@@ -69,6 +69,11 @@ export default function AssistantPage() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
+  /** Ask Amy Phase 2 — companionship chrome only. APIs untouched. */
+  const companionMode = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("companion") === "1";
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -333,11 +338,20 @@ export default function AssistantPage() {
         items.push({
           kind: "system",
           id: "empty",
-          content: <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>,
+          content: (
+            <p className="text-center text-sm text-muted-foreground">
+              {companionMode
+                ? t("ask_amy.companion.empty", {
+                    defaultValue: "I'm here. Ask one calm question when you're ready.",
+                  })
+                : t("ai.empty_short")}
+            </p>
+          ),
         });
       }
 
-      if (tabTopics.length > 0) {
+      // Companionship soft-enter — no topic/mode mall as first impression.
+      if (!companionMode && tabTopics.length > 0) {
         items.push({
           kind: "interactive",
           id: "topic-grid",
@@ -386,10 +400,24 @@ export default function AssistantPage() {
     });
 
     return items;
-  }, [dailyBriefing, historyPending, isEmpty, limitReached, loading, messages, sendMessage, tabTopics, t]);
+  }, [
+    companionMode,
+    dailyBriefing,
+    historyPending,
+    isEmpty,
+    limitReached,
+    loading,
+    messages,
+    sendMessage,
+    tabTopics,
+    t,
+  ]);
 
   return (
-    <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
+    <div
+      className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background"
+      data-aa-companion={companionMode ? "1" : undefined}
+    >
       <ChatThread
         surface="assistant"
         testId="assistant-chat-thread"
@@ -409,7 +437,11 @@ export default function AssistantPage() {
         composerPlaceholder={
           limitReached
             ? t("ai.input_limit_placeholder")
-            : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
+            : companionMode
+              ? t("ask_amy.companion.placeholder", {
+                  defaultValue: "Tell Amy what's on your mind…",
+                })
+              : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
         }
         scrollDeps={[messages, loading, historyLoaded, mode, input]}
         scrollToLatestLabel={t("ai.scroll_latest", { defaultValue: "Latest" })}
@@ -423,7 +455,11 @@ export default function AssistantPage() {
               <div className="flex min-w-0 items-center gap-2">
                 <AmyIcon size={28} ring />
                 <h1 className="truncate font-quicksand text-lg font-bold text-foreground">
-                  {t("ai.page_title")}
+                  {companionMode
+                    ? t("ask_amy.companion.title", {
+                        defaultValue: "Amy is here",
+                      })
+                    : t("ai.page_title")}
                 </h1>
               </div>
               {!isEmpty ? (
@@ -433,22 +469,30 @@ export default function AssistantPage() {
                 </Button>
               ) : null}
             </div>
-            <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-              {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setMode(id)}
-                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-all ${
-                    mode === id
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-primary/40"
-                  }`}
-                >
-                  <Icon className="h-3 w-3 shrink-0" />
-                  {t(labelKey)}
-                </button>
-              ))}
-            </div>
+            {!companionMode ? (
+              <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setMode(id)}
+                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-all ${
+                      mode === id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon className="h-3 w-3 shrink-0" />
+                    {t(labelKey)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t("ask_amy.companion.subtitle", {
+                  defaultValue: "One calm conversation — no pressure.",
+                })}
+              </p>
+            )}
           </header>
         )}
       />

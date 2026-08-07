@@ -134,6 +134,39 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.queryByTestId("hub-dest-row-discovery-worlds")).toBeNull();
   });
 
+  it("Ask Amy living — companionship room, not chatbot shelf", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "emotional", "speech-coach"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderAskAmyStream={({ activePath, onSelectPath }) => (
+          <div data-testid="ask-amy-living-stream">
+            <button
+              type="button"
+              data-testid="ask-amy-quiet-feelings"
+              onClick={() => onSelectPath("feelings")}
+            >
+              Feelings
+            </button>
+            <span data-path={activePath} />
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-ask-amy"));
+    expect(screen.getByTestId("ask-amy-living-stream")).toBeTruthy();
+    expect(screen.getByTestId("hub-room-module-ask-amy")).toBeTruthy();
+    expect(screen.queryByTestId("mod-amy-ai")).toBeNull();
+    fireEvent.click(screen.getByTestId("ask-amy-quiet-feelings"));
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
+
   it("Grow living — one educational room, no six-SKU nest", () => {
     render(
       <ParentHubRoomsShell

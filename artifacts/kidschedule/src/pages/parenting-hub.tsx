@@ -149,11 +149,13 @@ import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-sh
 import { GuidanceLivingStream } from "@/components/guidance/guidance-living-stream";
 import { MomentsLivingStream } from "@/components/moments/moments-living-stream";
 import { GrowLivingStream } from "@/components/grow/grow-living-stream";
+import { AskAmyLivingStream } from "@/components/ask-amy/ask-amy-living-stream";
 import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
 import { isGuidanceLivingV1Enabled } from "@/lib/guidance/living-room";
 import { isMomentsLivingV1Enabled } from "@/lib/moments/living-room";
 import { isGrowLivingV1Enabled } from "@/lib/grow/living-room";
+import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
 import {
   isHubTileRemovedFromRooms,
@@ -2292,6 +2294,17 @@ function ParentingHubPage() {
                         ageMonths={totalAgeMonths}
                         activeTileId={activeTileId}
                         onSelectTile={onSelectTile}
+                      />
+                    )
+                  : undefined
+              }
+              renderAskAmyStream={
+                isAskAmyLivingV1Enabled()
+                  ? ({ activePath, onSelectPath }) => (
+                      <AskAmyLivingStream
+                        childName={effectiveChild.name}
+                        activePath={activePath}
+                        onSelectPath={onSelectPath}
                       />
                     )
                   : undefined
