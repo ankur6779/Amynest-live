@@ -30,9 +30,11 @@ Includes:
 
 ## Not in this freeze
 
-Subsequent Experience V3 redesign phases (await Founder instructions):
+Subsequent Experience V3 redesign phases:
 
-Signup → Child Discovery → Today → Parent Hub → Child Hub → Ask Amy → Premium
+**Signup (R6 Keep)** → Child Discovery → Today → Parent Hub → Child Hub → Ask Amy → Premium
+
+See `docs/SIGNUP_V3_KEEP_EXPERIENCE.md` for the Signup Keep phase (Welcome remains frozen).
 
 ## Entry route
 

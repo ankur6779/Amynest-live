@@ -7,7 +7,7 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import type { ShimUser } from "@/lib/firebase-auth-context";
 
 export const GUEST_CHECKOUT_MESSAGE =
-  "Create a free account to subscribe — use Sign up or continue with Google.";
+  "Keep your journey with an account when you’re ready — Sign up or continue with Google.";
 
 const GUEST_UNAVAILABLE_SESSION_KEY = "amynest:guest_try_first_unavailable";
 

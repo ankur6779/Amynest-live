@@ -50,6 +50,7 @@ import {
   authInputGlowBlur,
   authInputGlowFocus,
 } from "@/lib/auth-screen-layout";
+import { buildSignInKeepCopy } from "@/lib/first-experience/signup-keep";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -322,9 +323,13 @@ function NeonRingHero() {
 
 // ── Full-page shell ────────────────────────────────────────────────────────────
 function AuthShell({
-  children
+  children,
+  keepMode = false,
+  tagline,
 }: {
   children: React.ReactNode;
+  keepMode?: boolean;
+  tagline?: string;
 }) {
   const {
     t
@@ -332,13 +337,28 @@ function AuthShell({
   const nativeShell = isNativeAmyNestShell();
   const { kavRef, scrollRef, keyboardOpen, handleBackgroundTap } =
     useNativeAuthKeyboard(nativeShell);
+  const shellBackground = keepMode
+    ? [
+        "radial-gradient(circle at 50% 38%, rgba(212,175,120,0.16) 0%, transparent 55%)",
+        "linear-gradient(175deg, #0c0a08 0%, #16110c 55%, #070604 100%)",
+      ].join(", ")
+    : [
+        "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
+        "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
+      ].join(", ");
+  const waveShadow = keepMode
+    ? ["0 0 0  80px rgba(212,175,120,0.04)", "0 0 0 170px rgba(212,175,120,0.03)", "0 0 0 290px rgba(180,140,90,0.02)", "0 0 0 440px rgba(120,90,50,0.015)"].join(", ")
+    : ["0 0 0  80px rgba(168,85,247,0.04)", "0 0 0 170px rgba(168,85,247,0.03)", "0 0 0 290px rgba(100,50,200,0.02)", "0 0 0 440px rgba(80,30,160,0.015)"].join(", ");
+  const heroGlow = keepMode
+    ? "radial-gradient(ellipse at center, rgba(212,175,120,0.42) 0%, rgba(180,140,90,0.22) 45%, transparent 70%)"
+    : "radial-gradient(ellipse at center, rgba(168,85,247,0.55) 0%, rgba(236,72,153,0.30) 45%, transparent 70%)";
   return (
     <AuthKeyboardShell
       kavRef={nativeShell ? kavRef : undefined}
       scrollRef={nativeShell ? scrollRef : undefined}
       keyboardOpen={keyboardOpen}
       onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
-      className="amynest-auth-page"
+      className={keepMode ? "amynest-auth-page amynest-auth-page--keep" : "amynest-auth-page"}
       style={{
         minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
@@ -346,10 +366,7 @@ function AuthShell({
         alignItems: "center",
         justifyContent: nativeShell ? "flex-start" : "center",
         padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : AUTH_SPACING.shellPaddingWeb,
-        background: [
-          "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
-          "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
-        ].join(", "),
+        background: shellBackground,
         position: "relative",
         overflowX: "hidden",
         overflowY: nativeShell ? undefined : "hidden",
@@ -367,7 +384,7 @@ function AuthShell({
       width: 0,
       height: 0,
       borderRadius: "50%",
-      boxShadow: ["0 0 0  80px rgba(168,85,247,0.04)", "0 0 0 170px rgba(168,85,247,0.03)", "0 0 0 290px rgba(100,50,200,0.02)", "0 0 0 440px rgba(80,30,160,0.015)"].join(", "),
+      boxShadow: waveShadow,
       animation: "siWavePulse 8s ease-in-out infinite",
       pointerEvents: "none"
     }} />
@@ -386,7 +403,7 @@ function AuthShell({
         width: AUTH_SPACING.heroGlowWidth,
         height: AUTH_SPACING.heroGlowHeight,
         margin: "-2px auto 0",
-        background: "radial-gradient(ellipse at center, rgba(168,85,247,0.55) 0%, rgba(236,72,153,0.30) 45%, transparent 70%)",
+        background: heroGlow,
         filter: "blur(12px)",
         pointerEvents: "none"
       }} />
@@ -395,7 +412,13 @@ function AuthShell({
         {/* Card */}
         <div className="amynest-auth-card" style={{
         ...authCardStyle(),
-        marginTop: AUTH_SPACING.cardMarginTop
+        marginTop: AUTH_SPACING.cardMarginTop,
+        ...(keepMode
+          ? {
+              border: "1px solid rgba(212,175,120,0.22)",
+              boxShadow: "0 18px 48px rgba(0,0,0,0.45), 0 0 40px rgba(212,175,120,0.08)",
+            }
+          : {}),
       }}>
           <div style={{
           padding: AUTH_SPACING.cardPadding
@@ -408,9 +431,9 @@ function AuthShell({
         marginTop: AUTH_SPACING.taglineMarginTop,
         textAlign: "center",
         fontSize: "11px",
-        color: "rgba(255,255,255,0.22)"
+        color: keepMode ? "rgba(244,238,230,0.35)" : "rgba(255,255,255,0.22)"
       }}>
-          {t("screens.sign_in.tagline")}
+          {tagline ?? t("screens.sign_in.tagline")}
         </p>
       </div>
     </AuthKeyboardShell>
@@ -429,9 +452,8 @@ export default function SignInPage() {
     isSignedIn
   } = useAuth();
   const [mode, setMode] = useState<ViewMode>("signin");
-  const fromFirstExperience =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("from") === "first-experience";
+  const keep = buildSignInKeepCopy();
+  const fromFirstExperience = keep.keepMode;
   const demoLoginEmail =
     import.meta.env.VITE_AMYNEST_ENV !== "production"
       ? (import.meta.env.VITE_DEMO_LOGIN_EMAIL as string | undefined)?.trim() ?? ""
@@ -693,27 +715,34 @@ export default function SignInPage() {
   }
 
   // ── Main sign-in view ────────────────────────────────────────────────────
-  return <AuthShell>
+  const subtitleColor = fromFirstExperience ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.65)";
+  const ctaGradient = fromFirstExperience
+    ? "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)"
+    : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)";
+  const ctaShadow = fromFirstExperience
+    ? "0 0 28px rgba(212,175,120,0.35), 0 4px 18px rgba(0,0,0,0.30)"
+    : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)";
+  // Value already lived — guest try belongs before first value, not after keep.
+  const showGuestOnThisBeat = showGuestTryFirst && !fromFirstExperience;
+  return <AuthShell keepMode={fromFirstExperience} tagline={keep.tagline}>
       <h1 style={{
       margin: "0 0 4px",
       fontSize: `${AUTH_SPACING.titleSize}px`,
       fontWeight: 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
-    }}>
-        {fromFirstExperience ? "Continue today’s story" : t("screens.sign_in.title")}
+    }} data-testid="sign-in-title">
+        {fromFirstExperience ? keep.title : t("screens.sign_in.title")}
       </h1>
       <p style={{
       margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
-      color: "rgba(200,180,255,0.65)"
-    }}>
-        {fromFirstExperience
-          ? "Signing in keeps today’s progress with you — tomorrow continues naturally."
-          : t("screens.sign_in.subtitle")}
+      color: subtitleColor
+    }} data-testid="sign-in-subtitle">
+        {fromFirstExperience ? keep.subtitle : t("screens.sign_in.subtitle")}
       </p>
 
-      {showGuestTryFirst ? (
+      {showGuestOnThisBeat ? (
         <button
           type="button"
           onClick={() => void onGuestTry()}
@@ -738,7 +767,7 @@ export default function SignInPage() {
           {guestBusy
             ? t("screens.sign_in.guest_loading", { defaultValue: "Starting…" })
             : t("screens.sign_in.guest_try_first", {
-                defaultValue: "Try first — create a routine in 5 min",
+                defaultValue: "Try first — no account needed yet",
               })}
         </button>
       ) : null}
@@ -880,26 +909,54 @@ export default function SignInPage() {
 
         <button type="submit" disabled={busy} className="si-submit-btn" style={{
         ...AUTH_SUBMIT_BTN_STYLE,
-        background: busy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+        background: busy ? "rgba(75,65,110,0.7)" : ctaGradient,
         border: "none",
-        color: "#FFFFFF",
+        color: fromFirstExperience && !busy ? "#1a140c" : "#FFFFFF",
         cursor: busy ? "not-allowed" : "pointer",
-        boxShadow: busy ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
+        boxShadow: busy ? "none" : ctaShadow,
         marginTop: "2px"
       }}>
-          {busy ? t("screens.sign_in.signing_in") : t("screens.sign_in.sign_in_button")}
+          {busy
+            ? t("screens.sign_in.signing_in")
+            : fromFirstExperience
+              ? keep.cta
+              : t("screens.sign_in.sign_in_button")}
         </button>
       </form>
 
+      {fromFirstExperience ? (
+        <p
+          className="amynest-auth-footer"
+          style={{
+            marginTop: `${AUTH_SPACING.footerMarginTop}px`,
+            fontSize: "13px",
+            color: "rgba(244,238,230,0.45)",
+            textAlign: "center",
+          }}
+        >
+          <Link
+            href="/welcome"
+            data-testid="sign-in-not-now"
+            style={{
+              color: "rgba(244,238,230,0.65)",
+              fontWeight: 500,
+              textDecoration: "none",
+            }}
+          >
+            {keep.fatigueExit}
+          </Link>
+        </p>
+      ) : null}
+
       <p className="amynest-auth-footer" style={{
-      marginTop: `${AUTH_SPACING.footerMarginTop}px`,
+      marginTop: fromFirstExperience ? "10px" : `${AUTH_SPACING.footerMarginTop}px`,
       fontSize: "14px",
-      color: "rgba(200,180,255,0.50)",
+      color: fromFirstExperience ? "rgba(244,238,230,0.45)" : "rgba(200,180,255,0.50)",
       textAlign: "center"
     }}>
         {t("screens.sign_in.no_account")}{" "}
-        <Link href="/sign-up" style={{
-        color: "hsl(var(--brand-purple-500))",
+        <Link href={keep.signUpHref} style={{
+        color: fromFirstExperience ? "#e8d4b0" : "hsl(var(--brand-purple-500))",
         fontWeight: 600,
         textDecoration: "none"
       }}>

@@ -40,6 +40,7 @@ import {
   authInputGlowBlur,
   authInputGlowFocus,
 } from "@/lib/auth-screen-layout";
+import { buildSignupKeepCopy } from "@/lib/first-experience/signup-keep";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -235,9 +236,14 @@ function NeonRingHero() {
 
 // ── Full-page shell ───────────────────────────────────────────────────────────
 function AuthShell({
-  children
+  children,
+  keepMode = false,
+  tagline,
 }: {
   children: React.ReactNode;
+  /** R6 sanctuary — warm gold-ivory keep, never neon portal. */
+  keepMode?: boolean;
+  tagline?: string;
 }) {
   const {
     t
@@ -245,13 +251,28 @@ function AuthShell({
   const nativeShell = isNativeAmyNestShell();
   const { kavRef, scrollRef, keyboardOpen, handleBackgroundTap } =
     useNativeAuthKeyboard(nativeShell);
+  const shellBackground = keepMode
+    ? [
+        "radial-gradient(circle at 50% 38%, rgba(212,175,120,0.16) 0%, transparent 55%)",
+        "linear-gradient(175deg, #0c0a08 0%, #16110c 55%, #070604 100%)",
+      ].join(", ")
+    : [
+        "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
+        "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
+      ].join(", ");
+  const waveShadow = keepMode
+    ? ["0 0 0  80px rgba(212,175,120,0.04)", "0 0 0 170px rgba(212,175,120,0.03)", "0 0 0 290px rgba(180,140,90,0.02)", "0 0 0 440px rgba(120,90,50,0.015)"].join(", ")
+    : ["0 0 0  80px rgba(168,85,247,0.04)", "0 0 0 170px rgba(168,85,247,0.03)", "0 0 0 290px rgba(100,50,200,0.02)", "0 0 0 440px rgba(80,30,160,0.015)"].join(", ");
+  const heroGlow = keepMode
+    ? "radial-gradient(ellipse at center, rgba(212,175,120,0.42) 0%, rgba(180,140,90,0.22) 45%, transparent 70%)"
+    : "radial-gradient(ellipse at center, rgba(168,85,247,0.50) 0%, rgba(236,72,153,0.28) 45%, transparent 70%)";
   return (
     <AuthKeyboardShell
       kavRef={nativeShell ? kavRef : undefined}
       scrollRef={nativeShell ? scrollRef : undefined}
       keyboardOpen={keyboardOpen}
       onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
-      className="amynest-auth-page"
+      className={keepMode ? "amynest-auth-page amynest-auth-page--keep" : "amynest-auth-page"}
       style={{
         minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
@@ -259,10 +280,7 @@ function AuthShell({
         alignItems: "center",
         justifyContent: nativeShell ? "flex-start" : "center",
         padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : AUTH_SPACING.shellPaddingWeb,
-        background: [
-          "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
-          "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
-        ].join(", "),
+        background: shellBackground,
         position: "relative",
         overflowX: "hidden",
         overflowY: nativeShell ? undefined : "hidden",
@@ -279,7 +297,7 @@ function AuthShell({
       width: 0,
       height: 0,
       borderRadius: "50%",
-      boxShadow: ["0 0 0  80px rgba(168,85,247,0.04)", "0 0 0 170px rgba(168,85,247,0.03)", "0 0 0 290px rgba(100,50,200,0.02)", "0 0 0 440px rgba(80,30,160,0.015)"].join(", "),
+      boxShadow: waveShadow,
       animation: "suWavePulse 8s ease-in-out infinite",
       pointerEvents: "none"
     }} />
@@ -297,7 +315,7 @@ function AuthShell({
         width: AUTH_SPACING.heroGlowWidth,
         height: AUTH_SPACING.heroGlowHeight,
         margin: "-2px auto 0",
-        background: "radial-gradient(ellipse at center, rgba(168,85,247,0.50) 0%, rgba(236,72,153,0.28) 45%, transparent 70%)",
+        background: heroGlow,
         filter: "blur(10px)",
         pointerEvents: "none"
       }} />
@@ -305,7 +323,13 @@ function AuthShell({
 
         <div className="amynest-auth-card" style={{
         ...authCardStyle(),
-        marginTop: AUTH_SPACING.cardMarginTop
+        marginTop: AUTH_SPACING.cardMarginTop,
+        ...(keepMode
+          ? {
+              border: "1px solid rgba(212,175,120,0.22)",
+              boxShadow: "0 18px 48px rgba(0,0,0,0.45), 0 0 40px rgba(212,175,120,0.08)",
+            }
+          : {}),
       }}>
           <div style={{
           padding: AUTH_SPACING.cardPadding
@@ -318,9 +342,9 @@ function AuthShell({
         marginTop: AUTH_SPACING.taglineMarginTop,
         textAlign: "center",
         fontSize: "11px",
-        color: "rgba(255,255,255,0.22)"
+        color: keepMode ? "rgba(244,238,230,0.35)" : "rgba(255,255,255,0.22)"
       }}>
-          {t("screens.sign_up.tagline")}
+          {tagline ?? t("screens.sign_up.tagline")}
         </p>
       </div>
     </AuthKeyboardShell>
@@ -430,29 +454,31 @@ export default function SignUpPage() {
     }
   };
   const canSubmit = email.trim() && password.length >= 6;
-  const fromFirstExperience =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("from") === "first-experience";
-  return <AuthShell>
+  const keep = buildSignupKeepCopy();
+  const keepMode = keep.keepMode;
+  const subtitleColor = keepMode ? "rgba(244,238,230,0.62)" : "rgba(200,180,255,0.65)";
+  const ctaGradient = keepMode
+    ? "linear-gradient(90deg, #c4a574 0%, #e8d4b0 100%)"
+    : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)";
+  const ctaShadow = keepMode
+    ? "0 0 28px rgba(212,175,120,0.35), 0 4px 18px rgba(0,0,0,0.30)"
+    : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)";
+  return <AuthShell keepMode={keepMode} tagline={keep.tagline}>
       <h1 style={{
       margin: "0 0 4px",
       fontSize: `${AUTH_SPACING.titleSize}px`,
       fontWeight: 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
-    }}>
-        {fromFirstExperience
-          ? "Keep today’s progress"
-          : t("screens.sign_up.title")}
+    }} data-testid="sign-up-title">
+        {keepMode ? keep.title : t("screens.sign_up.title")}
       </h1>
       <p style={{
       margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
-      color: "rgba(200,180,255,0.65)"
-    }}>
-        {fromFirstExperience
-          ? "Signing in keeps today’s progress, tomorrow’s plan, and your child’s growing understanding."
-          : t("screens.sign_up.subtitle")}
+      color: subtitleColor
+    }} data-testid="sign-up-subtitle">
+        {keepMode ? keep.subtitle : t("screens.sign_up.subtitle")}
       </p>
 
       <div className="su-oauth-stack">
@@ -570,26 +596,56 @@ export default function SignUpPage() {
 
         <button type="submit" disabled={busy || !canSubmit} className="su-submit-btn" style={{
         ...AUTH_SUBMIT_BTN_STYLE,
-        background: busy || !canSubmit ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+        background: busy || !canSubmit
+          ? "rgba(75,65,110,0.7)"
+          : ctaGradient,
         border: "none",
-        color: "#FFFFFF",
+        color: keepMode && !(busy || !canSubmit) ? "#1a140c" : "#FFFFFF",
         cursor: busy || !canSubmit ? "not-allowed" : "pointer",
-        boxShadow: busy || !canSubmit ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
+        boxShadow: busy || !canSubmit ? "none" : ctaShadow,
         marginTop: "2px"
       }}>
-          {busy ? t("screens.sign_up.creating") : t("screens.sign_up.create_button")}
+          {busy
+            ? t("screens.sign_up.creating")
+            : keepMode
+              ? keep.cta
+              : t("screens.sign_up.create_button")}
         </button>
       </form>
 
+      {keepMode ? (
+        <p
+          className="amynest-auth-footer"
+          style={{
+            marginTop: `${AUTH_SPACING.footerMarginTop}px`,
+            fontSize: "13px",
+            color: "rgba(244,238,230,0.45)",
+            textAlign: "center",
+          }}
+        >
+          <Link
+            href="/welcome"
+            data-testid="sign-up-not-now"
+            style={{
+              color: "rgba(244,238,230,0.65)",
+              fontWeight: 500,
+              textDecoration: "none",
+            }}
+          >
+            {keep.fatigueExit}
+          </Link>
+        </p>
+      ) : null}
+
       <p className="amynest-auth-footer" style={{
-      marginTop: `${AUTH_SPACING.footerMarginTop}px`,
+      marginTop: keepMode ? "10px" : `${AUTH_SPACING.footerMarginTop}px`,
       fontSize: "14px",
-      color: "rgba(200,180,255,0.50)",
+      color: keepMode ? "rgba(244,238,230,0.45)" : "rgba(200,180,255,0.50)",
       textAlign: "center"
     }}>
         {t("screens.sign_up.have_account")}{" "}
-        <Link href="/sign-in" style={{
-        color: "hsl(var(--brand-purple-500))",
+        <Link href={keep.signInHref} style={{
+        color: keepMode ? "#e8d4b0" : "hsl(var(--brand-purple-500))",
         fontWeight: 600,
         textDecoration: "none"
       }}>
