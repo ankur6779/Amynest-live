@@ -119,6 +119,19 @@ import {
   speakCoachFeedbackLines,
 } from "@/lib/speech-coach-audio-warmup";
 import { speechCoachPerf } from "@/lib/speech-coach-perf-trace";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
+import { buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import {
+  isSpeechCoachLivingV1Enabled,
+  recommendSpeechCoachAction,
+  SPEECH_COACH_QUIET_PATHS,
+} from "@/lib/speech-coach/living-room";
+import "@/pages/first-experience-material.css";
+import "@/components/speech-coach/speech-coach-living-room.css";
+
+/** Help-room FE photograph — same house as Parent Hub Help. */
+const SPEECH_COACH_MEMORY = ROOM_HEROES.help;
 
 type AnyChild = {
   id: number;
@@ -219,6 +232,8 @@ function GatedSection({
   children: (gate: { onAction: () => void; locked: boolean }) => React.ReactNode;
 }) {
   const { locked, tryFree, onAction } = useSpeechHubGate();
+  /** Living manufacturing — Pack 5 / Premium continuity: no Try Free shelf chrome */
+  const living = isSpeechCoachLivingV1Enabled();
 
   return (
     <LockedBlock locked={locked} reason="speech_coach" rounded="rounded-3xl">
@@ -236,7 +251,7 @@ function GatedSection({
                 <h2 className="font-bold text-base text-foreground leading-tight">
                   {title}
                 </h2>
-                {tryFree && <TryFreeBadge />}
+                {!living && tryFree ? <TryFreeBadge /> : null}
               </div>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 {description}
@@ -1531,9 +1546,11 @@ export default function SpeechCoachPage() {
   const authFetch = useAuthFetch();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const living = isSpeechCoachLivingV1Enabled();
   const [viewMode, setViewMode] = useState<SpeechViewMode>(() =>
     getSpeechViewMode(),
   );
+  const [moreOpen, setMoreOpen] = useState(false);
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) =>
@@ -1551,6 +1568,15 @@ export default function SpeechCoachPage() {
     authFetch,
     child?.id,
     v2Enabled && Boolean(child?.id),
+  );
+  const helpRoomHref = buildParentingHubDeepLink("speech-coach");
+  const recommend = useMemo(
+    () =>
+      recommendSpeechCoachAction({
+        ageMonths: child ? totalMonths(child) : 48,
+        v2Enabled,
+      }),
+    [child, v2Enabled],
   );
 
   useEffect(() => {
@@ -1578,6 +1604,287 @@ export default function SpeechCoachPage() {
     },
     [setLocation],
   );
+
+  const onRecommend = useCallback(() => {
+    if (recommend.kind === "route" && recommend.href) {
+      setLocation(recommend.href, { replace: false });
+      return;
+    }
+    if (recommend.sectionId) scrollToSection(recommend.sectionId);
+  }, [recommend, setLocation]);
+
+  if (living) {
+    return (
+      <div
+        className="fe-shell speech-coach-living"
+        data-testid="speech-coach-page"
+        data-ph-pack="speech-2"
+        data-fe-shot={SPEECH_COACH_MEMORY.shot}
+        data-fe-room="reveal"
+        data-fe-presence="settle"
+      >
+        <div className="fe-ambient" aria-hidden="true">
+          <img
+            src={SPEECH_COACH_MEMORY.src}
+            alt=""
+            decoding="async"
+            loading="lazy"
+            fetchPriority="low"
+          />
+          <div className="fe-ambient-wash" />
+        </div>
+        <div className="fe-breath fe-breath-a" aria-hidden="true" />
+        <div className="fe-breath fe-breath-b" aria-hidden="true" />
+        <div className="fe-living-shade" aria-hidden="true" />
+
+        <div className="sc-living-content">
+          <AppLink href={helpRoomHref} replace source="speech-coach-back-help">
+            <button type="button" className="sc-back" data-testid="speech-coach-back">
+              <ChevronLeft className="h-4 w-4" />
+              {t("parent_hub.rooms.help.title", { defaultValue: "Help" })}
+            </button>
+          </AppLink>
+
+          {childrenQuery.isLoading ? (
+            <div className="sc-loading" role="status">
+              {t("speech_coach.living.loading", {
+                defaultValue: "Preparing a calm practice space…",
+              })}
+            </div>
+          ) : null}
+
+          {!childrenQuery.isLoading && eligible.length === 0 ? (
+            <div className="sc-empty" data-testid="speech-coach-empty">
+              <p>
+                {t("speech_coach.living.empty", {
+                  defaultValue: "Add a child to begin gentle speech practice.",
+                })}
+              </p>
+              <div className="mt-3">
+                <AddChildLink source="speech-coach-empty">
+                  <Button size="sm" variant="secondary">
+                    {t("parent_hub.empty.cta")}
+                  </Button>
+                </AddChildLink>
+              </div>
+            </div>
+          ) : null}
+
+          {child && eligible.length > 1 ? (
+            <div className="sc-child-chips" data-testid="speech-child-picker">
+              {eligible.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="sc-child-chip"
+                  data-active={c.id === child.id ? "true" : "false"}
+                  data-testid={`speech-child-${c.id}`}
+                  onClick={() => setSelectedId(c.id)}
+                  aria-pressed={c.id === child.id}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {child ? (
+            <>
+              <div
+                className="sc-living-surface"
+                data-testid="speech-coach-living-surface"
+              >
+                <header className="sc-today-hero" data-testid="speech-coach-today-hero">
+                  <div
+                    className="fe-memory-mount sc-today-memory"
+                    data-testid="speech-coach-visual-memory"
+                    data-fe-shot={SPEECH_COACH_MEMORY.shot}
+                  >
+                    <div className="fe-memory-spill" aria-hidden="true" />
+                    <div className="fe-memory">
+                      <img
+                        src={SPEECH_COACH_MEMORY.src}
+                        alt={SPEECH_COACH_MEMORY.alt}
+                        draggable={false}
+                        decoding="async"
+                        fetchPriority="high"
+                      />
+                      <div className="fe-memory-veil" aria-hidden="true" />
+                      <div className="fe-memory-glass" aria-hidden="true" />
+                      <div className="fe-memory-grain" aria-hidden="true" />
+                      <div className="sc-today-readability" aria-hidden="true" />
+                      <div className="sc-today-copy">
+                        <p className="sc-today-eyebrow">
+                          {t("speech_coach.living.eyebrow", {
+                            defaultValue: "Today's Help",
+                          })}
+                        </p>
+                        <h1 className="sc-today-title">
+                          {t("speech_coach.living.title", {
+                            name: child.name,
+                            defaultValue: `What should we practice gently with ${child.name}?`,
+                          })}
+                        </h1>
+                        <p className="sc-today-purpose">
+                          {t("speech_coach.living.purpose", {
+                            defaultValue: "One calm next step — no pressure.",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="sc-recommend-btn"
+                    data-testid="speech-coach-recommend"
+                    onClick={onRecommend}
+                  >
+                    <span className="sc-recommend-cue">{recommend.label}</span>
+                    <span className="sc-recommend-title">{recommend.title}</span>
+                    <span className="sc-recommend-purpose">
+                      {recommend.purpose}
+                      {recommend.kind === "route" && v2DailyAllowance
+                        ? ` · ${v2DailyAllowance}`
+                        : ""}
+                    </span>
+                  </button>
+                </header>
+
+                <div className="sc-quiet-band">
+                  <p className="sc-quiet-label">
+                    {t("speech_coach.living.quiet_paths", {
+                      defaultValue: "Quiet practice paths",
+                    })}
+                  </p>
+                  <div
+                    className="sc-quiet-list"
+                    data-testid="speech-coach-quiet-paths"
+                  >
+                    {SPEECH_COACH_QUIET_PATHS.map((path) => (
+                      <button
+                        key={path.sectionId}
+                        type="button"
+                        className="sc-quiet-path"
+                        data-testid={`speech-quiet-${path.sectionId}`}
+                        onClick={() => scrollToSection(path.sectionId)}
+                      >
+                        <span className="sc-quiet-path-title">{path.title}</span>
+                        <span className="sc-quiet-path-purpose">{path.purpose}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="sc-living-sections space-y-4" data-testid="speech-coach-home">
+                <PronunciationSection child={child} viewMode={viewMode} />
+                <GamesSection child={child} viewMode={viewMode} />
+                <GuidanceSection />
+                <AffirmationsSection />
+                <ReportsSection child={child} />
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  className="sc-more-toggle"
+                  data-testid="speech-coach-more-toggle"
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                >
+                  {moreOpen
+                    ? t("speech_coach.living.more_hide", {
+                        defaultValue: "Hide more practice",
+                      })
+                    : t("speech_coach.living.more_show", {
+                        defaultValue: "More practice",
+                      })}
+                </button>
+                {moreOpen ? (
+                  <div className="sc-more-body" data-testid="speech-coach-more-body">
+                    <ViewModeToggle
+                      mode={viewMode}
+                      onChange={(m) => {
+                        setViewMode(m);
+                        setSpeechViewMode(m);
+                      }}
+                    />
+                    <DashboardSection child={child} viewMode={viewMode} />
+                    <MilestonesSection child={child} />
+                    <ReadAloudSection child={child} viewMode={viewMode} />
+                    {showLegacyCards ? (
+                      <>
+                        <AppLink
+                          href="/speech-coach/live-session"
+                          source="speech-home-hero-live"
+                          replace
+                        >
+                          <Button className="w-full" variant="secondary">
+                            {t("screens.speech_coach.home.hero_live_title")}
+                          </Button>
+                        </AppLink>
+                        <AppLink
+                          href="/speech-coach/talk"
+                          source="speech-home-talk-banner"
+                          replace
+                        >
+                          <Button className="w-full" variant="secondary">
+                            {t("screens.speech_coach.home.hero_talk_title")}
+                          </Button>
+                        </AppLink>
+                      </>
+                    ) : null}
+                    {!v2Enabled ? null : (
+                      <AppLink href="/speech-coach-v2" source="speech-coach-v2-more">
+                        <Button className="w-full" variant="secondary">
+                          {t("screens.speech_coach.home.hero_v2_title")}
+                        </Button>
+                      </AppLink>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "quick",
+                        "bedtime",
+                        "school",
+                        "pronounce",
+                        "warmup",
+                        "emotion",
+                      ].map((key) => (
+                        <Button
+                          key={key}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          data-testid={`session-type-${key}`}
+                          onClick={() => handleSessionType(key)}
+                        >
+                          {key}
+                        </Button>
+                      ))}
+                    </div>
+                    <ExpertSection child={child} />
+                  </div>
+                ) : null}
+              </div>
+
+              <p className="sc-support-note">{PREMIUM_VOICE.invitation}</p>
+              <AppLink href="/dashboard" source="speech-coach-exit-home">
+                <span className="sc-exit-home" data-testid="speech-coach-exit-home">
+                  {t("speech_coach.living.exit_home", {
+                    defaultValue: "Back to Today Home",
+                  })}
+                </span>
+              </AppLink>
+            </>
+          ) : null}
+
+          {!child && !childrenQuery.isLoading && eligible.length === 0 ? (
+            <ExpertSection child={null} />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1629,10 +1936,9 @@ export default function SpeechCoachPage() {
         />
       )}
 
-      {/* === SPEECH COACH HOME / EXPLORE HUB === */}
+      {/* === SPEECH COACH HOME / EXPLORE HUB (legacy kill-switch) === */}
       {child && (
         <div className="space-y-5 pt-2" data-testid="speech-coach-home">
-          {/* Welcome banner */}
           <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-primary/5 p-5">
             <div className="flex items-start gap-4">
               <div className="text-4xl leading-none mt-0.5">🎤</div>
@@ -1653,7 +1959,6 @@ export default function SpeechCoachPage() {
             </div>
           </div>
 
-          {/* PRIMARY: Start Live Session (legacy — hidden in production) */}
           {showLegacyCards && (
           <AppLink href="/speech-coach/live-session" source="speech-home-hero-live" replace>
             <motion.div
@@ -1735,7 +2040,6 @@ export default function SpeechCoachPage() {
             </AppLink>
           )}
 
-          {/* AI Pronunciation Practice + legacy Talk with Amy */}
           <div className={showLegacyCards ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
             {showLegacyCards && (
             <AppLink href="/speech-coach/talk" source="speech-home-talk-banner" replace>
@@ -1796,7 +2100,6 @@ export default function SpeechCoachPage() {
             </button>
           </div>
 
-          {/* Session Types */}
           <div>
             <div className="flex items-center justify-between mb-2.5 px-0.5">
               <div className="font-bold text-sm flex items-center gap-2 text-foreground">
@@ -1832,7 +2135,6 @@ export default function SpeechCoachPage() {
             </div>
           </div>
 
-          {/* Discoverability */}
           <div className="space-y-1.5">
             <div className="font-bold text-sm px-0.5 flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
