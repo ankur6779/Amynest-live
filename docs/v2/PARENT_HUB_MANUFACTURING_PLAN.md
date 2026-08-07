@@ -8,6 +8,9 @@
 - `docs/v2/PARENT_HUB_CONSTITUTION.md` — **APPROVED**  
 - `docs/v2/PARENT_HUB_VISUAL_MANUFACTURING_STUDY.md` — **APPROVED**  
 
+**Production gate (required before Pack 1 code):**  
+- `docs/v2/PARENT_HUB_PRODUCTION_AUDIT.md` — module Keep/Merge/Move/Hide/Remove table — **must be Founder-approved before implementation**  
+
 **Frozen upstream (do not touch):** Welcome · Signup · Child Discovery · Today Home  
 
 **Route (Production Safety):** keep `/parenting-hub`  
@@ -49,6 +52,8 @@ Code DNA already exists for Home boundary:
 ## Release train (why this order)
 
 ```text
+Gate A0  Production Audit (modules)  →  Keep/Merge/Move/Hide/Remove locked
+   ↓
 Gate B0  Blueprint freeze (docs)     →  what to build is unambiguous
    ↓
 Pack 1   Room shell                  →  four intentions replace eight groups
@@ -918,4 +923,4 @@ Inside Pack 1–3, manufacture Care + Help doors to ship quality before Moments/
 
 File: `docs/v2/PARENT_HUB_MANUFACTURING_PLAN.md`
 
-Next (only after Founder approval of this plan): **Gate B0 Blueprint** → then Pack 1.
+Next (only after Founder approval of this plan): **Gate A0 Production Audit** → **Gate B0 Blueprint** → then Pack 1.
