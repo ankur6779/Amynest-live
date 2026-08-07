@@ -1,6 +1,7 @@
 /**
  * Today Home Hero — ONE hero only.
  * Hierarchy: NRT → Why today → Begin → one supporting insight.
+ * Structure frozen — Apple micro-craft only.
  */
 import { ArrowRight, Sparkles } from "lucide-react";
 import { DashboardGlassCard } from "@/components/dashboard-glass-card";
@@ -16,6 +17,7 @@ type Props = {
 
 export function TodayHomeHero({ decision, insight, onBegin }: Props) {
   const restMode = decision.cta.kind === "rest";
+  const whyId = "today-home-why-text";
 
   return (
     <section
@@ -48,6 +50,7 @@ export function TodayHomeHero({ decision, insight, onBegin }: Props) {
               {decision.title}
             </h1>
             <p
+              id={whyId}
               className="mt-2 text-sm leading-relaxed text-white/75"
               data-testid="today-home-why"
             >
@@ -65,10 +68,11 @@ export function TodayHomeHero({ decision, insight, onBegin }: Props) {
             type="button"
             onClick={onBegin}
             data-testid="today-home-begin"
+            aria-describedby={whyId}
             className={
               restMode
-                ? "flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.08] px-5 py-3.5 text-base font-bold text-white/90 transition hover:bg-white/[0.12] active:scale-[0.98]"
-                : "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3.5 text-base font-bold text-[#0a1024] shadow-lg shadow-amber-500/25 transition hover:bg-amber-400 active:scale-[0.98]"
+                ? "flex w-full min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.08] px-5 py-3.5 text-base font-bold text-white/90 transition hover:bg-white/[0.12] active:scale-[0.98] motion-reduce:active:scale-100"
+                : "flex w-full min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3.5 text-base font-bold text-[#0a1024] shadow-lg shadow-amber-500/25 transition hover:bg-amber-400 active:scale-[0.98] motion-reduce:active:scale-100"
             }
           >
             {!restMode ? <Sparkles className="h-5 w-5" aria-hidden /> : null}

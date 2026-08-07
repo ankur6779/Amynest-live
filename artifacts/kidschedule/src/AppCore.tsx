@@ -671,7 +671,7 @@ function makeProtectedRoute(Component: ComponentType, routeLabel?: string) {
   return ProtectedRoutePage;
 }
 
-const DashboardRoute = makeProtectedRoute(Dashboard, "Dashboard");
+const DashboardRoute = makeProtectedRoute(Dashboard, "Home");
 const ChildrenListRoute = makeProtectedRoute(ChildrenList, "ChildrenList");
 const ChildFormRoute = makeProtectedRoute(ChildForm, "ChildForm");
 const RoutinesListRoute = makeProtectedRoute(RoutinesList, "RoutinesList");

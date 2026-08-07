@@ -45,7 +45,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
       <AmyFab embedded />
       <nav
         className="app-footer__nav w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
-        aria-label={t("nav.dashboard")}
+        aria-label={t("nav.main", { defaultValue: "Main" })}
       >
         <LayoutGroup id="bottom-tab-bar">
           <div className="relative flex h-[72px] w-full items-end justify-around px-2 pb-2">

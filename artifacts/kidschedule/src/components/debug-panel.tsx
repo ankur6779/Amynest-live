@@ -14,7 +14,7 @@ import { SHOW_BOOT_HUD } from "@/lib/is-dev";
 
 const SCREEN_NAMES: Record<string, string> = {
   "/": "Home",
-  "/dashboard": "Dashboard",
+  "/dashboard": "Home",
   "/children": "Children",
   "/children/new": "Add Child",
   "/routines": "Routines",

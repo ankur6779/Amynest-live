@@ -1,14 +1,11 @@
 /**
- * Today Home sanctuary deltas — seats Home inside Welcome FE materials.
- * FE CSS remains frozen; this file only scopes Home seating.
+ * Today Home sanctuary + Apple craft deltas.
+ * FE CSS remains frozen; this file only scopes Home seating & subordination.
  */
 
 .th-shell {
   position: relative;
   overflow: hidden;
-  min-height: 14rem;
-  /* Contain FE full-viewport shell tokens to the Home hero region */
-  min-height: unset;
   height: auto;
 }
 
@@ -23,8 +20,10 @@
 }
 
 .th-shell .fe-ambient img {
-  object-position: center 35%;
-  opacity: 0.55;
+  /* Match Welcome/Discovery reflection warmth & distance */
+  object-position: center 32%;
+  opacity: 0.62;
+  filter: saturate(1.05) contrast(1.02);
 }
 
 .th-shell-content {
@@ -32,34 +31,38 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.85rem 0.85rem 1.1rem;
+  gap: 0.75rem;
+  padding: 1rem 0.9rem 1.25rem;
+  padding-left: max(0.9rem, env(safe-area-inset-left));
+  padding-right: max(0.9rem, env(safe-area-inset-right));
 }
 
 @media (min-width: 640px) {
   .th-shell-content {
-    padding: 1.1rem 1.1rem 1.35rem;
+    padding: 1.25rem 1.15rem 1.5rem;
   }
 }
 
 .th-shell .th-memory-mount {
-  margin: 0 0 0.15rem;
+  margin: 0 0 0.35rem;
   max-width: 100%;
 }
 
 .th-shell .th-memory-mount .fe-memory {
-  max-height: 9.5rem;
+  /* Closer to Discovery earned/done authority — still secondary to NRT type */
+  max-height: min(42vw, 13.5rem);
+  min-height: 10rem;
 }
 
 .th-shell .th-memory-mount .fe-memory img {
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center 38%;
 }
 
 /* Quiet progress — secondary to NRT hero */
 .th-progress {
-  margin-top: 0.15rem;
-  padding: 0.65rem 0.85rem;
+  margin-top: 0.1rem;
+  padding: 0.7rem 0.9rem;
   border-radius: 0.9rem;
   border: 1px solid rgba(232, 212, 184, 0.12);
   background: rgba(8, 6, 12, 0.35);
@@ -103,7 +106,52 @@
     rgba(232, 212, 184, 0.55) 0%,
     rgba(251, 191, 36, 0.7) 100%
   );
-  transition: width 0.35s ease;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Timeline subordination — enters after hero, lower elevation */
+.th-timeline-slot {
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .th-timeline-slot {
+    animation: th-timeline-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.18s;
+  }
+}
+
+@keyframes th-timeline-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+}
+
+.th-timeline-card {
+  box-shadow: none !important;
+}
+
+/* Hero micro-craft */
+.th-hero-card [data-testid="today-home-begin"] {
+  min-height: 48px;
+  transition:
+    background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+
+.th-hero-card [data-testid="today-home-begin"]:focus-visible {
+  outline: 2px solid rgba(251, 191, 36, 0.85);
+  outline-offset: 3px;
+}
+
+.th-hero-card [data-testid="today-home-title"] {
+  text-wrap: balance;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -117,5 +165,18 @@
 
   .th-progress-fill {
     transition: none;
+  }
+
+  .th-timeline-slot {
+    animation: none !important;
+    opacity: 0.92;
+  }
+
+  .th-hero-card [data-testid="today-home-begin"] {
+    transition: none;
+  }
+
+  .th-hero-card [data-testid="today-home-begin"]:active {
+    transform: none !important;
   }
 }

@@ -149,7 +149,8 @@
     "household_action_opportunity": "Block a shared family activity — everyone can join in."
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Home",
+    "main": "Main",
     "household": "Household",
     "forecast": "Load Forecast",
     "explain": "Why This?",
@@ -188,7 +189,7 @@
     "descriptions": {
       "learning_zone": "Skills, subjects & practice",
       "amy_astro_intelligence": "Cosmic Portrait · Birth Sky · Amy",
-      "dashboard": "Overview & summary",
+      "dashboard": "Today’s next right thing",
       "parenting_hub": "Articles, tools & support",
       "amy_coach": "Learning goals & progress",
       "nutrition_hub": "Meals, plans & tracker",
@@ -253,7 +254,7 @@
     "add_second_child": "Add your second child",
     "birthday_not_added": "Birthday not added yet",
     "personalised_for": "Personalised for {{name}}",
-    "todays_timeline": "Today's Timeline",
+    "todays_timeline": "Also today",
     "now": "Now",
     "next": "Next",
     "no_plan_today": "No plan for today yet",

@@ -710,11 +710,14 @@ function NowNextTimeline({
   selectedChildName,
   onGenerate,
   journeyHandlesGenerate,
+  subordinate = false,
 }: {
   routines: Routine[];
   selectedChildName?: string | null;
   onGenerate?: () => void;
   journeyHandlesGenerate?: boolean;
+  /** Today Home craft: timeline supports NRT — never competes as a second hero. */
+  subordinate?: boolean;
 }) {
   const { t } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -787,24 +790,40 @@ function NowNextTimeline({
   });
 
   return (
-    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.08]">
+    <DashboardGlassCard
+      tintRgb={DASHBOARD_TINTS.timeline}
+      className={subordinate ? "th-timeline-card border-white/[0.06] bg-white/[0.03]" : undefined}
+    >
+      <div
+        className={`flex items-center justify-between gap-3 px-4 py-3 border-b ${
+          subordinate ? "border-white/[0.05]" : "border-white/[0.08]"
+        }`}
+      >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-300 shrink-0" />
-            <span className="font-quicksand font-bold text-sm text-white">{t("dashboard.todays_timeline")}</span>
+            <Clock className={`h-4 w-4 shrink-0 ${subordinate ? "text-white/35" : "text-amber-300"}`} />
+            <span
+              className={`font-quicksand text-sm ${
+                subordinate ? "font-medium text-white/55" : "font-bold text-white"
+              }`}
+            >
+              {t("dashboard.todays_timeline")}
+            </span>
           </div>
-          {nextItem ? (
+          {!subordinate && nextItem ? (
             <p className="text-[11px] text-white/60 mt-1 truncate">
               {t("dashboard.timeline_next_up", { task: nextItem.activity })}
             </p>
-          ) : doneCount > 0 && doneCount >= allTodayItems.length ? (
+          ) : null}
+          {!subordinate && doneCount > 0 && doneCount >= allTodayItems.length ? (
             <p className="text-[11px] text-white/60 mt-1">{t("dashboard.day_complete")}</p>
           ) : null}
         </div>
-        <TimelineProgressChip done={doneCount} total={allTodayItems.length} />
+        {!subordinate ? (
+          <TimelineProgressChip done={doneCount} total={allTodayItems.length} />
+        ) : null}
       </div>
-      {todaySurface ? (
+      {!subordinate && todaySurface ? (
         <div className="px-4 py-2 border-b border-white/[0.08] bg-white/[0.04]">
           <p className="text-[11px] leading-snug text-white/75">
             <Sparkles className="h-3 w-3 inline mr-1 align-text-bottom text-amber-300" />
@@ -812,34 +831,37 @@ function NowNextTimeline({
           </p>
         </div>
       ) : null}
-      <div className="p-3 space-y-1.5">
+      <div className={`space-y-1.5 ${subordinate ? "p-2.5" : "p-3"}`}>
         {displayItems.map((item, idx) => {
         const isCurrent = currentIdx >= 0 && idx === 0;
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
+        const currentClass = subordinate
+          ? "bg-white/[0.07] ring-1 ring-[rgba(232,212,184,0.22)] text-white/90"
+          : "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_16px_rgba(251,146,60,0.30)]";
         return <AppLink key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`} source="dashboard-routine-timeline">
-              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_16px_rgba(251,146,60,0.30)]" : "bg-white/[0.06] hover:bg-white/[0.10]"}`}>
-                <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-white/55"}`}>
+              <div className={`flex items-center gap-3 rounded-xl transition-colors duration-200 min-h-[48px] ${subordinate ? "p-2.5" : "p-3"} ${isCurrent ? currentClass : "bg-white/[0.06] hover:bg-white/[0.10]"}`}>
+                <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent && !subordinate ? "text-white" : "text-white/55"}`}>
                   <div className="text-xs font-bold">{formatRoutineTime(item.time)}</div>
-                  {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-white/10 text-amber-200 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
+                  {isCurrent && <span className={`mt-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${subordinate ? "bg-white/10 text-amber-100/80" : "font-black bg-white/25"}`}>{t("pages.dashboard.now")}</span>}
+                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-bold uppercase bg-white/10 text-amber-200/80 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-white/90"} ${completed ? "line-through opacity-60" : ""}`} style={{
+                  <div className={`${subordinate ? "font-medium text-sm" : "font-bold text-sm"} ${isCurrent && !subordinate ? "text-white" : "text-white/85"} ${completed ? "line-through opacity-60" : ""}`} style={{
                 wordBreak: "break-word",
                 whiteSpace: "normal"
               }}>
                     {item.activity}
                   </div>
-                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-white/75" : "text-white/55"}`}>
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent && !subordinate ? "text-white/75" : "text-white/50"}`}>
                     <span>{[item.childName, formatRoutineDurationShort(item)].filter(Boolean).join(" · ")}</span>
-                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-amber-200/90 bg-white/[0.06] border-white/10"}`}>
+                    {item.ageBand && !subordinate && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-amber-200/90 bg-white/[0.06] border-white/10"}`}>
                         <Users className="h-2.5 w-2.5" />
                         {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
                       </span>}
                   </div>
                 </div>
-                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
+                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-emerald-400/80 shrink-0" />}
               </div>
             </AppLink>;
       })}
@@ -1548,20 +1570,21 @@ export default function Dashboard() {
               </ContentReveal.Item>
             ) : null}
 
-            <ContentReveal.Item className={timelineOrderClass}>
-              <NowNextTimeline
-                routines={filteredRoutines}
-                selectedChildName={selectedChild?.name ?? null}
-                onGenerate={showTimelineGenerate ? () => handleGenerateRoutine("timeline_empty") : undefined}
-                journeyHandlesGenerate={journeyHandlesGenerate}
-              />
-            </ContentReveal.Item>
-
             <ContentReveal.Item>
               <ChildrenChipBar
                 children={childrenSafe as ChildRow[]}
                 selectedChildId={selectedChildId}
                 onSelectChild={setSelectedChildId}
+              />
+            </ContentReveal.Item>
+
+            <ContentReveal.Item className={TODAY_HOME_V1 ? "th-timeline-slot" : timelineOrderClass}>
+              <NowNextTimeline
+                routines={filteredRoutines}
+                selectedChildName={selectedChild?.name ?? null}
+                onGenerate={showTimelineGenerate ? () => handleGenerateRoutine("timeline_empty") : undefined}
+                journeyHandlesGenerate={journeyHandlesGenerate}
+                subordinate={TODAY_HOME_V1}
               />
             </ContentReveal.Item>
 
