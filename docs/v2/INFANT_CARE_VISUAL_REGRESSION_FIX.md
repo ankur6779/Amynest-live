@@ -6,7 +6,7 @@
 **Upstream:** `docs/v2/INFANT_CARE_PHASE2_FOUNDER_REVIEW.md`  
 **Not a new pack. Not a redesign. Not Speech Coach.**
 
-**Commit SHA:** `e6259681` (`e6259681b8f4c5e7d0a000000000000000000000`)
+**Commit SHA:** `e6259681` (`e62596817405420e9f3fdbb83cbb2abee84a27a3`)
 
 ---
 
