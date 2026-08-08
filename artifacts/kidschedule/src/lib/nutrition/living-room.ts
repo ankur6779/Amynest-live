@@ -1,6 +1,9 @@
 /**
  * Nutrition Phase 2 — living room hierarchy helpers.
  * Presentation only. No meal logic / API / entitlement changes.
+ *
+ * Living open deepens one Care path at a time.
+ * Sticky journey nav / score theatre are not opening truth.
  */
 
 import type { NutritionTab } from "@/features/nutrition/types/nutrition-hub.types";
@@ -46,6 +49,12 @@ export const NUTRITION_QUIET_PATHS: readonly NutritionQuietPath[] = [
     purpose: "Meals we share together",
   },
 ] as const;
+
+export const NUTRITION_QUIET_TABS = NUTRITION_QUIET_PATHS.map((p) => p.tab);
+
+export function isNutritionQuietTab(tab: string): tab is NutritionTab {
+  return (NUTRITION_QUIET_TABS as readonly string[]).includes(tab);
+}
 
 /**
  * One recommended Care act for a tired parent.

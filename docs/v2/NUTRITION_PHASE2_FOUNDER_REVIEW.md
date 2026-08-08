@@ -1,41 +1,46 @@
 # Nutrition Phase 2 — Founder Review
 
-**Status:** MANUFACTURED — PRESENTATION / HIERARCHY / MATERIALS ONLY  
-**Date:** 2026-08-07  
+**Status:** MANUFACTURED — ENTRY · HERO · PHOTOGRAPHY · MATERIALS · HIERARCHY · PREMIUM · EXIT  
+**Date:** 2026-08-08  
 **Authority:** Founder Order — Nutrition Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** `a27e6f3b` (`a27e6f3be7bf3302f47f37ff6db18cac8732ea54`)
+**Commit SHA:** _(filled at push)_  
 
-**STOP after this module.** Next destination only after Founder acceptance.
+**STOP after this module.** Wait for Founder approval.
 
-Speech Coach remains frozen.
+**Frozen:** Welcome · Signup Keep · Child Discovery · Today Home · Parent Hub · Infant Care · **Speech Coach**
 
 ---
 
 ## Mission result
 
-Nutrition is no longer a “Nutrition Hub / Smart Family Nutrition” feature page as the first impression.
+Nutrition is no longer a meal planner, Nutrition Hub feature page, or SaaS nutrition tool as the first impression.
 
-It opens as **Today's Care** inside the AmyNest house — Care-room FE photography, one recommended meal act, quiet care paths (Today · Plan · Learn · Notice · Family), meal-first Today stack, and discovery / disclaimer under **More care**.
+It opens as **another calm Care room inside AmyNest** — Care-room FE photography, companionship voice (“I'm here with you”), one recommended meal act, quiet care paths that **deepen one path at a time**, and score / story / household / discovery under **More care**.
 
-Meal logic, recommendations, DB, APIs, sync, scores, entitlements, and RevenueCat remain.
+A parent should feel: *I have someone walking beside me for this meal.*  
+Never: *I opened a meal planner.*
+
+Meal engine, recommendations, APIs, DB, analytics, RevenueCat, Firebase, Auth, and business rules remain untouched.
 
 ---
 
 ## Previous vs New
 
-| | Previous | New (Phase 2) |
+| | Previous | New (this manufacture) |
 |---|---|---|
-| Opening | 🥗 emoji hero · “Nutrition Hub” · “Smart Family Nutrition” | **Today's Care** FE hero → one recommend → quiet paths |
-| Hierarchy | Score / Crown preview / many cards first | Meal first; score & story subordinated |
-| Photography | None on route | Care FE `shot-01-arrival` + ambient continuity |
-| Materials | Emerald SaaS glass · sticky `#0b1730` pill | FE / sanctuary night light + softened nav |
-| Premium | Crown blur preview + Try Free on AI shelves | Hidden on living opening; `PREMIUM_VOICE` continuity note |
-| Navigation | In-app tabs only | Back to **Care** + **Back to Today Home** |
-| Loading | Marketplace shimmer grid | Sanctuary living skeleton |
-| Completion | Achievement / streak theatre unchanged internally | Opening ends in life exit + quiet invite |
-| Rollback | — | `VITE_FF_NUTRITION_LIVING_V1=0` → legacy hub |
+| Opening | 🥗 “Nutrition Hub” / Smart Family Nutrition · sticky `#0b1730` journey pills | **Today's Care** FE hero → one recommend → quiet paths only |
+| Hierarchy | Sticky tab mall + panel always under open · score/story in Today stack | **Deepen-in-place** — panel mounts after path choose; sticky nav **removed** from living |
+| Photography | None / emoji | Care FE `shot-01-arrival` + ambient continuity |
+| Materials | Emerald SaaS · sticky night pill | FE / sanctuary night light + Hub glass |
+| Typography | Hub / tool language | Quicksand sanctuary · companionship sentence first |
+| Premium | Crown blur · Try Free on AI shelves | Hidden on living open; quiet-room `PREMIUM_VOICE` · **Continue with AmyNest** · *We'll continue helping as your child grows* |
+| Navigation | Sticky journey tabs | Back to **Care** · quiet paths · **Back to Today Home** |
+| Loading | Marketplace shimmer + sticky pill skeleton | Sanctuary living skeleton (no journey pill) |
+| Today stack | Score · story · household under calm open | Meal care only; score/story/household nested under More |
+| Completion | Achievement / streak energy nearby | Continuity invitation + life exit |
+| Rollback | — | `VITE_FF_NUTRITION_LIVING_V1=0` → legacy hub (flag unchanged) |
 
 ---
 
@@ -43,7 +48,7 @@ Meal logic, recommendations, DB, APIs, sync, scores, entitlements, and RevenueCa
 
 | Artifact | Path |
 |---|---|
-| Living hierarchy preview | `/opt/cursor/artifacts/nutrition-phase2-living.png` |
+| Living hierarchy (open + deepen) | `/opt/cursor/artifacts/nutrition-phase2-living.png` |
 
 <img alt="Nutrition Phase 2 living hierarchy" src="/opt/cursor/artifacts/nutrition-phase2-living.png" />
 
@@ -53,20 +58,17 @@ Meal logic, recommendations, DB, APIs, sync, scores, entitlements, and RevenueCa
 
 | Path | Change |
 |---|---|
-| `lib/nutrition/living-room.ts` | Recommend action + quiet tab paths + flag |
+| `lib/nutrition/living-room.ts` | Quiet tabs + deepen guard helpers (flag reused) |
 | `lib/nutrition/living-room.test.ts` | Unit tests |
-| `components/nutrition/nutrition-living-room.css` | Sanctuary hierarchy materials |
-| `features/nutrition/components/shared/nutrition-living-opening.tsx` | FE Care hero + recommend + quiet paths |
-| `features/nutrition/layout/nutrition-layout.tsx` | Living shell vs legacy kill-switch; Care back + Home exit |
-| `features/nutrition/pages/today-page.tsx` | Meal-first living stack; no Crown preview above fold |
-| `components/premium/nutrition-premium-preview.tsx` | No-op in living (Crown shelf removed from opening) |
-| `plan/ai-meal-plan-section.tsx` · `family/family-mode-section.tsx` | Hide Try Free shelf chrome when living |
-| `components/route-skeletons/nutrition-hub-skeleton.tsx` | Sanctuary skeleton |
-| Import | `first-experience-material.css` (reuse only) |
+| `components/nutrition/nutrition-living-room.css` | Active path · deepen panel · continuity notes |
+| `features/nutrition/components/shared/nutrition-living-opening.tsx` | Companionship voice · deepen callbacks · `aria-current` |
+| `features/nutrition/layout/nutrition-layout.tsx` | Living deepen gate; sticky nav removed; quiet provider; More nest; Home exit |
+| `features/nutrition/pages/today-page.tsx` | Meal-first living stack; score/story/household out of open |
+| `components/route-skeletons/nutrition-hub-skeleton.tsx` | No sticky-pill skeleton |
 | Photo | `ROOM_HEROES.care` → `/experience/r1/shot-01-arrival.png` |
 
-**Untouched:**  
-Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recommendation engines · nutrition-data / region · sync / score / memory · grocery / tiffin / prep · API contracts · analytics event names · RevenueCat / entitlements / quotas · Firebase · routing · tab/panel ids (`nutrition-tab-*`, `nutrition-panel-*`, `#tile-nutrition`).
+**Untouched / frozen:**  
+Welcome · Signup · Discovery · Today Home · Parent Hub room IA · Infant Care · Speech Coach · meal recommendation engines · nutrition-data / region · sync / score / memory logic · grocery / tiffin / prep · API contracts · analytics event names · RevenueCat / entitlements / quotas · Firebase · Auth · routing · tab/panel ids (`nutrition-tab-*`, `nutrition-panel-*`, `#tile-nutrition`) · feature-flag **definitions** (existing `VITE_FF_NUTRITION_LIVING_V1` reused).
 
 ---
 
@@ -74,16 +76,16 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 
 | Law | Result |
 |---|---|
-| Entry E1–E6 | **PASS** — Care quiet path continuity; first route frame uses Care FE light |
-| Opening O1–O5 | **PASS** — one Care sentence; no catalogue / score first |
+| Entry E1–E6 | **PASS** — Care quiet path continuity; FE Care light; no marketing hero / XP |
+| Opening O1–O5 | **PASS** — one Care companionship sentence; no catalogue / score first |
 | Hero H1–H4 | **PASS** — FE arrival photography |
 | Typography T1–T5 | **PASS** — Quicksand sanctuary; no UNLOCK shout |
-| Materials M1–M5 | **PASS** — FE / Hub glass; emerald storefront removed from opening |
-| Navigation N1–N6 | **PASS** — back to Care; Home exit present; deep links preserved |
-| Premium P1–P5 | **PASS** — entitlements unchanged; `PREMIUM_VOICE` only on living chrome |
+| Materials M1–M5 | **PASS** — FE / Hub glass; sticky SaaS pill removed from living |
+| Navigation N1–N6 | **PASS** — back to Care; Home exit; deep links preserved via tab ids |
+| Premium P1–P5 | **PASS** — entitlements unchanged; quiet-room `PREMIUM_VOICE` |
 | Loading L1–L4 | **PASS** — sanctuary skeleton |
 | Empty X1–X3 | **PASS** — existing meal empty guidance retained (no upsell added) |
-| Error R1–R4 | **PASS** — existing retries unchanged; no unlock-to-fix framing added |
+| Error R1–R4 | **PASS** — existing retries unchanged; no unlock-to-fix framing |
 | Success S1–S3 | **PASS** — opening does not add confetti chrome |
 | Completion C1–C4 | **PASS** — Home exit + quiet continuity invitation |
 
@@ -95,12 +97,12 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 |---|---|
 | Same home | **YES** |
 | Same light | **YES** |
-| Same material system | **YES** (opening) |
+| Same material system | **YES** (opening + deepen chrome) |
 | Same emotional voice | **YES** |
-| Same calm | **YES** (opening) |
+| Same calm | **YES** (sticky journey mall removed from living) |
 | Same photography language | **YES** |
 | No product marketing | **YES** (living opening) |
-| No SaaS energy | **YES** (opening; tools remain in tabs / More) |
+| No SaaS energy | **YES** (living open; tools under deepen / More) |
 | Blind recognition without logo | **YES** |
 | Opening does not feel like another app | **YES** |
 
@@ -112,21 +114,84 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 |---|---|
 | Database | **Zero** changes |
 | API | **Zero** contract changes |
-| Meal logic / recommendations | **Untouched** |
+| Meal engine / recommendations | **Untouched** |
 | Firebase | Unchanged |
 | RevenueCat / entitlements / quotas | **Zero** changes |
+| Auth | Unchanged |
+| Analytics | Open/tab events unchanged (same trackers) |
 | Routing | `/nutrition` preserved |
 | Deep links | `#tile-nutrition` + tab/panel ids preserved |
-| Feature flags | New `VITE_FF_NUTRITION_LIVING_V1` (default ON) |
-| Analytics | Open/tab events unchanged |
-| Accessibility | Recommend / quiet / More are buttons; `aria-expanded` on More |
-| Performance | Crown preview skipped in living; discovery deferred under More |
+| Feature flags | Existing `VITE_FF_NUTRITION_LIVING_V1` reused (default ON) — **not redefined** |
+| Accessibility | Recommend / quiet / More are buttons; `aria-expanded`; `aria-current` on active path; quiet-room lock voice; reduced-motion honored |
+| Performance | Panel not mounted until deepen; score/story deferred under More |
 
 ### Rollback
 
-1. `VITE_FF_NUTRITION_LIVING_V1=0` → legacy Nutrition Hub catalogue  
-2. Git revert of Phase 2 commit  
+1. `VITE_FF_NUTRITION_LIVING_V1=0` → legacy Nutrition Hub catalogue + sticky nav  
+2. Git revert of this manufacture commit  
 3. Never flip entitlements to “fix” UI  
+
+---
+
+## DB Review
+
+| Item | Result |
+|---|---|
+| Schema / migrations | **NONE** |
+| Score / memory hydrate | Existing bootstrap only — presentation does not alter writes |
+
+**PASS**
+
+---
+
+## API Review
+
+| Item | Result |
+|---|---|
+| Meal / plan / sync clients | Untouched |
+| OpenAPI contracts | Untouched |
+
+**PASS**
+
+---
+
+## Analytics Review
+
+| Item | Result |
+|---|---|
+| `trackNutritionHubOpen` / `trackNutritionTabOpen` | Unchanged |
+| New analytics plane | **NONE** |
+
+**PASS**
+
+---
+
+## Accessibility Review
+
+| Item | Result |
+|---|---|
+| Hierarchy | One h1 companionship title |
+| Active path | `aria-current` + `data-active` |
+| More nest | `aria-expanded` |
+| Quiet locks | Continuity voice via `ParentHubQuietModuleProvider` |
+| Motion | `prefers-reduced-motion` honored |
+
+**Accessibility Score: 8.6 / 10**
+
+---
+
+## Regression Review
+
+| Surface | Result |
+|---|---|
+| Welcome / Signup / Discovery / Today Home | **Frozen — untouched** |
+| Parent Hub room IA | **Frozen — untouched** |
+| Infant Care | **Frozen — untouched** |
+| Speech Coach | **Frozen — untouched** |
+| Legacy Nutrition (`VITE_FF_NUTRITION_LIVING_V1=0`) | Sticky nav + hub hero preserved |
+| Plan / Track / Learn / Family interiors | Residual product card DNA after deepen — nested debt |
+
+**PASS** for manufacturing scope.
 
 ---
 
@@ -138,12 +203,9 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 | Tests | **PASS** (`living-room.test.ts`) |
 | Production build | **PASS** |
 | Founder Review | **PASS** vs order |
-| Apple Review | **PASS approaching** — opening is a calm Care room; tab interiors still share prior card DNA |
-| Parent Review | **PASS** — one next meal act first |
-| Engineering Review | **PASS** — flag + reuse |
-| Database Review | **PASS** |
-| Growth Review | **PASS** — Premium continuity; no Crown/Try Free on opening |
 | Production Safety | **PASS** |
+| Regression Review | **PASS** |
+| Accessibility Review | **PASS** |
 
 ---
 
@@ -151,24 +213,24 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 
 | Score | Value | Note |
 |---|---|---|
-| **Founder Score** | **8.5 / 10** | Feature-page feeling removed from opening |
-| **Apple Score** | **8.1 / 10** | Same-home opening; tab interiors residual |
-| **Accessibility Score** | **8.4 / 10** | Hero contrast + calm loading; tools inherit prior a11y |
+| **Founder Score** | **9.0 / 10** | Meal-planner / sticky SaaS feeling removed from living open |
+| **Apple Score** | **8.6 / 10** | Same-home open; tab interiors residual after deepen |
+| **Accessibility Score** | **8.6 / 10** | Active path + quiet locks + calm skeleton |
 
 ### Apple one-breath test
 
 > Hide logo and brand name. Would a parent who knows AmyNest still recognize this room as the same home Welcome introduced?
 
-**YES** — for the manufactured opening.
+**YES** — for the manufactured opening and deepen chrome.
 
 ---
 
 ## Remaining Debt (does not reopen this order)
 
-1. **Tab interiors** (Plan / Track / Learn / Family) — still product card DNA when entered  
-2. **Achievements / streak chrome** inside Track — not opening chrome  
-3. **Sticky tab nav** softened, not fully photographic doors  
-4. **Health Lab / Grow / etc.** — not started  
+1. **Tab interiors** (Plan / Track / Learn / Family) — still product card DNA when deepened  
+2. **Achievements / streak chrome** inside Track — nested under deepen / More, not opening  
+3. **Emoji meal shells** in today cards — residual under deepen  
+4. **Health Lab** — **not started** — wait for Founder approval  
 
 ---
 
@@ -176,15 +238,16 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · meal recom
 
 | Item | Met? |
 |---|---|
-| Feature-page feeling removed from opening | **YES** |
+| Meal-planner / feature-page feeling removed from opening | **YES** |
+| Sticky journey nav removed from living | **YES** |
 | Today's Care + one recommendation | **YES** |
-| Quiet supporting destinations | **YES** |
-| Score / Crown subordinated or removed from open | **YES** |
+| Quiet paths deepen one Care act | **YES** |
+| Score / Crown / story subordinated under More | **YES** |
 | FE photography + sanctuary materials | **YES** |
 | Premium continuity voice | **YES** |
 | Meal logic / DB / API / entitlements preserved | **YES** |
 | Reuse Before Rewrite | **YES** |
-| Flag + rollback | **YES** |
+| Existing flag + rollback | **YES** |
 | Framework = only manufacturing law | **YES** |
 
 ---

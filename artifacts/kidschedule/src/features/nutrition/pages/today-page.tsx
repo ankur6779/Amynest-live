@@ -22,16 +22,12 @@ export function TodayPage() {
         data-testid="nutrition-today-living"
       >
         <ChildContextChip />
-        {/* Meal first — Care act before score / premium theatre */}
+        {/* Meal care first — never score / streak / Crown theatre */}
         <TonightMealHero />
         <FocusNutrientCard />
         <FamilyMealShortcut />
         <NutritionInsightCard />
         <AgeInfoCard />
-        <HouseholdNutritionBoard />
-        {/* Dashboard / story subordinated — never first impression */}
-        <TodayScoreSummary />
-        <WeeklyNutritionStory compact />
       </div>
     );
   }

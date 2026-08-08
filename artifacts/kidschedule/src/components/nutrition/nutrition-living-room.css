@@ -291,6 +291,15 @@
   outline: none;
 }
 
+.nu-quiet-path[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.38);
+  background: rgba(232, 212, 184, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.1),
+    0 0 0 1px rgba(251, 191, 36, 0.1),
+    0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
 .nu-quiet-path-title {
   display: block;
   font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
@@ -347,6 +356,12 @@
   padding: 0 0.2rem;
 }
 
+.nu-support-invite,
+.nu-support-continue {
+  color: rgba(232, 212, 184, 0.62);
+  font-size: 0.76rem;
+}
+
 .nu-exit-home {
   display: inline-flex;
   align-items: center;
@@ -369,19 +384,14 @@
   outline: none;
 }
 
-/* Soften sticky tab chrome — sanctuary, not SaaS pill mall */
-.nutrition-living [data-testid="nutrition-journey-nav"] > div {
-  border-color: rgba(232, 212, 184, 0.16) !important;
-  background: rgba(8, 6, 12, 0.62) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 252, 248, 0.06),
-    0 8px 22px rgba(0, 0, 0, 0.24) !important;
-}
+/* Sticky journey nav is not mounted in living — quiet paths are the only nav. */
 
-.nutrition-living .nu-living-panel {
+.nutrition-living .nu-living-panel,
+.nutrition-living .nu-deepen-panel {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  padding: 0.15rem 0.05rem 0.25rem;
 }
 
 /* Soften gated catalogue cards inside living room */

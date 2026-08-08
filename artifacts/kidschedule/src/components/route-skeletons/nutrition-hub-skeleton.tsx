@@ -8,7 +8,7 @@ export function NutritionHubSkeleton() {
     <div
       className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 p-4"
       role="status"
-      aria-label="Preparing calm nutrition care"
+      aria-label="Preparing a calm care space with you"
       aria-busy="true"
       data-testid="nutrition-hub-skeleton"
     >
@@ -23,8 +23,7 @@ export function NutritionHubSkeleton() {
           <ShimmerBlock className="h-14 w-full rounded-[1.05rem] bg-white/8" />
         </div>
       </div>
-      <ShimmerBlock className="h-10 w-full rounded-full bg-white/8" />
-      <ShimmerBlock className="h-28 w-full rounded-[1.05rem] bg-white/8" />
+      <ShimmerBlock className="h-12 w-full rounded-[1.05rem] bg-white/8" />
     </div>
   );
 }

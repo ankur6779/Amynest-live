@@ -1,7 +1,7 @@
 /**
  * Nutrition Phase 2 — living opening surface.
  * Care FE photography + one recommend + quiet tab paths.
- * Presentation only.
+ * Presentation only — never a meal-planner storefront.
  */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,20 @@ import {
   recommendNutritionAction,
 } from "@/lib/nutrition/living-room";
 import { useNutritionContext } from "@/features/nutrition/context/nutrition-context";
+import type { NutritionTab } from "@/features/nutrition/types/nutrition-hub.types";
 
 const CARE_MEMORY = ROOM_HEROES.care;
 
-export function NutritionLivingOpening() {
+type Props = {
+  /** Deepen into one Care path — replaces sticky journey mall. */
+  onDeepen: (tab: NutritionTab) => void;
+  /** Currently deepened tab (null = room open only). */
+  activePath: NutritionTab | null;
+};
+
+export function NutritionLivingOpening({ onDeepen, activePath }: Props) {
   const { t } = useTranslation();
-  const { activeChild, setActiveTab } = useNutritionContext();
+  const { activeChild } = useNutritionContext();
   const recommend = useMemo(() => recommendNutritionAction(), []);
   const childName =
     activeChild.name?.trim() ||
@@ -50,12 +58,13 @@ export function NutritionLivingOpening() {
               <h1 className="nu-today-title">
                 {t("nutrition.living.title", {
                   name: childName,
-                  defaultValue: `What should we feed ${childName} today?`,
+                  defaultValue: `I'm here with you and ${childName}.`,
                 })}
               </h1>
               <p className="nu-today-purpose">
                 {t("nutrition.living.purpose", {
-                  defaultValue: "One calm next meal — for this body.",
+                  defaultValue:
+                    "We'll choose one calm meal together — for this body, no pressure.",
                 })}
               </p>
             </div>
@@ -65,7 +74,7 @@ export function NutritionLivingOpening() {
           type="button"
           className="nu-recommend-btn"
           data-testid="nutrition-recommend"
-          onClick={() => setActiveTab(recommend.tab)}
+          onClick={() => onDeepen(recommend.tab)}
         >
           <span className="nu-recommend-cue">{recommend.label}</span>
           <span className="nu-recommend-title">{recommend.title}</span>
@@ -85,8 +94,10 @@ export function NutritionLivingOpening() {
               key={path.tab}
               type="button"
               className="nu-quiet-path"
+              data-active={activePath === path.tab ? "true" : "false"}
+              aria-current={activePath === path.tab ? "true" : undefined}
               data-testid={`nutrition-quiet-${path.tab}`}
-              onClick={() => setActiveTab(path.tab)}
+              onClick={() => onDeepen(path.tab)}
             >
               <span className="nu-quiet-path-title">{path.title}</span>
               <span className="nu-quiet-path-purpose">{path.purpose}</span>

@@ -1,20 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
   isNutritionLivingV1Enabled,
+  isNutritionQuietTab,
   NUTRITION_QUIET_PATHS,
+  NUTRITION_QUIET_TABS,
   recommendNutritionAction,
 } from "./living-room";
 
 describe("nutrition living-room", () => {
   it("exposes five quiet Care paths", () => {
     expect(NUTRITION_QUIET_PATHS).toHaveLength(5);
-    expect(NUTRITION_QUIET_PATHS.map((p) => p.tab)).toEqual([
+    expect(NUTRITION_QUIET_TABS).toEqual([
       "today",
       "plan",
       "learn",
       "track",
       "family",
     ]);
+  });
+
+  it("guards quiet tabs for deepen hierarchy", () => {
+    expect(isNutritionQuietTab("today")).toBe(true);
+    expect(isNutritionQuietTab("grocery")).toBe(false);
   });
 
   it("recommends tonight's meal in the evening", () => {
