@@ -8,7 +8,7 @@
 **Also binding:** Module Manufacturing Framework · Parent Hub Constitution · Pack 5 Premium Continuity · AmyNest Philosophy · Routine Engine Freeze (June 2026)
 
 **Implementation Commit SHA:** `0a5ba1e021818a23d2fd27763840a802bf17d3ec`  
-**Docs Commit SHA:** (this commit)
+**Docs Commit SHA:** `9d843bf0ca5d9b666034c18cb9fdedadcad6a55f`
 
 **STOP after R2.** Wait for Founder approval.  
 Do **not** begin R3 result manufacturing.  
@@ -337,7 +337,7 @@ Live authenticated screenshots were not captured in this cloud run (auth-gated `
 | Artifact | SHA |
 |---|---|
 | R2 implementation | `0a5ba1e021818a23d2fd27763840a802bf17d3ec` |
-| This Founder Review | (docs commit after impl) |
+| This Founder Review | `9d843bf0ca5d9b666034c18cb9fdedadcad6a55f` |
 
 ---
 
