@@ -48,7 +48,7 @@ const TRIGGER_COPY: Record<PremiumPromptTrigger, Omit<PremiumMomentCopy, "cta">>
   speech_complete: {
     emoji: "🗣️",
     title: "Speech session complete",
-    subtitle: "Unlock unlimited Speech Coach sessions and track pronunciation progress.",
+    subtitle: "We can keep building confidence together with more practice whenever you're ready.",
     benefits: [
       "Unlimited Speech Coach",
       "Pronunciation tracking",
@@ -59,7 +59,7 @@ const TRIGGER_COPY: Record<PremiumPromptTrigger, Omit<PremiumMomentCopy, "cta">>
   meal_plan: {
     emoji: "🥗",
     title: "Meal plan ready",
-    subtitle: "Premium unlocks unlimited AI meal plans tailored to your family.",
+    subtitle: "We can keep planning meals for your family whenever you're ready.",
     benefits: [
       "Unlimited meal plans",
       "Nutrition AI",
@@ -81,7 +81,7 @@ const TRIGGER_COPY: Record<PremiumPromptTrigger, Omit<PremiumMomentCopy, "cta">>
   health_insight: {
     emoji: "💚",
     title: "Health insight ready",
-    subtitle: "Premium unlocks Health Lab, advanced insights, and weekly reports.",
+    subtitle: "We can keep supporting you with deeper Health Lab guidance whenever you're ready.",
     benefits: [
       "Health Lab",
       "Advanced insights",

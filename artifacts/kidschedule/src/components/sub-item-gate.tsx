@@ -11,6 +11,12 @@ import {
   isPhonicsSubItemUnlocked,
   phonicsSubItemUnlockDay,
 } from "@workspace/parent-hub-journey";
+import {
+  ASK_AMY_SOFT_CONTINUE,
+  hardDayPremiumContinueCta,
+  hardDayPremiumInvitation,
+  isHardDaySubItemMfhoSection,
+} from "@/lib/hard-day-monetization";
 
 interface SubItemGateProps {
   /**
@@ -49,6 +55,7 @@ interface SubItemGateProps {
  * Behaviour for free users:
  *   • Hub journey (phonics): sub-items unlock by journey day 1 → 2 → 3.
  *   • Legacy: up to two sub-items per section lifetime, then lock.
+ *   • P0-7 D2: Emotional Support (`hub_emotional`) always passthrough for MFHO.
  *
  * Premium users always see passthrough — no badges, no overlays.
  */
@@ -84,6 +91,11 @@ export function SubItemGate({
 
   // Premium users — always full access, no badges or overlays.
   if (isPremium || subPremium) {
+    return wrap(children);
+  }
+
+  // P0-7 D2 — Hard-day MFHO sections never gate before help (Emotional Support).
+  if (isHardDaySubItemMfhoSection(sectionId)) {
     return wrap(children);
   }
 
@@ -127,7 +139,7 @@ export function SubItemGate({
 
   const locked = isBlockLocked(subItemId);
 
-  // Locked variant — visually rendered, fully non-interactive, tap → paywall.
+  // Locked variant — P0-7 D6: PREMIUM_VOICE continuity + Not now exit (no Unlock theatre).
   if (locked) {
     return (
       <div
@@ -137,18 +149,34 @@ export function SubItemGate({
         <div style={{ pointerEvents: "none" }} aria-hidden="true">
           {children}
         </div>
-        <button
-          type="button"
-          onClick={openPaywall}
-          aria-label={t("parent_hub.badges.premium_feature_aria")}
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl bg-background/40 backdrop-blur-[1px] px-3"
           data-testid="sub-item-lock-overlay"
-          className="absolute inset-0 z-10 cursor-pointer rounded-2xl bg-background/30 backdrop-blur-[1px] hover:bg-background/40 transition-colors flex items-center justify-center"
         >
-          <span className="inline-flex items-center gap-1 rounded-full bg-card text-primary-foreground shadow-md shadow px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
-            <Lock className="h-3 w-3" />
-            {t("parent_hub.badges.premium_feature")}
-          </span>
-        </button>
+          <p className="max-w-[16rem] text-center text-xs text-foreground/90 leading-snug">
+            {hardDayPremiumInvitation()}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={openPaywall}
+              aria-label={hardDayPremiumContinueCta()}
+              data-testid="sub-item-lock-continue"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {hardDayPremiumContinueCta()}
+            </button>
+            <button
+              type="button"
+              onClick={goHub}
+              aria-label={ASK_AMY_SOFT_CONTINUE.notNowLabel}
+              data-testid="sub-item-lock-not-now"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {ASK_AMY_SOFT_CONTINUE.notNowLabel}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

@@ -23,6 +23,14 @@ export function isPtmSeason(date = new Date()): boolean {
   return m >= 8 && m <= 10;
 }
 
+/**
+ * P0-7 D7 — suppress season FOMO copy on hard-day Help/PTM surfaces.
+ * Seasonal tile sort may still use `isPtmSeason`; urgency banner/preview must not.
+ */
+export function shouldShowPtmSeasonFomoOnHardDayPath(): boolean {
+  return false;
+}
+
 export function formatHubDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

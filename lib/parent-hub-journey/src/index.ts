@@ -27,6 +27,12 @@ export const HUB_CONTENT_QUOTAS = {
 export const SECTION_LIFETIME_LIMITS: Record<string, number> = {
   hub_story_hub: HUB_CONTENT_QUOTAS.storyHubLifetimeVideos,
   hub_art_craft: HUB_CONTENT_QUOTAS.artCraftLifetimeVideos,
+  /**
+   * P0-7 D2 — Emotional Support hard-day cards (4).
+   * Raise free floor so Meaningful First Help is never cut mid-distress.
+   * SubItemGate also bypasses lock for this section (belt-and-braces).
+   */
+  hub_emotional: 4,
 };
 
 export const DEFAULT_SECTION_LIFETIME_LIMIT = 2;

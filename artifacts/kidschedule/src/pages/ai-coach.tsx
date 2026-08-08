@@ -2002,7 +2002,7 @@ export default function AICoachPage() {
                             }}
                           >
                             {access === "locked"
-                              ? (living ? livingGoalLockedCta() : "Unlock with Premium")
+                              ? livingGoalLockedCta()
                               : (living ? livingGoalOpenCta() : "Tap to start →")}
                           </p>
                         </div>
@@ -2139,7 +2139,7 @@ export default function AICoachPage() {
                       }}
                     >
                       {access === "locked"
-                        ? (living ? livingGoalLockedCta() : "Unlock with Premium")
+                        ? livingGoalLockedCta()
                         : (living ? livingGoalOpenCta() : "Tap to start →")}
                     </p>
                   </div>

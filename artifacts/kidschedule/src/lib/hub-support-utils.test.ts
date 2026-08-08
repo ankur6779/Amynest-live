@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isPtmSeason,
   orderEmotionalCards,
+  shouldShowPtmSeasonFomoOnHardDayPath,
   sortSupportTileIds,
   sortHealthTileIds,
 } from "./hub-support-utils";
@@ -10,6 +11,11 @@ describe("hub-support-utils", () => {
   it("detects PTM season Sep–Nov", () => {
     expect(isPtmSeason(new Date("2026-10-15"))).toBe(true);
     expect(isPtmSeason(new Date("2026-01-15"))).toBe(false);
+  });
+
+  it("P0-7 D7 keeps season detection but suppresses FOMO on hard-day path", () => {
+    expect(isPtmSeason(new Date("2026-10-15"))).toBe(true);
+    expect(shouldShowPtmSeasonFomoOnHardDayPath()).toBe(false);
   });
 
   it("prioritises overwhelmed when mood is low", () => {

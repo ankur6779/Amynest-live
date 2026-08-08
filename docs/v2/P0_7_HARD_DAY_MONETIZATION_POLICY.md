@@ -641,18 +641,18 @@ Never show Premium / paywall / Upgrade as the blocking action when:
 
 ## 14. Founder Decisions Required
 
-Before engineering implements P0-7:
+**LOCKED (Founder Decision Lock — P0-7):**
 
-| # | Decision | Options |
+| # | Decision | Locked choice |
 |---|---|---|
-| D1 | Approve Hard-Day Law (§8) as binding product policy? | YES / amend / NO |
-| D2 | Emotional Support: guarantee MFHO by raising free cards vs bypassing SubItemGate for hard-day cards? | Raise floor / bypass gate for MFHO / both |
-| D3 | Ask Amy on quota exhaust: soft-continue message only vs 1 extra grace answer vs immediate continuity offer? | Pick one |
-| D4 | Change any quota integers now, or **experience-only** first? | Experience-only (recommended) / tune numbers |
-| D5 | Infant free AI questions: keep 3 with continuity copy, or raise? | Keep + rewrite / raise to N |
-| D6 | Dual living OFF: force PREMIUM_VOICE on hard-day paths regardless of flag? | YES recommended / living-flag only |
-| D7 | PTM Season FOMO: remove on hard-day path or globally quiet? | Hard-day only / global |
-| D8 | Proceed to implementation PR after D1–D7? | Wait / proceed |
+| D1 | Approve Hard-Day Law (§8) as binding product policy? | **YES** |
+| D2 | Emotional Support: guarantee MFHO by raising free cards vs bypassing SubItemGate for hard-day cards? | **both** |
+| D3 | Ask Amy on quota exhaust | **soft-continue message only** |
+| D4 | Change any quota integers now, or experience-only first? | **Experience-only** |
+| D5 | Infant free AI questions | **Keep + rewrite** |
+| D6 | Dual living OFF: force PREMIUM_VOICE on hard-day paths regardless of flag? | **YES** |
+| D7 | PTM Season FOMO | **Hard-day only** |
+| D8 | Proceed to implementation after D1–D7? | **proceed** |
 
 ---
 

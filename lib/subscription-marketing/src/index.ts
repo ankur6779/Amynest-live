@@ -224,16 +224,17 @@ export const PAYWALL_SOCIAL_PROOF = [
 ] as const;
 
 export const PAYWALL_AI = {
-  title: "You've used today's free Amy guidance",
+  title: "Amy can keep supporting you",
   subtitle:
-    "Premium unlocks unlimited personalized answers for meltdowns, homework, bedtime, and the moments in between—so you always have a calm next step.",
+    "Continue with more personalized guidance for meltdowns, homework, bedtime, and the moments in between—whenever you're ready.",
   cta: "Continue with Amy's guidance",
 } as const;
 
+/** P0-7 D5 — keep infant free floor; continuity framing (never “unlock free baby questions”). */
 export const PAYWALL_INFANT_AI = {
-  title: "You've used today's free baby questions",
+  title: "Amy can keep supporting your baby",
   subtitle:
-    "Premium unlocks unlimited Baby Expert answers about sleep, feeding, and development—matched to your baby's age, not generic advice.",
+    "Continue with more Baby Expert guidance about sleep, feeding, and development—matched to your baby's age, whenever you're ready.",
   cta: "Continue with Amy's guidance",
 } as const;
 

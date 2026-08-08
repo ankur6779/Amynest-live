@@ -81,6 +81,7 @@ import {
   getLifeSkillPreviewText,
   getPtmPreviewText,
   isPtmSeason,
+  shouldShowPtmSeasonFomoOnHardDayPath,
   orderEmotionalCards,
   sortSupportTileIds,
   sortHealthTileIds,
@@ -1285,6 +1286,8 @@ function ParentingHubPage() {
   const hubSurface = { current: "main" as "main" | "previous" | "early" };
 
   const ptmSeason = isPtmSeason();
+  /** P0-7 D7 — FOMO banner/preview off on hard-day Help path; season sort may remain. */
+  const showPtmSeasonFomo = ptmSeason && shouldShowPtmSeasonFomoOnHardDayPath();
   const adaptiveMood = effectiveChild ? getAdaptiveMood(effectiveChild.id) : "neutral";
   const emotionalCardOrder = orderEmotionalCards(adaptiveMood);
   const moodHighlight = adaptiveMood === "low";
@@ -1761,7 +1764,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_ptm_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <ParentSupportPremiumSection id="ptm-prep" highlighted={ptmSeason} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}>
+          <ParentSupportPremiumSection id="ptm-prep" highlighted={false} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? undefined} onOpen={() => markHubUsed("hub_ptm_prep")}>
             <HubLazyContent><PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -2485,7 +2488,7 @@ function ParentingHubPage() {
               if (group.key === "support") {
                 return groupShell(
                   <>
-                    {ptmSeason ? (
+                    {showPtmSeasonFomo ? (
                       <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                         {t("parent_hub.support.ptm_season_banner")}
                       </div>
@@ -2602,7 +2605,7 @@ function ParentingHubPage() {
                         "animate-in fade-in slide-in-from-top-1 duration-200",
                       )}
                     >
-                      {isSupport && ptmSeason ? (
+                      {isSupport && showPtmSeasonFomo ? (
                         <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                           {t("parent_hub.support.ptm_season_banner")}
                         </div>

@@ -5,13 +5,11 @@ import {
   type ThreadMessage,
 } from "@/components/chat-thread";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   RefreshCw,
-  Zap,
   Sparkles,
   Heart,
   GraduationCap,
@@ -28,9 +26,10 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { readResolvedApiJson } from "@/lib/poll-result";
 import { TAB_TOPICS, type AssistantTabId } from "@/lib/assistant-tab-topics";
 import { FF_INFANT_PREMIUM } from "@/lib/infant-feature-flags";
-import { mapFeatureToPaywallReason } from "@/lib/subscription-gate";
-import type { PaywallReason } from "@/contexts/paywall-context";
-import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import {
+  ASK_AMY_SOFT_CONTINUE,
+  askAmySoftContinueMessage,
+} from "@/lib/hard-day-monetization";
 import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import "@/components/ask-amy/ask-amy-living-room.css";
@@ -202,26 +201,21 @@ export default function AssistantPage() {
         ASSISTANT_AI_TIMEOUT_MS,
       );
       if (res.status === 402) {
+        // P0-7 D3 — soft-continue message only. Quotas unchanged (D4).
+        // No auto-paywall, no Upgrade/Zap theatre on hard-day Ask Amy.
         refreshSubscription();
-        let paywallReason: PaywallReason = "ai_quota";
-        try {
-          const errBody = (await parseApiJson<{ feature?: string }>(res));
-          paywallReason = mapFeatureToPaywallReason(errBody?.feature);
-        } catch {
-          paywallReason = isInfantAmyContext ? "infant_ai_quota" : "ai_quota";
-        }
         setMessages((prev) => [
           ...prev,
           {
             role: "system",
-            content: isInfantAmyContext
-              ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
-              : t("ai.system_limit_message"),
+            content: t(
+              isInfantAmyContext
+                ? "ai.infant_system_limit_message"
+                : "ai.system_limit_message",
+              askAmySoftContinueMessage(isInfantAmyContext),
+            ),
           },
         ]);
-        window.dispatchEvent(
-          new CustomEvent("amynest:open-paywall", { detail: { reason: paywallReason } }),
-        );
         return;
       }
       if (!res.ok) throw new Error(`api_error_${res.status}`);
@@ -284,30 +278,31 @@ export default function AssistantPage() {
     }
 
     if (limitReached) {
+      // P0-7 D3 + D6 — soft-continue message only (PREMIUM_VOICE), living flag irrelevant.
       items.push({
         kind: "system",
         id: "limit",
         content: (
-          <div className="flex justify-center px-1">
-            <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
+          <div
+            className="flex justify-center px-1"
+            data-testid="ask-amy-soft-continue"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground space-y-2">
               <p>
-                {companionMode
-                  ? t("ask_amy.companion.limit", {
-                      defaultValue:
-                        "We've shared several questions today. We can continue supporting you whenever you're ready.",
-                    })
-                  : isInfantAmyContext
-                    ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
-                    : t("ai.system_limit_message")}
+                {t(
+                  isInfantAmyContext
+                    ? "ai.infant_system_limit_message"
+                    : "ai.system_limit_message",
+                  askAmySoftContinueMessage(isInfantAmyContext),
+                )}
               </p>
-              <Link href="/pricing" className="mt-2 inline-block">
-                <Button size="sm" className="gap-1.5 rounded-full" data-testid="button-upgrade-system">
-                  {!companionMode ? <Zap className="h-3.5 w-3.5" /> : null}
-                  {companionMode
-                    ? PREMIUM_VOICE.continueCta
-                    : t("ai.upgrade_premium")}
-                </Button>
-              </Link>
+              <p className="text-xs text-muted-foreground">
+                {t("ask_amy.soft_continue.hint", {
+                  defaultValue: "You can leave whenever you need — no pressure.",
+                })}
+              </p>
             </div>
           </div>
         ),
@@ -452,7 +447,7 @@ export default function AssistantPage() {
         composerDisabled={limitReached || historyPending}
         composerPlaceholder={
           limitReached
-            ? t("ai.input_limit_placeholder")
+            ? t("ai.input_limit_placeholder", ASK_AMY_SOFT_CONTINUE.inputPlaceholder)
             : companionMode
               ? t("ask_amy.companion.placeholder", {
                   defaultValue: "Tell Amy what's on your mind…",
@@ -518,7 +513,7 @@ export default function AssistantPage() {
           </header>
         )}
       />
-      {companionMode ? (
+      {companionMode || limitReached ? (
         <div className="mx-auto w-full max-w-3xl px-4 pb-6">
           <AmyNestLeaveContinuity />
         </div>

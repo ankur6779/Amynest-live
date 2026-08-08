@@ -59,4 +59,10 @@ describe("isSectionBlockLocked", () => {
     expect(isSectionBlockLocked(nine, "9", HUB_CONTENT_QUOTAS.artCraftLifetimeVideos)).toBe(false);
     expect(isSectionBlockLocked([...nine, "9"], "10", HUB_CONTENT_QUOTAS.artCraftLifetimeVideos)).toBe(true);
   });
+
+  it("P0-7 D2 allows all four Emotional Support hard-day cards before lock", () => {
+    const used = ["overwhelmed", "anxious", "connect"];
+    expect(isSectionBlockLocked(used, "break", 4)).toBe(false);
+    expect(isSectionBlockLocked([...used, "break"], "extra", 4)).toBe(true);
+  });
 });

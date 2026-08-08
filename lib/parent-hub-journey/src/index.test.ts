@@ -150,4 +150,9 @@ describe("parent-hub-journey", () => {
     assert.equal(HUB_CONTENT_QUOTAS.speechCoachSessions, 3);
     assert.equal(HUB_CONTENT_QUOTAS.premiumDownloadDaily, 5);
   });
+
+  it("P0-7 D2 raises Emotional Support free floor to four hard-day cards", () => {
+    assert.equal(getSectionLifetimeLimit("hub_emotional"), 4);
+    assert.equal(getSectionLifetimeLimit("hub_unknown_section"), 2);
+  });
 });
