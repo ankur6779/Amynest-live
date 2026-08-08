@@ -1,7 +1,7 @@
 /**
  * Moments Phase 2 — one emotional room.
- * Moments FE photography + one recommend + quiet continuous paths.
- * Never four peer products. Presentation only.
+ * Presence · Story · Make · Talking Amy under one room light.
+ * Never four products. Presentation only — engines reused.
  */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,6 +47,7 @@ export function MomentsLivingStream({
       className="mo-living-surface"
       data-testid="moments-living-stream"
       data-mo-living="1"
+      data-mo-hierarchy="deepen"
     >
       <header className="mo-today-hero" data-testid="moments-today-hero">
         <div
@@ -76,12 +77,13 @@ export function MomentsLivingStream({
               <h1 className="mo-today-title">
                 {t("moments.living.title", {
                   name: childName,
-                  defaultValue: `One beautiful moment with ${childName}`,
+                  defaultValue: `I'm here with you and ${childName}.`,
                 })}
               </h1>
               <p className="mo-today-purpose">
                 {t("moments.living.purpose", {
-                  defaultValue: "One emotional room — never four products.",
+                  defaultValue:
+                    "One emotional room — never four products side by side.",
                 })}
               </p>
             </div>
@@ -110,7 +112,6 @@ export function MomentsLivingStream({
         <div className="mo-quiet-list" data-testid="moments-quiet-paths">
           {MOMENTS_QUIET_PATHS.map((path) => {
             const active = activePath === path.id;
-            const demoted = path.id === "talking-amy";
             return (
               <button
                 key={path.id}
@@ -118,7 +119,8 @@ export function MomentsLivingStream({
                 className="mo-quiet-path"
                 data-testid={`moments-quiet-${path.id}`}
                 data-active={active ? "true" : "false"}
-                data-demoted={demoted ? "true" : "false"}
+                data-demoted={path.demoted ? "true" : "false"}
+                aria-current={active ? "true" : undefined}
                 onClick={() => onSelectTile(path.tileId)}
               >
                 <span className="mo-quiet-path-title">{path.title}</span>
@@ -179,7 +181,17 @@ export function MomentsLivingStream({
         </div>
       ) : null}
 
-      <p className="mo-support-note">{PREMIUM_VOICE.invitation}</p>
+      <p className="mo-support-note">
+        {t("moments.living.continuity", {
+          defaultValue: "We'll continue helping as your child grows.",
+        })}
+      </p>
+      <p className="mo-support-note mo-support-invite">{PREMIUM_VOICE.invitation}</p>
+      <p className="mo-support-note mo-support-continue">
+        {t("moments.living.continue_support", {
+          defaultValue: PREMIUM_VOICE.continueCta,
+        })}
+      </p>
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
 import {
   MOMENTS_STREAM_TILE_ID,
   isMomentsLivingV1Enabled,
+  momentsDeepenCueForTile,
   momentsPathForTile,
 } from "@/lib/moments/living-room";
 import {
@@ -318,6 +319,9 @@ export function ParentHubRoomsShell({
       selectedTileId !== GUIDANCE_STREAM_TILE_ID
         ? selectedTileId
         : null;
+    const momentsDeepenCue = deepenTile
+      ? momentsDeepenCueForTile(deepenTile)
+      : null;
 
     return (
       <div
@@ -371,11 +375,18 @@ export function ParentHubRoomsShell({
 
             {deepenTile ? (
               <div
-                className="ph-module-quiet"
+                className="ph-module-quiet mo-deepen"
                 data-testid={`hub-room-module-${deepenTile}`}
                 data-section-id={deepenTile}
                 data-ph-pack="5"
+                data-mo-deepen="1"
               >
+                {momentsDeepenCue ? (
+                  <div className="mo-deepen-cue" data-testid="moments-deepen-cue">
+                    <p className="mo-deepen-cue-title">{momentsDeepenCue.title}</p>
+                    <p className="mo-deepen-cue-purpose">{momentsDeepenCue.purpose}</p>
+                  </div>
+                ) : null}
                 <ParentHubQuietModuleProvider>
                   {renderDestination(deepenTile)}
                 </ParentHubQuietModuleProvider>

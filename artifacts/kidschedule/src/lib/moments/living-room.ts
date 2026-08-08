@@ -22,6 +22,8 @@ export type MomentsQuietPath = {
   tileId: string;
   title: string;
   purpose: string;
+  /** Neon / product energy — never lead Moments */
+  demoted?: boolean;
 };
 
 /**
@@ -52,6 +54,7 @@ export const MOMENTS_QUIET_PATHS: readonly MomentsQuietPath[] = [
     tileId: "talking-amy",
     title: "Soft voice",
     purpose: "Playful talk when you're ready",
+    demoted: true,
   },
 ] as const;
 
@@ -129,6 +132,22 @@ export function momentsPathForTile(tileId: string): MomentsPathId | null {
 export function tileIdForMomentsPath(pathId: MomentsPathId): string {
   const path = MOMENTS_QUIET_PATHS.find((p) => p.id === pathId);
   return path?.tileId ?? "activities";
+}
+
+/** Quiet deepen cue for a legacy Hub tile — never four-product language. */
+export function momentsDeepenCueForTile(tileId: string): {
+  title: string;
+  purpose: string;
+} | null {
+  const pathId = momentsPathForTile(tileId);
+  if (!pathId) return null;
+  const soft =
+    MOMENTS_PRESENCE_SOFT.find((s) => s.tileId === tileId) ??
+    MOMENTS_MAKE_SOFT.find((s) => s.tileId === tileId);
+  if (soft) return { title: soft.title, purpose: soft.purpose };
+  const path = MOMENTS_QUIET_PATHS.find((p) => p.id === pathId);
+  if (!path) return null;
+  return { title: path.title, purpose: path.purpose };
 }
 
 /** Flag — Moments living room manufacturing. Default ON. */

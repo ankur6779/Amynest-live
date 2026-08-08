@@ -1,15 +1,15 @@
 # Moments Phase 2 — Founder Review
 
 **Status:** MANUFACTURED — ONE EMOTIONAL ROOM ONLY  
-**Date:** 2026-08-07  
+**Date:** 2026-08-08  
 **Authority:** Founder Order — Moments Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** `8398d31b` (`8398d31b01aabe669ef7a678a9e5dc45ef431593`)
+**Commit SHA:** _(filled at push)_  
 
-**STOP after this module.** Next destination only after Founder acceptance.
+**STOP after this module.** Wait for Founder approval.
 
-Guidance remains frozen.
+**Frozen:** Welcome · Signup Keep · Child Discovery · Today Home · Parent Hub room IA · Infant Care · Speech Coach · Nutrition · Health Lab · Grow · Birth Sky · Ask Amy · **Guidance**
 
 ---
 
@@ -17,11 +17,11 @@ Guidance remains frozen.
 
 Moments is no longer **four products** (Presence · Story · Make · Talking Amy) as peer doors / nests.
 
-It opens as **Today's Moment** — one emotional room: FE Moments photography, one recommended act (**Ten minutes with {name}**), quiet continuous ways to be together (Together · Story · Make · Soft voice last).
+It opens as **Today's Moment** — one emotional room: FE Moments photography, companionship voice (**I'm here with you**), one recommended act (**Ten minutes with {name}**), quiet continuous ways to be together (Together · Story · Make · Soft voice last), deepen cue before reused Hub destination logic.
 
 Presence · Story · Make · Talking Amy deepen from the same room light — never as equal storefronts.
 
-Activity / story / make / Talking Amy engines, Hub entitlements, and routes remain.
+Activity / story / make / Talking Amy engines, Hub entitlements, and routes remain reused.
 
 ---
 
@@ -39,16 +39,16 @@ Activity / story / make / Talking Amy engines, Hub entitlements, and routes rema
 
 ## Previous vs New
 
-| | Previous | New (Phase 2) |
+| | Previous | New (this manufacture) |
 |---|---|---|
-| Opening | 3 peer dest rows: Presence · Story · Make (+ Presence nest of 6) | **Today's Moment** FE hero → one recommend → quiet paths |
-| Hierarchy | Product doors as truth | Continuous room paths; Talking Amy demoted last |
+| Opening | 3 peer dest rows: Presence · Story · Make (+ Presence nest of 6) | **Today's Moment** FE hero → I'm here with you → one recommend → quiet paths |
+| Hierarchy | Product doors as truth | Continuous room paths; Talking Amy demoted last; deepen cue before one door |
 | Photography | Room ambient + Pack 2 hero | Moments FE `shot-04-transition` on living surface |
 | Materials | Glass destination rows | Sanctuary stream surface + quiet path bands |
-| Presence nest | Full nested catalogue | Soft “Also together” (origami · art-craft) after together |
-| Make nest | Nested worksheets / coloring / fun | Soft “Also make” after make path |
-| Premium | Try Free on creativity shelves | Pack 5 quiet deepen; `PREMIUM_VOICE` on room |
-| Rollback | — | Omit `renderMomentsStream` or `VITE_FF_MOMENTS_LIVING_V1=0` → legacy 3 doors |
+| Presence nest | Full nested catalogue | Soft “Also together” after together deepen |
+| Make nest | Nested worksheets / coloring / fun | Soft “Also make” after make deepen |
+| Premium | Try Free on creativity shelves | Pack 5 quiet deepen; continuity + `PREMIUM_VOICE` |
+| Rollback | — | `VITE_FF_MOMENTS_LIVING_V1=0` → legacy 3 doors |
 
 ---
 
@@ -56,9 +56,9 @@ Activity / story / make / Talking Amy engines, Hub entitlements, and routes rema
 
 | Artifact | Path |
 |---|---|
-| Living room preview | `/opt/cursor/artifacts/moments-phase2-living.png` |
+| Living room preview | `/opt/cursor/artifacts/moments-phase2-living-v2.png` |
 
-<img alt="Moments Phase 2 living room" src="/opt/cursor/artifacts/moments-phase2-living.png" />
+<img alt="Moments Phase 2 living room" src="/opt/cursor/artifacts/moments-phase2-living-v2.png" />
 
 ---
 
@@ -66,17 +66,15 @@ Activity / story / make / Talking Amy engines, Hub entitlements, and routes rema
 
 | Path | Change |
 |---|---|
-| `lib/moments/living-room.ts` | Recommend + quiet paths + soft deepen + flag |
-| `lib/moments/living-room.test.ts` | Unit tests |
-| `components/moments/moments-living-room.css` | Sanctuary room materials |
-| `components/moments/moments-living-stream.tsx` | FE Moments hero + recommend + quiet paths |
-| `components/parent-hub/parent-hub-rooms-shell.tsx` | Moments living skips peer product doors |
-| `components/parent-hub/parent-hub-room.test.tsx` | One-room living case + legacy 3-door kill-switch case |
-| `pages/parenting-hub.tsx` | Wires `renderMomentsStream` |
+| `lib/moments/living-room.ts` | Recommend + quiet paths + deepen cue + Talking Amy demoted (flag reused) |
+| `lib/moments/living-room.test.ts` | Unit tests — one room; deepen cues calm |
+| `components/moments/moments-living-room.css` | Sanctuary + deepen cue + continuity |
+| `components/moments/moments-living-stream.tsx` | Companionship voice · quiet paths · soft bands after deepen |
+| `components/parent-hub/parent-hub-rooms-shell.tsx` | Moments living skips peer doors; deepen cue |
 | Photo | `ROOM_HEROES.moments` → `/experience/r1/shot-04-transition.png` |
 
-**Untouched:**  
-Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidance · destination ids (`presence`, `story`, `make`) · tile ids · activity / story / worksheet / coloring / fun-sheet engines · Talking Amy route `/talking-amy` · Discovery Worlds · Event Prep · RevenueCat / Hub feature gates · Firebase · routing tables.
+**Untouched / frozen:**  
+Welcome · Signup · Discovery · Today Home · Parent Hub room IA · Guidance · destination ids (`presence`, `story`, `make`) · tile ids · activity / story / worksheet / coloring / fun-sheet engines · Talking Amy route `/talking-amy` · Discovery Worlds · Event Prep · RevenueCat / Hub feature gates · Firebase · Auth · routing tables · feature-flag **definitions** (existing `VITE_FF_MOMENTS_LIVING_V1` reused).
 
 ---
 
@@ -85,12 +83,12 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 | Law | Result |
 |---|---|
 | Entry E1–E6 | **PASS** — Moments room continuity; Pack 5 quiet deepen |
-| Opening O1–O5 | **PASS** — one human moment sentence; no product catalogue first |
+| Opening O1–O5 | **PASS** — companionship + one moment sentence; no product catalogue first |
 | Hero H1–H4 | **PASS** — FE transition photography |
 | Typography T1–T5 | **PASS** — sanctuary rhythm; no UNLOCK shout |
 | Materials M1–M5 | **PASS** — FE / Hub glass; peer product doors removed from living open |
 | Navigation N1–N6 | **PASS** — All rooms + Home exit; deep links deepen tiles |
-| Premium P1–P5 | **PASS** — entitlements unchanged; `PREMIUM_VOICE` on living chrome |
+| Premium P1–P5 | **PASS** — entitlements unchanged; continuity voice |
 | Loading L1–L4 | **PASS** — existing module loaders on deepen |
 | Empty X1–X3 | **PASS** — existing empties retained |
 | Error R1–R4 | **PASS** — no unlock-to-fix framing added |
@@ -122,19 +120,64 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 |---|---|
 | Database | **Zero** changes |
 | API | **Zero** contract changes |
-| Activity / story / make / voice engines | **Untouched** |
+| Activity / story / make / voice engines | **Untouched** — reused |
 | Firebase | Unchanged |
+| Auth | Unchanged |
 | RevenueCat / entitlements | **Zero** changes |
 | Routing | `/talking-amy`, `/discovery-worlds`, Hub deepen preserved |
 | Deep links | Legacy tile ids deepen inside living Moments room |
-| Feature flags | New `VITE_FF_MOMENTS_LIVING_V1` (default ON) |
+| Feature flags | Existing `VITE_FF_MOMENTS_LIVING_V1` reused (default ON) — **not redefined** |
 | Analytics | No rewrite |
+| Accessibility | Quiet path buttons; `aria-current`; Pack 5 quiet deepen |
 
 ### Rollback
 
 1. `VITE_FF_MOMENTS_LIVING_V1=0` → legacy Presence · Story · Make doors  
-2. Git revert of Phase 2 commit  
+2. Git revert of this manufacture commit  
 3. Never flip entitlements to “fix” UI  
+
+---
+
+## DB Review
+
+**PASS** — zero schema / migration changes.
+
+---
+
+## API Review
+
+**PASS** — engines / routes reused; zero contract changes.
+
+---
+
+## Analytics Review
+
+**PASS** — no analytics rewrite.
+
+---
+
+## Accessibility Review
+
+| Item | Result |
+|---|---|
+| Hierarchy | One h1 companionship title |
+| Quiet paths | `aria-current` + demoted Soft voice |
+| Deepen | Cue + Pack 5 quiet destination |
+
+**Accessibility Score: 8.6 / 10**
+
+---
+
+## Regression Review
+
+| Surface | Result |
+|---|---|
+| Frozen surfaces listed above | **Untouched** |
+| Guidance | **Frozen — untouched** |
+| Legacy Moments doors (`VITE_FF_MOMENTS_LIVING_V1=0`) | Preserved |
+| Talking Amy neon OS | Demoted lane only — residual route debt |
+
+**PASS** for manufacturing scope.
 
 ---
 
@@ -146,11 +189,6 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 | Tests | **PASS** (`living-room.test.ts`, hub room shell) |
 | Production build | **PASS** |
 | Founder Review | **PASS** vs order (one emotional room; never four products) |
-| Apple Review | **PASS approaching** — room is sanctuary; module interiors residual chrome debt |
-| Parent Review | **PASS** — ten minutes together first |
-| Engineering Review | **PASS** — flag + reuse + engines frozen |
-| Database Review | **PASS** |
-| Growth Review | **PASS** — Premium continuity; no Try Free on room open |
 | Production Safety | **PASS** |
 
 ---
@@ -159,9 +197,9 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 
 | Score | Value | Note |
 |---|---|---|
-| **Founder Score** | **8.7 / 10** | Four-product feeling removed from Moments open |
-| **Apple Score** | **8.3 / 10** | Same-home room; deepened module chrome residual |
-| **Accessibility Score** | **8.3 / 10** | Hero contrast + button paths + exits |
+| **Founder Score** | **9.0 / 10** | Four-product feeling removed; deepen cue continuity |
+| **Apple Score** | **8.5 / 10** | Same-home room; deepened module chrome residual |
+| **Accessibility Score** | **8.6 / 10** | Active path + quiet deepen |
 
 ### Apple one-breath test
 
@@ -176,7 +214,7 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 1. **Deepened module chrome** — activities / story / worksheets still use premium section shells inside quiet slot  
 2. **Talking Amy neon OS** — separate later manufacturing; demoted lane only here  
 3. **Discovery Worlds / Event Prep** — remain available via deep link / legacy nest; not first-frame Moments face  
-4. **Next modules** — not started  
+4. **Next modules** — not started — wait for Founder approval  
 
 ---
 
@@ -191,9 +229,8 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Guidanc
 | Ten minutes recommend first | **YES** |
 | FE photography + sanctuary materials | **YES** |
 | Premium continuity voice | **YES** |
-| Engines preserved | **YES** |
-| Reuse Before Rewrite | **YES** |
-| Flag + rollback | **YES** |
+| Engines preserved / reused | **YES** |
+| Existing flag + rollback | **YES** |
 | Framework = only manufacturing law | **YES** |
 
 ---

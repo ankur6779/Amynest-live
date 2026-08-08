@@ -3,6 +3,7 @@ import {
   MOMENTS_QUIET_PATHS,
   MOMENTS_STREAM_TILE_ID,
   isMomentsLivingV1Enabled,
+  momentsDeepenCueForTile,
   momentsPathForTile,
   recommendMomentsAction,
   tileIdForMomentsPath,
@@ -20,6 +21,18 @@ describe("moments living-room", () => {
     expect(MOMENTS_QUIET_PATHS[MOMENTS_QUIET_PATHS.length - 1]?.id).toBe(
       "talking-amy",
     );
+    expect(MOMENTS_QUIET_PATHS[MOMENTS_QUIET_PATHS.length - 1]?.demoted).toBe(
+      true,
+    );
+  });
+
+  it("deepen cues stay one-room — never four-product language", () => {
+    const cue = momentsDeepenCueForTile("story-hub");
+    expect(cue?.title).toBe("One story");
+    expect(momentsDeepenCueForTile("origami-studio")?.title).toBe(
+      "Fold together",
+    );
+    expect(momentsDeepenCueForTile("amy-ai")).toBeNull();
   });
 
   it("recommends ten minutes together", () => {
