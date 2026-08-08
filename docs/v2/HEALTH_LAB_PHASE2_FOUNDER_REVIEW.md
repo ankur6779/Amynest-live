@@ -60,11 +60,9 @@ Removed from the living default face:
 
 | Artifact | Path |
 |---|---|
-| Living Care room | `/opt/cursor/artifacts/health-lab-phase2-living-v2.png` |
+| Living Care room | `/opt/cursor/artifacts/health-lab-phase2-living.png` |
 
-<img alt="Health Lab Phase 2 living Care room" src="/opt/cursor/artifacts/health-lab-phase2-living-v2.png" />
-
-_(If capture unavailable, open `/health-lab` with `VITE_FF_HEALTH_LAB_LIVING_V1` default ON.)_
+<img alt="Health Lab Phase 2 living Care room" src="/opt/cursor/artifacts/health-lab-phase2-living.png" />
 
 ---
 
