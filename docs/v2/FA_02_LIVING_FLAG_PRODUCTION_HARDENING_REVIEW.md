@@ -4,7 +4,7 @@
 **Authority:** Founder Order — FA-02 P1 Mixed-Mode Production Hardening  
 **Source:** `docs/v2/FA_02_LIVING_FLAG_PRODUCTION_LOCK_VERIFICATION.md`  
 **Branch:** `cursor/product-execution-model-v2`  
-**Actual implementation SHA:** `PENDING_STAMP`
+**Actual implementation SHA:** `26b2c05ce8fe8d9cc10fad1dd2e7a95ac90e2bab`
 
 **Law:** Smallest safe production guard only. No module experience / visual / product / entitlement changes. No Final Apple Audit.
 
