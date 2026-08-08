@@ -3,14 +3,11 @@
  * Presentation only. No API / entitlement / engine changes.
  */
 
-export type SpeechCoachRecommendKind = "route" | "scroll";
+export type SpeechCoachRecommendKind = "deepen";
 
 export type SpeechCoachRecommend = {
   kind: SpeechCoachRecommendKind;
-  /** Route when kind=route */
-  href?: string;
-  /** Section anchor when kind=scroll */
-  sectionId?: string;
+  sectionId: SpeechCoachQuietId;
   label: string;
   title: string;
   purpose: string;
@@ -61,31 +58,36 @@ export const SPEECH_COACH_QUIET_PATHS: readonly SpeechCoachQuietPath[] = [
   },
 ] as const;
 
+/** More-nest session chips — human labels, never raw tool keys as product truth. */
+export const SPEECH_COACH_MORE_SESSIONS = [
+  { key: "quick", label: "Quick practice", purpose: "A few gentle minutes" },
+  { key: "bedtime", label: "Bedtime words", purpose: "Soft close to the day" },
+  { key: "school", label: "School readiness", purpose: "Calm words for school" },
+  { key: "pronounce", label: "Sounds & words", purpose: "Gentle pronunciation" },
+  { key: "warmup", label: "Warm-up", purpose: "Ease into speaking" },
+  { key: "emotion", label: "Feelings & words", purpose: "Name feelings together" },
+] as const;
+
+export function isSpeechCoachQuietId(id: string): id is SpeechCoachQuietId {
+  return (SPEECH_COACH_QUIET_DESTINATIONS as readonly string[]).includes(id);
+}
+
 /**
  * One recommended Help-room act for a tired parent.
- * Prefers V2 practice when enabled; never scores the parent.
+ * Stays inside the room (deepen) — never launches neon session catalogue first.
+ * V2 / live / talk remain available under More when configured.
  */
 export function recommendSpeechCoachAction(opts: {
   ageMonths: number;
   hour?: number;
+  /** Accepted for call-site stability; does not divert the living open to V2. */
   v2Enabled?: boolean;
 }): SpeechCoachRecommend {
   const hour = opts.hour ?? new Date().getHours();
-  const v2 = Boolean(opts.v2Enabled);
-
-  if (v2) {
-    return {
-      kind: "route",
-      href: "/speech-coach-v2",
-      label: "Start here",
-      title: "Practice with Amy",
-      purpose: "Gentle sounds and words — no pressure",
-    };
-  }
 
   if (hour >= 19 || hour < 7) {
     return {
-      kind: "scroll",
+      kind: "deepen",
       sectionId: "speech-section-affirmations",
       label: "Tonight's help",
       title: "Confidence",
@@ -95,7 +97,7 @@ export function recommendSpeechCoachAction(opts: {
 
   if (opts.ageMonths < 36) {
     return {
-      kind: "scroll",
+      kind: "deepen",
       sectionId: "speech-section-games",
       label: "Start here",
       title: "Play & speak",
@@ -104,7 +106,7 @@ export function recommendSpeechCoachAction(opts: {
   }
 
   return {
-    kind: "scroll",
+    kind: "deepen",
     sectionId: "speech-section-practice",
     label: "Start here",
     title: "Sounds & words",

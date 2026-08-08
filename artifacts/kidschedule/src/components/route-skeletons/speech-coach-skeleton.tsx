@@ -9,7 +9,7 @@ export function SpeechCoachSkeleton() {
     <div
       className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 p-4"
       role="status"
-      aria-label="Preparing a calm practice space"
+      aria-label="Preparing a calm practice space with you"
       aria-busy="true"
       data-testid="speech-coach-skeleton"
     >

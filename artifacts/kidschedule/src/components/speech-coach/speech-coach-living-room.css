@@ -291,6 +291,27 @@
   outline: none;
 }
 
+.sc-quiet-path[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.38);
+  background: rgba(232, 212, 184, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.1),
+    0 0 0 1px rgba(251, 191, 36, 0.1),
+    0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+.sc-deepen-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.15rem 0.05rem 0.25rem;
+}
+
+.sc-deepen-panel .sc-living-card {
+  border-color: rgba(232, 212, 184, 0.16) !important;
+  background: rgba(8, 6, 12, 0.58) !important;
+}
+
 .sc-quiet-path-title {
   display: block;
   font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
@@ -347,6 +368,67 @@
   padding: 0 0.2rem;
 }
 
+.sc-support-invite,
+.sc-support-continue {
+  color: rgba(232, 212, 184, 0.62);
+  font-size: 0.76rem;
+}
+
+.sc-more-sessions {
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.4);
+  padding: 0.7rem 0.75rem 0.8rem;
+}
+
+.sc-more-sessions-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.7);
+}
+
+.sc-more-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sc-more-session {
+  width: 100%;
+  text-align: left;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(232, 212, 184, 0.14);
+  background: rgba(8, 6, 12, 0.45);
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.sc-more-session:hover,
+.sc-more-session:focus-visible {
+  border-color: rgba(232, 212, 184, 0.28);
+  outline: none;
+}
+
+.sc-more-session-title {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.sc-more-session-purpose {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: rgba(244, 238, 230, 0.74);
+}
+
 .sc-exit-home {
   display: inline-flex;
   align-items: center;
@@ -369,8 +451,8 @@
   outline: none;
 }
 
-/* Soften gated catalogue cards inside living room */
-.speech-coach-living .sc-living-sections .rounded-3xl,
+/* Soften deepen + more nest cards inside living room */
+.speech-coach-living .sc-deepen-panel .rounded-3xl,
 .speech-coach-living .sc-more-body .rounded-3xl {
   border-color: rgba(232, 212, 184, 0.14) !important;
   background: rgba(8, 6, 12, 0.55) !important;
@@ -380,12 +462,12 @@
     0 8px 22px rgba(0, 0, 0, 0.24);
 }
 
-.speech-coach-living .sc-living-sections .text-foreground,
+.speech-coach-living .sc-deepen-panel .text-foreground,
 .speech-coach-living .sc-more-body .text-foreground {
   color: rgba(255, 252, 248, 0.96) !important;
 }
 
-.speech-coach-living .sc-living-sections .text-muted-foreground,
+.speech-coach-living .sc-deepen-panel .text-muted-foreground,
 .speech-coach-living .sc-more-body .text-muted-foreground {
   color: rgba(244, 238, 230, 0.72) !important;
 }
@@ -403,7 +485,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sc-recommend-btn,
-  .sc-quiet-path {
+  .sc-quiet-path,
+  .sc-more-session {
     transition: none;
   }
 
