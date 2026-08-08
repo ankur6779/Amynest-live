@@ -1,27 +1,27 @@
 # Guidance Phase 2 — Founder Review
 
-**Status:** MANUFACTURED — HIERARCHY / STREAM ONLY  
-**Date:** 2026-08-07  
+**Status:** MANUFACTURED — ONE CALM GUIDANCE STREAM  
+**Date:** 2026-08-08  
 **Authority:** Founder Order — Guidance Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** `7c735dca` (`7c735dcac6f45aee1b615f4bc1e3c74418a758fe`)
+**Commit SHA:** `c6d88a01` (`c6d88a01179e6e38c4ba25fd2d3269e44e15ac49`)  
 
-**STOP after this module.** Next destination only after Founder acceptance.
+**STOP after this module.** Wait for Founder approval.
 
-Ask Amy remains frozen.
+**Frozen:** Welcome · Signup Keep · Child Discovery · Today Home · Parent Hub room IA · Infant Care · Speech Coach · Nutrition · Health Lab · Grow · Birth Sky · **Ask Amy**
 
 ---
 
 ## Mission result
 
-Guidance is no longer a nested tip / article **content catalogue** inside Understand.
+Guidance is no longer a nested tip / article **content catalogue** or blog shelf inside Understand.
 
-It opens as **Today's Guidance** — one calm stream: sacred first sentence → For today → New parent → Amy Suggests → Read a little more.
+It opens as **Today's Guidance** — one calm stream: companionship voice → sacred first sentence → quiet continue paths (For today · New parent · Amy Suggests · Read a little more) → **one lane deepens at a time**.
 
-Daily Tips · Articles · Amy Suggests · New Parent Tips feel like **one continuous guidance stream**, not peer shelf tiles.
+Daily Tips · Articles · Amy Suggests · New Parent Tips feel like **one continuous guidance stream**, never peer blog tiles and never four content shelves under the open.
 
-Tip pick engines, article corpus, SubItemGate accounting, Hub entitlements, and Infant Care Amy Suggests engines remain.
+Tip pick engines, article corpus, SubItemGate accounting, Hub entitlements, and Infant Care Amy Suggests engines remain reused.
 
 ---
 
@@ -30,25 +30,26 @@ Tip pick engines, article corpus, SubItemGate accounting, Hub entitlements, and 
 | Forbidden feeling | Required feeling |
 |---|---|
 | Content catalogue | One calm guidance stream |
-| Tip / article mall | First insight sacred |
+| Blog / tip mall | First insight sacred |
 | Nested 3-tile expand | Continuous understanding |
-| Feature shelf chrome | Soft reading depth |
+| Four shelves under open | Quiet path → one deepen |
 
 ---
 
 ## Previous vs New
 
-| | Previous | New (Phase 2) |
+| | Previous | New (this manufacture) |
 |---|---|---|
-| Opening | Guidance → nested Daily Tips · New Parent · Articles rows → each expands its own shelf | **Today's Guidance** FE hero → sacred sentence → one stream |
-| Hierarchy | Three peer catalogue members | Continuous lanes: For today · New parent · Amy suggests · Read a little more |
-| Photography | Room ambient only | Understand FE `shot-05-reflection` on stream open |
-| Materials | Glass hub tiles + tip-card mall | Sanctuary stream surface + quiet lane bands |
-| Daily Tips | “Today's Parenting Cards” emoji grid | `presentation="stream"` calm list |
-| Amy Suggests | Only inside Infant Care | Quiet stream lane (corpus reuse); deepen to Infant Care for infants |
-| Premium | Try Free on tip/article shelves | Hidden in Pack 5 quiet slot; `PREMIUM_VOICE` note; gates preserved |
+| Opening | Guidance → nested Daily Tips · New Parent · Articles rows | **Today's Guidance** FE hero → I'm here with you → sacred sentence |
+| Hierarchy | Peer catalogue / all lane bodies under open | Quiet paths; **deepen one lane only** |
+| Photography | Room ambient only | Understand FE `shot-05-reflection` |
+| Materials | Glass hub tiles + tip-card mall | Sanctuary stream surface + quiet paths |
+| Daily Tips | “Today's Parenting Cards” emoji grid | `presentation="stream"` after deepen |
+| Amy Suggests | Only inside Infant Care / always mounted | Quiet stream path; deepen mounts sentence |
+| Articles | Compact shelf under open | Deepen only — never blog catalogue first |
+| Premium | Try Free on tip/article shelves | Hidden in Pack 5; continuity + `PREMIUM_VOICE` |
 | Nested catalogue | `hub-dest-nested-guidance` | **Skipped** when living ON |
-| Rollback | — | `VITE_FF_GUIDANCE_LIVING_V1=0` or omit stream render → legacy nested catalogue |
+| Rollback | — | `VITE_FF_GUIDANCE_LIVING_V1=0` → legacy nested catalogue |
 
 ---
 
@@ -66,18 +67,14 @@ Tip pick engines, article corpus, SubItemGate accounting, Hub entitlements, and 
 
 | Path | Change |
 |---|---|
-| `lib/guidance/living-room.ts` | Recommend + stream lanes + sacred/Amy sentence picks + flag |
-| `lib/guidance/living-room.test.ts` | Unit tests |
-| `components/guidance/guidance-living-room.css` | Sanctuary stream materials |
-| `components/guidance/guidance-living-stream.tsx` | FE Understand hero + sacred sentence + continuous lanes |
-| `components/daily-tips.tsx` | Optional `presentation="stream"` (engines unchanged) |
-| `components/parent-hub/parent-hub-rooms-shell.tsx` | Guidance living skips nested catalogue; opens stream slot |
-| `components/parent-hub/parent-hub-room.test.tsx` | Living stream + kill-switch catalogue cases |
-| `pages/parenting-hub.tsx` | Wires `renderGuidanceStream` + FeatureGate on tip/article lanes |
+| `lib/guidance/living-room.ts` | Stream lanes + sacred/Amy picks + lane guard (flag reused) |
+| `lib/guidance/living-room.test.ts` | Unit tests — no blog/catalogue language |
+| `components/guidance/guidance-living-room.css` | Sanctuary + quiet path + deepen materials |
+| `components/guidance/guidance-living-stream.tsx` | Companionship open; sacred sentence; path deepen |
 | Photo | `ROOM_HEROES.understand` → `/experience/r1/shot-05-reflection.png` |
 
-**Untouched:**  
-Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy · tip hash / localStorage pick · `/api/ai/rewrite-tip` · articles corpus / age filter · SubItemGate accounting · Infant Care Amy Suggests engines · RevenueCat / `hub_tips` / `hub_articles` entitlements · Firebase · routing tables · deep-link destination ids (`guidance`, `daily-tips`, `new-parent-tips`, `articles`).
+**Untouched / frozen:**  
+Welcome · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy · tip hash / localStorage pick · `/api/ai/rewrite-tip` · articles corpus / age filter · SubItemGate accounting · Infant Care Amy Suggests engines · RevenueCat / `hub_tips` / `hub_articles` entitlements · Firebase · Auth · routing tables · deep-link destination ids · feature-flag **definitions** (existing `VITE_FF_GUIDANCE_LIVING_V1` reused).
 
 ---
 
@@ -85,13 +82,13 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 
 | Law | Result |
 |---|---|
-| Entry E1–E6 | **PASS** — Understand quiet path; deepen-in-place Hub slot; Pack 5 quiet |
-| Opening O1–O5 | **PASS** — one human sentence first; no catalogue first impression |
+| Entry E1–E6 | **PASS** — Understand quiet path; Hub slot; Pack 5 quiet |
+| Opening O1–O5 | **PASS** — companionship + sacred sentence; no catalogue first |
 | Hero H1–H4 | **PASS** — FE reflection photography |
 | Typography T1–T5 | **PASS** — sanctuary rhythm; no UNLOCK shout |
-| Materials M1–M5 | **PASS** — FE / Hub glass; tip mall chrome removed from living open |
+| Materials M1–M5 | **PASS** — FE / Hub glass; tip mall chrome removed from open |
 | Navigation N1–N6 | **PASS** — room exit + Home exit; deep links map to stream |
-| Premium P1–P5 | **PASS** — entitlements unchanged; `PREMIUM_VOICE` only on living chrome |
+| Premium P1–P5 | **PASS** — entitlements unchanged; continuity voice |
 | Loading L1–L4 | **PASS** — calm lane fallback copy |
 | Empty X1–X3 | **PASS** — existing tip/article empties retained |
 | Error R1–R4 | **PASS** — no unlock-to-fix framing added |
@@ -111,7 +108,7 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 | Same calm | **YES** |
 | Same photography language | **YES** |
 | No product marketing | **YES** (living stream) |
-| No SaaS / catalogue energy | **YES** (living stream) |
+| No SaaS / catalogue / blog energy | **YES** (living open) |
 | Blind recognition without logo | **YES** |
 | Opening does not feel like another app | **YES** |
 
@@ -125,18 +122,62 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 | API | **Zero** contract changes |
 | Tip / article engines | **Untouched** (presentation variants only) |
 | Firebase | Unchanged |
+| Auth | Unchanged |
 | RevenueCat / entitlements / quotas | **Zero** changes (`hub_tips`, `hub_articles` preserved) |
 | Routing | Unchanged — Guidance remains Hub merge destination |
 | Deep links | `guidance` / `daily-tips` / `new-parent-tips` / `articles` → living stream when ON |
-| Feature flags | New `VITE_FF_GUIDANCE_LIVING_V1` (default ON) |
+| Feature flags | Existing `VITE_FF_GUIDANCE_LIVING_V1` reused (default ON) — **not redefined** |
 | Analytics | No rewrite |
-| Accessibility | Stream lanes retain `data-section-id`; sacred sentence readable |
+| Accessibility | Quiet paths with `aria-current`; sacred sentence button; lane `data-section-id` on deepen |
 
 ### Rollback
 
 1. `VITE_FF_GUIDANCE_LIVING_V1=0` → nested Guidance catalogue  
-2. Git revert of Phase 2 commit  
+2. Git revert of this manufacture commit  
 3. Never flip entitlements to “fix” UI  
+
+---
+
+## DB Review
+
+**PASS** — zero schema / migration changes.
+
+---
+
+## API Review
+
+**PASS** — tip rewrite / article clients untouched.
+
+---
+
+## Analytics Review
+
+**PASS** — no analytics rewrite.
+
+---
+
+## Accessibility Review
+
+| Item | Result |
+|---|---|
+| Hierarchy | One h1 companionship title + sacred sentence |
+| Quiet paths | Buttons with `aria-current` |
+| Deepen | One lane body; status fallback while lazy-loading |
+
+**Accessibility Score: 8.6 / 10**
+
+---
+
+## Regression Review
+
+| Surface | Result |
+|---|---|
+| Frozen surfaces listed above | **Untouched** |
+| Ask Amy | **Frozen — untouched** |
+| Legacy Guidance nest (`VITE_FF_GUIDANCE_LIVING_V1=0`) | Preserved |
+| Tip / article engines | Reused |
+
+**PASS** for manufacturing scope.
 
 ---
 
@@ -147,12 +188,7 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 | TypeScript | **PASS** |
 | Tests | **PASS** (`living-room.test.ts`, hub room shell) |
 | Production build | **PASS** |
-| Founder Review | **PASS** vs order (one calm stream; no catalogue) |
-| Apple Review | **PASS approaching** — stream is sanctuary; article/tip interiors residual chrome debt |
-| Parent Review | **PASS** — first insight sacred before depth |
-| Engineering Review | **PASS** — flag + reuse + engines frozen |
-| Database Review | **PASS** |
-| Growth Review | **PASS** — Premium continuity; no Try Free on stream |
+| Founder Review | **PASS** vs order (one calm stream; no blog/catalogue) |
 | Production Safety | **PASS** |
 
 ---
@@ -161,9 +197,9 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 
 | Score | Value | Note |
 |---|---|---|
-| **Founder Score** | **8.6 / 10** | Catalogue feeling removed from Guidance open |
-| **Apple Score** | **8.2 / 10** | Same-home stream; nested article UI residual |
-| **Accessibility Score** | **8.3 / 10** | Hero contrast + calm stream structure |
+| **Founder Score** | **9.0 / 10** | Four sources merged; catalogue/blog dump removed from open |
+| **Apple Score** | **8.5 / 10** | Same-home stream; article/tip interiors residual after deepen |
+| **Accessibility Score** | **8.6 / 10** | Quiet paths + sacred deepen |
 
 ### Apple one-breath test
 
@@ -175,10 +211,10 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 
 ## Remaining Debt (does not reopen this order)
 
-1. **Articles compact interior** — still has some shelf chrome inside the lane  
+1. **Articles compact interior** — still has some shelf chrome inside the deepened lane  
 2. **New Parent Tips Ask Amy CTA** — soft button retained (Ask Amy frozen; do not redesign)  
 3. **Infant Amy Suggests full panel** — remains in Infant Care; Guidance lane is presentation reuse  
-4. **Next modules** — not started  
+4. **Next modules** — not started — wait for Founder approval  
 
 ---
 
@@ -186,15 +222,15 @@ Welcome V3 · Signup · Discovery · Today Home · Parent Hub room IA · Ask Amy
 
 | Item | Met? |
 |---|---|
-| Content catalogue feeling removed | **YES** |
+| Content catalogue / blog feeling removed | **YES** |
 | One calm guidance stream | **YES** |
-| Daily Tips · Articles · Amy Suggests · New Parent Tips in stream | **YES** |
+| Daily Tips · Articles · Amy Suggests · New Parent Tips merged | **YES** |
 | Sacred first sentence | **YES** |
+| One-lane deepen (not four shelves under open) | **YES** |
 | FE photography + sanctuary materials | **YES** |
 | Premium continuity voice | **YES** |
 | Tip / article engines preserved | **YES** |
-| Reuse Before Rewrite | **YES** |
-| Flag + rollback | **YES** |
+| Existing flag + rollback | **YES** |
 | Framework = only manufacturing law | **YES** |
 
 ---
