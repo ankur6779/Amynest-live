@@ -81,6 +81,19 @@ import {
 import { weekdayLabelFromRoutineDate } from "@/lib/fixed-activities-utils";
 import type { FixedActivitiesResult } from "@workspace/api-client-react";
 import { extractApiErrorMessage } from "@/lib/api-error-message";
+import { RoutineLivingOpening } from "@/components/routines/routine-living-opening";
+import {
+  buildRoutineContextChips,
+  isRoutineLivingV1Enabled,
+  livingRoutineBuildCta,
+  livingRoutineBuildSubtext,
+  livingRoutineLoadingBody,
+  livingRoutineLoadingHeadline,
+  livingRoutineLoadingSlowBody,
+  livingRoutineProductName,
+  ROUTINE_HANDOFF_STAGES,
+} from "@/lib/routine-generation/living-entry";
+import "@/components/routines/routine-living-room.css";
 
 // Mirrors the `weatherOutdoor` enum in the regenerated GenerateRoutineBody
 // schema (see lib/api-zod/src/generated/types/generateRoutineBodyWeatherOutdoor.ts).
@@ -612,6 +625,10 @@ export default function RoutineGenerate() {
   const [inlineFixedBlocking, setInlineFixedBlocking] =
     useState<FixedActivitiesResult | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  /** R2 living entry — progressive deltas under "Anything different today?" */
+  const living = isRoutineLivingV1Enabled();
+  const [deltasOpen, setDeltasOpen] = useState(false);
+  const [handoffStageIdx, setHandoffStageIdx] = useState(0);
 
   const serializedFixedActivities = React.useMemo(
     () =>
@@ -1527,6 +1544,67 @@ export default function RoutineGenerate() {
   })();
   const isFormValid = selectedChild && date && (!schoolQuestionRequired || hasSchool !== null);
 
+  const livingChildName = selectedChildData?.name?.trim() || "your child";
+  const livingContextChips = React.useMemo(() => {
+    if (!living) return [];
+    const parentGoalsRaw = (selectedChildData as { parentGoals?: string[] | string } | undefined)
+      ?.parentGoals;
+    const parentGoals =
+      Array.isArray(parentGoalsRaw)
+        ? parentGoalsRaw.filter(Boolean).join(", ")
+        : typeof parentGoalsRaw === "string"
+          ? parentGoalsRaw
+          : null;
+    return buildRoutineContextChips({
+      childName: livingChildName,
+      ageYears: selectedChildData?.age ?? null,
+      ageMonths: (selectedChildData as { ageMonths?: number } | undefined)?.ageMonths ?? 0,
+      goals: selectedChildData?.goals ?? null,
+      parentGoals,
+      dateIso: date,
+      hasSchool,
+      schoolQuestionRequired,
+      caregiver: handlerType,
+      weatherOutdoor,
+      hasExistingRoutine: !!existingRoutine?.exists,
+      priorRoutineCount: priorRoutineCountRef.current,
+    });
+  }, [
+    living,
+    livingChildName,
+    selectedChildData,
+    date,
+    hasSchool,
+    schoolQuestionRequired,
+    handlerType,
+    weatherOutdoor,
+    existingRoutine?.exists,
+  ]);
+
+  // Open deltas when required context is missing, or continuity needs a choice.
+  useEffect(() => {
+    if (!living || mode !== "single") return;
+    if (!isFormValid || (existingRoutine?.exists && !overrideMode)) {
+      setDeltasOpen(true);
+    }
+  }, [living, mode, isFormValid, existingRoutine?.exists, overrideMode]);
+
+  // Truthful handoff stages while generating — no fake AI theatre.
+  useEffect(() => {
+    if (!living || !(isGenerating || isAiGenerating)) {
+      setHandoffStageIdx(0);
+      return;
+    }
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (reduceMotion) return;
+    const id = window.setInterval(() => {
+      setHandoffStageIdx((i) => (i + 1) % ROUTINE_HANDOFF_STAGES.length);
+    }, 2800);
+    return () => window.clearInterval(id);
+  }, [living, isGenerating, isAiGenerating]);
+
   const missingOptionalLabels = (() => {
     const missing: string[] = [];
     if (!fridgeItems.trim()) {
@@ -1786,18 +1864,34 @@ export default function RoutineGenerate() {
   );
   const activationStep = selectedChild ? 2 : 1;
 
-  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-28 sm:pb-12")}>
+  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-28 sm:pb-12", living && "routine-living-shell")}>
       <header className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link href="/routines"><ArrowLeft className="h-5 w-5" /></Link>
+        <Button variant="ghost" size="icon" asChild className="rounded-full min-h-12 min-w-12">
+          <Link href="/routines" aria-label={t("common.back", { defaultValue: "Back" })}>
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
         </Button>
         <div>
-          <h1 className="font-quicksand text-3xl font-bold text-foreground">{t("pages.routines.generate.generate_routine")}</h1>
-          <p className="text-muted-foreground mt-1">{t("pages.routines.generate.amy_builds_a_smart_daily_plan_around_your_schedule")}</p>
+          <h1 className="font-quicksand text-3xl font-bold text-foreground">
+            {living
+              ? t("routines.living.product_name", { defaultValue: livingRoutineProductName() })
+              : t("pages.routines.generate.generate_routine")}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {living
+              ? t("routines.living.header_purpose", {
+                  defaultValue: "Amy already understands enough — build today's plan.",
+                })
+              : t("pages.routines.generate.amy_builds_a_smart_daily_plan_around_your_schedule")}
+          </p>
         </div>
       </header>
 
-      {showFirstRoutineProgress ? (
+      {living && mode === "single" && !isGenerating && !isAiGenerating ? (
+        <RoutineLivingOpening childName={livingChildName} chips={livingContextChips} />
+      ) : null}
+
+      {!living && showFirstRoutineProgress ? (
         <div
           className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3"
           data-testid="first-routine-activation-progress"
@@ -1836,7 +1930,8 @@ export default function RoutineGenerate() {
         </div>
       ) : null}
 
-      {/* Handler Selector — applies to both modes */}
+      {/* Handler Selector — living single mode moves this under deltas */}
+      {(!living || mode === "family") && (
       <Card className="rounded-3xl border-none shadow-sm bg-card">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -1846,7 +1941,7 @@ export default function RoutineGenerate() {
           <div className="grid grid-cols-4 gap-2">
             {HANDLER_TYPES.map(h => {
             const active = handlerType === h.key;
-            return <button key={h.key} onClick={() => setHandlerType(h.key)} className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-2xl border-2 transition-all ${active ? "shadow-sm" : "border-border bg-card hover:border-primary/40"}`} style={active ? {
+            return <button key={h.key} onClick={() => setHandlerType(h.key)} className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-2xl border-2 transition-all min-h-12 ${active ? "shadow-sm" : "border-border bg-card hover:border-primary/40"}`} style={active ? {
               backgroundColor: h.bg,
               borderColor: h.border
             } : {}}>
@@ -1868,18 +1963,23 @@ export default function RoutineGenerate() {
           })}</p>
         </CardContent>
       </Card>
+      )}
 
-      {/* Mode Selector */}
+      {/* Mode Selector — demoted in living single path */}
+      {living && mode === "single" ? null : (
       <div className="flex gap-2 p-1 bg-muted rounded-2xl">
-        <button onClick={() => setMode("single")} className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${mode === "single" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+        <button onClick={() => setMode("single")} className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all min-h-12 ${mode === "single" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
           <User className="h-4 w-4" />
-          {t("pages.routines.generate.single_child")}
+          {living
+            ? t("routines.living.back_to_today", { defaultValue: "Today's plan" })
+            : t("pages.routines.generate.single_child")}
         </button>
-        <button onClick={() => setMode("family")} className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${mode === "family" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+        <button onClick={() => setMode("family")} className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all min-h-12 ${mode === "family" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
           <Users className="h-4 w-4" />
           {t("pages.routines.generate.family_routine")}
         </button>
       </div>
+      )}
 
       {/* ==================== SINGLE MODE ==================== */}
       {mode === "single" && <>
@@ -1934,8 +2034,53 @@ export default function RoutineGenerate() {
             </Card>
           ) : null}
 
-          {isGenerating || isAiGenerating ? <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
+          {isGenerating || isAiGenerating ? <Card className={cn("rounded-3xl border-none shadow-sm overflow-hidden mt-4", living ? "rg-handoff-card" : "bg-card")}>
               <CardContent className="p-12 flex flex-col items-center justify-center text-center space-y-6">
+                {living ? (
+                  <>
+                    <div
+                      className="relative w-16 h-16 rounded-full flex items-center justify-center bg-white/10 text-primary border border-white/15"
+                      aria-hidden="true"
+                    >
+                      <Calendar className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <h3 className="font-quicksand text-2xl font-bold mb-2">
+                        {aiGeneratingSlow
+                          ? t("routines.living.loading_slow_title", {
+                              defaultValue: livingRoutineLoadingSlowBody(),
+                            })
+                          : t("routines.living.loading_title", {
+                              name: livingChildName,
+                              defaultValue: livingRoutineLoadingHeadline(livingChildName),
+                            })}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {t("routines.living.loading_body", {
+                          defaultValue: livingRoutineLoadingBody(),
+                        })}
+                      </p>
+                    </div>
+                    <ul className="rg-handoff-stages" aria-live="polite">
+                      {ROUTINE_HANDOFF_STAGES.map((stage, idx) => (
+                        <li
+                          key={stage}
+                          className="rg-handoff-stage"
+                          data-active={idx === handoffStageIdx ? "true" : "false"}
+                        >
+                          {stage}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="sr-only">
+                      {t("routines.living.loading_sr", {
+                        defaultValue:
+                          "Building today's plan. Please wait. Do not tap again.",
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <>
                 <div className="relative">
                   <div className={`absolute inset-0 rounded-full animate-ping ${isAiGenerating ? "bg-muted" : "bg-primary/20"}`} />
                   <div className={`relative w-20 h-20 rounded-full flex items-center justify-center ${isAiGenerating ? "bg-muted text-primary" : "bg-primary/10 text-primary"}`}>
@@ -1964,6 +2109,8 @@ export default function RoutineGenerate() {
                 <p className="text-[9px] font-bold uppercase tracking-widest text-primary/35">
                   {t("patent_pending.loading_2")}
                 </p>
+                  </>
+                )}
               </CardContent>
             </Card> : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-6 sm:p-8 space-y-8">
@@ -1971,7 +2118,7 @@ export default function RoutineGenerate() {
                 {/* Step 1 — Select Child (hidden when only 1 child registered) */}
                 {multiChild && <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">1</div>
+                    {!living && <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">1</div>}
                     <Label className="text-lg font-bold">{t("pages.routines.generate.who_is_this_schedule_for")}</Label>
                   </div>
 
@@ -1988,7 +2135,7 @@ export default function RoutineGenerate() {
               })}
                   </div>
 
-                  {selectedChildData && <>
+                  {!living && selectedChildData && <>
                       <div className="bg-muted/50 rounded-2xl p-4 space-y-2 border border-border/50">
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t("pages.routines.generate.profile_summary")}</p>
@@ -2030,8 +2177,8 @@ export default function RoutineGenerate() {
                     </>}
                 </div>}
 
-                {/* Parenting Hub promo — shown after child is selected */}
-                {selectedChildData && <Link href="/parenting-hub">
+                {/* Parenting Hub promo — demoted in living entry (Home owns gravity) */}
+                {!living && selectedChildData && <Link href="/parenting-hub">
                     <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-muted to-muted p-4 flex items-center gap-4 hover:border-border hover:shadow-md transition-all cursor-pointer">
                       <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
                         <span className="text-xl">📚</span>
@@ -2060,7 +2207,80 @@ export default function RoutineGenerate() {
                   />
                 )}
 
-                <div className="space-y-6">
+                {living ? (
+                  <div className="rg-deltas">
+                    <button
+                      type="button"
+                      className="rg-deltas-trigger"
+                      data-testid="routine-living-deltas-trigger"
+                      aria-expanded={deltasOpen}
+                      onClick={() => setDeltasOpen((o) => !o)}
+                    >
+                      <div>
+                        <p className="rg-deltas-title">
+                          {t("routines.living.deltas_title", {
+                            defaultValue: "Anything different today?",
+                          })}
+                        </p>
+                        <p className="rg-deltas-hint">
+                          {t("routines.living.deltas_hint", {
+                            defaultValue:
+                              "Optional — mood, caregiver, weather, school, or special plans",
+                          })}
+                        </p>
+                      </div>
+                      {deltasOpen ? (
+                        <ChevronUp className="h-5 w-5 shrink-0 opacity-70" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 shrink-0 opacity-70" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                ) : null}
+
+                <div
+                  className={cn("space-y-6", living && !deltasOpen && "hidden")}
+                  data-testid={living ? "routine-living-deltas-body" : undefined}
+                  hidden={living ? !deltasOpen : undefined}
+                >
+                {living ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-bold text-foreground">
+                        {t("family_routine.handler_title")}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {HANDLER_TYPES.map((h) => {
+                        const active = handlerType === h.key;
+                        return (
+                          <button
+                            key={h.key}
+                            type="button"
+                            onClick={() => setHandlerType(h.key)}
+                            className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-2xl border-2 transition-all min-h-12 ${active ? "shadow-sm" : "border-border bg-card hover:border-primary/40"}`}
+                            style={
+                              active
+                                ? { backgroundColor: h.bg, borderColor: h.border }
+                                : undefined
+                            }
+                          >
+                            <span className="text-xl leading-none">{h.emoji}</span>
+                            <span
+                              className="text-xs font-bold leading-tight"
+                              style={active ? { color: h.fg } : { color: "inherit" }}
+                            >
+                              {t(`family_routine.handler_${h.key}`, {
+                                defaultValue: h.label,
+                              })}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
                 <InputSection
                   title={t("pages.routines.generate.section_essential", { defaultValue: "Essential inputs" })}
                   subtitle={t("pages.routines.generate.section_essential_hint", { defaultValue: "Required to build today's schedule" })}
@@ -2069,7 +2289,9 @@ export default function RoutineGenerate() {
                   <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-3 py-2 text-sm">
                     <User className="h-4 w-4 text-primary" />
                     <span>
-                      {t("pages.routines.generate.generating_for", { defaultValue: "Generating for" })}{" "}
+                      {t("pages.routines.generate.generating_for", {
+                        defaultValue: living ? "Plan for" : "Generating for",
+                      })}{" "}
                       <strong>{selectedChildData.name}</strong>
                     </span>
                   </div>
@@ -2263,6 +2485,52 @@ export default function RoutineGenerate() {
                   <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
                 </InputSection>
 
+                <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left hover:border-primary/40 transition-colors min-h-12">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">
+                        {t("pages.routines.generate.advanced_options", {
+                          defaultValue: "Advanced options",
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("pages.routines.generate.advanced_options_hint", {
+                          defaultValue: "Fridge items, auto-detection & more",
+                        })}
+                      </p>
+                    </div>
+                    {advancedOpen ? (
+                      <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3 space-y-4">
+                    <GenerationGuidanceBanner />
+                    <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
+                    <InputSection
+                      title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
+                      subtitle={t("pages.routines.generate.section_lifestyle_hint", {
+                        defaultValue: "Optional — improves meals and activity tone",
+                      })}
+                    >
+                      <FridgeItemsField value={fridgeItems} onChange={setFridgeItems} />
+                    </InputSection>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {!living && (
+                  <>
+                    <CompletenessBar ready={!!isFormValid} missingOptional={missingOptionalLabels} />
+                    <RoutineStylePreview
+                      weatherOutdoor={weatherOutdoor}
+                      mood={mood}
+                      hasSpecialPlans={!!specialPlans.trim()}
+                    />
+                  </>
+                )}
+                </div>
+
                 {inlineFixedBlocking && !fixedReviewState && (
                   <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 space-y-2" role="alert">
                     <p className="text-sm font-medium text-destructive">
@@ -2340,47 +2608,6 @@ export default function RoutineGenerate() {
                   </div>
                 )}
 
-                <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left hover:border-primary/40 transition-colors">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">
-                        {t("pages.routines.generate.advanced_options", {
-                          defaultValue: "Advanced options",
-                        })}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t("pages.routines.generate.advanced_options_hint", {
-                          defaultValue: "Fridge items, auto-detection & more",
-                        })}
-                      </p>
-                    </div>
-                    {advancedOpen ? (
-                      <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    )}
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-3 space-y-4">
-                    <GenerationGuidanceBanner />
-                    <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
-                    <InputSection
-                      title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
-                      subtitle={t("pages.routines.generate.section_lifestyle_hint", {
-                        defaultValue: "Optional — improves meals and activity tone",
-                      })}
-                    >
-                      <FridgeItemsField value={fridgeItems} onChange={setFridgeItems} />
-                    </InputSection>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <CompletenessBar ready={!!isFormValid} missingOptional={missingOptionalLabels} />
-                <RoutineStylePreview
-                  weatherOutdoor={weatherOutdoor}
-                  mood={mood}
-                  hasSpecialPlans={!!specialPlans.trim()}
-                />
-
                 <div className="pt-2 space-y-3">
                   {prefetchingLocation && <p className="text-center text-xs text-muted-foreground bg-muted/60 border border-border rounded-full py-2 px-4">📍 {t("pages.routines.generate.location_redetecting", { defaultValue: "Detecting your location for accurate meals & outdoor plan…" })}</p>}
                   {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
@@ -2392,28 +2619,58 @@ export default function RoutineGenerate() {
                         disabled={!isFormValid || isGenerating || !!inlineFixedBlocking || createMutation.isPending}
                         testId="routines-generate-ai-btn"
                         title={
-                          overrideMode
-                            ? t("pages.routines.generate.regenerate_override", {
-                                defaultValue: "Regenerate & replace routine",
+                          living
+                            ? t("routines.living.build_cta", {
+                                defaultValue: livingRoutineBuildCta(overrideMode),
                               })
-                            : t("pages.routines.index.generate_smart_amy", {
-                                defaultValue: "Generate Smart Amy Routine",
+                            : overrideMode
+                              ? t("pages.routines.generate.regenerate_override", {
+                                  defaultValue: "Regenerate & replace routine",
+                                })
+                              : t("pages.routines.index.generate_smart_amy", {
+                                  defaultValue: "Generate Smart Amy Routine",
+                                })
+                        }
+                        subtext={
+                          living
+                            ? t("routines.living.build_subtext", {
+                                name: livingChildName,
+                                defaultValue: livingRoutineBuildSubtext(livingChildName),
+                              })
+                            : t("pages.routines.index.ai_powered_subtext", {
+                                defaultValue: "AI-powered personalized routine",
                               })
                         }
-                        subtext={t("pages.routines.index.ai_powered_subtext", {
-                          defaultValue: "AI-powered personalized routine",
-                        })}
                       />
 
-                      <p className="text-center text-[9px] font-bold uppercase tracking-widest text-primary/40">
-                        {t("patent_pending.microcopy_planning")}
-                      </p>
+                      {!living && (
+                        <p className="text-center text-[9px] font-bold uppercase tracking-widest text-primary/40">
+                          {t("patent_pending.microcopy_planning")}
+                        </p>
+                      )}
 
                       {!isFormValid && <p className="text-center text-xs text-destructive">
-                          {t("pages.routines.generate.please_select_a_child_and_answer_the_school_question_to_cont")}
+                          {living
+                            ? t("routines.living.missing_context", {
+                                defaultValue:
+                                  "Choose your child and confirm school for this day if needed — then build today's plan.",
+                              })
+                            : t("pages.routines.generate.please_select_a_child_and_answer_the_school_question_to_cont")}
                         </p>}
+
+                      {living && (
+                        <button
+                          type="button"
+                          className="rg-family-quiet"
+                          data-testid="routine-living-family-link"
+                          onClick={() => setMode("family")}
+                        >
+                          {t("routines.living.family_quiet", {
+                            defaultValue: "Planning for more than one child?",
+                          })}
+                        </button>
+                      )}
                     </>}
-                </div>
                 </div>
               </CardContent>
             </Card>}
@@ -2938,13 +3195,25 @@ export default function RoutineGenerate() {
               disabled={!isFormValid || isGenerating || !!inlineFixedBlocking || createMutation.isPending}
               testId="routines-generate-ai-btn-sticky"
               title={
-                overrideMode
-                  ? t("pages.routines.generate.regenerate_override", {
-                      defaultValue: "Regenerate & replace routine",
+                living
+                  ? t("routines.living.build_cta", {
+                      defaultValue: livingRoutineBuildCta(overrideMode),
                     })
-                  : t("pages.routines.index.generate_smart_amy", {
-                      defaultValue: "Generate Smart Amy Routine",
+                  : overrideMode
+                    ? t("pages.routines.generate.regenerate_override", {
+                        defaultValue: "Regenerate & replace routine",
+                      })
+                    : t("pages.routines.index.generate_smart_amy", {
+                        defaultValue: "Generate Smart Amy Routine",
+                      })
+              }
+              subtext={
+                living
+                  ? t("routines.living.build_subtext", {
+                      name: livingChildName,
+                      defaultValue: livingRoutineBuildSubtext(livingChildName),
                     })
+                  : undefined
               }
             />
           </div>

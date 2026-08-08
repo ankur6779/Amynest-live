@@ -1,0 +1,288 @@
+/**
+ * Routine Generation R2 — living entry sanctuary materials.
+ * Same house as Welcome / Today Home / Care FE. Does NOT invent a new visual system.
+ * Uniqueness via hierarchy + context clarity — not neon / sparkle / excess motion.
+ */
+
+.routine-living-shell {
+  position: relative;
+  color: inherit;
+}
+
+.rg-living-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.1) 0%, transparent 55%),
+    rgba(8, 6, 12, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.rg-today-hero {
+  position: relative;
+  padding: 0;
+}
+
+.rg-today-hero .rg-today-memory.fe-memory-mount {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.rg-today-hero .rg-today-memory .fe-memory {
+  aspect-ratio: 16 / 11;
+  max-height: min(48vw, 15.5rem);
+  min-height: 11rem;
+  border-radius: 0;
+}
+
+.rg-today-hero .rg-today-memory .fe-memory img {
+  object-position: center 32%;
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.rg-today-readability {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(6, 4, 10, 0.14) 0%,
+      rgba(6, 4, 10, 0.32) 42%,
+      rgba(6, 4, 10, 0.8) 100%
+    );
+  pointer-events: none;
+}
+
+.rg-today-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 1.1rem 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.rg-today-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.rg-today-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgba(255, 252, 248, 0.98);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+.rg-today-purpose {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.88);
+}
+
+.rg-today-purpose-soft {
+  color: rgba(232, 212, 184, 0.72);
+  font-size: 0.82rem;
+}
+
+.rg-context-band {
+  padding: 0.95rem 1.1rem 1.05rem;
+  border-top: 1px solid rgba(232, 212, 184, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.rg-context-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.rg-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rg-context-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 212, 184, 0.22);
+  background: rgba(255, 252, 248, 0.06);
+}
+
+.rg-context-chip-cat {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.55);
+}
+
+.rg-context-chip-label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: rgba(255, 252, 248, 0.94);
+  line-height: 1.25;
+}
+
+.rg-ready-moment {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(8, 6, 12, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rg-ready-line {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.86);
+}
+
+.rg-ready-line strong {
+  color: rgba(255, 252, 248, 0.96);
+  font-weight: 700;
+}
+
+.rg-deltas {
+  border-radius: 1.15rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(255, 252, 248, 0.03);
+  overflow: hidden;
+}
+
+.rg-deltas-trigger {
+  width: 100%;
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.rg-deltas-trigger:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.55);
+  outline-offset: 2px;
+}
+
+.rg-deltas-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.rg-deltas-hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(232, 212, 184, 0.68);
+}
+
+.rg-family-quiet {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(232, 212, 184, 0.72);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.rg-family-quiet:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.55);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+.rg-handoff-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.08) 0%, transparent 55%),
+    rgba(8, 6, 12, 0.45);
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.rg-handoff-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.rg-handoff-stage {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: rgba(232, 212, 184, 0.72);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  text-align: left;
+}
+
+.rg-handoff-stage[data-active="true"] {
+  color: rgba(255, 252, 248, 0.96);
+  border-color: rgba(232, 212, 184, 0.28);
+  background: rgba(255, 252, 248, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-today-hero .rg-today-memory .fe-memory img {
+    filter: none;
+  }
+
+  .rg-handoff-stage {
+    transition: none;
+  }
+}
