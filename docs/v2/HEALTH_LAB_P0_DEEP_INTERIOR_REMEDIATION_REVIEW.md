@@ -289,12 +289,10 @@ Restores: Mission Briefing · neon hold · galaxy prep · rocket dialect · XP p
 
 ## 23. Commit SHA
 
-_Fill after commit:_
-
 | Item | Value |
 |---|---|
-| Implementation commit | _(pending)_ |
-| Review doc commit | _(same or follow-up stamp)_ |
+| Implementation commit | `89a15eed` |
+| Review doc | included in `89a15eed` (+ SHA stamp follow-up if present) |
 
 ---
 
