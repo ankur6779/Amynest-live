@@ -6,7 +6,7 @@
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 **Also binding:** AmyNest Philosophy · Parent Hub Constitution · Pack 5 Premium Continuity  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `27dec4c69ff8d9c36647929761995ed5435be801`  
 
 **STOP after this module.** Wait for Founder approval.
 
