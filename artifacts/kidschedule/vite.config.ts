@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { readFileSync, writeFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { clearStaleCachesPlugin } from "../../scripts/vite-plugins/clear-stale-caches.js";
+import { assertAmynestLivingUniverseBuildEnv } from "./src/lib/amynest-living-universe";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(artifactDir, "..", "..");
@@ -214,7 +215,16 @@ function amynestServiceWorkerPlugin() {
   };
 }
 
-export default defineConfig(async ({ command }) => ({
+export default defineConfig(async ({ command, mode }) => {
+  // FA-02 P1: reject production builds that explicitly select mixed universe.
+  const env = loadEnv(mode, repoRoot, "");
+  assertAmynestLivingUniverseBuildEnv(
+    mode,
+    env.VITE_FF_AMYNEST_LIVING_UNIVERSE ??
+      process.env.VITE_FF_AMYNEST_LIVING_UNIVERSE,
+  );
+
+  return {
   envDir: repoRoot,
   base: basePath,
   cacheDir: path.resolve(artifactDir, "node_modules/.vite"),
@@ -429,4 +439,5 @@ export default defineConfig(async ({ command }) => ({
     host: "0.0.0.0",
     allowedHosts: true,
   },
-}));
+};
+});

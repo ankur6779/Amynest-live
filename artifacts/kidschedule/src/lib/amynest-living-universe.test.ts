@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AMYNEST_LIVING_SURFACE_FLAGS,
+  AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR,
+  assertAmynestLivingUniverseBuildEnv,
+  isProductionMixedUniverseForbidden,
   readAmynestLivingUniverseSnapshot,
   resolveAmynestLivingUniverseMode,
   resolvePortfolioLivingFlag,
@@ -52,6 +55,8 @@ describe("FA-02 amynest living universe lock", () => {
   });
 
   it("mixed mode allows incoherent per-module combinations (dev/test only)", async () => {
+    vi.stubEnv("MODE", "test");
+    vi.stubEnv("PROD", false);
     vi.stubEnv("VITE_FF_AMYNEST_LIVING_UNIVERSE", "mixed");
     vi.stubEnv("VITE_FF_GROW_LIVING_V1", "0");
     vi.stubEnv("VITE_FF_HEALTH_LAB_LIVING_V1", "1");
@@ -63,6 +68,57 @@ describe("FA-02 amynest living universe lock", () => {
     // Re-read after stubs via dynamic import path for grow/health already covered;
     // snapshot uses import.meta.env which vi.stubEnv updates.
     expect(snap.mode).toBe("mixed");
+  });
+
+  it("development + mixed remains valid", async () => {
+    vi.stubEnv("MODE", "development");
+    vi.stubEnv("PROD", false);
+    vi.stubEnv("VITE_FF_AMYNEST_LIVING_UNIVERSE", "mixed");
+    const { resolveAmynestLivingUniverseMode: resolve } = await import(
+      "./amynest-living-universe"
+    );
+    expect(resolve()).toBe("mixed");
+    expect(() =>
+      assertAmynestLivingUniverseBuildEnv("development", "mixed"),
+    ).not.toThrow();
+  });
+
+  it("production + mixed is forbidden (resolver throws; no silent remap)", async () => {
+    vi.stubEnv("MODE", "production");
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_FF_AMYNEST_LIVING_UNIVERSE", "mixed");
+    const {
+      resolveAmynestLivingUniverseMode: resolve,
+      AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR: err,
+    } = await import("./amynest-living-universe");
+    expect(() => resolve()).toThrow(err);
+    expect(isProductionMixedUniverseForbidden("production", "mixed")).toBe(true);
+    expect(() => assertAmynestLivingUniverseBuildEnv("production", "mixed")).toThrow(
+      AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR,
+    );
+  });
+
+  it("production + allow_mixed is forbidden", async () => {
+    vi.stubEnv("MODE", "production");
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_FF_AMYNEST_LIVING_UNIVERSE", "allow_mixed");
+    const { resolveAmynestLivingUniverseMode: resolve } = await import(
+      "./amynest-living-universe"
+    );
+    expect(() => resolve()).toThrow(/forbidden in production/i);
+    expect(() =>
+      assertAmynestLivingUniverseBuildEnv("production", "allow_mixed"),
+    ).toThrow(/forbidden in production/i);
+  });
+
+  it("production living and legacy remain valid", () => {
+    expect(isProductionMixedUniverseForbidden("production", undefined)).toBe(false);
+    expect(isProductionMixedUniverseForbidden("production", "living")).toBe(false);
+    expect(isProductionMixedUniverseForbidden("production", "1")).toBe(false);
+    expect(isProductionMixedUniverseForbidden("production", "0")).toBe(false);
+    expect(isProductionMixedUniverseForbidden("production", "legacy")).toBe(false);
+    expect(() => assertAmynestLivingUniverseBuildEnv("production", "living")).not.toThrow();
+    expect(() => assertAmynestLivingUniverseBuildEnv("production", "0")).not.toThrow();
   });
 
   it("wired module helpers honor living master lock", async () => {

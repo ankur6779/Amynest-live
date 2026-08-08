@@ -9,7 +9,11 @@
  *   VITE_FF_AMYNEST_LIVING_UNIVERSE
  *     unset | "" | true | 1 | living  → living universe (all portfolio surfaces ON)
  *     0 | false | legacy              → coherent emergency legacy (all OFF)
- *     mixed | allow_mixed             → honor per-module flags (dev/test only)
+ *     mixed | allow_mixed             → honor per-module flags (DEV/TEST ONLY)
+ *
+ * FA-02 P1 hardening:
+ *   production + mixed|allow_mixed is REJECTED (build fails + resolver throws).
+ *   No silent remap of production-mixed → living.
  *
  * Vitest / MODE=test defaults to mixed so existing per-module kill-switch
  * unit tests keep working unless the master is explicitly stubbed.
@@ -41,6 +45,39 @@ export const AMYNEST_LIVING_SURFACE_FLAGS = [
 
 export type AmynestLivingSurfaceFlag = (typeof AMYNEST_LIVING_SURFACE_FLAGS)[number];
 
+export const AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR =
+  "FA-02: VITE_FF_AMYNEST_LIVING_UNIVERSE=mixed (or allow_mixed) is forbidden in production. " +
+  "Use unset/living/1 for the living universe, or 0/legacy/false for coherent emergency rollback. " +
+  "mixed is DEV/TEST only.";
+
+/** True when master raw value requests mixed / allow_mixed. */
+export function isAmynestMixedUniverseRaw(
+  universeRaw: string | undefined | null,
+): boolean {
+  return universeRaw === "mixed" || universeRaw === "allow_mixed";
+}
+
+/**
+ * Pure build/config guard — used by Vite production builds and unit tests.
+ * Prefer failing configuration over silently shipping a mixed production face.
+ */
+export function isProductionMixedUniverseForbidden(
+  viteMode: string,
+  universeRaw: string | undefined | null,
+): boolean {
+  return viteMode === "production" && isAmynestMixedUniverseRaw(universeRaw);
+}
+
+/** Throw when production + mixed would otherwise be selectable. */
+export function assertAmynestLivingUniverseBuildEnv(
+  viteMode: string,
+  universeRaw: string | undefined | null,
+): void {
+  if (isProductionMixedUniverseForbidden(viteMode, universeRaw)) {
+    throw new Error(AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR);
+  }
+}
+
 function isTestRuntime(): boolean {
   try {
     // Vitest sets VITEST; Vite test mode sets MODE=test.
@@ -51,11 +88,28 @@ function isTestRuntime(): boolean {
   }
 }
 
+function isProductionRuntime(): boolean {
+  try {
+    if (import.meta.env.MODE === "production") return true;
+    const prod = import.meta.env.PROD as boolean | string | undefined;
+    return prod === true || prod === "true";
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve portfolio universe mode from the master build-time flag. */
 export function resolveAmynestLivingUniverseMode(): AmynestLivingUniverseMode {
   const raw = import.meta.env.VITE_FF_AMYNEST_LIVING_UNIVERSE;
   if (raw === "0" || raw === "false" || raw === "legacy") return "legacy";
-  if (raw === "mixed" || raw === "allow_mixed") return "mixed";
+  if (raw === "mixed" || raw === "allow_mixed") {
+    // Belt-and-suspenders with Vite build assert: never resolve mixed in production.
+    // Do not silently remap to living — reject so mixed cannot ship.
+    if (isProductionRuntime()) {
+      throw new Error(AMYNEST_PRODUCTION_MIXED_UNIVERSE_ERROR);
+    }
+    return "mixed";
+  }
   if (raw === "true" || raw === "1" || raw === "living") return "living";
   // Default: production/dev → coherent living. Tests → mixed (honor kill switches).
   if (raw === undefined || raw === "") {
