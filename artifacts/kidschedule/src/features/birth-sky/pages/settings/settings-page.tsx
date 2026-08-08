@@ -47,6 +47,16 @@ import { editBirthDetailsAndRegenerate } from "../../application/orchestrators/e
 import { BirthSkyRegenerateOverlay } from "./regenerate-overlay";
 import { BirthSkyExportPage } from "./export-page";
 import { AmyAstroEmblem } from "../../components/amy-astro-emblem";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingDeleteConfirmAria,
+  livingDeleteConfirmHeading,
+  livingDeleteEntryCta,
+  livingExportSummaryLabel,
+  livingSettingsAboutTitle,
+  livingSettingsNavAria,
+} from "@/lib/birth-sky/living-room";
 import "../../design/amy-astro.css";
 
 type Subpage =
@@ -109,6 +119,8 @@ export function BirthSkySettingsPage({
     typeof editBirthDetailsAndRegenerate
   >[0]["next"] | null>(null);
   const reduced = prefersReducedMotion();
+  const living = isBirthSkyLivingV1Enabled();
+  const productName = living ? livingBirthSkyProductName() : "Amy Astro Intelligence";
 
   useEffect(() => {
     trackBirthSkyEvent("birth_sky.settings_opened", { offline: !online });
@@ -211,7 +223,11 @@ export function BirthSkySettingsPage({
 
   const confirmDelete = async () => {
     if (!online) {
-      setToast("Deleting Amy Astro Intelligence requires a connection.");
+      setToast(
+        living
+          ? "Removing Birth Sky data requires a connection."
+          : "Deleting Amy Astro Intelligence requires a connection.",
+      );
       return;
     }
     setDeleting(true);
@@ -223,7 +239,11 @@ export function BirthSkySettingsPage({
       trackBirthSkyEvent("birth_sky.delete_completed", { delete_scope: "birth_sky" });
       onDeleted();
     } catch {
-      setToast("Couldn’t delete. Amy Astro Intelligence is unchanged.");
+      setToast(
+        living
+          ? "Couldn’t remove. Birth Sky data is unchanged."
+          : "Couldn’t delete. Amy Astro Intelligence is unchanged.",
+      );
       setDeleteStep(0);
     } finally {
       setDeleting(false);
@@ -298,7 +318,9 @@ export function BirthSkySettingsPage({
       : sub === "export"
         ? "Export"
         : sub === "about"
-          ? "About Amy Astro Intelligence"
+          ? living
+            ? livingSettingsAboutTitle()
+            : "About Amy Astro Intelligence"
           : sub === "snapshots"
             ? "Sky history"
             : sub === "preferences"
@@ -321,7 +343,10 @@ export function BirthSkySettingsPage({
       ) : null}
 
       {sub === "root" ? (
-        <nav aria-label="Amy Astro Intelligence settings" className="space-y-2">
+        <nav
+          aria-label={living ? livingSettingsNavAria() : "Amy Astro Intelligence settings"}
+          className="space-y-2"
+        >
           <SettingsRow
             label="Preferences"
             onClick={() => setSub("preferences")}
@@ -351,7 +376,7 @@ export function BirthSkySettingsPage({
             testId="birth-sky-settings-snapshots"
           />
           <SettingsRow
-            label="About Amy Astro Intelligence"
+            label={living ? livingSettingsAboutTitle() : "About Amy Astro Intelligence"}
             onClick={() => setSub("about")}
             testId="birth-sky-settings-about"
           />
@@ -391,7 +416,7 @@ export function BirthSkySettingsPage({
       {sub === "privacy" ? (
         <div className="space-y-4" data-testid="birth-sky-privacy">
           <p className="text-sm text-[hsl(40_20%_96%/0.75)]">
-            Amy Astro Intelligence is parent-only. Birth details are never used for ads. Reflective and
+            {productName} is parent-only. Birth details are never used for ads. Reflective and
             optional — not a scientific prediction.
           </p>
           <p className="text-xs text-[hsl(40_20%_96%/0.55)]">
@@ -452,7 +477,7 @@ export function BirthSkySettingsPage({
             onClick={() => setDeleteStep(1)}
             data-testid="birth-sky-delete-entry"
           >
-            Delete Amy Astro Intelligence
+            {living ? livingDeleteEntryCta() : "Delete Amy Astro Intelligence"}
           </Button>
           <Button
             type="button"
@@ -484,7 +509,7 @@ export function BirthSkySettingsPage({
             </p>
             {(
               [
-                ["summary", "Amy Astro Intelligence summary"],
+                ["summary", living ? livingExportSummaryLabel() : "Amy Astro Intelligence summary"],
                 ["astronomy", "Astronomy data"],
                 ["reflections", "Reflections"],
                 ["conversations", "Conversations"],
@@ -514,7 +539,7 @@ export function BirthSkySettingsPage({
           <div className="flex flex-col items-center gap-3 text-center">
             <AmyAstroEmblem size={88} interactive={false} />
             <p className="amy-astro-display text-lg font-bold text-[hsl(42_70%_78%)]">
-              Amy Astro Intelligence
+              {productName}
             </p>
           </div>
           <p className="text-[hsl(40_20%_96%/0.75)]">
@@ -602,14 +627,22 @@ export function BirthSkySettingsPage({
           ref={deleteDialogRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Confirm delete Amy Astro Intelligence"
+          aria-label={
+            living
+              ? livingDeleteConfirmAria()
+              : "Confirm delete Amy Astro Intelligence"
+          }
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
           data-testid="birth-sky-delete-dialog"
           tabIndex={-1}
         >
           <div className="w-full max-w-md rounded-2xl border border-white/12 bg-[hsl(220_28%_12%)] p-5">
             <h3 className="text-lg font-semibold">
-              {deleteStep === 1 ? "Delete Amy Astro Intelligence?" : "This cannot be undone"}
+              {living
+                ? livingDeleteConfirmHeading(deleteStep === 1 ? 1 : 2)
+                : deleteStep === 1
+                  ? "Delete Amy Astro Intelligence?"
+                  : "This cannot be undone"}
             </h3>
             <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.75)]">
               {deleteStep === 1

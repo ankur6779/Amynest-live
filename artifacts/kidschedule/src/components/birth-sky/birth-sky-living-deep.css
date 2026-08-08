@@ -1,0 +1,127 @@
+/**
+ * Birth Sky P0 — deep interior sanctuary (living ON).
+ * Same house as Understand open / Welcome / Grow deep / Health deep.
+ * Presentation only — does not alter Birth Sky engines.
+ *
+ * Cosmic imagery may remain subordinate; mute Intelligence / nebula theatre.
+ */
+
+.bs-living-deep {
+  position: relative;
+}
+
+.bs-living-deep .amy-astro-cta-premium,
+.bs-living-deep .amy-astro-ripple {
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.bs-living-deep .amy-astro-cta-premium {
+  background: rgba(232, 212, 184, 0.16) !important;
+  border: 1px solid rgba(232, 212, 184, 0.28) !important;
+  color: rgba(255, 252, 248, 0.96) !important;
+}
+
+.bs-living-deep .amy-astro-display,
+.bs-living-deep .amy-astro-gold-text {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: rgba(255, 252, 248, 0.96) !important;
+  text-shadow: none !important;
+}
+
+.bs-living-deep-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.72);
+}
+
+.bs-living-deep-title {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.bs-living-deep-panel {
+  border-radius: 1.35rem;
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.08) 0%, transparent 55%),
+    rgba(8, 6, 12, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.bs-living-deep-primary-btn {
+  border-radius: 999px !important;
+  border: 1px solid rgba(232, 212, 184, 0.28) !important;
+  background: rgba(232, 212, 184, 0.16) !important;
+  color: rgba(255, 252, 248, 0.96) !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  min-height: 48px;
+}
+
+.bs-living-deep-ghost-btn {
+  border-radius: 999px !important;
+  border: 1px solid rgba(232, 212, 184, 0.22) !important;
+  background: rgba(8, 6, 12, 0.35) !important;
+  color: rgba(255, 252, 248, 0.92) !important;
+  box-shadow: none !important;
+  min-height: 48px;
+}
+
+.bs-living-deep-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(232, 212, 184, 0.22);
+  background: rgba(8, 6, 12, 0.35);
+  color: rgba(232, 212, 184, 0.88);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Soften segment gold/violet selected theatre when living */
+.bs-living-deep [data-bs-segment-active="true"] {
+  background: rgba(232, 212, 184, 0.14) !important;
+  color: rgba(255, 252, 248, 0.96) !important;
+  box-shadow: none !important;
+}
+
+/* Demote cosmic metric / progress theatre */
+.bs-living-deep [data-testid="amy-astro-cosmic-progress"] {
+  opacity: 0.88;
+}
+
+.bs-living-deep [data-testid="amy-astro-cosmic-progress"] .amy-astro-breathe {
+  animation: none !important;
+}
+
+/* Leave continuity sits quietly in the deep night shell */
+.bs-living-deep [data-testid="amy-nest-leave-continuity"] {
+  color: rgba(255, 252, 248, 0.92);
+}
+
+.bs-living-deep [data-testid="amy-nest-leave-continuity"] a {
+  border-color: rgba(232, 212, 184, 0.22) !important;
+  background: rgba(8, 6, 12, 0.45) !important;
+  color: rgba(255, 252, 248, 0.94) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-living-deep .amy-astro-enter,
+  .bs-living-deep .amy-astro-ripple,
+  .bs-living-deep .amy-astro-cta-premium,
+  .bs-living-deep .amy-astro-breathe,
+  .bs-living-deep .amy-astro-constellation-draw,
+  .bs-living-deep .amy-astro-aspect-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+}

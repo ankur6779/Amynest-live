@@ -22,7 +22,7 @@ describe("IM-7 accessibility static checks", () => {
     const src = read("pages/settings/settings-page.tsx");
     expect(src).toMatch(/role="dialog"/);
     expect(src).toMatch(/aria-modal="true"/);
-    expect(src).toMatch(/aria-label="Confirm delete Amy Astro Intelligence"/);
+    expect(src).toMatch(/Confirm delete Amy Astro Intelligence|livingDeleteConfirmAria/);
   });
 
   it("edit confirm dialog announces update", () => {

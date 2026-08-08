@@ -3,13 +3,25 @@ import {
   BIRTH_SKY_QUIET_PATHS,
   birthSkyLivingOpen,
   isBirthSkyLivingV1Enabled,
+  livingAskAmySheetTitle,
   livingBirthSkyProductName,
+  livingCompletionLine,
   livingCreateCta,
   livingDashboardEditionLabel,
+  livingDashboardTitle,
+  livingDaySkyTimeHint,
+  livingErrorExitCta,
+  livingErrorLoadCopy,
   livingFormationCopy,
+  livingHeroAskAmyCta,
+  livingLoadingCopy,
   livingPremiumPdfCta,
+  livingProgressTitle,
   livingRevealCta,
   livingReviewTitle,
+  livingSegmentLabel,
+  livingSoftCta,
+  livingSoftGreetingLine,
   recommendBirthSkyAction,
 } from "./living-room";
 
@@ -48,5 +60,33 @@ describe("birth-sky living-room", () => {
     expect(livingCreateCta("Maya").toLowerCase()).not.toContain("astro");
     expect(livingPremiumPdfCta().toLowerCase()).not.toMatch(/unlock/);
     expect(livingDashboardEditionLabel().toLowerCase()).not.toContain("signature");
+  });
+
+  it("deep interior helpers stay Understand — never destiny / Intelligence / unlock", () => {
+    const joined = [
+      livingDashboardTitle(),
+      livingHeroAskAmyCta(),
+      livingAskAmySheetTitle(),
+      livingLoadingCopy(),
+      livingErrorLoadCopy(),
+      livingErrorExitCta(),
+      livingProgressTitle(),
+      livingSegmentLabel("tradition"),
+      livingSegmentLabel("astronomy"),
+      livingCompletionLine("Maya"),
+      livingDaySkyTimeHint(),
+      livingSoftCta("Step back into their universe →"),
+      livingSoftCta("Continue your journey →"),
+      livingSoftGreetingLine("Welcome back to Amy Astro."),
+      livingSoftGreetingLine("Maya's universe is listening again.", "Maya"),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    expect(joined).not.toMatch(/intelligence|destiny|unlock|horoscope|prediction|nasa|marketplace/);
+    expect(joined).not.toContain("reading the stars");
+    expect(joined).not.toContain("kundli");
+    expect(livingSoftCta("Step back into their universe →")).toBe("Continue gently");
+    expect(livingSoftGreetingLine("Welcome back to Amy Astro.")).toBe("Welcome back.");
   });
 });

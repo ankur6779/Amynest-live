@@ -9,6 +9,7 @@ import {
   type AmyPortraitVariant,
 } from "../lib/portrait-variant";
 import { AMY_ASTRO_TILE_PORTRAIT_SRC } from "../lib/branding";
+import { livingBrandAvatarAria } from "@/lib/birth-sky/living-room";
 import "../design/amy-astro.css";
 
 type Props = {
@@ -40,7 +41,7 @@ export function AmyBrandAvatar({
       )}
       style={{ width: size, height: size }}
       role="img"
-      aria-label="Amy Astro Intelligence"
+      aria-label={livingBrandAvatarAria()}
       data-testid="amy-astro-brand-avatar"
       data-portrait-variant={variant}
     >

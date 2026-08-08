@@ -1,10 +1,15 @@
 /**
  * Regeneration Loading Overlay (Pack 7 §3 / Pack 4 path — not first-run Formation).
+ * Living ON: calm understanding copy — no "Reading the Stars" theatre.
  */
 
 import { useRef } from "react";
 import { AmyAstroEmblem } from "../../components/amy-astro-emblem";
 import { useFocusTrap } from "../../lib/focus-trap";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingRegenLoadingCopy,
+} from "@/lib/birth-sky/living-room";
 import "../../design/amy-astro.css";
 
 type Props = {
@@ -21,6 +26,7 @@ export function BirthSkyRegenerateOverlay({
   onDismiss,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const living = isBirthSkyLivingV1Enabled();
   useFocusTrap(rootRef, visible, failed ? onDismiss : undefined);
   if (!visible) return null;
 
@@ -29,7 +35,13 @@ export function BirthSkyRegenerateOverlay({
       ref={rootRef}
       role="dialog"
       aria-modal="true"
-      aria-label={failed ? "Sky update failed" : "Reading the Stars"}
+      aria-label={
+        failed
+          ? "Sky update failed"
+          : living
+            ? livingRegenLoadingCopy()
+            : "Reading the Stars"
+      }
       aria-busy={!failed}
       tabIndex={-1}
       className="amy-astro-root fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
@@ -48,7 +60,7 @@ export function BirthSkyRegenerateOverlay({
             <div className="mt-5 flex flex-col gap-2">
               <button
                 type="button"
-                className="amy-astro-btn-premium min-h-11 rounded-xl bg-white/15 text-sm font-bold"
+                className="amy-astro-btn-premium min-h-12 rounded-xl bg-white/15 text-sm font-bold"
                 onClick={onRetry}
                 data-testid="birth-sky-regen-retry"
               >
@@ -56,7 +68,7 @@ export function BirthSkyRegenerateOverlay({
               </button>
               <button
                 type="button"
-                className="amy-astro-btn-text min-h-11 rounded-xl text-sm font-semibold text-[hsl(40_20%_96%/0.78)] hover:bg-white/[0.06]"
+                className="amy-astro-btn-text min-h-12 rounded-xl text-sm font-semibold text-[hsl(40_20%_96%/0.78)] hover:bg-white/[0.06]"
                 onClick={onDismiss}
                 data-testid="birth-sky-regen-dismiss"
               >
@@ -66,9 +78,9 @@ export function BirthSkyRegenerateOverlay({
           </>
         ) : (
           <>
-            <AmyAstroEmblem size={72} interactive={false} />
+            <AmyAstroEmblem size={living ? 56 : 72} interactive={false} />
             <p className="mt-4 text-sm font-semibold text-[hsl(42_70%_78%)]" role="status">
-              Reading the Stars…
+              {living ? livingRegenLoadingCopy() : "Reading the Stars…"}
             </p>
             <p className="mt-1 text-xs text-[hsl(40_20%_96%/0.55)]">
               Past snapshots stay preserved

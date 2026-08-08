@@ -5,6 +5,10 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { trackBirthSkyEvent } from "../../lib/analytics";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingDaySkyTimeHint,
+} from "@/lib/birth-sky/living-room";
 
 type Props = {
   visible: boolean;
@@ -30,6 +34,8 @@ export function BirthSkyDaySkyBanner({
 
   if (!visible) return null;
 
+  const living = isBirthSkyLivingV1Enabled();
+
   return (
     <div
       className="rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3 text-left"
@@ -40,13 +46,14 @@ export function BirthSkyDaySkyBanner({
         Day Sky · still meaningful
       </p>
       <p className="mt-1 text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">
-        Without an exact time we map the sky of that day. Time unlocks rising and houses —
-        optional, whenever you&apos;re ready.
+        {living
+          ? livingDaySkyTimeHint()
+          : "Without an exact time we map the sky of that day. Time unlocks rising and houses — optional, whenever you're ready."}
       </p>
       <Button
         type="button"
         variant="secondary"
-        className="amy-astro-btn-secondary mt-3 min-h-11 rounded-xl"
+        className="amy-astro-btn-secondary mt-3 min-h-12 rounded-xl"
         onClick={onAddTime}
         data-testid="birth-sky-day-sky-add-time"
       >

@@ -17,6 +17,7 @@ import {
   livingBirthSkyProductName,
 } from "@/lib/birth-sky/living-room";
 import "@/components/birth-sky/birth-sky-living-room.css";
+import "@/components/birth-sky/birth-sky-living-deep.css";
 import "../design/amy-astro.css";
 
 type BirthSkyModuleShellProps = {
@@ -82,7 +83,7 @@ export function BirthSkyModuleShell({
       <div
         className={cn(
           living
-            ? "birth-sky-living-shell relative flex min-h-[100dvh] flex-col overflow-x-clip"
+            ? "birth-sky-living-shell bs-living-deep relative flex min-h-[100dvh] flex-col overflow-x-clip"
             : "amy-astro-root relative flex min-h-[100dvh] flex-col overflow-x-clip",
           className,
         )}

@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { BirthSkyModuleShell } from "../components/birth-sky-module-shell";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingChildConfirmTitle,
+  livingErrorExitCta,
+} from "@/lib/birth-sky/living-room";
 
 export type BirthSkyChildOption = {
   id: number;
@@ -37,11 +43,18 @@ export function BirthSkyChildConfirmationPage({
     trackBirthSkyEvent("birth_sky.setup_step_viewed", { setup_step: "child" });
   }, []);
 
+  const living = isBirthSkyLivingV1Enabled();
+  const productName = living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME;
+
   if (!child) {
     return (
-      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-no-child">
+      <BirthSkyModuleShell title={productName} onBack={onBack} testId="birth-sky-no-child">
         <div className="py-12 text-center">
-          <h2 className="font-quicksand text-xl font-bold">Choose a child to open Amy Astro Intelligence</h2>
+          <h2 className="font-quicksand text-xl font-bold">
+            {living
+              ? "Choose a child to open Birth Sky"
+              : "Choose a child to open Amy Astro Intelligence"}
+          </h2>
           <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
             Add or select a child in AmyNest, then return here.
           </p>
@@ -51,7 +64,7 @@ export function BirthSkyChildConfirmationPage({
             onClick={onBack}
             data-testid="birth-sky-no-child-exit"
           >
-            Back to Parenting Hub
+            {living ? livingErrorExitCta() : "Back to Parenting Hub"}
           </Button>
         </div>
       </BirthSkyModuleShell>
@@ -59,8 +72,10 @@ export function BirthSkyChildConfirmationPage({
   }
 
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-child-confirmation">
-      <h2 className="font-quicksand text-2xl font-bold">Whose Amy Astro Intelligence?</h2>
+    <BirthSkyModuleShell title={productName} onBack={onBack} testId="birth-sky-child-confirmation">
+      <h2 className="font-quicksand text-2xl font-bold">
+        {living ? livingChildConfirmTitle(child.name) : "Whose Amy Astro Intelligence?"}
+      </h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
         We’ll use this child’s profile. You can switch before continuing.
       </p>

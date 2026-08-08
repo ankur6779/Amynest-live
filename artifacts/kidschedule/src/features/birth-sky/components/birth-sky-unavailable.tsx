@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { BirthSkyModuleShell } from "./birth-sky-module-shell";
 import { AmyAstroEmblem } from "./amy-astro-emblem";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingErrorExitCta,
+  livingUnavailableCopy,
+} from "@/lib/birth-sky/living-room";
 
 type BirthSkyUnavailableProps = {
   onExit: () => void;
@@ -16,16 +22,21 @@ export function BirthSkyUnavailable({
   onExit,
   reason = "flag_off",
 }: BirthSkyUnavailableProps) {
+  const living = isBirthSkyLivingV1Enabled();
+  const productName = living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME;
+
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-unavailable">
+    <BirthSkyModuleShell title={productName} onBack={onExit} testId="birth-sky-unavailable">
       <div className="flex flex-col items-center px-2 py-16 text-center">
         <AmyAstroEmblem size={88} interactive={false} />
         <h2 className="amy-astro-display mt-4 text-2xl font-bold text-[hsl(42_70%_78%)]">
-          {AMY_ASTRO_PRODUCT_NAME} is unavailable
+          {living ? livingUnavailableCopy() : `${AMY_ASTRO_PRODUCT_NAME} is unavailable`}
         </h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-[hsl(40_20%_96%/0.72)]">
           {reason === "deep_links_off"
-            ? "Deep links into Amy Astro Intelligence are turned off right now."
+            ? living
+              ? "Deep links into Birth Sky are turned off right now."
+              : "Deep links into Amy Astro Intelligence are turned off right now."
             : "This optional module is turned off right now."}
         </p>
         <Button
@@ -34,7 +45,7 @@ export function BirthSkyUnavailable({
           onClick={onExit}
           data-testid="birth-sky-unavailable-exit"
         >
-          Back to Parenting Hub
+          {living ? livingErrorExitCta() : "Back to Parenting Hub"}
         </Button>
       </div>
     </BirthSkyModuleShell>

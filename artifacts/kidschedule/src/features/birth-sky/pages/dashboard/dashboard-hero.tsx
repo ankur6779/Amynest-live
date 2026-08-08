@@ -18,11 +18,16 @@ import { AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
 import {
   isBirthSkyLivingV1Enabled,
   livingDashboardEditionLabel,
+  livingHeroAskAmyCta,
+  livingSoftCta,
+  livingSoftGreetingLine,
+  livingUpdateDetailsCta,
 } from "@/lib/birth-sky/living-room";
 import { buildPersonalizedGreeting } from "../../lib/personalized-greetings";
 import type { ContinuityFacts } from "../../lib/emotional-continuity";
 import { loadReplyMemory, rememberGreeting } from "../../lib/reply-memory";
 import { cn } from "@/lib/utils";
+import "@/components/birth-sky/birth-sky-living-deep.css";
 import "../../design/amy-astro.css";
 
 type Props = {
@@ -66,7 +71,7 @@ export function BirthSkyDashboardHero({
   const painted = useRef(false);
   const greeting = useMemo(() => {
     const mem = loadReplyMemory(profileId);
-    return buildPersonalizedGreeting({
+    const raw = buildPersonalizedGreeting({
       parentFirstName: parentFirstName ?? null,
       childName: vm.childName,
       moonPhaseLabel,
@@ -77,6 +82,13 @@ export function BirthSkyDashboardHero({
       avoidHellos: mem.lastGreetings,
       continuity,
     });
+    if (!living) return raw;
+    return {
+      hello: livingSoftGreetingLine(raw.hello, vm.childName),
+      skyLine: livingSoftGreetingLine(raw.skyLine, vm.childName),
+      moonLead: livingSoftGreetingLine(raw.moonLead, vm.childName),
+      cta: livingSoftCta(raw.cta),
+    };
   }, [
     parentFirstName,
     vm.childName,
@@ -87,6 +99,7 @@ export function BirthSkyDashboardHero({
     vm.daySky,
     greetingIndex,
     continuity,
+    living,
   ]);
 
   useEffect(() => {
@@ -195,7 +208,12 @@ export function BirthSkyDashboardHero({
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              className="amy-astro-ripple amy-astro-cta-premium flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] px-3 text-sm font-semibold text-white shadow-[0_0_24px_hsl(275_70%_40%/0.35)]"
+              className={cn(
+                "amy-astro-ripple amy-astro-cta-premium flex min-h-12 flex-1 items-center justify-center gap-2.5 px-3 text-sm font-semibold",
+                living
+                  ? "bs-living-deep-primary-btn"
+                  : "rounded-2xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-white shadow-[0_0_24px_hsl(275_70%_40%/0.35)]",
+              )}
               onClick={onContinueJourney ?? onAskAmy}
               data-testid="amy-astro-hero-continue"
             >
@@ -203,14 +221,19 @@ export function BirthSkyDashboardHero({
                 name="chapter_book"
                 size={32}
                 reducedMotion={reducedMotion}
-                title="Open chapter"
+                title={living ? "Continue" : "Open chapter"}
               />
               <span>{greeting.cta}</span>
             </button>
             {onAskAmy ? (
               <button
                 type="button"
-                className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-2xl border border-white/15 bg-white/[0.04] px-3 text-xs font-semibold text-[hsl(40_30%_85%)]"
+                className={cn(
+                  "amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2.5 px-3 text-xs font-semibold",
+                  living
+                    ? "bs-living-deep-ghost-btn"
+                    : "rounded-2xl border border-white/15 bg-white/[0.04] text-[hsl(40_30%_85%)]",
+                )}
                 onClick={onAskAmy}
                 data-testid="amy-astro-hero-ask-amy"
               >
@@ -218,15 +241,15 @@ export function BirthSkyDashboardHero({
                   name="ask_amy"
                   size={32}
                   reducedMotion={reducedMotion}
-                  title="Ask Amy"
+                  title={living ? livingHeroAskAmyCta() : "Ask Amy"}
                 />
-                <span>Ask Amy About Their Sky</span>
+                <span>{living ? livingHeroAskAmyCta() : "Ask Amy About Their Sky"}</span>
               </button>
             ) : null}
           </div>
           <button
             type="button"
-            className="amy-astro-ripple mt-2 inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-[hsl(40_30%_80%/0.75)] underline-offset-2 hover:underline"
+            className="amy-astro-ripple mt-2 inline-flex min-h-12 items-center gap-2 text-xs font-semibold text-[hsl(40_30%_80%/0.75)] underline-offset-2 hover:underline"
             onClick={onRegenerateEntry}
             data-testid="birth-sky-regenerate-entry"
           >
@@ -234,9 +257,9 @@ export function BirthSkyDashboardHero({
               name="update_telescope"
               size={24}
               reducedMotion={reducedMotion}
-              title="Update sky"
+              title={living ? livingUpdateDetailsCta() : "Update sky"}
             />
-            Update sky details
+            {living ? livingUpdateDetailsCta() : "Update sky details"}
           </button>
         </>
       ) : null}

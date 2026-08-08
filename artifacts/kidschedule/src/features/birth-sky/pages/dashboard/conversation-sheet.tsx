@@ -20,6 +20,13 @@ import {
   loadGuideMemory,
 } from "../../lib/conversation-intelligence";
 import { cn } from "@/lib/utils";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingAskAmySheetTitle,
+  livingBirthSkyProductShort,
+  livingLoadingCopy,
+} from "@/lib/birth-sky/living-room";
+import "@/components/birth-sky/birth-sky-living-deep.css";
 import "../../design/amy-astro.css";
 
 type Props = {
@@ -87,6 +94,7 @@ export function BirthSkyConversationSheet({
   continuityHint,
   profileId,
 }: Props) {
+  const living = isBirthSkyLivingV1Enabled();
   const titleId = useId();
   const sheetRef = useRef<HTMLDivElement>(null);
   const liveRef = useRef<HTMLDivElement>(null);
@@ -168,7 +176,7 @@ export function BirthSkyConversationSheet({
     window.setTimeout(() => {
       setLookingAt(false);
       onSend();
-    }, reducedMotion ? 200 : 1400);
+    }, living || reducedMotion ? 200 : 1400);
   };
 
   return (
@@ -177,35 +185,46 @@ export function BirthSkyConversationSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="amy-astro-root fixed inset-0 z-50 flex flex-col"
+      className={cn(
+        "fixed inset-0 z-50 flex flex-col",
+        living ? "birth-sky-living-shell bs-living-deep" : "amy-astro-root",
+      )}
       data-testid="birth-sky-ai-sheet"
+      data-bs-living={living ? "1" : undefined}
       tabIndex={-1}
       style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
     >
-      <AmyAstroCosmicAmbient
-        reducedMotion={reducedMotion}
-        showMeteor={false}
-        intensity="shell"
-      />
+      {living ? (
+        <div className="birth-sky-living-shell-ambient" aria-hidden="true" />
+      ) : (
+        <AmyAstroCosmicAmbient
+          reducedMotion={reducedMotion}
+          showMeteor={false}
+          intensity="shell"
+        />
+      )}
 
       <header className="relative z-10 flex items-center gap-3 border-b border-[hsl(42_50%_60%/0.18)] px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
-        <AmyAstroEmblem size={48} reducedMotion={reducedMotion} />
+        <AmyAstroEmblem size={living ? 40 : 48} reducedMotion={reducedMotion} />
         <div className="min-w-0 flex-1">
           <h2
             id={titleId}
-            className="amy-astro-display amy-astro-gold-text text-xl font-semibold"
+            className={cn(
+              "text-xl font-semibold",
+              living ? "bs-living-deep-title" : "amy-astro-display amy-astro-gold-text",
+            )}
           >
-            Ask Amy About Their Sky
+            {living ? livingAskAmySheetTitle() : "Ask Amy About Their Sky"}
           </h2>
           <p className="line-clamp-2 text-[11px] leading-snug text-[hsl(40_20%_96%/0.55)]">
-            {AMY_ASTRO_PRODUCT_SHORT}
+            {living ? livingBirthSkyProductShort() : AMY_ASTRO_PRODUCT_SHORT}
             {childName ? ` · ${childName}` : ""} · parent-only
           </p>
         </div>
         <Button
           type="button"
           variant="secondary"
-          className="amy-astro-btn-premium amy-astro-btn-secondary min-h-11 shrink-0 rounded-xl px-3"
+          className="amy-astro-btn-premium amy-astro-btn-secondary min-h-12 shrink-0 rounded-xl px-3"
           onClick={onClose}
           data-testid="birth-sky-ai-close"
         >
@@ -391,7 +410,7 @@ export function BirthSkyConversationSheet({
                 <AmyAstroEmblem size={56} reducedMotion={reducedMotion} interactive={false} />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(42_60%_70%/0.75)]">
-                Reading the Stars…
+                {living ? livingLoadingCopy() : "Reading the Stars…"}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {sunSign ? (
@@ -519,7 +538,13 @@ export function BirthSkyConversationSheet({
                 onClick={beginSend}
                 data-testid="birth-sky-ai-send"
               >
-                {lookingAt ? "Reading the Stars…" : "Ask Amy"}
+                {lookingAt
+                  ? living
+                    ? livingLoadingCopy()
+                    : "Reading the Stars…"
+                  : living
+                    ? livingAskAmySheetTitle()
+                    : "Ask Amy"}
               </Button>
             )}
           </div>

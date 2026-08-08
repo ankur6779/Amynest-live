@@ -1,8 +1,15 @@
 /**
  * Cosmic Journey progress — discovery only, never XP/points.
+ * Living ON: gentle noticing (same data, quieter face).
  */
 
 import { cn } from "@/lib/utils";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingProgressAria,
+  livingProgressNextLabel,
+  livingProgressTitle,
+} from "@/lib/birth-sky/living-room";
 import "../design/amy-astro.css";
 
 type Props = {
@@ -20,6 +27,7 @@ export function AmyAstroCosmicProgress({
   reducedMotion = false,
   className,
 }: Props) {
+  const living = isBirthSkyLivingV1Enabled();
   return (
     <section
       className={cn(
@@ -28,19 +36,24 @@ export function AmyAstroCosmicProgress({
         className,
       )}
       data-testid="amy-astro-cosmic-progress"
-      aria-label="Cosmic journey progress"
+      aria-label={living ? livingProgressAria() : "Cosmic journey progress"}
     >
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(42_60%_70%/0.75)]">
-            Cosmic Journey
+            {living ? livingProgressTitle() : "Cosmic Journey"}
           </p>
-          <p className="amy-astro-display amy-astro-gold-text mt-1 text-3xl font-semibold tabular-nums">
+          <p
+            className={cn(
+              "mt-1 font-semibold tabular-nums",
+              living ? "bs-living-deep-title text-2xl" : "amy-astro-display amy-astro-gold-text text-3xl",
+            )}
+          >
             {percent}%
           </p>
         </div>
         <p className="max-w-[12rem] text-right text-[11px] leading-snug text-[hsl(40_20%_96%/0.55)]">
-          Next discovery
+          {living ? livingProgressNextLabel() : "Next discovery"}
           <br />
           <span className="font-semibold text-[hsl(42_70%_78%)]">{nextLabel}</span>
         </p>

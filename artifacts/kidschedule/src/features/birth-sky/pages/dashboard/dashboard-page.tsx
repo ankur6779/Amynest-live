@@ -61,6 +61,16 @@ import { BirthSkyEditDetailsBoundaryPage } from "./edit-details-boundary";
 import { BirthSkyRegenerateOverlay } from "../settings/regenerate-overlay";
 import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 import {
+  isBirthSkyLivingV1Enabled,
+  livingDashboardTitle,
+  livingErrorExitCta,
+  livingErrorLoadCopy,
+  livingLeaveEyebrow,
+  livingLoadingCopy,
+  livingSoftGreetingLine,
+} from "@/lib/birth-sky/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import {
   buildKundliBodies,
   canRenderKundliFromAstronomy,
 } from "../../lib/build-kundli-bodies";
@@ -522,20 +532,43 @@ export function BirthSkyDashboardPage({
     );
   }
 
+  const living = isBirthSkyLivingV1Enabled();
+  const shellTitle = living ? livingDashboardTitle() : AMY_ASTRO_PRODUCT_NAME;
+
   if (loadError || !snapshot || !heroVm || !skyVm || !astroVm || !portrait || !todaysSky) {
     return (
-      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-dashboard-error">
+      <BirthSkyModuleShell title={shellTitle} onBack={onExit} testId="birth-sky-dashboard-error">
+        {living ? (
+          <p className="bs-living-deep-eyebrow mb-2">{livingLeaveEyebrow()}</p>
+        ) : null}
         <p className="text-sm text-[hsl(40_20%_96%/0.78)]" role="alert">
-          {loadError ?? "Reading the Stars…"}
+          {loadError
+            ? living
+              ? livingErrorLoadCopy()
+              : loadError
+            : living
+              ? livingLoadingCopy()
+              : "Reading the Stars…"}
         </p>
         <button
           type="button"
-          className="mt-6 min-h-12 w-full rounded-xl bg-white/10 font-semibold"
+          className={
+            living
+              ? "bs-living-deep-primary-btn mt-6 w-full px-4 text-sm"
+              : "mt-6 min-h-12 w-full rounded-xl bg-white/10 font-semibold"
+          }
           onClick={onExit}
           data-testid="birth-sky-dashboard-error-exit"
         >
-          Back to Parenting Hub
+          {living ? livingErrorExitCta() : "Back to Parenting Hub"}
         </button>
+        {living ? (
+          <AmyNestLeaveContinuity
+            className="mt-4 border-[rgba(232,212,184,0.22)] bg-[rgba(8,6,12,0.45)] text-[rgba(255,252,248,0.92)]"
+            continueHref="/parenting-hub"
+            continueLabel="Back to Understand"
+          />
+        ) : null}
       </BirthSkyModuleShell>
     );
   }
@@ -548,7 +581,7 @@ export function BirthSkyDashboardPage({
 
   return (
     <BirthSkyModuleShell
-      title={AMY_ASTRO_PRODUCT_NAME}
+      title={shellTitle}
       onBack={onExit}
       testId="birth-sky-dashboard"
       reducedMotion={reduced}
@@ -636,17 +669,30 @@ export function BirthSkyDashboardPage({
         />
 
         <AmyAstroDiscoveryNudge
-          nudge={discoveryNudge}
-          continuityLine={continuityLine}
+          nudge={
+            living
+              ? {
+                  ...discoveryNudge,
+                  line: livingSoftGreetingLine(discoveryNudge.line, childName),
+                }
+              : discoveryNudge
+          }
+          continuityLine={
+            living && continuityLine
+              ? livingSoftGreetingLine(continuityLine, childName)
+              : continuityLine
+          }
           reducedMotion={reduced}
           onFollow={followDiscovery}
         />
 
+        {/* Living: progress stays available but demoted — not a cosmic metric dashboard. */}
         <AmyAstroCosmicProgress
           percent={progress.percent}
           nextLabel={progress.nextLabel}
           memoryLines={memoryLines}
           reducedMotion={reduced}
+          className={living ? "opacity-90" : undefined}
         />
 
         <BirthSkyDaySkyBanner
@@ -888,6 +934,14 @@ export function BirthSkyDashboardPage({
             setMemory(rememberAiOpened(profile.profileId));
             void ai.openAskAmy("reflect");
           }}
+        />
+      ) : null}
+
+      {living ? (
+        <AmyNestLeaveContinuity
+          className="mt-6 border-[rgba(232,212,184,0.22)] bg-[rgba(8,6,12,0.45)] text-[rgba(255,252,248,0.92)]"
+          continueHref="/parenting-hub"
+          continueLabel="Back to Understand"
         />
       ) : null}
 
