@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { Loader2, Mic, PhoneOff, Sparkles } from "lucide-react";
+import { Loader2, Mic, PhoneOff } from "lucide-react";
 import { AmyTalkingHead } from "@/components/amy-3d/amy-talking-head";
 import type { RealtimeConnectionState, RealtimeDiagnostics } from "../hooks/use-speech-coach-v2-realtime";
 import { RealtimeDiagnosticsPanel } from "./realtime-diagnostics-panel";
@@ -9,6 +9,11 @@ import {
   speechCoachConnectionLabel,
   useSpeechCoachHeroSize,
 } from "../lib/session-presentation";
+import {
+  isSpeechCoachLivingV1Enabled,
+  livingSpeechV2PresenceLabel,
+} from "@/lib/speech-coach/living-room";
+import "@/components/speech-coach/speech-coach-living-deep.css";
 
 export function SpeechCoachV2SessionUi(props: {
   childName: string;
@@ -45,23 +50,39 @@ export function SpeechCoachV2SessionUi(props: {
     amyAudioMeterActive,
   } = props;
 
+  const living = isSpeechCoachLivingV1Enabled();
   const heroSize = useSpeechCoachHeroSize();
   const realtimeReady = live && connectionState === "connected";
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-sky-950 via-indigo-950 to-slate-950 text-white">
+    <div
+      className={
+        living
+          ? "sc-living-deep flex min-h-[100dvh] flex-col"
+          : "relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-sky-950 via-indigo-950 to-slate-950 text-white"
+      }
+      data-sc-living-deep={living ? "1" : undefined}
+      data-testid="speech-coach-v2-session-ui"
+    >
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
         <div>
-          <p className="text-xs uppercase tracking-wider text-white/60">Speech Coach</p>
-          <h1 className="text-lg font-bold">Hi {childName}!</h1>
+          <p className={living ? "sc-living-deep-eyebrow" : "text-xs uppercase tracking-wider text-white/60"}>
+            {living ? "Voice together" : "Speech Coach"}
+          </p>
+          <h1 className={living ? "sc-living-deep-title text-lg" : "text-lg font-bold"}>
+            {living ? `${childName} · with Amy` : `Hi ${childName}!`}
+          </h1>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1">
-            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-            {starsEarned} stars
-          </span>
-          <span className="rounded-full bg-white/10 px-3 py-1">{pointsEarned} pts</span>
-        </div>
+        {!living ? (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1">
+              {starsEarned} stars
+            </span>
+            <span className="rounded-full bg-white/10 px-3 py-1">{pointsEarned} pts</span>
+          </div>
+        ) : (
+          <span className="sc-living-deep-chip">{livingSpeechV2PresenceLabel()}</span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-4">
@@ -78,7 +99,9 @@ export function SpeechCoachV2SessionUi(props: {
           audioMeterActiveRef={amyAudioMeterActive}
           debugMouth={showRealtimeDiagnostics()}
         />
-        <p className="mt-4 text-sm font-medium text-sky-200">{phaseLabel}</p>
+        <p className={living ? "mt-4 text-sm font-medium text-white/80" : "mt-4 text-sm font-medium text-sky-200"}>
+          {phaseLabel}
+        </p>
         <p className="mt-1 text-xs text-white/60">
           {speechCoachConnectionLabel(connectionState, live, {
             amySpeaking,
@@ -90,7 +113,13 @@ export function SpeechCoachV2SessionUi(props: {
           <RealtimeDiagnosticsPanel diagnostics={diagnostics} />
         )}
         {lastTranscript && (
-          <p className="mt-4 max-w-sm rounded-2xl bg-white/10 px-4 py-2 text-center text-sm text-white/90">
+          <p
+            className={
+              living
+                ? "sc-living-deep-panel mt-4 max-w-sm px-4 py-2 text-center text-sm text-white/90"
+                : "mt-4 max-w-sm rounded-2xl bg-white/10 px-4 py-2 text-center text-sm text-white/90"
+            }
+          >
             You said: {lastTranscript}
           </p>
         )}
@@ -106,7 +135,11 @@ export function SpeechCoachV2SessionUi(props: {
             type="button"
             onClick={onStart}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-400 to-indigo-500 py-4 text-base font-semibold disabled:opacity-60"
+            className={
+              living
+                ? "sc-living-deep-primary-btn flex w-full min-h-12 items-center justify-center gap-2 py-4 text-base disabled:opacity-60"
+                : "flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-400 to-indigo-500 py-4 text-base font-semibold disabled:opacity-60"
+            }
             data-testid="speech-coach-v2-start"
           >
             {loading ? (
@@ -114,17 +147,21 @@ export function SpeechCoachV2SessionUi(props: {
             ) : (
               <Mic className="h-5 w-5" />
             )}
-            Start speaking with Amy
+            {living ? "Begin gently" : "Start speaking with Amy"}
           </button>
         ) : (
           <button
             type="button"
             onClick={onEnd}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-4 text-base font-semibold"
+            className={
+              living
+                ? "sc-living-deep-ghost-btn flex w-full min-h-12 items-center justify-center gap-2 py-4 text-base font-semibold"
+                : "flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-4 text-base font-semibold"
+            }
             data-testid="speech-coach-v2-end"
           >
             <PhoneOff className="h-5 w-5" />
-            Finish session
+            {living ? "Finish gently" : "Finish session"}
           </button>
         )}
       </div>

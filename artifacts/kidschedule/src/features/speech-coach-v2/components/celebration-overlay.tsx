@@ -1,5 +1,12 @@
 import { Sparkles, Star, Trophy } from "lucide-react";
 import { SPEECH_COACH_V2_BADGES, type SpeechCoachV2BadgeId } from "@workspace/speech-coach-v2";
+import {
+  isSpeechCoachLivingV1Enabled,
+  livingSpeechV2CompleteBody,
+  livingSpeechV2CompleteTitle,
+} from "@/lib/speech-coach/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import "@/components/speech-coach/speech-coach-living-deep.css";
 
 export function SpeechCoachV2CelebrationOverlay(props: {
   stars: number;
@@ -9,6 +16,33 @@ export function SpeechCoachV2CelebrationOverlay(props: {
   onDone: () => void;
 }) {
   const { stars, points, badges, streakDays, onDone } = props;
+  const living = isSpeechCoachLivingV1Enabled();
+
+  if (living) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center sc-living-deep p-6"
+        data-testid="speech-coach-v2-celebration-living"
+      >
+        <div className="sc-living-deep-panel w-full max-w-md p-8 text-center text-white">
+          <h2 className="sc-living-deep-title text-2xl">{livingSpeechV2CompleteTitle()}</h2>
+          <p className="mt-2 text-sm text-white/80">{livingSpeechV2CompleteBody()}</p>
+          <button
+            type="button"
+            onClick={onDone}
+            className="sc-living-deep-primary-btn mt-8 w-full min-h-12 px-4 py-3 text-sm"
+          >
+            Continue
+          </button>
+          <AmyNestLeaveContinuity
+            className="mt-4"
+            continueHref="/speech-coach"
+            continueLabel="Back to today's help"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-950/95 via-purple-950/95 to-sky-950/95 p-6">

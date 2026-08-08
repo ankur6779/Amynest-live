@@ -45,10 +45,13 @@ import { useConversationSilenceStop } from "./conversation-silence-detector";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import {
   isSpeechCoachLivingV1Enabled,
+  livingSpeechHeardLabel,
   livingSpeechLiveEyebrow,
   livingSpeechSessionCompleteBody,
+  livingSpeechStartLiveLabel,
 } from "@/lib/speech-coach/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import "@/components/speech-coach/speech-coach-living-deep.css";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
@@ -878,26 +881,48 @@ export function LiveSpeechCoach({
 
   if (!current && state !== "complete") {
     return (
-      <EmptyFullScreen title="No speech tasks ready" body="Please try again after adding practice prompts." />
+      <EmptyFullScreen
+        title={living ? "Practice isn’t ready yet" : "No speech tasks ready"}
+        body={living ? "Come back in a moment — Amy will help you begin gently." : "Please try again after adding practice prompts."}
+      />
     );
   }
 
+  const ghostBtn = living
+    ? "sc-living-deep-ghost-btn"
+    : "rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15";
+  const primaryBtn = living
+    ? "sc-living-deep-primary-btn h-16 min-h-12 px-10 text-base"
+    : "h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]";
+
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#070812] text-white" data-testid="live-speech-coach-page">
-      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/30 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
+    <main
+      className={
+        living
+          ? "sc-living-deep"
+          : "relative min-h-dvh overflow-hidden bg-[#070812] text-white"
+      }
+      data-testid="live-speech-coach-page"
+      data-sc-living-deep={living ? "1" : undefined}
+    >
+      {!living ? (
+        <>
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/30 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
+        </>
+      ) : null}
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
           <AppLink href="/speech-coach" replace source="live-speech-coach-back">
-            <Button variant="ghost" size="icon" aria-label="Back to Speech Coach" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+            <Button variant="ghost" size="icon" aria-label="Back to Speech Coach" className={ghostBtn}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </AppLink>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
+            <p className={living ? "sc-living-deep-eyebrow" : "text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80"}>
               {living ? livingSpeechLiveEyebrow() : "Live AI Speech Coach"}
             </p>
-            <h1 className="truncate font-quicksand text-xl font-black">
+            <h1 className={living ? "sc-living-deep-title truncate text-xl" : "truncate font-quicksand text-xl font-black"}>
               {living ? `${child.name} · voice together` : `${child.name}'s voice session`}
             </h1>
           </div>
@@ -906,20 +931,20 @@ export function LiveSpeechCoach({
               type="button"
               variant="ghost"
               size="sm"
-              className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+              className={ghostBtn}
               onClick={onOpenParentTools}
               data-testid="speech-open-parent-tools"
             >
-              Parent Tools
+              {living ? "Help" : "Parent Tools"}
             </Button>
           ) : null}
-          <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black">
-            Step {Math.min(idx + 1, tasks.length)}/{tasks.length}
+          <div className={living ? "sc-living-deep-chip" : "rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black"}>
+            {living ? `${Math.min(idx + 1, tasks.length)} of ${tasks.length}` : `Step ${Math.min(idx + 1, tasks.length)}/${tasks.length}`}
           </div>
         </header>
 
         <div
-          className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"
+          className={living ? "sc-living-deep-progress mt-4" : "mt-4 h-2 overflow-hidden rounded-full bg-white/10"}
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
@@ -927,21 +952,33 @@ export function LiveSpeechCoach({
           aria-label="Session progress"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
+            className={
+              living
+                ? "sc-living-deep-progress-fill"
+                : "h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
+            }
             style={{ width: `${progressPct}%` }}
           />
         </div>
 
-        <section className="mt-4 rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(168,85,247,0.75)] backdrop-blur-xl">
+        <section
+          className={
+            living
+              ? "sc-living-deep-panel mt-4 p-4"
+              : "mt-4 rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(168,85,247,0.75)] backdrop-blur-xl"
+          }
+        >
           <div className="flex items-center justify-between gap-3 text-xs text-white/70">
-            <span className="rounded-full bg-cyan-400/10 px-3 py-1 font-bold text-cyan-100">{mode.label}</span>
+            <span className={living ? "sc-living-deep-chip" : "rounded-full bg-cyan-400/10 px-3 py-1 font-bold text-cyan-100"}>{mode.label}</span>
             <span>{mode.intro}</span>
           </div>
           <AmyHero state={state} success={successFlash} />
           <div className="space-y-3 text-center">
             {state !== "complete" && current && (
               <>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-white/45">Say this</p>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-white/45">
+                  {living ? "Try saying" : "Say this"}
+                </p>
                 <p className="font-quicksand text-4xl font-black tracking-wide text-white drop-shadow">
                   {current.text}
                 </p>
@@ -974,13 +1011,19 @@ export function LiveSpeechCoach({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              <Stat label="Steps" value={Math.min(idx + 1, tasks.length)} />
-              <Stat label="With you" value={tasks.length} />
+              <div className="sc-living-deep-stat">
+                <p className="sc-living-deep-stat-label">Steps</p>
+                <p className="sc-living-deep-stat-value">{Math.min(idx + 1, tasks.length)}</p>
+              </div>
+              <div className="sc-living-deep-stat">
+                <p className="sc-living-deep-stat-label">With you</p>
+                <p className="sc-living-deep-stat-value">{tasks.length}</p>
+              </div>
             </div>
           )}
 
           {lastResult && (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-4">
+            <div className={living ? "sc-living-deep-panel p-4" : "rounded-3xl border border-white/10 bg-white/[0.07] p-4"}>
               <div className="flex items-start gap-3">
                 <div className={`rounded-2xl p-2 ${lastResult.correct ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/15 text-amber-200"}`}>
                   <CheckCircle2 className="h-5 w-5" />
@@ -989,8 +1032,11 @@ export function LiveSpeechCoach({
                   <p className="font-bold">{lastResult.displayFeedback}</p>
                   {lastResult.improvement && <p className="mt-1 text-sm text-white/65">{lastResult.improvement}</p>}
                   <p className="mt-2 text-xs text-white/45">
-                    Accuracy {Math.round(lastResult.confidence * 100)}%
-                    {lastResult.transcript ? ` - Heard: "${lastResult.transcript}"` : ""}
+                    {living
+                      ? livingSpeechHeardLabel(lastResult.transcript)
+                      : `Accuracy ${Math.round(lastResult.confidence * 100)}%${
+                          lastResult.transcript ? ` - Heard: "${lastResult.transcript}"` : ""
+                        }`}
                   </p>
                 </div>
               </div>
@@ -1008,16 +1054,27 @@ export function LiveSpeechCoach({
           {state !== "complete" ? (
             <div className="flex items-center justify-center gap-3">
               {hasStarted && (
-                <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15" onClick={retryTask}>
+                <Button type="button" variant="ghost" className={ghostBtn} onClick={retryTask}>
                   <Volume2 className="h-4 w-4" />
                   Hear again
                 </Button>
               )}
               {!hasStarted ? (
-                <Button type="button" size="lg" className="h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]" onClick={startSession}>
-                  <Sparkles className="h-5 w-5" />
-                  Start Live Session
+                <Button type="button" size="lg" className={primaryBtn} onClick={startSession}>
+                  {!living ? <Sparkles className="h-5 w-5" /> : null}
+                  {living ? livingSpeechStartLiveLabel() : "Start Live Session"}
                 </Button>
+              ) : living ? (
+                <button
+                  type="button"
+                  disabled={startingMic || (!canRecord && state !== "listening")}
+                  onClick={() => void startListening()}
+                  className="sc-living-deep-mic"
+                  data-listening={state === "listening" ? "true" : "false"}
+                  aria-label={state === "listening" ? "Stop listening" : "Start listening"}
+                >
+                  {state === "processing" || startingMic ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-9 w-9" />}
+                </button>
               ) : (
                 <button
                   type="button"
@@ -1036,15 +1093,23 @@ export function LiveSpeechCoach({
                 </button>
               )}
               {state === "next_task" && (
-                <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={nextTask}>
-                  Next
+                <Button
+                  type="button"
+                  className={living ? "sc-living-deep-primary-btn min-h-12 px-5" : "rounded-full bg-white text-slate-950 hover:bg-white/90"}
+                  onClick={nextTask}
+                >
+                  {living ? "Continue" : "Next"}
                 </Button>
               )}
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex justify-center gap-3">
-                <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={restart}>
+                <Button
+                  type="button"
+                  className={living ? "sc-living-deep-primary-btn min-h-12 px-5" : "rounded-full bg-white text-slate-950 hover:bg-white/90"}
+                  onClick={restart}
+                >
                   <RotateCcw className="h-4 w-4" />
                   {living ? "Practice again" : "New Session"}
                 </Button>
@@ -1052,14 +1117,14 @@ export function LiveSpeechCoach({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+                    className={ghostBtn}
                     onClick={onOpenParentTools}
                   >
                     {living ? "Today's help" : "Parent Tools"}
                   </Button>
                 ) : (
                   <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
-                    <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+                    <Button type="button" variant="ghost" className={ghostBtn}>
                       {living ? "Today's help" : "Parent Tools"}
                     </Button>
                   </AppLink>

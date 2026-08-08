@@ -32,7 +32,9 @@ import type { SpeechViewMode } from "./speech-coach-utils";
 import {
   isSpeechCoachLivingV1Enabled,
   livingSpeechSessionPresenceLabel,
+  SPEECH_LIVING_DEEP_PALETTE,
 } from "@/lib/speech-coach/living-room";
+import "@/components/speech-coach/speech-coach-living-deep.css";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 
 // ── Exported types (imported by index.tsx) ────────────────────────────────────
@@ -167,7 +169,11 @@ const WAVE_HEIGHTS = [
   35, 72, 90, 55, 85, 42, 78, 60, 95, 50, 82, 45, 88, 65, 70,
 ] as const;
 
-function NeonWaveform({ active }: { active: boolean }) {
+function NeonWaveform({ active, living = false }: { active: boolean; living?: boolean }) {
+  const activeBg = living
+    ? "linear-gradient(to top, rgba(232,212,184,0.9), rgba(232,212,184,0.55))"
+    : "linear-gradient(to top, rgba(139,92,246,1), rgba(236,72,153,0.9))";
+  const idleBg = living ? "rgba(232,212,184,0.28)" : "rgba(139,92,246,0.28)";
   return (
     <div
       className="flex items-end justify-center gap-0.5"
@@ -178,15 +184,13 @@ function NeonWaveform({ active }: { active: boolean }) {
       {WAVE_HEIGHTS.map((h, i) => (
         <div
           key={i}
-          className={`w-1.5 rounded-full transition-all ${active ? "animate-bounce" : ""}`}
+          className={`w-1.5 rounded-full transition-all ${active && !living ? "animate-bounce" : ""}`}
           style={{
             height: active ? `${h}%` : "18%",
-            background: active
-              ? "linear-gradient(to top, rgba(139,92,246,1), rgba(236,72,153,0.9))"
-              : "rgba(139,92,246,0.28)",
-            boxShadow: active ? "0 0 6px rgba(139,92,246,0.6)" : "none",
-            animationDelay: `${i * 55}ms`,
-            animationDuration: `${510 + (i % 5) * 65}ms`,
+            background: active ? activeBg : idleBg,
+            boxShadow: active && !living ? "0 0 6px rgba(139,92,246,0.6)" : "none",
+            animationDelay: living ? undefined : `${i * 55}ms`,
+            animationDuration: living ? undefined : `${510 + (i % 5) * 65}ms`,
             transition: "height 0.18s ease",
           }}
         />
@@ -322,15 +326,19 @@ function SessionXPBar({
         )}
       </div>
       <div
-        className="h-1.5 rounded-full overflow-hidden"
-        style={{ background: C.violetDim }}
+        className={living ? "sc-living-deep-progress" : "h-1.5 rounded-full overflow-hidden"}
+        style={living ? undefined : { background: C.violetDim }}
       >
         <div
-          className="h-full rounded-full transition-all duration-700"
+          className={living ? "sc-living-deep-progress-fill" : "h-full rounded-full transition-all duration-700"}
           style={{
             width: `${pct}%`,
-            background: `linear-gradient(to right, ${C.violet}, ${C.fuchsia})`,
-            boxShadow: `0 0 8px ${C.violetMid}`,
+            ...(living
+              ? {}
+              : {
+                  background: `linear-gradient(to right, ${C.violet}, ${C.fuchsia})`,
+                  boxShadow: `0 0 8px ${C.violetMid}`,
+                }),
           }}
         />
       </div>
@@ -534,6 +542,7 @@ export function PronunciationCompanion({
 }: PronunciationCompanionProps) {
   const { t } = useTranslation();
   const living = isSpeechCoachLivingV1Enabled();
+  const palette = living ? SPEECH_LIVING_DEEP_PALETTE : C;
   const capIos = isCapacitorIOS();
   const nativePf =
     typeof window !== "undefined" && Capacitor.isNativePlatform()
@@ -566,10 +575,11 @@ export function PronunciationCompanion({
       )
     : null;
 
-  // Confetti burst on "great" result
+  // Confetti burst on "great" result — suppressed under living deep interior (P0).
   const [showConfetti, setShowConfetti] = useState(false);
   const prevFeedbackRef = useRef<TranscriptFeedback | null>(null);
   useEffect(() => {
+    if (living) return;
     const feedback = currentResult?.feedback ?? null;
     const prev = prevFeedbackRef.current;
     prevFeedbackRef.current = feedback;
@@ -577,33 +587,33 @@ export function PronunciationCompanion({
     setShowConfetti(true);
     const timer = setTimeout(() => setShowConfetti(false), 2200);
     return () => clearTimeout(timer);
-  }, [currentResult?.feedback]);
+  }, [currentResult?.feedback, living]);
 
   // Score ring colour
   const scoreBg =
     currentResult?.feedback === "great"
-      ? C.emeraldDim
+      ? palette.emeraldDim
       : currentResult?.feedback === "close"
-        ? C.amberDim
-        : C.redDim;
+        ? palette.amberDim
+        : palette.redDim;
   const scoreBorder =
     currentResult?.feedback === "great"
-      ? C.emeraldBorder
+      ? palette.emeraldBorder
       : currentResult?.feedback === "close"
-        ? C.amberBorder
-        : C.redBorder;
+        ? palette.amberBorder
+        : palette.redBorder;
   const scoreColour =
     currentResult?.feedback === "great"
-      ? C.emerald
+      ? palette.emerald
       : currentResult?.feedback === "close"
-        ? C.amber
-        : C.red;
+        ? palette.amber
+        : palette.red;
   const scoreBarGradient =
     currentResult?.feedback === "great"
-      ? `linear-gradient(to right, ${C.emerald}, rgba(52,211,153,0.7))`
+      ? `linear-gradient(to right, ${palette.emerald}, rgba(167,212,180,0.7))`
       : currentResult?.feedback === "close"
-        ? `linear-gradient(to right, ${C.amber}, rgba(251,191,36,0.7))`
-        : `linear-gradient(to right, ${C.red}, rgba(239,68,68,0.7))`;
+        ? `linear-gradient(to right, ${palette.amber}, rgba(232,212,184,0.7))`
+        : `linear-gradient(to right, ${palette.red}, rgba(224,170,160,0.7))`;
 
 
   useEffect(() => {
@@ -659,7 +669,11 @@ export function PronunciationCompanion({
       {articulationCue && viewMode === "parent" ? (
         <div
           className="rounded-xl border px-3 py-2 text-xs leading-relaxed"
-          style={{ borderColor: C.panelBorder, color: C.textMid, background: "rgba(139,92,246,0.08)" }}
+          style={{
+            borderColor: palette.panelBorder,
+            color: palette.textMid,
+            background: living ? "rgba(232,212,184,0.08)" : "rgba(139,92,246,0.08)",
+          }}
           data-testid="speech-articulation-cue"
         >
           <p className="font-semibold mb-0.5">{articulationCue.label}</p>
@@ -667,31 +681,38 @@ export function PronunciationCompanion({
         </div>
       ) : null}
 
-      {/* ── Futuristic dark panel ──────────────────────────────────────────── */}
+      {/* ── Practice panel (living = sanctuary; legacy = neon) ─────────────── */}
       <div
         data-on-dark
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: C.panelBg,
-          border: `1px solid ${C.panelBorder}`,
-          boxShadow:
-            "0 0 40px rgba(139,92,246,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
-        }}
+        data-sc-living-deep={living ? "1" : undefined}
+        className={living ? "relative overflow-hidden sc-living-deep-panel" : "relative rounded-2xl overflow-hidden"}
+        style={
+          living
+            ? undefined
+            : {
+                background: palette.panelBg,
+                border: `1px solid ${palette.panelBorder}`,
+                boxShadow:
+                  "0 0 40px rgba(139,92,246,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
+              }
+        }
       >
-        {/* Top edge glow line */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
-          aria-hidden
-          style={{
-            width: "60%",
-            height: "1px",
-            background:
-              "linear-gradient(to right, transparent, rgba(139,92,246,0.85), transparent)",
-          }}
-        />
+        {/* Top edge glow line — legacy neon only */}
+        {!living ? (
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
+            aria-hidden
+            style={{
+              width: "60%",
+              height: "1px",
+              background:
+                "linear-gradient(to right, transparent, rgba(139,92,246,0.85), transparent)",
+            }}
+          />
+        ) : null}
 
-        {/* Confetti burst */}
-        {showConfetti && <ConfettiBurst />}
+        {/* Confetti burst — living suppresses via effect */}
+        {showConfetti && !living ? <ConfettiBurst /> : null}
 
         <div className="relative p-5 space-y-5">
 
@@ -706,14 +727,14 @@ export function PronunciationCompanion({
               <div className="text-center space-y-1">
                 <p
                   className="text-base font-bold"
-                  style={{ color: C.textMid }}
+                  style={{ color: palette.textMid }}
                   data-on-dark
                 >
                   {amyStateLabel}
                 </p>
                 <p
                   className="text-xs max-w-[220px] leading-relaxed"
-                  style={{ color: C.purpleDim }}
+                  style={{ color: palette.purpleDim }}
                   data-on-dark
                 >
                   {amyIntro}
@@ -725,12 +746,12 @@ export function PronunciationCompanion({
                 className="w-full rounded-xl px-4 py-3 text-center space-y-0.5"
                 style={{
                   background: "rgba(139,92,246,0.1)",
-                  border: `1px solid ${C.violetBorder}`,
+                  border: `1px solid ${palette.violetBorder}`,
                 }}
               >
                 <p
                   className="text-sm font-bold"
-                  style={{ color: C.textMid }}
+                  style={{ color: palette.textMid }}
                   data-on-dark
                 >
                   {t(`screens.speech_coach.pronounce.difficulty.${difficulty}`)}{" "}
@@ -738,7 +759,7 @@ export function PronunciationCompanion({
                 </p>
                 <p
                   className="text-xs"
-                  style={{ color: C.purpleDim }}
+                  style={{ color: palette.purpleDim }}
                   data-on-dark
                 >
                   {t(
@@ -752,7 +773,7 @@ export function PronunciationCompanion({
               {sessionSize === 0 ? (
                 <p
                   className="text-xs"
-                  style={{ color: C.purpleDim }}
+                  style={{ color: palette.purpleDim }}
                   data-on-dark
                 >
                   {t("screens.speech_coach.pronounce.session.loading_practice")}
@@ -766,12 +787,21 @@ export function PronunciationCompanion({
                   }}
                   data-testid="pronounce-start-session"
                   className="flex items-center gap-2 px-8 py-3 rounded-full font-bold text-sm transition-all active:scale-95"
-                  style={{
-                    background: `linear-gradient(135deg, ${C.violet}, ${C.fuchsia})`,
-                    color: "#fff",
-                    border: "none",
-                    boxShadow: `0 0 22px ${C.violetMid}, 0 4px 16px rgba(139,92,246,0.3)`,
-                  }}
+                  style={
+                    living
+                      ? {
+                          background: "rgba(232,212,184,0.16)",
+                          color: "rgba(255,252,248,0.96)",
+                          border: "1px solid rgba(232,212,184,0.28)",
+                          boxShadow: "none",
+                        }
+                      : {
+                          background: `linear-gradient(135deg, ${palette.violet}, ${palette.fuchsia})`,
+                          color: "#fff",
+                          border: "none",
+                          boxShadow: `0 0 22px ${palette.violetMid}, 0 4px 16px rgba(139,92,246,0.3)`,
+                        }
+                  }
                 >
                   <Mic className="h-4 w-4" />
                   {t("screens.speech_coach.pronounce.session.start_cta")}
@@ -792,7 +822,7 @@ export function PronunciationCompanion({
                     onClick={onNewSession}
                     data-testid="pronounce-exit-session"
                     className="text-[11px] font-bold transition-opacity hover:opacity-60"
-                    style={{ color: C.purpleDim }}
+                    style={{ color: palette.purpleDim }}
                   >
                     ✕
                   </button>
@@ -817,7 +847,7 @@ export function PronunciationCompanion({
                 {/* State label */}
                 <p
                   className="text-xs font-bold tracking-wide"
-                  style={{ color: C.textDim }}
+                  style={{ color: palette.textDim }}
                   data-on-dark
                 >
                   {amyStateLabel}
@@ -833,25 +863,25 @@ export function PronunciationCompanion({
                         ? "rgba(139,92,246,0.18)"
                         : promptPhase === "result" &&
                             currentResult?.feedback === "great"
-                          ? C.emeraldDim
+                          ? palette.emeraldDim
                           : "rgba(139,92,246,0.07)",
                     border: `1px solid ${
                       promptPhase === "recording"
-                        ? C.violetMid
+                        ? palette.violetMid
                         : promptPhase === "result" &&
                             currentResult?.feedback === "great"
-                          ? C.emeraldBorder
+                          ? palette.emeraldBorder
                           : "rgba(139,92,246,0.2)"
                     }`,
                     boxShadow:
                       promptPhase === "recording"
-                        ? `0 0 22px ${C.violetDim}`
+                        ? `0 0 22px ${palette.violetDim}`
                         : "none",
                   }}
                 >
                   <span
                     className="block text-[10px] font-bold uppercase tracking-widest mb-2"
-                    style={{ color: C.purpleDim }}
+                    style={{ color: palette.purpleDim }}
                     data-on-dark
                   >
                     {t(
@@ -861,8 +891,8 @@ export function PronunciationCompanion({
                   <span
                     className="block text-5xl font-black tracking-tight leading-none"
                     style={{
-                      color: C.textBright,
-                      textShadow: `0 0 28px ${C.violetMid}, 0 0 56px rgba(139,92,246,0.28)`,
+                      color: palette.textBright,
+                      textShadow: living ? undefined : `0 0 28px ${palette.violetMid}, 0 0 56px rgba(139,92,246,0.28)`,
                     }}
                     data-on-dark
                   >
@@ -872,7 +902,7 @@ export function PronunciationCompanion({
 
                 {/* Live waveform — recording only */}
                 {promptPhase === "recording" && (
-                  <NeonWaveform active={stt.listening} />
+                  <NeonWaveform active={stt.listening} living={living} />
                 )}
 
                 {/* Analyzing indicator */}
@@ -894,14 +924,14 @@ export function PronunciationCompanion({
                   !stt.transcribing && (
                     <p
                       className="text-xs font-bold flex items-center gap-1.5"
-                      style={{ color: C.purple }}
+                      style={{ color: palette.purple }}
                       aria-live="polite"
                       data-testid="pronounce-listening-indicator"
                       data-on-dark
                     >
                       <span
                         className="h-2 w-2 rounded-full animate-pulse"
-                        style={{ background: C.purple }}
+                        style={{ background: palette.purple }}
                       />
                       {stt.status === "preparing"
                         ? t("screens.speech_coach.stt.preparing")
@@ -917,7 +947,7 @@ export function PronunciationCompanion({
                 {stt.listening && stt.interimTranscript && (
                   <p
                     className="text-xs italic"
-                    style={{ color: C.purpleDim }}
+                    style={{ color: palette.purpleDim }}
                     aria-live="polite"
                     data-on-dark
                   >
@@ -967,7 +997,7 @@ export function PronunciationCompanion({
                   <div className="flex items-center justify-between">
                     <span
                       className="text-[10px] font-bold uppercase tracking-wide"
-                      style={{ color: C.purpleDim }}
+                      style={{ color: palette.purpleDim }}
                       data-on-dark
                     >
                       {t(
@@ -978,7 +1008,7 @@ export function PronunciationCompanion({
                       {currentResult.feedback === "great" ? (
                         <CheckCircle2
                           className="h-4 w-4"
-                          style={{ color: C.emerald }}
+                          style={{ color: palette.emerald }}
                         />
                       ) : (
                         <Star
@@ -1010,7 +1040,7 @@ export function PronunciationCompanion({
                   {currentResult.transcript && (
                     <p
                       className="text-[11px]"
-                      style={{ color: C.purpleDim }}
+                      style={{ color: palette.purpleDim }}
                       data-on-dark
                     >
                       {t("screens.speech_coach.stt.you_said")}{" "}
@@ -1124,7 +1154,7 @@ export function PronunciationCompanion({
                         className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
                         style={{
                           background: "rgba(239,68,68,0.18)",
-                          border: `1px solid ${C.redBorder}`,
+                          border: `1px solid ${palette.redBorder}`,
                           color: "rgba(252,165,165,1)",
                           boxShadow: "0 0 12px rgba(239,68,68,0.18)",
                         }}
@@ -1144,10 +1174,10 @@ export function PronunciationCompanion({
                         data-testid="pronounce-record-btn"
                         className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold transition-all disabled:opacity-40 active:scale-95"
                         style={{
-                          background: `linear-gradient(135deg, ${C.violet}, ${C.fuchsia})`,
-                          border: `1px solid ${C.violetMid}`,
+                          background: `linear-gradient(135deg, ${palette.violet}, ${palette.fuchsia})`,
+                          border: `1px solid ${palette.violetMid}`,
                           color: "#fff",
-                          boxShadow: `0 0 18px ${C.violetMid}`,
+                          boxShadow: `0 0 18px ${palette.violetMid}`,
                         }}
                       >
                         <Mic className="h-3.5 w-3.5" />
@@ -1174,10 +1204,10 @@ export function PronunciationCompanion({
                         data-testid="pronounce-next-btn"
                         className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ml-auto"
                         style={{
-                          background: `linear-gradient(135deg, ${C.violet}, ${C.fuchsia})`,
-                          border: `1px solid ${C.violetMid}`,
+                          background: `linear-gradient(135deg, ${palette.violet}, ${palette.fuchsia})`,
+                          border: `1px solid ${palette.violetMid}`,
                           color: "#fff",
-                          boxShadow: `0 0 18px ${C.violetMid}`,
+                          boxShadow: `0 0 18px ${palette.violetMid}`,
                         }}
                       >
                         {isLastItem
@@ -1195,7 +1225,7 @@ export function PronunciationCompanion({
               ) : (
                 <p
                   className="text-xs"
-                  style={{ color: C.purpleDim }}
+                  style={{ color: palette.purpleDim }}
                   data-on-dark
                 >
                   {t("screens.speech_coach.stt.unsupported")}
@@ -1216,8 +1246,8 @@ export function PronunciationCompanion({
                 <p
                   className="text-xl font-black"
                   style={{
-                    color: C.textBright,
-                    textShadow: `0 0 22px ${C.violetMid}`,
+                    color: palette.textBright,
+                    textShadow: living ? undefined : `0 0 22px ${palette.violetMid}`,
                   }}
                   data-on-dark
                 >
@@ -1227,7 +1257,7 @@ export function PronunciationCompanion({
                 </p>
                 <p
                   className="text-xs mt-1"
-                  style={{ color: C.purpleDim }}
+                  style={{ color: palette.purpleDim }}
                   data-on-dark
                 >
                   {t(
@@ -1268,13 +1298,13 @@ export function PronunciationCompanion({
                       className="rounded-xl px-4 py-3 text-center"
                       style={{
                         background: "rgba(139,92,246,0.14)",
-                        border: `1px solid ${C.violetBorder}`,
+                        border: `1px solid ${palette.violetBorder}`,
                       }}
                     >
                       <span
                         className="text-2xl font-black"
                         style={{
-                          color: C.amber,
+                          color: palette.amber,
                           textShadow: living
                             ? undefined
                             : `0 0 16px rgba(251,191,36,0.5)`,
@@ -1288,7 +1318,7 @@ export function PronunciationCompanion({
                       {!living ? (
                         <p
                           className="text-sm mt-0.5"
-                          style={{ color: C.purpleDim }}
+                          style={{ color: palette.purpleDim }}
                           data-on-dark
                         >
                           {"⭐".repeat(Math.min(strong.length, 5))}
@@ -1296,7 +1326,7 @@ export function PronunciationCompanion({
                       ) : (
                         <p
                           className="text-sm mt-0.5"
-                          style={{ color: C.purpleDim }}
+                          style={{ color: palette.purpleDim }}
                           data-on-dark
                         >
                           Gentle practice — enough for now.
@@ -1315,8 +1345,8 @@ export function PronunciationCompanion({
                       <div
                         className="rounded-xl px-4 py-3"
                         style={{
-                          background: C.emeraldDim,
-                          border: `1px solid ${C.emeraldBorder}`,
+                          background: palette.emeraldDim,
+                          border: `1px solid ${palette.emeraldBorder}`,
                         }}
                       >
                         <p
@@ -1343,8 +1373,8 @@ export function PronunciationCompanion({
                       <div
                         className="rounded-xl px-4 py-3"
                         style={{
-                          background: C.amberDim,
-                          border: `1px solid ${C.amberBorder}`,
+                          background: palette.amberDim,
+                          border: `1px solid ${palette.amberBorder}`,
                         }}
                       >
                         <p
@@ -1375,10 +1405,10 @@ export function PronunciationCompanion({
                 data-testid="pronounce-new-session-btn"
                 className="flex items-center gap-2 px-8 py-3 rounded-full font-bold text-sm transition-all active:scale-95"
                 style={{
-                  background: `linear-gradient(135deg, ${C.violet}, ${C.fuchsia})`,
+                  background: `linear-gradient(135deg, ${palette.violet}, ${palette.fuchsia})`,
                   color: "#fff",
                   border: "none",
-                  boxShadow: `0 0 22px ${C.violetMid}`,
+                  boxShadow: `0 0 22px ${palette.violetMid}`,
                 }}
               >
                 <Sparkles className="h-4 w-4" />

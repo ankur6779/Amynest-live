@@ -42,6 +42,11 @@ import {
   loadSpeechGameRewards,
 } from "./speech-game-rewards";
 import {
+  isSpeechCoachLivingV1Enabled,
+  livingSpeechGameCompleteBody,
+} from "@/lib/speech-coach/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import {
   emojiForGameWord,
   SPEECH_GAME_THEMES,
 } from "./speech-game-theme";
@@ -107,8 +112,37 @@ function GameCompletion({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const living = isSpeechCoachLivingV1Enabled();
   const theme = SPEECH_GAME_THEMES[gameId];
   const gameMeta = SPEECH_GAMES.find((g) => g.id === gameId);
+
+  if (living) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-4 text-center"
+        data-testid="speech-game-completion-living"
+      >
+        <div className="text-3xl" aria-hidden>{theme.emoji}</div>
+        <p className="mt-2 font-bold text-lg text-foreground">
+          {t("screens.speech_coach.games.complete_title", { game: gameTitle })}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{livingSpeechGameCompleteBody()}</p>
+        <div className="mt-4 flex justify-center gap-2">
+          <Button type="button" className="min-h-12 rounded-full" onClick={onPlayAgain}>
+            {t("screens.speech_coach.games.play_again")}
+          </Button>
+          <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={onClose}>
+            {t("screens.speech_coach.games.exit")}
+          </Button>
+        </div>
+        <AmyNestLeaveContinuity
+          className="mt-3"
+          continueHref="/speech-coach"
+          continueLabel="Back to today's help"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-violet-50 to-fuchsia-50 p-4 text-center dark:from-violet-950/50 dark:to-fuchsia-950/40">
@@ -567,12 +601,15 @@ export function SpeechGameFlow({
 
 export function SpeechGameRewardsBar({ childId }: { childId: number }) {
   const { t } = useTranslation();
+  const living = isSpeechCoachLivingV1Enabled();
   const [rewards, setRewards] = useState(() => loadSpeechGameRewards(childId));
 
   useEffect(() => {
     setRewards(loadSpeechGameRewards(childId));
   }, [childId]);
 
+  // P0 deep interior — hide coin/badge theatre on living face (rewards data kept).
+  if (living) return null;
   if (rewards.coins === 0 && rewards.badges.length === 0) return null;
 
   return (

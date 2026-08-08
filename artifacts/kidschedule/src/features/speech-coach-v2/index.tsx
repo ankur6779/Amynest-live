@@ -13,10 +13,12 @@ import {
 } from "./lib/remote-config";
 import { SpeechCoachV2ParentDashboardPanel } from "./components/parent-dashboard";
 import { useSpeechCoachV2DailyAllowance } from "./hooks/use-speech-coach-v2-daily-allowance";
+import { isSpeechCoachLivingV1Enabled } from "@/lib/speech-coach/living-room";
 
 export default function SpeechCoachV2HubPage() {
   const [, setLocation] = useLocation();
   const authFetch = useAuthFetch();
+  const living = isSpeechCoachLivingV1Enabled();
   const { data: children = [] } = useListChildren();
   const child = children[0];
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
@@ -61,25 +63,45 @@ export default function SpeechCoachV2HubPage() {
         Back
       </button>
 
-      <div className="rounded-3xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-6 text-white shadow-lg">
-        <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
-          AmyNest AI™ Speech Coach
+      <div
+        className={
+          living
+            ? "rounded-3xl border border-border/60 bg-card/80 p-6 text-foreground shadow-sm"
+            : "rounded-3xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 p-6 text-white shadow-lg"
+        }
+      >
+        <p
+          className={
+            living
+              ? "text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              : "text-xs font-semibold uppercase tracking-wider text-white/70"
+          }
+        >
+          {living ? "Voice together" : "AmyNest AI™ Speech Coach"}
         </p>
-        <h1 className="mt-2 text-2xl font-bold">Speech Coach</h1>
-        <p className="mt-2 text-sm text-white/85">
-          Live AI speech coaching for pronunciation, fluency, and confidence.
+        <h1 className="mt-2 text-2xl font-bold">{living ? "Practice with Amy" : "Speech Coach"}</h1>
+        <p className={living ? "mt-2 text-sm text-muted-foreground" : "mt-2 text-sm text-white/85"}>
+          {living
+            ? "Calm live practice for pronunciation, fluency, and confidence — Amy beside you."
+            : "Live AI speech coaching for pronunciation, fluency, and confidence."}
         </p>
         {dailyAllowance && (
-          <p className="mt-1 text-xs font-semibold text-white/75">{dailyAllowance}</p>
+          <p className={living ? "mt-1 text-xs font-semibold text-muted-foreground" : "mt-1 text-xs font-semibold text-white/75"}>
+            {dailyAllowance}
+          </p>
         )}
         <AppLink href="/speech-coach-v2/session" source="speech-coach-v2-hub">
           <Button
-            className="mt-5 w-full rounded-xl bg-white text-indigo-700 hover:bg-white/90"
+            className={
+              living
+                ? "mt-5 w-full min-h-12 rounded-xl"
+                : "mt-5 w-full rounded-xl bg-white text-indigo-700 hover:bg-white/90"
+            }
             size="lg"
             data-testid="start-speech-coach-v2"
           >
             <Mic className="mr-2 h-5 w-5" />
-            Start speaking with Amy
+            {living ? "Begin gently" : "Start speaking with Amy"}
             <ArrowRight className="ml-auto h-4 w-4" />
           </Button>
         </AppLink>
@@ -88,16 +110,27 @@ export default function SpeechCoachV2HubPage() {
       <Tabs defaultValue="child" className="mt-8">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="child">Practice</TabsTrigger>
-          <TabsTrigger value="parent">Parent Dashboard</TabsTrigger>
+          <TabsTrigger value="parent">{living ? "Progress" : "Parent Dashboard"}</TabsTrigger>
         </TabsList>
         <TabsContent value="child" className="mt-4 space-y-4">
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
               <ul className="space-y-2">
-                <li>• Guided session with 6 phases</li>
-                <li>• Age-adaptive lessons for ages 2–10</li>
-                <li>• Stars, points, and confidence badges</li>
-                <li>• {dailyAllowance ?? "Daily practice limit from your plan"}</li>
+                {living ? (
+                  <>
+                    <li>• A guided practice with Amy</li>
+                    <li>• Age-right help for ages 2–10</li>
+                    <li>• Gentle progress you can notice</li>
+                    <li>• {dailyAllowance ?? "Daily practice from your plan"}</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Guided session with 6 phases</li>
+                    <li>• Age-adaptive lessons for ages 2–10</li>
+                    <li>• Stars, points, and confidence badges</li>
+                    <li>• {dailyAllowance ?? "Daily practice limit from your plan"}</li>
+                  </>
+                )}
               </ul>
             </CardContent>
           </Card>
