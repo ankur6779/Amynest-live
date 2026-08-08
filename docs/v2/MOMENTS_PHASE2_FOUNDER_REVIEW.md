@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Moments Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `1253621d075dcfa85bf9cbbf3771dcb0d1055c92`  
 
 **STOP after this module.** Wait for Founder approval.
 
