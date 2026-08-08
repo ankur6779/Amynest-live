@@ -6,7 +6,7 @@
 **Audit baseline:** `4893a7690ef57c165ed96981128c8cc34cad7f9a`  
 **Implementation map:** `docs/v2/AMYNEST_P0_P1_REMEDIATION_IMPLEMENTATION_MAP.md`  
 **HEAD before coding:** `4893a769`  
-**Implementation Commit SHA:** _(filled after commit)_
+**Implementation Commit SHA:** 
 
 **STOP after this pass.** Do **not** run Final Apple Audit. Do **not** start another manufacturing phase.
 
@@ -237,7 +237,7 @@ Closer to one home on leave/nav/premium voice. Speech neon chassis and Hub catal
 | Artifact | SHA |
 |---|---|
 | Audit baseline | `4893a7690ef57c165ed96981128c8cc34cad7f9a` |
-| This remediation | _(filled after commit)_ |
+| This remediation |  |
 
 ---
 
