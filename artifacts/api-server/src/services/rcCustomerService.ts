@@ -1,13 +1,40 @@
+import { db, subscriptionsTable, type Subscription } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import { safeJsonResponse } from "../lib/safe-json-response.js";
 import type { Plan } from "./subscriptionService";
+import { isPremiumNow } from "./subscription-premium-gate.js";
 import {
   applyRevenueCatSnapshot,
   markRevenueCatSyncError,
   productIdToPlan,
   type RevenueCatSnapshot,
 } from "./subscriptionStateService";
+
+type RcSyncSource = "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery";
+
+/** Sources that must not wipe a still-valid local paid row on empty RC. */
+const PRESERVE_LOCAL_ON_EMPTY_RC_SOURCES: ReadonlySet<RcSyncSource> = new Set([
+  "restore",
+  "reconciliation",
+  "manual_recovery",
+  "purchase_finalize",
+]);
+
+/**
+ * Empty RC active_entitlements must not downgrade a still-valid local
+ * RevenueCat premium row (propagation lag, transient empty, entitlement-id
+ * mismatch). Webhooks are excluded — EXPIRATION/BILLING_ISSUE must apply.
+ */
+export function shouldPreserveLocalEntitlementOnEmptyRc(
+  local: Subscription | null | undefined,
+  source: RcSyncSource,
+): boolean {
+  if (!PRESERVE_LOCAL_ON_EMPTY_RC_SOURCES.has(source)) return false;
+  if (!local || local.provider !== "revenuecat") return false;
+  return isPremiumNow(local);
+}
 
 const RC_V2_SECRET_KEY = process.env.REVENUECAT_V2_SECRET_KEY ?? "";
 const RC_PROJECT_ID = process.env.REVENUECAT_PROJECT_ID ?? "";
@@ -257,7 +284,7 @@ function buildSnapshotFromV2(
  * for the webhook round-trip.
  */
 export async function syncRevenueCatSubscription(userId: string, opts: {
-  source?: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery";
+  source?: RcSyncSource;
   providerEventId?: string | null;
   eventType?: string | null;
 } = {}): Promise<{
@@ -318,18 +345,39 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
     const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
     if (!activeEnt && !activeSubscription) {
+      const source = opts.source ?? "purchase_finalize";
       logger.warn(
         {
           userId,
+          source,
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
           subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      const localRow = await db.query.subscriptionsTable.findFirst({
+        where: eq(subscriptionsTable.userId, canonicalUserId),
+      });
+      if (shouldPreserveLocalEntitlementOnEmptyRc(localRow, source)) {
+        logger.warn(
+          { userId: canonicalUserId, requestedUserId: userId, source },
+          "[rcSync] RC empty but local paid period still valid — preserving local entitlement",
+        );
+        return {
+          synced: false,
+          isPremium: true,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: true,
+          appliedUserId: canonicalUserId,
+          reason: "rc_empty_local_preserved",
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
-        source: opts.source ?? "purchase_finalize",
+        source,
         providerEventId: opts.providerEventId,
       });
       return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId, reason: "no_active_entitlement" };
