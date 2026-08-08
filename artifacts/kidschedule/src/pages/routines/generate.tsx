@@ -1955,6 +1955,11 @@ export default function RoutineGenerate() {
               setFixedReviewState(null);
               void handleAiGenerate(force);
             }}
+            onAdjustDetails={() => {
+              setLivingResultState(null);
+              setFixedReviewState(null);
+              setDeltasOpen(true);
+            }}
           >
             {fixedReviewState ? (
               <FixedActivitiesReviewPanel
@@ -2124,25 +2129,6 @@ export default function RoutineGenerate() {
                 </div>
               </CardContent>
             </Card>
-          ) : null}
-
-          {living && livingResultState && !isGenerating && !isAiGenerating ? (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                className="rg-family-quiet"
-                data-testid="routine-living-result-adjust"
-                onClick={() => {
-                  setLivingResultState(null);
-                  setFixedReviewState(null);
-                  setDeltasOpen(true);
-                }}
-              >
-                {t("routines.living.result.adjust_details", {
-                  defaultValue: "Change today's details",
-                })}
-              </button>
-            </div>
           ) : null}
 
           {isGenerating || isAiGenerating ? <Card className={cn("rounded-3xl border-none shadow-sm overflow-hidden mt-4", living ? "rg-handoff-card" : "bg-card")}>

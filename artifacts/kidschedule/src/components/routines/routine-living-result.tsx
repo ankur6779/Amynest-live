@@ -16,6 +16,12 @@ import {
 import {
   buildLivingDayArc,
   buildLivingWhyProof,
+  livingAdjustBandHint,
+  livingAdjustBandTitle,
+  livingAdjustDetailsCta,
+  livingAdjustDetailsHint,
+  livingAdjustPostBeginHint,
+  livingExecutionHandoffNote,
   livingResultBeginCta,
   livingResultBeginSubtext,
   livingResultEmptyBody,
@@ -25,7 +31,6 @@ import {
   livingResultPartialNote,
   livingResultRebuildConfirm,
   livingResultRebuildCta,
-  livingResultSoftEditNote,
   livingResultWhatLine,
   pickLivingFirstAction,
   type LivingResultItem,
@@ -52,6 +57,8 @@ type Props = {
   isRebuilding?: boolean;
   onBegin: () => void;
   onRebuild: () => void;
+  /** Reopen R2 deltas — Adjust this day (not a rebuild by itself) */
+  onAdjustDetails?: () => void;
   /** Fixed-activities review or other truthful secondary panels */
   children?: React.ReactNode;
 };
@@ -73,6 +80,7 @@ export function RoutineLivingResult({
   isRebuilding,
   onBegin,
   onRebuild,
+  onAdjustDetails,
   children,
 }: Props) {
   const { t } = useTranslation();
@@ -375,21 +383,6 @@ export function RoutineLivingResult({
           </section>
         ) : null}
 
-        {children ? (
-          <div
-            className="rg-result-secondary"
-            data-testid="routine-living-result-secondary"
-          >
-            {children}
-          </div>
-        ) : null}
-
-        <p className="rg-result-soft-note">
-          {t("routines.living.result.soft_edit", {
-            defaultValue: livingResultSoftEditNote(),
-          })}
-        </p>
-
         <div className="rg-result-actions">
           {!empty ? (
             <RoutinePremiumCta
@@ -406,58 +399,126 @@ export function RoutineLivingResult({
             />
           ) : null}
 
-          {!rebuildArmed ? (
-            <button
-              type="button"
-              className="rg-result-rebuild"
-              data-testid="routine-living-result-rebuild"
-              disabled={!!isSaving || !!isRebuilding}
-              onClick={() => setRebuildArmed(true)}
-            >
-              {t("routines.living.result.rebuild_cta", {
-                defaultValue: livingResultRebuildCta(),
+          <p className="rg-result-soft-note" data-testid="routine-living-result-handoff">
+            {t("routines.living.result.execution_handoff", {
+              defaultValue: livingExecutionHandoffNote(),
+            })}
+          </p>
+
+          {/* R4 Adjust band — small corrections, not rebuild */}
+          <section
+            className="rg-adjust-band"
+            aria-labelledby="rg-adjust-title"
+            data-testid="routine-living-adjust-band"
+          >
+            <p className="rg-result-kicker" id="rg-adjust-title">
+              {t("routines.living.adapt.adjust_title", {
+                defaultValue: livingAdjustBandTitle(),
               })}
-            </button>
-          ) : (
-            <div
-              className="rg-result-rebuild-confirm"
-              role="alertdialog"
-              aria-label={t("routines.living.result.rebuild_confirm_aria", {
-                defaultValue: "Confirm rebuild",
+            </p>
+            <p className="rg-adjust-hint">
+              {t("routines.living.adapt.adjust_hint", {
+                defaultValue: livingAdjustBandHint(),
               })}
-              data-testid="routine-living-result-rebuild-confirm"
-            >
-              <p>
-                {t("routines.living.result.rebuild_confirm", {
-                  defaultValue: livingResultRebuildConfirm(),
-                })}
-              </p>
-              <div className="rg-result-rebuild-actions">
-                <button
-                  type="button"
-                  className="rg-result-rebuild-yes"
-                  disabled={!!isRebuilding}
-                  onClick={() => {
-                    setRebuildArmed(false);
-                    onRebuild();
-                  }}
-                >
-                  {t("routines.living.result.rebuild_yes", {
-                    defaultValue: "Yes, rebuild",
+            </p>
+
+            {onAdjustDetails ? (
+              <button
+                type="button"
+                className="rg-adjust-details"
+                data-testid="routine-living-result-adjust"
+                disabled={!!isSaving || !!isRebuilding}
+                onClick={onAdjustDetails}
+              >
+                <span className="rg-adjust-details-title">
+                  {t("routines.living.adapt.adjust_details_cta", {
+                    defaultValue: livingAdjustDetailsCta(),
                   })}
-                </button>
-                <button
-                  type="button"
-                  className="rg-result-rebuild-no"
-                  onClick={() => setRebuildArmed(false)}
-                >
-                  {t("routines.living.result.rebuild_no", {
-                    defaultValue: "Keep this plan",
+                </span>
+                <span className="rg-adjust-details-hint">
+                  {t("routines.living.adapt.adjust_details_hint", {
+                    defaultValue: livingAdjustDetailsHint(),
                   })}
-                </button>
+                </span>
+              </button>
+            ) : null}
+
+            <p className="rg-adjust-post-begin">
+              {t("routines.living.adapt.post_begin_hint", {
+                defaultValue: livingAdjustPostBeginHint(),
+              })}
+            </p>
+
+            {children ? (
+              <div
+                className="rg-result-secondary"
+                data-testid="routine-living-result-secondary"
+              >
+                <p className="rg-adjust-fixed-label">
+                  {t("routines.living.adapt.fixed_label", {
+                    defaultValue: "Weekly commitments",
+                  })}
+                </p>
+                {children}
               </div>
-            </div>
-          )}
+            ) : null}
+          </section>
+
+          {/* Rebuild — destructive, confirm-gated, visually demoted */}
+          <div className="rg-rebuild-zone" data-testid="routine-living-rebuild-zone">
+            {!rebuildArmed ? (
+              <button
+                type="button"
+                className="rg-result-rebuild"
+                data-testid="routine-living-result-rebuild"
+                disabled={!!isSaving || !!isRebuilding}
+                onClick={() => setRebuildArmed(true)}
+              >
+                {t("routines.living.result.rebuild_cta", {
+                  defaultValue: livingResultRebuildCta(),
+                })}
+              </button>
+            ) : (
+              <div
+                className="rg-result-rebuild-confirm"
+                role="alertdialog"
+                aria-label={t("routines.living.result.rebuild_confirm_aria", {
+                  defaultValue: "Confirm rebuild",
+                })}
+                data-testid="routine-living-result-rebuild-confirm"
+              >
+                <p>
+                  {t("routines.living.result.rebuild_confirm", {
+                    defaultValue: livingResultRebuildConfirm(),
+                  })}
+                </p>
+                <div className="rg-result-rebuild-actions">
+                  <button
+                    type="button"
+                    className="rg-result-rebuild-yes"
+                    disabled={!!isRebuilding}
+                    onClick={() => {
+                      setRebuildArmed(false);
+                      onRebuild();
+                    }}
+                  >
+                    {t("routines.living.result.rebuild_yes", {
+                      defaultValue: "Yes, rebuild",
+                    })}
+                  </button>
+                  <button
+                    type="button"
+                    className="rg-result-rebuild-no"
+                    onClick={() => setRebuildArmed(false)}
+                  >
+                    {t("routines.living.result.rebuild_no", {
+                      defaultValue: "Keep this plan",
+                    })}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

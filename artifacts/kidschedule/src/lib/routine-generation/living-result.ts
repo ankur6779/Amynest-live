@@ -85,8 +85,161 @@ export function livingResultRebuildConfirm(): string {
 }
 
 export function livingResultSoftEditNote(): string {
-  return "After you begin, you can skip or gently adjust any block.";
+  return "After you begin, you can skip, delay, or gently adjust any block — without rebuilding.";
 }
+
+/** R4 — Adjust this day (small correction) vs Rebuild (new plan). */
+export function livingAdjustBandTitle(): string {
+  return "Adjust this day";
+}
+
+export function livingAdjustBandHint(): string {
+  return "Small changes that keep this plan — not a full rebuild.";
+}
+
+export function livingAdjustDetailsCta(): string {
+  return "Change today's details";
+}
+
+export function livingAdjustDetailsHint(): string {
+  return "Mood, caregiver, weather, school, or special plans — then rebuild if needed.";
+}
+
+export function livingAdjustPostBeginHint(): string {
+  return "Skip, delay, and gentle edits unlock after you begin.";
+}
+
+export function livingExecutionHandoffNote(): string {
+  return "Begin saves this plan and opens today's first step — ready to live.";
+}
+
+export function livingRevealCraftingLine(childName = "your child"): string {
+  return `Bringing ${childName}'s plan…`;
+}
+
+export function livingRevealReadyEyebrow(): string {
+  return "Here it is";
+}
+
+export function livingDetailStartHere(activity: string, time?: string): string {
+  const when = time?.trim() ? ` · ${time.trim()}` : "";
+  return `Start here${when}: ${activity.trim()}`;
+}
+
+export function livingDetailAdaptHint(): string {
+  return "This plan can move with your day — skip, delay, or refresh what remains.";
+}
+
+export function livingRegenMenuLabel(): string {
+  return "Fit the rest of today";
+}
+
+export function livingRegenRestTitle(): string {
+  return "Refresh remaining day";
+}
+
+export function livingRegenRestDesc(): string {
+  return "Keeps what you've finished — reshapes only what's left.";
+}
+
+export function livingRegenFullTitle(): string {
+  return "Rebuild full day";
+}
+
+export function livingRegenFullDesc(): string {
+  return "Returns to today's details and replaces the whole plan.";
+}
+
+export function livingRegenTriggerLabel(): string {
+  return "Adjust day";
+}
+
+/**
+ * Capability catalog for R4 honesty — PRESENT vs FUTURE.
+ * Presentation/docs only; does not invent APIs.
+ */
+export const LIVING_ADAPT_CAPABILITIES = [
+  {
+    id: "begin_save",
+    phase: "result" as const,
+    status: "present" as const,
+    action: "Begin today",
+    capability: "Save plan and open execution",
+    path: "POST /api/routines → /routines/:id?reveal=1",
+  },
+  {
+    id: "change_details",
+    phase: "result" as const,
+    status: "present" as const,
+    action: "Change today's details",
+    capability: "Reopen generate deltas (mood/weather/etc.)",
+    path: "Client form state — no API until rebuild",
+  },
+  {
+    id: "rebuild_plan",
+    phase: "result" as const,
+    status: "present" as const,
+    action: "Rebuild today's plan",
+    capability: "Full regenerate with confirmation",
+    path: "Existing generate-ai / generate client path",
+  },
+  {
+    id: "fixed_review",
+    phase: "result" as const,
+    status: "present" as const,
+    action: "Adjust weekly commitments",
+    capability: "Fixed activities review + regenerate/save",
+    path: "FixedActivitiesReviewPanel → generate/save",
+  },
+  {
+    id: "skip_complete_delay",
+    phase: "detail" as const,
+    status: "present" as const,
+    action: "Skip / complete / delay +15m",
+    capability: "Item status updates with cascade",
+    path: "PATCH /api/routines/:id/items",
+  },
+  {
+    id: "inline_edit",
+    phase: "detail" as const,
+    status: "present" as const,
+    action: "Edit activity / time / duration",
+    capability: "Inline soft edit (customized=true)",
+    path: "PATCH /api/routines/:id/items",
+  },
+  {
+    id: "partial_regen",
+    phase: "detail" as const,
+    status: "present" as const,
+    action: "Refresh remaining day",
+    capability: "Partial regenerate from now",
+    path: "POST /api/routines/:id/partial-regenerate",
+  },
+  {
+    id: "feedback_write",
+    phase: "detail" as const,
+    status: "present" as const,
+    action: "Activity / day feedback",
+    capability: "Write-only signals (does not steer engine today)",
+    path: "POST /api/routine-feedback",
+  },
+  {
+    id: "presave_skip_swap",
+    phase: "result" as const,
+    status: "future" as const,
+    action: "Skip / swap block before save",
+    capability: "Requires routine id + PATCH before persist",
+    path: "FUTURE",
+  },
+  {
+    id: "feedback_to_engine",
+    phase: "detail" as const,
+    status: "future" as const,
+    action: "Feedback shapes next generate",
+    capability: "Feedback is write-only today",
+    path: "FUTURE",
+  },
+] as const;
 
 export function livingResultEmptyTitle(): string {
   return "Amy couldn't shape today's plan yet";

@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Calendar, Sparkles } from "lucide-react";
 import { HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
+import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
+import {
+  livingRevealCraftingLine,
+  livingRevealReadyEyebrow,
+} from "@/lib/routine-generation/living-result";
 
-const CRAFT_MS = 1500;
+const CRAFT_MS_LEGACY = 1500;
+const CRAFT_MS_LIVING = 700;
 
 type RoutineRevealOverlayProps = {
   active: boolean;
@@ -20,21 +26,36 @@ export function RoutineRevealOverlay({
   highlightChips,
   onComplete,
 }: RoutineRevealOverlayProps) {
+  const living = isRoutineLivingV1Enabled();
   const [phase, setPhase] = useState<"crafting" | "reveal" | "done">("crafting");
 
   useEffect(() => {
     if (!active) return;
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+    if (living && reduceMotion) {
+      setPhase("reveal");
+      const doneTimer = window.setTimeout(() => {
+        setPhase("done");
+        onComplete();
+      }, 900);
+      return () => window.clearTimeout(doneTimer);
+    }
+
     setPhase("crafting");
-    const craftTimer = window.setTimeout(() => setPhase("reveal"), CRAFT_MS);
+    const craftMs = living ? CRAFT_MS_LIVING : CRAFT_MS_LEGACY;
+    const craftTimer = window.setTimeout(() => setPhase("reveal"), craftMs);
     const doneTimer = window.setTimeout(() => {
       setPhase("done");
       onComplete();
-    }, CRAFT_MS + 2200);
+    }, craftMs + (living ? 1600 : 2200));
     return () => {
       window.clearTimeout(craftTimer);
       window.clearTimeout(doneTimer);
     };
-  }, [active, onComplete]);
+  }, [active, onComplete, living]);
 
   if (!active || phase === "done") return null;
 
@@ -47,6 +68,8 @@ export function RoutineRevealOverlay({
       )}
       role="status"
       aria-live="polite"
+      data-testid="routine-reveal-overlay"
+      data-living={living ? "1" : "0"}
     >
       <div
         className={cn(
@@ -56,11 +79,19 @@ export function RoutineRevealOverlay({
           phase === "crafting" ? "opacity-100" : "opacity-0",
         )}
       >
-        <Sparkles className="h-8 w-8 text-amber-300/90 mx-auto mb-3" />
+        {living ? (
+          <Calendar className="h-7 w-7 text-amber-200/90 mx-auto mb-3" aria-hidden />
+        ) : (
+          <Sparkles className="h-8 w-8 text-amber-300/90 mx-auto mb-3" aria-hidden />
+        )}
         <p className="text-sm font-semibold text-foreground/90">
-          Amy is crafting your routine…
+          {living
+            ? livingRevealCraftingLine(childName)
+            : "Amy is crafting your routine…"}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">{childName}</p>
+        {!living ? (
+          <p className="text-xs text-muted-foreground mt-1">{childName}</p>
+        ) : null}
       </div>
 
       {phase === "reveal" ? (
@@ -72,7 +103,7 @@ export function RoutineRevealOverlay({
           )}
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300/90 mb-2">
-            Routine ready
+            {living ? livingRevealReadyEyebrow() : "Routine ready"}
           </p>
           <h2 className="font-quicksand text-2xl font-bold text-foreground leading-snug">
             {title}

@@ -50,6 +50,17 @@ import { RoutineDayPanel } from "@/components/routine-day-panel";
 import { RoutineProgressRail } from "@/components/routine-progress-rail";
 import { MealOptionPills } from "@/components/routines/meal-option-pills";
 import { RoutineRevealOverlay } from "@/components/routines/routine-reveal-overlay";
+import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
+import {
+  livingDetailAdaptHint,
+  livingDetailStartHere,
+  livingRegenFullDesc,
+  livingRegenFullTitle,
+  livingRegenMenuLabel,
+  livingRegenRestDesc,
+  livingRegenRestTitle,
+  livingRegenTriggerLabel,
+} from "@/lib/routine-generation/living-result";
 import { SubscriptionValueBridgeBanner } from "@/components/subscription-value-bridge-banner";
 import {
   markFirstRoutineItemEverCompleted,
@@ -513,6 +524,7 @@ function RoutineItemModal({
     </div>;
 }
 export default function RoutineDetail() {
+  const living = isRoutineLivingV1Enabled();
   const {
     t
   } = useTranslation();
@@ -1688,17 +1700,27 @@ export default function RoutineDetail() {
             {dateMode !== "past" && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={partialRegenLoading} className="rounded-full gap-2 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10">
+                  <Button variant="outline" size="sm" disabled={partialRegenLoading} className="rounded-full gap-2 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 min-h-11">
                     <RotateCcw className={`h-4 w-4 ${partialRegenLoading ? "animate-spin" : ""}`} />
                     {partialRegenLoading
                       ? t("pages.routines.detail.regen_updating", { defaultValue: "Updating…" })
-                      : t("pages.routines.detail.regenerate", { defaultValue: "Regenerate" })}
+                      : living
+                        ? t("routines.living.adapt.regen_trigger", {
+                            defaultValue: livingRegenTriggerLabel(),
+                          })
+                        : t("pages.routines.detail.regenerate", { defaultValue: "Regenerate" })}
                     <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-72 rounded-2xl">
                   <DropdownMenuLabel>
-                    {t("pages.routines.detail.regenerate_menu_label", { defaultValue: "Regenerate routine" })}
+                    {living
+                      ? t("routines.living.adapt.regen_menu", {
+                          defaultValue: livingRegenMenuLabel(),
+                        })
+                      : t("pages.routines.detail.regenerate_menu_label", {
+                          defaultValue: "Regenerate routine",
+                        })}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -1709,12 +1731,23 @@ export default function RoutineDetail() {
                     <RotateCcw className="h-4 w-4 text-primary shrink-0" />
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">
-                        {t("pages.routines.detail.regen_rest_title", { defaultValue: "Regenerate rest of day" })}
+                        {living
+                          ? t("routines.living.adapt.regen_rest_title", {
+                              defaultValue: livingRegenRestTitle(),
+                            })
+                          : t("pages.routines.detail.regen_rest_title", {
+                              defaultValue: "Regenerate rest of day",
+                            })}
                       </span>
                       <span className="text-xs text-muted-foreground leading-snug">
-                        {t("pages.routines.detail.regen_rest_desc", {
-                          defaultValue: "Keeps finished tasks, redoes only the remaining plan",
-                        })}
+                        {living
+                          ? t("routines.living.adapt.regen_rest_desc", {
+                              defaultValue: livingRegenRestDesc(),
+                            })
+                          : t("pages.routines.detail.regen_rest_desc", {
+                              defaultValue:
+                                "Keeps finished tasks, redoes only the remaining plan",
+                            })}
                       </span>
                     </div>
                   </DropdownMenuItem>
@@ -1727,12 +1760,23 @@ export default function RoutineDetail() {
                     <Sparkles className="h-4 w-4 text-primary shrink-0" />
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">
-                        {t("pages.routines.detail.regen_full_title", { defaultValue: "Regenerate full day" })}
+                        {living
+                          ? t("routines.living.adapt.regen_full_title", {
+                              defaultValue: livingRegenFullTitle(),
+                            })
+                          : t("pages.routines.detail.regen_full_title", {
+                              defaultValue: "Regenerate full day",
+                            })}
                       </span>
                       <span className="text-xs text-muted-foreground leading-snug">
-                        {t("pages.routines.detail.regen_full_desc", {
-                          defaultValue: "Start fresh with new inputs and replace the whole routine",
-                        })}
+                        {living
+                          ? t("routines.living.adapt.regen_full_desc", {
+                              defaultValue: livingRegenFullDesc(),
+                            })
+                          : t("pages.routines.detail.regen_full_desc", {
+                              defaultValue:
+                                "Start fresh with new inputs and replace the whole routine",
+                            })}
                       </span>
                     </div>
                   </DropdownMenuItem>
@@ -1873,6 +1917,47 @@ export default function RoutineDetail() {
           }
           mood={todayMood}
         />
+
+        {/* R4 living continuity — Start here after Begin handoff */}
+        {living && dateMode === "today" && totalCount > 0 ? (
+          <div
+            className={cn(
+              HUB_GLASS_SURFACE,
+              ROUTINES_HUB_ACCENT.border,
+              "rounded-[20px] px-4 py-3 space-y-1",
+            )}
+            data-testid="routine-living-detail-continuity"
+            aria-live="polite"
+          >
+            <p className="text-sm font-bold text-foreground">
+              {(() => {
+                const idx =
+                  timelineFocus.currentIndex >= 0
+                    ? timelineFocus.currentIndex
+                    : timelineFocus.nextUpIndex >= 0
+                      ? timelineFocus.nextUpIndex
+                      : items.findIndex(
+                          (it) => (it.status ?? "pending") === "pending",
+                        );
+                const item = idx >= 0 ? items[idx] : undefined;
+                if (!item?.activity) {
+                  return t("routines.living.adapt.detail_ready", {
+                    defaultValue: "Today's plan is ready to live.",
+                  });
+                }
+                return livingDetailStartHere(
+                  item.activity,
+                  formatRoutineTime(item.time),
+                );
+              })()}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("routines.living.adapt.detail_hint", {
+                defaultValue: livingDetailAdaptHint(),
+              })}
+            </p>
+          </div>
+        ) : null}
 
         {/* Premium "day at a glance" hero — today only */}
         {dateMode === "today" && totalCount > 0 && (
