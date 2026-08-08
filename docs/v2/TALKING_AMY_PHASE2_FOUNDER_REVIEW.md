@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Talking Amy Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:**   
+**Commit SHA:** `14d7240b78ce055ea638e5d9025238e94a6f6a45`
 
 **STOP after this module.** Wait for Founder approval.
 
