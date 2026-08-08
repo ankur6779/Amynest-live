@@ -11,7 +11,7 @@
 **Engine:** PRODUCTION FROZEN (June 2026) — not thawed
 
 **Implementation Commit SHA:** `7e8d6c559e21dab72cbea42795cb688c7f56bf5c`  
-**Docs Commit SHA:** (this commit)
+**Docs Commit SHA:** `a3ecabca47dc0cfedead6a3113b096bc85849650`
 
 **STOP after R4.** Wait for Founder approval.  
 Do **not** begin R5.  
@@ -321,7 +321,7 @@ Restores legacy reveal sparkle/crafting copy, “Regenerate” menu labels, and 
 | Artifact | SHA |
 |---|---|
 | R4 implementation | `7e8d6c559e21dab72cbea42795cb688c7f56bf5c` |
-| This Founder Review | (docs commit after impl) |
+| This Founder Review | `a3ecabca47dc0cfedead6a3113b096bc85849650` |
 
 ---
 
