@@ -281,7 +281,8 @@ Founder / QA should visually confirm on device:
 
 ## 24. Commit SHA
 
-_Filled after commit:_ see git history for `P0-7` hard-day monetization implementation commit on `cursor/product-execution-model-v2`.
+**Implementation commit:** `2bd531392979d77d2b8cf6f99f47da9db9495dec`  
+**Branch:** `cursor/product-execution-model-v2`
 
 ---
 
