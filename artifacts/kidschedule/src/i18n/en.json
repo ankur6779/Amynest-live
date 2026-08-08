@@ -3439,8 +3439,8 @@
         "description": "A whole library of bedtime, moral & fun stories — for ages 0–8"
       },
       "talking-amy": {
-        "title": "🎙️ Talking Amy",
-        "description": "Hold, talk, and Amy echoes you in 5 fun voices — Chipmunk, Baby, Robot, Alien & Monster. On-device only."
+        "title": "Talking Amy",
+        "description": "Speak together — Amy answers in a soft voice on this device."
       },
       "phonics": {
         "title": "🔤 Phonics Learning",
@@ -4029,8 +4029,8 @@
         "chip_2": "Moral Stories"
       },
       "talking_amy": {
-        "chip_1": "5 Voices",
-        "chip_2": "AI Chat"
+        "chip_1": "Soft voices",
+        "chip_2": "On device"
       },
       "speech_coach": {
         "chip_1": "Pronunciation",

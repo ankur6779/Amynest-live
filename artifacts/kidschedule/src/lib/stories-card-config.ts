@@ -63,18 +63,18 @@ export const STORIES_CARD_VISUALS: Record<Exclude<StoriesCardId, "section-header
     iconSrc: `${BASE}/talking-amy-icon.png`,
     heroSrc: `${BASE}/talking-amy-hero.png`,
     surfaceGradient:
-      "linear-gradient(135deg, rgba(79,70,229,0.58) 0%, rgba(99,102,241,0.5) 45%, rgba(217,70,239,0.4) 100%)",
+      "linear-gradient(135deg, rgba(42,34,38,0.92) 0%, rgba(58,46,42,0.88) 48%, rgba(36,30,34,0.94) 100%)",
     ambientGlow:
-      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(129,140,248,0.36), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(217,70,239,0.28), transparent 55%)",
-    borderHover: "group-hover:border-indigo-300/35",
-    chipBorder: "border-indigo-200/15",
-    ctaGradient: "from-fuchsia-400 via-indigo-500 to-violet-500",
-    ctaShadow: "shadow-[0_0_20px_rgba(99,102,241,0.45)] group-hover:shadow-[0_0_28px_rgba(217,70,239,0.5)]",
-    glyphColor: "text-indigo-100/80",
-    floatingGlyphs: ["♪", "◉", "★"],
+      "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(232,212,184,0.22), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(180,140,120,0.16), transparent 55%)",
+    borderHover: "group-hover:border-[rgba(232,212,184,0.28)]",
+    chipBorder: "border-[rgba(232,212,184,0.16)]",
+    ctaGradient: "from-amber-200/70 via-stone-300/55 to-rose-200/60",
+    ctaShadow: "shadow-[0_8px_24px_rgba(0,0,0,0.28)] group-hover:shadow-[0_10px_28px_rgba(0,0,0,0.34)]",
+    glyphColor: "text-[rgba(232,212,184,0.75)]",
+    floatingGlyphs: ["·", "✦", "·"],
     chips: [
-      { icon: Mic, labelKey: "parent_hub.stories_cards.talking_amy.chip_1", defaultLabel: "5 Voices" },
-      { icon: Bot, labelKey: "parent_hub.stories_cards.talking_amy.chip_2", defaultLabel: "AI Chat" },
+      { icon: Mic, labelKey: "parent_hub.stories_cards.talking_amy.chip_1", defaultLabel: "Soft voices" },
+      { icon: Bot, labelKey: "parent_hub.stories_cards.talking_amy.chip_2", defaultLabel: "On device" },
     ],
   },
   "speech-coach": {
@@ -129,7 +129,7 @@ export type StoriesLaunchCardId = keyof typeof STORIES_LAUNCH_CARD_IDS;
 
 export const STORIES_CARD_BADGES: Partial<Record<Exclude<StoriesCardId, "section-header">, string>> = {
   "story-hub": "ALL STORIES",
-  "talking-amy": "POPULAR",
+  "talking-amy": "WITH YOU",
   "speech-coach": "DAILY PRACTICE",
   "discovery-worlds": "EXPLORE",
 };

@@ -89,6 +89,7 @@ export function TalkingAmyHero({
   glowOpacityScale = 1,
   animationSpeedScale = 1,
   miniSurprise = null,
+  living = false,
 }: {
   phase: TalkingAmyPhase;
   mode: TalkingAmyMode;
@@ -101,6 +102,8 @@ export function TalkingAmyHero({
   glowOpacityScale?: number;
   animationSpeedScale?: number;
   miniSurprise?: TalkingAmyMiniSurpriseId | null;
+  /** Phase 2 living room — warm rings, never neon planet */
+  living?: boolean;
 }) {
   const avatar = useHeroSize();
   const glass = Math.round(avatar * 1.24);
@@ -116,19 +119,35 @@ export function TalkingAmyHero({
   const avatarInputs = buildTalkingAmyAvatarInputs(phase, micVisual.level);
   const amyState = avatarInputsToAmyState(avatarInputs);
 
-  const glowClass = listening
-    ? theme.listeningGlow
+  const livingGlow = listening
+    ? "bg-amber-200/25"
     : thinking
-      ? theme.thinkingGlow
+      ? "bg-stone-200/18"
       : speaking || celebrating
-        ? theme.speakingGlow
-        : theme.thinkingGlow;
+        ? "bg-rose-200/22"
+        : "bg-amber-100/14";
 
-  const ringClass = listening
-    ? theme.ringBorderListening
-    : speaking || celebrating
-      ? theme.ringBorderSpeaking
-      : "border-white/20";
+  const glowClass = living
+    ? livingGlow
+    : listening
+      ? theme.listeningGlow
+      : thinking
+        ? theme.thinkingGlow
+        : speaking || celebrating
+          ? theme.speakingGlow
+          : theme.thinkingGlow;
+
+  const ringClass = living
+    ? listening
+      ? "border-[rgba(232,212,184,0.55)]"
+      : speaking || celebrating
+        ? "border-[rgba(232,212,184,0.45)]"
+        : "border-[rgba(232,212,184,0.28)]"
+    : listening
+      ? theme.ringBorderListening
+      : speaking || celebrating
+        ? theme.ringBorderSpeaking
+        : "border-white/20";
 
   const shouldBounce =
     !reducedMotion &&
@@ -217,7 +236,11 @@ export function TalkingAmyHero({
       <motion.div
         className={[
           "pointer-events-none absolute rounded-full border-2 transition-transform duration-100",
-          idle && !listening ? "border-purple-400/55" : ringClass,
+          idle && !listening
+            ? living
+              ? "border-[rgba(232,212,184,0.4)]"
+              : "border-purple-400/55"
+            : ringClass,
         ].join(" ")}
         style={{
           width: glass,
@@ -238,7 +261,11 @@ export function TalkingAmyHero({
       />
       {!reducedMotion && (idle || listening || speaking || celebrating) ? (
         <motion.div
-          className="pointer-events-none absolute rounded-full border border-purple-300/25"
+          className={
+            living
+              ? "pointer-events-none absolute rounded-full border border-[rgba(232,212,184,0.18)]"
+              : "pointer-events-none absolute rounded-full border border-purple-300/25"
+          }
           style={{ width: glass + 18, height: glass + 18 }}
           animate={{ scale: [1, 1.06, 1], opacity: [0.25, 0.5, 0.25] }}
           transition={{ duration: 4 * animationSpeedScale, repeat: Infinity, ease: "easeInOut" }}
@@ -247,12 +274,16 @@ export function TalkingAmyHero({
       <motion.div
         className={[
           "relative grid place-items-center overflow-visible rounded-full border shadow-2xl backdrop-blur-xl transition-all duration-300",
-          theme.transparentEffect ? "bg-white/5" : "bg-white/10",
-          theme.rainbowGlow ? "border-pink-300/40" : "",
-          mood?.ringAccent ?? "",
-          featured ? "ring-2 ring-amber-200/50" : "",
-          secretActive ? "ring-2 ring-fuchsia-300/60" : "",
-          bedtime ? "ring-1 ring-indigo-300/35" : "",
+          theme.transparentEffect ? "bg-white/5" : living ? "bg-white/[0.07]" : "bg-white/10",
+          !living && theme.rainbowGlow ? "border-pink-300/40" : "",
+          living ? "" : (mood?.ringAccent ?? ""),
+          featured ? (living ? "ring-1 ring-[rgba(232,212,184,0.35)]" : "ring-2 ring-amber-200/50") : "",
+          secretActive
+            ? living
+              ? "ring-1 ring-[rgba(232,212,184,0.4)]"
+              : "ring-2 ring-fuchsia-300/60"
+            : "",
+          bedtime ? (living ? "ring-1 ring-[rgba(232,212,184,0.28)]" : "ring-1 ring-indigo-300/35") : "",
           listening ? "scale-110" : "",
           ringClass,
         ].join(" ")}

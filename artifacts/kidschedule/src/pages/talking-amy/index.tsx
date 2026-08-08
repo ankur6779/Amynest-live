@@ -1,4 +1,4 @@
-// audit-block-ignore-start -- immersive Talking Amy uses intentional neon dark UI accents.
+// audit-block-ignore-start -- legacy neon path retained behind VITE_FF_TALKING_AMY_LIVING_V1=0.
 import {
   useCallback,
   useEffect,
@@ -11,6 +11,7 @@ import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { AchievementUnlockCard } from "@/components/talking-amy/achievement-unlock-card";
 import { TalkingAmyHero } from "@/components/talking-amy/talking-amy-hero";
+import "@/components/talking-amy/talking-amy-living-room.css";
 import { PAGE_BACK_BTN, PAGE_SAFE_TOP } from "@/lib/page-sticky-header";
 import { Button } from "@/components/ui/button";
 import { useListChildren } from "@workspace/api-client-react";
@@ -19,6 +20,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { microphoneSessionManager } from "@/lib/microphone-session-manager";
 import { prepareNativeForPlayback } from "@/lib/audio-session-coordinator";
 import { playTalkingAmyEcho, stopTalkingAmyEcho } from "@/lib/talking-amy-echo";
+import {
+  TALKING_AMY_LIVING_MIC,
+  TALKING_AMY_LIVING_PROMPTS,
+  isTalkingAmyLivingV1Enabled,
+  livingCollectionNote,
+  livingDailyVoiceLabel,
+  livingModeEchoHint,
+  livingModeTagline,
+  livingStreakNote,
+  talkingAmyLivingOpen,
+} from "@/lib/talking-amy/living-room";
 import { cn } from "@/lib/utils";
 import {
   mergeUnlockedAchievements,
@@ -152,6 +164,7 @@ function ModeSelector({
   discoveredIds,
   onSelect,
   disabled,
+  living,
 }: {
   selected: TalkingAmyRegularModeId;
   favorite: TalkingAmyRegularModeId | null;
@@ -159,13 +172,18 @@ function ModeSelector({
   discoveredIds: readonly TalkingAmyModeId[];
   onSelect: (id: TalkingAmyRegularModeId) => void;
   disabled: boolean;
+  living: boolean;
 }) {
   return (
     <div
-      className="grid max-h-[220px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-3"
+      className={
+        living
+          ? "ta-living-modes"
+          : "grid max-h-[220px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-3"
+      }
       data-testid="talking-amy-mode-selector"
       role="radiogroup"
-      aria-label="Amy voice mode"
+      aria-label="Amy voice"
     >
       {TALKING_AMY_MODES.map((m) => {
         const active = m.id === selected;
@@ -180,26 +198,40 @@ function ModeSelector({
             aria-checked={active}
             disabled={disabled}
             onClick={() => onSelect(m.id as TalkingAmyRegularModeId)}
-            className={[
-              "relative rounded-2xl border px-2 py-2.5 text-center transition active:scale-[0.98]",
-              active
-                ? "border-white/50 bg-white/20 shadow-lg ring-2 ring-white/30"
-                : "border-white/15 bg-white/5 hover:bg-white/10",
-              isDaily ? "ring-1 ring-amber-200/40" : "",
-              disabled ? "opacity-50 pointer-events-none" : "",
-            ].join(" ")}
+            data-active={active ? "1" : undefined}
+            data-daily={living && isDaily ? "1" : undefined}
+            className={
+              living
+                ? ["ta-living-mode", disabled ? "opacity-50 pointer-events-none" : ""].join(" ")
+                : [
+                    "relative rounded-2xl border px-2 py-2.5 text-center transition active:scale-[0.98]",
+                    active
+                      ? "border-white/50 bg-white/20 shadow-lg ring-2 ring-white/30"
+                      : "border-white/15 bg-white/5 hover:bg-white/10",
+                    isDaily ? "ring-1 ring-amber-200/40" : "",
+                    disabled ? "opacity-50 pointer-events-none" : "",
+                  ].join(" ")
+            }
           >
             {isFavorite ? (
-              <Star className="absolute right-1.5 top-1.5 h-3 w-3 fill-amber-300 text-amber-300" />
+              <Star
+                className={
+                  living
+                    ? "ta-living-mode-meta h-3 w-3 fill-[rgba(232,212,184,0.85)] text-[rgba(232,212,184,0.85)]"
+                    : "absolute right-1.5 top-1.5 h-3 w-3 fill-amber-300 text-amber-300"
+                }
+              />
             ) : null}
-            {isDaily ? (
+            {!living && isDaily ? (
               <span className="absolute left-1.5 top-1.5 text-[9px]">✨</span>
             ) : null}
-            {isNew ? (
+            {!living && isNew ? (
               <span className="absolute bottom-1 right-1.5 text-[8px] text-amber-200/80">NEW</span>
             ) : null}
             <div className="text-2xl leading-none">{m.emoji}</div>
-            <div className="mt-1 text-[10px] font-black leading-tight">{m.label}</div>
+            <div className={living ? "ta-living-mode-label" : "mt-1 text-[10px] font-black leading-tight"}>
+              {m.label.replace(/\s*Amy$/, "")}
+            </div>
           </button>
         );
       })}
@@ -213,6 +245,7 @@ export default function TalkingAmyPage() {
   useEffect(() => {
     void prepareNativeForPlayback();
   }, []);
+  const living = isTalkingAmyLivingV1Enabled();
   const reducedMotion = useReducedMotion();
   const dailySpecialId = useMemo(() => getDailySpecialAmyModeId(), []);
   const dailySpecial = useMemo(() => getDailySpecialAmyMode(), []);
@@ -220,6 +253,10 @@ export default function TalkingAmyPage() {
   const { data: children = [], isLoading } = useListChildren();
   const [childIdx, setChildIdx] = useState(0);
   const child = (children[childIdx] ?? children[0]) as AnyChild | undefined;
+  const livingOpen = useMemo(
+    () => talkingAmyLivingOpen(child?.name ?? "your child"),
+    [child?.name],
+  );
 
   const [modeId, setModeId] = useState<TalkingAmyRegularModeId>(() => resolveInitialTalkingAmyMode());
   const [favoriteMode, setFavoriteMode] = useState<TalkingAmyRegularModeId | null>(() =>
@@ -237,6 +274,12 @@ export default function TalkingAmyPage() {
   const [collection, setCollection] = useState<TalkingAmyCollection>(() => loadTalkingAmyCollection(0));
   const playbackModeId = resolveTalkingAmyPlaybackMode(modeId, activeSecretId);
   const mode = getTalkingAmyMode(playbackModeId);
+  const displayTagline = living
+    ? livingModeTagline(playbackModeId, mode.tagline)
+    : mode.tagline;
+  const displayEchoHint = living
+    ? livingModeEchoHint(playbackModeId, mode.echoHint)
+    : mode.echoHint;
   const collectionProgress = useMemo(() => getCollectionProgress(collection), [collection]);
   const isFeaturedToday = isDailyFeaturedMode(modeId);
 
@@ -264,7 +307,8 @@ export default function TalkingAmyPage() {
   const [hasReplay, setHasReplay] = useState(false);
 
   const audioLevelRef = useMicLevelRef(phase === "recording");
-  const prompt = FUN_PROMPTS[promptIdx % FUN_PROMPTS.length];
+  const promptSource = living ? TALKING_AMY_LIVING_PROMPTS : FUN_PROMPTS;
+  const prompt = promptSource[promptIdx % promptSource.length];
   const modeLocked = phase === "recording" || phase === "thinking" || phase === "echoing";
   const canReplay = hasReplay && phase === "idle";
 
@@ -679,34 +723,62 @@ export default function TalkingAmyPage() {
           key={c.id}
           type="button"
           onClick={() => setChildIdx(i)}
-          className={[
-            "shrink-0 rounded-full px-3 py-1 text-xs font-black transition",
-            i === childIdx
-              ? "bg-white text-violet-700 shadow"
-              : "bg-white/10 text-white/80 hover:bg-white/20",
-          ].join(" ")}
+          data-active={i === childIdx ? "1" : undefined}
+          className={
+            living
+              ? "ta-living-child shrink-0"
+              : [
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-black transition",
+                  i === childIdx
+                    ? "bg-white text-violet-700 shadow"
+                    : "bg-white/10 text-white/80 hover:bg-white/20",
+                ].join(" ")
+          }
         >
           {c.name}
         </button>
       )),
-    [children, childIdx],
+    [children, childIdx, living],
   );
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-[#1a0533] via-[#2d0b4e] to-[#120828] text-white">
-        <p className="font-quicksand text-lg font-bold animate-pulse">Loading Amy…</p>
+      <div
+        className={
+          living
+            ? "ta-living-page flex min-h-dvh items-center justify-center"
+            : "flex min-h-dvh items-center justify-center bg-gradient-to-b from-[#1a0533] via-[#2d0b4e] to-[#120828] text-white"
+        }
+      >
+        <p className="font-quicksand text-lg font-bold animate-pulse">
+          {living ? "Amy is here…" : "Loading Amy…"}
+        </p>
       </div>
     );
   }
 
   if (!child) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#1a0533] via-[#2d0b4e] to-[#120828] px-6 text-center text-white">
-        <p className="font-quicksand text-xl font-black">Add a child to play Talking Amy!</p>
+      <div
+        className={
+          living
+            ? "ta-living-page flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center"
+            : "flex min-h-dvh flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#1a0533] via-[#2d0b4e] to-[#120828] px-6 text-center text-white"
+        }
+      >
+        <p className="font-quicksand text-xl font-bold">
+          {living ? "Add a child to meet Talking Amy" : "Add a child to play Talking Amy!"}
+        </p>
         <AddChildLink source="talking-amy-no-child">Add a child</AddChildLink>
         <AppLink href="/parenting-hub" replace source="talking-amy-no-child">
-          <Button variant="outline" className="rounded-full border-white/20 bg-white/10 text-white">
+          <Button
+            variant="outline"
+            className={
+              living
+                ? "ta-living-btn rounded-full"
+                : "rounded-full border-white/20 bg-white/10 text-white"
+            }
+          >
             Back to Parent Hub
           </Button>
         </AppLink>
@@ -720,9 +792,13 @@ export default function TalkingAmyPage() {
         ? "Tap to stop"
         : "Keep holding…"
       : phase === "thinking"
-        ? "Amy is thinking…"
+        ? living
+          ? "A moment…"
+          : "Amy is thinking…"
         : phase === "echoing"
-          ? "Amy is talking!"
+          ? living
+            ? "Amy is with you"
+            : "Amy is talking!"
           : inputMode === "tap"
             ? "Tap to talk"
             : "Hold to talk";
@@ -732,23 +808,63 @@ export default function TalkingAmyPage() {
     (phase === "recording"
       ? "I'm listening…"
       : phase === "thinking"
-        ? "Getting ready…"
+        ? living
+          ? "Getting ready…"
+          : "Getting ready…"
         : phase === "echoing"
-          ? `${mode.emoji} ${mode.label}!`
-          : `Hi ${child.name}!`);
+          ? living
+            ? `${mode.emoji} ${mode.label.replace(/\s*Amy$/, "")}`
+            : `${mode.emoji} ${mode.label}!`
+          : `Hi ${child.name}`);
 
-  const burstEmoji =
-    mode.id === "robot" ? "🤖" : mode.id === "alien" ? "👽" : mode.id === "monster" ? "🦖" : "✨";
+  const burstEmoji = living
+    ? "✦"
+    : mode.id === "robot"
+      ? "🤖"
+      : mode.id === "alien"
+        ? "👽"
+        : mode.id === "monster"
+          ? "🦖"
+          : "✨";
+
+  const micIdleGradient = living ? TALKING_AMY_LIVING_MIC.idle : mode.theme.micButtonGradient;
+  const micRecordingGradient = living
+    ? TALKING_AMY_LIVING_MIC.recording
+    : mode.theme.micButtonRecording;
+  const streakNote = living ? livingStreakNote(streakDay) : null;
 
   return (
     <div
-      className="relative min-h-dvh overflow-hidden bg-gradient-to-b from-[#1a0533] via-[#3b0d6b] to-[#120828] text-white"
+      className={
+        living
+          ? "ta-living-page"
+          : "relative min-h-dvh overflow-hidden bg-gradient-to-b from-[#1a0533] via-[#3b0d6b] to-[#120828] text-white"
+      }
       data-testid="talking-amy-page"
+      data-ta-living={living ? "1" : undefined}
     >
-      <div className={["pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full blur-3xl", mode.theme.pageAccent].join(" ")} />
-      <div className="pointer-events-none absolute -right-16 bottom-24 h-80 w-80 rounded-full bg-fuchsia-500/15 blur-3xl" />
+      {living ? (
+        <div className="ta-living-ambient" aria-hidden="true">
+          <img src="/experience/r1/shot-04-transition.png" alt="" />
+          <div className="ta-living-ambient-veil" />
+        </div>
+      ) : (
+        <>
+          <div
+            className={["pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full blur-3xl", mode.theme.pageAccent].join(
+              " ",
+            )}
+          />
+          <div className="pointer-events-none absolute -right-16 bottom-24 h-80 w-80 rounded-full bg-fuchsia-500/15 blur-3xl" />
+        </>
+      )}
 
-      <div className={cn("relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pb-4", PAGE_SAFE_TOP)}>
+      <div
+        className={cn(
+          living ? "ta-living-shell mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pb-4" : "relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pb-4",
+          PAGE_SAFE_TOP,
+        )}
+      >
         <header className="flex items-center gap-3">
           <AppLink href="/parenting-hub" replace source="talking-amy-back">
             <Button
@@ -757,21 +873,37 @@ export default function TalkingAmyPage() {
               size="icon"
               className={cn(
                 PAGE_BACK_BTN,
-                "rounded-full border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white",
+                living
+                  ? "ta-living-back"
+                  : "rounded-full border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white",
               )}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </AppLink>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-200/85">
-              {personality.mood.emoji} {personality.mood.label} · {mode.tagline}
-            </p>
-            <h1 className="truncate font-quicksand text-xl font-black">Talking Amy</h1>
+            {living ? (
+              <>
+                <p className="ta-living-eyebrow">{livingOpen.eyebrow}</p>
+                <h1 className="ta-living-title truncate">{livingOpen.title}</h1>
+                <p className="ta-living-purpose truncate">{displayTagline}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-200/85">
+                  {personality.mood.emoji} {personality.mood.label} · {mode.tagline}
+                </p>
+                <h1 className="truncate font-quicksand text-xl font-black">Talking Amy</h1>
+              </>
+            )}
           </div>
-          <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-200/90">
-            🔒 Private · On Device
-          </div>
+          {living ? (
+            <div className="ta-living-privacy">On this device</div>
+          ) : (
+            <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-200/90">
+              🔒 Private · On Device
+            </div>
+          )}
         </header>
 
         {children.length > 1 ? (
@@ -780,65 +912,125 @@ export default function TalkingAmyPage() {
 
         {personality.bedtime ? (
           <div
-            className="mt-3 rounded-2xl border border-indigo-300/30 bg-indigo-500/12 px-3 py-2"
+            className={
+              living
+                ? "ta-living-note"
+                : "mt-3 rounded-2xl border border-indigo-300/30 bg-indigo-500/12 px-3 py-2"
+            }
             data-testid="talking-amy-bedtime-banner"
           >
-            <p className="text-[11px] font-black uppercase tracking-wider text-indigo-100/90">
-              🌙 Sleepy Amy is here — soft glows and gentle echoes tonight
+            <p
+              className={
+                living
+                  ? undefined
+                  : "text-[11px] font-black uppercase tracking-wider text-indigo-100/90"
+              }
+            >
+              {living
+                ? "Sleepy Amy is here — soft and gentle tonight"
+                : "🌙 Sleepy Amy is here — soft glows and gentle echoes tonight"}
             </p>
           </div>
         ) : null}
 
-        {streakDay >= 2 ? (
+        {living ? (
+          streakNote ? (
+            <div className="ta-living-note" data-quiet="1">
+              {streakNote}
+            </div>
+          ) : null
+        ) : streakDay >= 2 ? (
           <div className="mt-2 text-center text-[10px] font-bold uppercase tracking-wider text-amber-200/75">
             🔥 {streakDay}-day Amy streak
           </div>
         ) : null}
 
         <div
-          className="mt-3 rounded-2xl border border-amber-200/25 bg-gradient-to-r from-amber-400/15 via-fuchsia-500/10 to-violet-500/15 px-3 py-2"
+          className={
+            living
+              ? "ta-living-note"
+              : "mt-3 rounded-2xl border border-amber-200/25 bg-gradient-to-r from-amber-400/15 via-fuchsia-500/10 to-violet-500/15 px-3 py-2"
+          }
           data-testid="talking-amy-daily-special"
         >
-          <p className="text-[11px] font-black uppercase tracking-wider text-amber-100/90">
-            ✨ Featured Today: {dailySpecial.emoji} {dailySpecial.label}
-            {isFeaturedToday ? " — bonus sparkle & progress!" : ""}
+          <p
+            className={
+              living
+                ? undefined
+                : "text-[11px] font-black uppercase tracking-wider text-amber-100/90"
+            }
+          >
+            {living
+              ? livingDailyVoiceLabel(dailySpecial.emoji, dailySpecial.label)
+              : `✨ Featured Today: ${dailySpecial.emoji} ${dailySpecial.label}${
+                  isFeaturedToday ? " — bonus sparkle & progress!" : ""
+                }`}
           </p>
         </div>
 
         {activeSecretId ? (
           <div
-            className="mt-2 rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-2"
+            className={
+              living
+                ? "ta-living-note"
+                : "mt-2 rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-2"
+            }
             data-testid="talking-amy-secret-badge"
           >
-            <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-100">
-              ✨ Secret Mode Active — {getTalkingAmyMode(activeSecretId).emoji}{" "}
-              {getTalkingAmyMode(activeSecretId).label}
-              <span className="ml-2 text-[10px] font-bold text-white/60 tabular-nums">
-                {Math.ceil(getSecretModeRemainingMs() / 60_000)}m left
-              </span>
+            <p
+              className={
+                living
+                  ? undefined
+                  : "text-[11px] font-black uppercase tracking-wider text-fuchsia-100"
+              }
+            >
+              {living ? (
+                <>
+                  A special voice · {getTalkingAmyMode(activeSecretId).emoji}{" "}
+                  {getTalkingAmyMode(activeSecretId).label.replace(/\s*Amy$/, "")}
+                  <span className="ml-2 tabular-nums opacity-70">
+                    {Math.ceil(getSecretModeRemainingMs() / 60_000)}m
+                  </span>
+                </>
+              ) : (
+                <>
+                  ✨ Secret Mode Active — {getTalkingAmyMode(activeSecretId).emoji}{" "}
+                  {getTalkingAmyMode(activeSecretId).label}
+                  <span className="ml-2 text-[10px] font-bold text-white/60 tabular-nums">
+                    {Math.ceil(getSecretModeRemainingMs() / 60_000)}m left
+                  </span>
+                </>
+              )}
             </p>
           </div>
         ) : null}
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
-          <div className="text-[11px] font-black uppercase tracking-wider text-white/70">
-            🏆 Amy repeated you: <span className="text-amber-200">{stats.repeatCount}</span>
+        {living ? (
+          <div className="ta-living-note" data-quiet="1" data-testid="talking-amy-collection">
+            {livingCollectionNote(collectionProgress.unlocked, collectionProgress.total)}
+            {stats.repeatCount > 0 ? ` · Amy answered ${stats.repeatCount} times` : ""}
           </div>
-          <div
-            className="text-[11px] font-black uppercase tracking-wider text-white/70"
-            data-testid="talking-amy-collection"
-          >
-            🎁 Collection:{" "}
-            <span className="text-emerald-200">
-              {collectionProgress.unlocked} / {collectionProgress.total}
-            </span>
+        ) : (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
+            <div className="text-[11px] font-black uppercase tracking-wider text-white/70">
+              🏆 Amy repeated you: <span className="text-amber-200">{stats.repeatCount}</span>
+            </div>
+            <div
+              className="text-[11px] font-black uppercase tracking-wider text-white/70"
+              data-testid="talking-amy-collection"
+            >
+              🎁 Collection:{" "}
+              <span className="text-emerald-200">
+                {collectionProgress.unlocked} / {collectionProgress.total}
+              </span>
+            </div>
+            <div className="text-[10px] text-white/45 tabular-nums">
+              {stats.replayCount} replays · {collectionProgress.secretUnlocked} secrets
+            </div>
           </div>
-          <div className="text-[10px] text-white/45 tabular-nums">
-            {stats.replayCount} replays · {collectionProgress.secretUnlocked} secrets
-          </div>
-        </div>
+        )}
 
-        <div className="mt-3 space-y-2">
+        <div className={cn("mt-3 space-y-2", living && "ta-living-actions")}>
           <ModeSelector
             selected={modeId}
             favorite={favoriteMode}
@@ -846,6 +1038,7 @@ export default function TalkingAmyPage() {
             discoveredIds={collection.discoveredModeIds}
             onSelect={selectMode}
             disabled={modeLocked}
+            living={living}
           />
           <div className="flex flex-wrap gap-2">
             <Button
@@ -854,11 +1047,15 @@ export default function TalkingAmyPage() {
               variant="outline"
               disabled={!canReplay}
               onClick={() => void handleHearAgain()}
-              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              className={
+                living
+                  ? "ta-living-btn"
+                  : "rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              }
               data-testid="talking-amy-hear-again"
             >
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Hear Again
+              {living ? "Hear again" : "Hear Again"}
             </Button>
             <Button
               type="button"
@@ -866,11 +1063,15 @@ export default function TalkingAmyPage() {
               variant="outline"
               disabled={modeLocked}
               onClick={handleSurpriseMe}
-              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              className={
+                living
+                  ? "ta-living-btn"
+                  : "rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              }
               data-testid="talking-amy-surprise"
             >
               <Dices className="mr-1.5 h-3.5 w-3.5" />
-              Surprise Me
+              {living ? "Another voice" : "Surprise Me"}
             </Button>
             <Button
               type="button"
@@ -878,11 +1079,15 @@ export default function TalkingAmyPage() {
               variant="outline"
               disabled={modeLocked}
               onClick={handleSaveFavorite}
-              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              className={
+                living
+                  ? "ta-living-btn"
+                  : "rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              }
               data-testid="talking-amy-favorite"
             >
               <Star className="mr-1.5 h-3.5 w-3.5" />
-              Favorite Mode
+              {living ? "Keep this voice" : "Favorite Mode"}
             </Button>
             <Button
               type="button"
@@ -890,7 +1095,11 @@ export default function TalkingAmyPage() {
               variant="outline"
               disabled={modeLocked}
               onClick={toggleInputMode}
-              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              className={
+                living
+                  ? "ta-living-btn"
+                  : "rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              }
               data-testid="talking-amy-input-mode"
             >
               {inputMode === "tap" ? (
@@ -898,18 +1107,29 @@ export default function TalkingAmyPage() {
               ) : (
                 <Hand className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {inputMode === "tap" ? "Tap to Talk" : "Hold to Talk"}
+              {inputMode === "tap" ? "Tap to talk" : "Hold to talk"}
             </Button>
           </div>
         </div>
 
-        <section className="relative mt-4 flex flex-1 flex-col overflow-visible rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(251,191,36,0.55)] backdrop-blur-xl">
+        <section
+          className={
+            living
+              ? "ta-living-stage"
+              : "relative mt-4 flex flex-1 flex-col overflow-visible rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-[0_24px_80px_-30px_rgba(251,191,36,0.55)] backdrop-blur-xl"
+          }
+        >
           <AchievementUnlockCard
             achievement={unlockedAchievement}
             show={phase === "celebrate" && !!unlockedAchievement}
             reducedMotion={reducedMotion}
+            living={living}
           />
-          <SparkleBurst show={phase === "celebrate"} emoji={burstEmoji} reducedMotion={reducedMotion} />
+          <SparkleBurst
+            show={phase === "celebrate"}
+            emoji={burstEmoji}
+            reducedMotion={reducedMotion}
+          />
           <TalkingAmyHero
             phase={phase}
             mode={mode}
@@ -922,6 +1142,7 @@ export default function TalkingAmyPage() {
             glowOpacityScale={personality.glowOpacityScale}
             animationSpeedScale={personality.animationSpeedScale}
             miniSurprise={miniSurprise}
+            living={living}
           />
 
           <div className="space-y-2 text-center">
@@ -931,7 +1152,11 @@ export default function TalkingAmyPage() {
                 initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }}
-                className="font-quicksand text-2xl font-black leading-tight"
+                className={
+                  living
+                    ? "ta-living-headline"
+                    : "font-quicksand text-2xl font-black leading-tight"
+                }
               >
                 {headline}
               </motion.p>
@@ -942,31 +1167,48 @@ export default function TalkingAmyPage() {
                 key={prompt}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-sm text-white/75"
+                className={living ? "ta-living-prompt" : "text-sm text-white/75"}
               >
-                {prompt}
+                {living ? `${livingOpen.purpose} · ${prompt}` : prompt}
               </motion.p>
             )}
 
             {phase === "recording" && (
-              <p className="text-sm font-bold text-white/85">
-                {inputMode === "tap" ? "Amy hears you — pause 1 sec to finish!" : "Say something silly!"}
+              <p className={living ? "ta-living-prompt" : "text-sm font-bold text-white/85"}>
+                {living
+                  ? inputMode === "tap"
+                    ? "Amy hears you — pause a second to finish"
+                    : "Speak — Amy is listening"
+                  : inputMode === "tap"
+                    ? "Amy hears you — pause 1 sec to finish!"
+                    : "Say something silly!"}
               </p>
             )}
 
             {phase === "thinking" && (
-              <p className="text-sm text-white/70">Amy is getting your voice ready…</p>
+              <p className={living ? "ta-living-prompt" : "text-sm text-white/70"}>
+                {living ? "Amy is getting your voice ready…" : "Amy is getting your voice ready…"}
+              </p>
             )}
 
             {(phase === "echoing" || phase === "celebrate") && (
-              <p className="flex items-center justify-center gap-2 text-sm text-white/80">
+              <p
+                className={
+                  living
+                    ? "ta-living-prompt flex items-center justify-center gap-2"
+                    : "flex items-center justify-center gap-2 text-sm text-white/80"
+                }
+              >
                 <Volume2 className="h-4 w-4" />
-                {mode.echoHint}
+                {displayEchoHint}
               </p>
             )}
 
             {statusHint && (
-              <p className="text-sm text-amber-100/80" data-testid="talking-amy-status">
+              <p
+                className={living ? "ta-living-prompt" : "text-sm text-amber-100/80"}
+                data-testid="talking-amy-status"
+              >
                 {statusHint}
               </p>
             )}
@@ -1001,20 +1243,32 @@ export default function TalkingAmyPage() {
               className={[
                 "relative flex h-28 w-28 touch-none select-none flex-col items-center justify-center rounded-full border-4 shadow-2xl transition-colors",
                 phase === "recording"
-                  ? `border-white/40 bg-gradient-to-br ${mode.theme.micButtonRecording}`
+                  ? `border-white/40 bg-gradient-to-br ${micRecordingGradient}`
                   : phase === "echoing" || phase === "thinking"
-                    ? "border-white/25 bg-white/10 opacity-75"
-                    : `border-white/30 bg-gradient-to-br ${mode.theme.micButtonGradient} active:scale-95`,
+                    ? living
+                      ? "border-[rgba(232,212,184,0.25)] bg-white/10 opacity-75"
+                      : "border-white/25 bg-white/10 opacity-75"
+                    : `border-white/30 bg-gradient-to-br ${micIdleGradient} active:scale-95`,
               ].join(" ")}
               style={{ touchAction: "none" }}
             >
               <Mic className="h-10 w-10 text-white drop-shadow" />
-              <span className="mt-1 text-[10px] font-black uppercase tracking-wider text-white/90">
+              <span
+                className={
+                  living
+                    ? "mt-1 text-[10px] font-semibold tracking-wide text-white/90"
+                    : "mt-1 text-[10px] font-black uppercase tracking-wider text-white/90"
+                }
+              >
                 {micLabel}
               </span>
               {phase === "idle" && !reducedMotion && (
                 <motion.span
-                  className="absolute -inset-1 rounded-full border-2 border-white/20"
+                  className={
+                    living
+                      ? "absolute -inset-1 rounded-full border border-[rgba(232,212,184,0.28)]"
+                      : "absolute -inset-1 rounded-full border-2 border-white/20"
+                  }
                   animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                 />
@@ -1022,10 +1276,14 @@ export default function TalkingAmyPage() {
             </motion.button>
           </div>
 
-          <p className="text-center text-xs text-white/55">
-            {inputMode === "tap"
-              ? "Tap to talk — Amy stops after 1 second of quiet (or tap again). Up to 10 seconds. On-device only."
-              : "Hold up to 10 seconds — Amy transforms your voice on this device only. Nothing is saved or uploaded."}
+          <p className={living ? "ta-living-footer" : "text-center text-xs text-white/55"}>
+            {living
+              ? inputMode === "tap"
+                ? "Tap to talk — Amy stops after a quiet second. On this device only."
+                : "Hold to talk — Amy transforms your voice on this device. Nothing leaves here."
+              : inputMode === "tap"
+                ? "Tap to talk — Amy stops after 1 second of quiet (or tap again). Up to 10 seconds. On-device only."
+                : "Hold up to 10 seconds — Amy transforms your voice on this device only. Nothing is saved or uploaded."}
           </p>
 
           {micDenied && (
@@ -1034,7 +1292,11 @@ export default function TalkingAmyPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-full border-white/20 bg-white/10 text-white"
+                className={
+                  living
+                    ? "ta-living-btn"
+                    : "rounded-full border-white/20 bg-white/10 text-white"
+                }
                 onClick={() => void openAndroidMicrophoneSettings()}
               >
                 Open microphone settings
@@ -1042,10 +1304,14 @@ export default function TalkingAmyPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/45">
-            <Sparkles className="h-3.5 w-3.5 text-amber-300/80" />
-            9 fun voices · 3 secrets · zero cloud
-          </div>
+          {living ? (
+            <p className="ta-living-footer">Soft voices · private · never leaves this device</p>
+          ) : (
+            <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/45">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300/80" />
+              9 fun voices · 3 secrets · zero cloud
+            </div>
+          )}
         </section>
       </div>
     </div>

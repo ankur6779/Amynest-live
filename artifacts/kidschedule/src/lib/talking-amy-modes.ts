@@ -102,7 +102,7 @@ export const TALKING_AMY_REGULAR_MODES: readonly TalkingAmyMode[] = [
     id: "chipmunk",
     emoji: "🐿️",
     label: "Chipmunk Amy",
-    tagline: "Classic Talking Tom style",
+    tagline: "Bright and playful",
     voice: { detuneCents: 600, playbackRate: 1.35, lowPassHz: 6800 },
     theme: {
       ...MODE_THEME_DEFAULTS,
