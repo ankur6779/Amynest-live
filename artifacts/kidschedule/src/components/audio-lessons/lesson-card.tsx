@@ -2,6 +2,7 @@ import { Clock, Lock, Play, RotateCcw } from "lucide-react";
 import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { getLessonText, type Lesson, type LessonTier } from "@/lib/audio-lessons";
+import { livingFreeBadge } from "@/lib/amy-audio/living-room";
 
 export type LessonAccess = "free-sample" | "locked" | "open";
 
@@ -17,6 +18,7 @@ type LessonCardProps = {
   cta?: "play" | "continue" | "completed";
   onPress: () => void;
   cardRef?: Ref<HTMLButtonElement>;
+  living?: boolean;
 };
 
 export function LessonCard({
@@ -31,6 +33,7 @@ export function LessonCard({
   cta = "play",
   onPress,
   cardRef,
+  living = false,
 }: LessonCardProps) {
   const { t } = useTranslation();
   const text = getLessonText(lesson, lang);
@@ -51,14 +54,19 @@ export function LessonCard({
       data-testid={`lesson-card-${lesson.id}`}
       onClick={onPress}
       disabled={disabled || (cta === "completed" && !isLocked)}
+      className={living ? "aaudio-soft-card" : undefined}
       style={{
         textAlign: "left",
-        background: highlight
+        background: living
+          ? undefined
+          : highlight
           ? "rgba(52,211,153,0.08)"
           : isLocked
             ? "rgba(255,255,255,0.03)"
             : "rgba(255,255,255,0.06)",
-        border: highlight
+        border: living
+          ? undefined
+          : highlight
           ? "1px solid rgba(52,211,153,0.45)"
           : isLocked
             ? "1px solid rgba(139,92,246,0.12)"
@@ -127,7 +135,17 @@ export function LessonCard({
             </h3>
             {isFree && (
               <span
-                style={{
+                className={living ? "aaudio-soft-badge" : undefined}
+                style={
+                  living
+                    ? {
+                        flexShrink: 0,
+                        fontSize: 9,
+                        fontWeight: 800,
+                        padding: "2px 7px",
+                        borderRadius: 999,
+                      }
+                    : {
                   flexShrink: 0,
                   background: "linear-gradient(135deg, hsl(var(--brand-emerald-600)), hsl(var(--brand-emerald-500)))",
                   color: "#fff",
@@ -135,9 +153,10 @@ export function LessonCard({
                   fontWeight: 800,
                   padding: "2px 7px",
                   borderRadius: 999,
-                }}
+                }
+                }
               >
-                {t("pages.audio_lessons.free")}
+                {living ? livingFreeBadge() : t("pages.audio_lessons.free")}
               </span>
             )}
           </div>

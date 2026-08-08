@@ -5,6 +5,7 @@ import {
   type LessonSeries,
   type SeriesProgress,
 } from "@/lib/audio-lessons";
+import { livingPremiumBadge } from "@/lib/amy-audio/living-room";
 
 type SeriesCardProps = {
   series: LessonSeries;
@@ -13,6 +14,7 @@ type SeriesCardProps = {
   disabled?: boolean;
   onStart: () => void;
   onUnlock?: () => void;
+  living?: boolean;
 };
 
 export function SeriesCard({
@@ -22,6 +24,7 @@ export function SeriesCard({
   disabled = false,
   onStart,
   onUnlock,
+  living = false,
 }: SeriesCardProps) {
   const { t } = useTranslation();
   const totalMin = totalSeriesMinutes(series);
@@ -37,10 +40,11 @@ export function SeriesCard({
   return (
     <div
       data-testid={`series-card-${series.id}`}
+      className={living ? "aaudio-soft-card" : undefined}
       style={{
         borderRadius: 16,
-        border: "1px solid rgba(139,92,246,0.35)",
-        background: "rgba(139,92,246,0.08)",
+        border: living ? undefined : "1px solid rgba(139,92,246,0.35)",
+        background: living ? undefined : "rgba(139,92,246,0.08)",
         overflow: "hidden",
         position: "relative",
       }}
@@ -60,7 +64,19 @@ export function SeriesCard({
           }}
         >
           <div
-            style={{
+            className={living ? "aaudio-soft-badge" : undefined}
+            style={
+              living
+                ? {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }
+                : {
               display: "flex",
               alignItems: "center",
               gap: 6,
@@ -71,10 +87,11 @@ export function SeriesCard({
               color: "hsl(var(--brand-amber-300))",
               fontSize: 11,
               fontWeight: 800,
-            }}
+            }
+            }
           >
-            <Lock size={12} />
-            {t("pages.audio_lessons.premium")}
+            {!living && <Lock size={12} />}
+            {living ? livingPremiumBadge() : t("pages.audio_lessons.premium")}
           </div>
         </div>
       )}

@@ -67,6 +67,16 @@ import { AudioPlayerBar } from "@/components/audio-lessons/audio-player-bar";
 import { EmergencySheet } from "@/components/audio-lessons/emergency-sheet";
 import { PlayerSheet, type PlayerSheetPlayback } from "@/components/audio-lessons/player-sheet";
 import type { LessonAccess } from "@/components/audio-lessons/lesson-card";
+import { AmyAudioLivingOpening } from "@/components/amy-audio/amy-audio-living-opening";
+import {
+  isAmyAudioLivingV1Enabled,
+  livingAmyAudioProductName,
+  livingEmergencyCta,
+  livingMoreAgesLabel,
+  livingPreviewNote,
+  type AmyAudioQuietPath,
+} from "@/lib/amy-audio/living-room";
+import "@/components/amy-audio/amy-audio-living-room.css";
 
 export default function AudioLessonsPage() {
   const { navigate, back } = useAppNavigate();
@@ -88,6 +98,7 @@ export default function AudioLessonsPage() {
   const { openPaywall } = usePaywall();
   const sub = useSubscription();
   const isPremium = sub.isPremium;
+  const living = isAmyAudioLivingV1Enabled();
 
   useEffect(() => {
     try {
@@ -414,40 +425,104 @@ export default function AudioLessonsPage() {
     [selectedAge, playLessonById, openAgeDetail],
   );
 
+  const beginQuietListen = useCallback(() => {
+    if (resumeTarget) {
+      handleResume();
+      return;
+    }
+    if (quickPlayLesson) {
+      playLessonById(quickPlayLesson.lesson.id, true);
+      return;
+    }
+    if (dailyPickLesson) {
+      playLessonById(dailyPickLesson.lesson.id, true);
+      return;
+    }
+    const last = loadLastAgeGroup();
+    openAgeDetail(last ?? "2-4");
+  }, [
+    resumeTarget,
+    handleResume,
+    quickPlayLesson,
+    dailyPickLesson,
+    playLessonById,
+    openAgeDetail,
+  ]);
+
+  const handleLivingQuietPath = useCallback(
+    (pathId: AmyAudioQuietPath["id"]) => {
+      if (pathId === "calm") {
+        setEmergencyOpen(true);
+        return;
+      }
+      if (pathId === "continue") {
+        if (resumeTarget) {
+          handleResume();
+          return;
+        }
+        beginQuietListen();
+        return;
+      }
+      beginQuietListen();
+    },
+    [resumeTarget, handleResume, beginQuietListen],
+  );
+
   const showMiniPlayer = open && !playerExpanded;
 
   return (
     <div
-      className={`w-full max-w-full min-w-0 overflow-x-clip box-border${showMiniPlayer ? " scroll-safe--audio" : ""}`}
-      style={{
-        background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
-        color: "#fff",
-      }}
+      className={`w-full max-w-full min-w-0 overflow-x-clip box-border${showMiniPlayer ? " scroll-safe--audio" : ""}${living ? " amy-audio-living-shell" : ""}`}
+      style={
+        living
+          ? { color: "#fff" }
+          : {
+              background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
+              color: "#fff",
+            }
+      }
     >
       <PageStickyHeader
         onBack={handleBack}
         backLabel={t("pages.audio_lessons.back")}
-        className="z-20 border-b border-violet-500/20 bg-[rgba(15,12,41,0.95)] backdrop-blur-md"
+        className={`z-20 border-b backdrop-blur-md ${living ? "aaudio-header border-[rgba(232,212,184,0.12)]" : "border-violet-500/20 bg-[rgba(15,12,41,0.95)]"}`}
         innerClassName="amynest-page-inset max-w-[720px] mx-auto gap-3 !px-0"
-        backButtonClassName="h-9 w-9 border-none bg-violet-400/15 text-[hsl(var(--brand-violet-300))] shadow-none"
+        backButtonClassName={
+          living
+            ? "h-9 w-9 border-none bg-[rgba(232,212,184,0.12)] text-[rgba(232,212,184,0.9)] shadow-none"
+            : "h-9 w-9 border-none bg-violet-400/15 text-[hsl(var(--brand-violet-300))] shadow-none"
+        }
       >
         <div className="flex min-w-0 items-center gap-2">
-          <Headphones size={20} color="hsl(var(--brand-violet-300))" aria-hidden />
+          <Headphones
+            size={20}
+            color={living ? "rgba(232,212,184,0.9)" : "hsl(var(--brand-violet-300))"}
+            aria-hidden
+          />
           <h1 className="m-0 font-quicksand text-lg font-extrabold text-white">
-            {t("pages.audio_lessons.amy_audio_lessons")}
+            {living ? livingAmyAudioProductName() : t("pages.audio_lessons.amy_audio_lessons")}
           </h1>
         </div>
       </PageStickyHeader>
 
       {!selectedAge ? (
         <>
+          {living ? (
+            <div className="amynest-page-inset" style={{ paddingTop: 16, paddingBottom: 8 }}>
+              <AmyAudioLivingOpening
+                onRecommend={beginQuietListen}
+                onSelectQuietPath={handleLivingQuietPath}
+              />
+            </div>
+          ) : (
           <div className="amynest-page-inset" style={{ paddingTop: 20, paddingBottom: 8 }}>
             <p style={{ color: "#c7c0e8", fontSize: 14, lineHeight: 1.55, margin: 0 }}>
               {t("pages.audio_lessons.intro_home")}
             </p>
           </div>
+          )}
 
-          {resumeTarget && (
+          {resumeTarget && !living && (
             <div className="amynest-page-inset" style={{ paddingTop: 8 }}>
               <button
                 type="button"
@@ -504,24 +579,37 @@ export default function AudioLessonsPage() {
           {!isPremium && (
             <div className="amynest-page-inset" style={{ paddingTop: 12 }}>
               <div
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(251,191,36,0.35)",
-                  background: "rgba(251,191,36,0.08)",
-                  color: "hsl(var(--brand-amber-200))",
-                  fontSize: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
+                className={living ? "aaudio-soft-card" : undefined}
+                style={
+                  living
+                    ? {
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }
+                    : {
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(251,191,36,0.35)",
+                        background: "rgba(251,191,36,0.08)",
+                        color: "hsl(var(--brand-amber-200))",
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }
+                }
               >
                 <Lock size={14} />
-                {t("pages.audio_lessons.preview_note")}
+                {living ? livingPreviewNote() : t("pages.audio_lessons.preview_note")}
               </div>
             </div>
           )}
 
+          {!living && (
           <div className="amynest-page-inset" style={{ paddingTop: 12, display: "grid", gap: 10 }}>
             {quickPlayLesson && (
               <AmyQuickPlayCard
@@ -536,7 +624,9 @@ export default function AudioLessonsPage() {
               />
             )}
           </div>
+          )}
 
+          {!living && (
           <div className="amynest-page-inset" style={{ paddingTop: 12, paddingBottom: 4 }}>
             <button
               type="button"
@@ -562,11 +652,18 @@ export default function AudioLessonsPage() {
               {t("pages.audio_lessons.emergency_cta")}
             </button>
           </div>
+          )}
+
+          <div className="amynest-page-inset" style={{ paddingTop: 16, paddingBottom: 4 }}>
+            {living && (
+              <p className="aaudio-section-label">{livingMoreAgesLabel()}</p>
+            )}
+          </div>
 
           <div
             className="amynest-page-inset"
             style={{
-              paddingTop: 16,
+              paddingTop: living ? 0 : 16,
               paddingBottom: 16,
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
@@ -575,9 +672,41 @@ export default function AudioLessonsPage() {
             data-testid="age-tiles-grid"
           >
             {AGE_TILE_META.map((meta) => (
-              <AgeTile key={meta.group} meta={meta} onExplore={() => openAgeDetail(meta.group)} />
+              <AgeTile
+                key={meta.group}
+                meta={meta}
+                living={living}
+                onExplore={() => openAgeDetail(meta.group)}
+              />
             ))}
           </div>
+
+          {living && (
+            <div className="amynest-page-inset" style={{ paddingBottom: 20 }}>
+              <button
+                type="button"
+                data-testid="emergency-cta"
+                onClick={() => setEmergencyOpen(true)}
+                className="aaudio-soft-card"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  color: "rgba(232,212,184,0.92)",
+                }}
+              >
+                <LifeBuoy size={16} />
+                {livingEmergencyCta()}
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <AgeDetailScreen
@@ -595,6 +724,7 @@ export default function AudioLessonsPage() {
           onPickLesson={(l, opts) => void handlePickLesson(l, opts)}
           onStartSeries={handleStartSeries}
           onUnlock={() => openPaywall("audio_lessons")}
+          living={living}
         />
       )}
 
@@ -608,6 +738,7 @@ export default function AudioLessonsPage() {
           onMinimize={() => setPlayerExpanded(false)}
           onLessonComplete={handleLessonComplete}
           onPlaybackChange={setPlaybackControls}
+          living={living}
         />
       )}
 
@@ -617,6 +748,7 @@ export default function AudioLessonsPage() {
             lesson={open}
             playing={playbackControls.playing}
             loading={playbackControls.loading}
+            living={living}
             onTogglePlay={() => {
               if (playbackControls.playing) playbackControls.pause();
               else playbackControls.play();

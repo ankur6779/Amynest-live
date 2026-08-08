@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ChevronUp, Loader2, Pause, Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getLessonText, type Lesson } from "@/lib/audio-lessons";
+import { livingNowPlaying } from "@/lib/amy-audio/living-room";
 
 type AudioPlayerBarProps = {
   lesson: Lesson;
@@ -10,6 +11,7 @@ type AudioPlayerBarProps = {
   loading?: boolean;
   onTogglePlay: () => void;
   onExpand: () => void;
+  living?: boolean;
 };
 
 export function AudioPlayerBar({
@@ -19,6 +21,7 @@ export function AudioPlayerBar({
   loading = false,
   onTogglePlay,
   onExpand,
+  living = false,
 }: AudioPlayerBarProps) {
   const { t } = useTranslation();
   const text = getLessonText(lesson, lang);
@@ -30,15 +33,18 @@ export function AudioPlayerBar({
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.22 }}
       data-testid="audio-player-bar"
-      className="bottom-controls"
+      className={`bottom-controls${living ? " aaudio-mini-living" : ""}`}
       style={{
         padding: "10px max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px))",
-        background: "linear-gradient(180deg, rgba(15,12,41,0.2) 0%, rgba(15,12,41,0.95) 40%)",
+        background: living
+          ? undefined
+          : "linear-gradient(180deg, rgba(15,12,41,0.2) 0%, rgba(15,12,41,0.95) 40%)",
         backdropFilter: "blur(10px)",
-        borderTop: "1px solid rgba(139,92,246,0.35)",
+        borderTop: living ? "1px solid rgba(232,212,184,0.18)" : "1px solid rgba(139,92,246,0.35)",
       }}
     >
       <div
+        className={living ? "aaudio-mini-inner" : undefined}
         style={{
           maxWidth: 720,
           margin: "0 auto",
@@ -47,20 +53,25 @@ export function AudioPlayerBar({
           gap: 10,
           padding: "10px 12px",
           borderRadius: 16,
-          background: "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.15))",
-          border: "1px solid rgba(139,92,246,0.35)",
+          background: living
+            ? undefined
+            : "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.15))",
+          border: living ? undefined : "1px solid rgba(139,92,246,0.35)",
         }}
       >
         <button
           type="button"
           onClick={onTogglePlay}
           aria-label={playing ? "Pause" : "Play"}
+          className={living ? "aaudio-mini-play" : undefined}
           style={{
             width: 42,
             height: 42,
             borderRadius: 999,
             border: "none",
-            background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+            background: living
+              ? undefined
+              : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
             color: "#fff",
             display: "flex",
             alignItems: "center",
@@ -105,8 +116,8 @@ export function AudioPlayerBar({
           >
             {text.title}
           </p>
-          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#a99fd9" }}>
-            {t("pages.audio_lessons.now_playing")}
+          <p style={{ margin: "2px 0 0", fontSize: 11, color: living ? "rgba(232,212,184,0.72)" : "#a99fd9" }}>
+            {living ? livingNowPlaying() : t("pages.audio_lessons.now_playing")}
           </p>
         </button>
 

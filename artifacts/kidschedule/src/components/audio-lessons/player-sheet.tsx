@@ -43,6 +43,7 @@ type PlayerSheetProps = {
   onMinimize: () => void;
   onLessonComplete?: (lessonId: string) => void;
   onPlaybackChange?: (state: PlayerSheetPlayback) => void;
+  living?: boolean;
 };
 
 export function PlayerSheet({
@@ -53,6 +54,7 @@ export function PlayerSheet({
   onMinimize,
   onLessonComplete,
   onPlaybackChange,
+  living = false,
 }: PlayerSheetProps) {
   const lang = "en";
   const { t } = useTranslation();
@@ -146,10 +148,13 @@ export function PlayerSheet({
       <div
         onClick={(e) => e.stopPropagation()}
         data-testid="audio-player-sheet"
+        className={living ? "aaudio-player-living" : undefined}
         style={{
           width: "100%",
           maxWidth: 560,
-          background: "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
+          background: living
+            ? undefined
+            : "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           padding: "16px 20px calc(12px + var(--app-bottom-clearance, 48px))",

@@ -154,6 +154,12 @@ import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
 import { isGuidanceLivingV1Enabled } from "@/lib/guidance/living-room";
 import { isMomentsLivingV1Enabled } from "@/lib/moments/living-room";
+import {
+  isAmyAudioLivingV1Enabled,
+  livingAmyAudioHubDesc,
+  livingAmyAudioHubTitle,
+  livingAmyAudioProductName,
+} from "@/lib/amy-audio/living-room";
 import { isGrowLivingV1Enabled } from "@/lib/grow/living-room";
 import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
@@ -639,13 +645,38 @@ function ActivitiesSection({
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
   return <div className="space-y-2.5">
-      <SubSection gateSection="hub_activities" icon={<AudioLines className="h-4 w-4 text-white" />} title={t("parent_hub.tiles_activity.audio_lessons.title")} description={t("parent_hub.tiles_activity.audio_lessons.desc")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(34,211,238,0.26)0%,rgba(6,182,212,0.12)100%)">
+      <SubSection
+        gateSection="hub_activities"
+        icon={<AudioLines className="h-4 w-4 text-white" />}
+        title={
+          isAmyAudioLivingV1Enabled()
+            ? livingAmyAudioHubTitle()
+            : t("parent_hub.tiles_activity.audio_lessons.title")
+        }
+        description={
+          isAmyAudioLivingV1Enabled()
+            ? livingAmyAudioHubDesc()
+            : t("parent_hub.tiles_activity.audio_lessons.desc")
+        }
+        accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
+        cardClass={
+          isAmyAudioLivingV1Enabled()
+            ? "linear-gradient(135deg,rgba(232,212,184,0.18)0%,rgba(167,139,250,0.08)100%)"
+            : "linear-gradient(135deg,rgba(34,211,238,0.26)0%,rgba(6,182,212,0.12)100%)"
+        }
+      >
         <p className="text-sm text-muted-foreground mb-3">
-          {t("parent_hub.tiles.activities.lead")}
+          {isAmyAudioLivingV1Enabled()
+            ? t("amy_audio.living.hub_lead", {
+                defaultValue: "A few calm minutes with Amy — when hands are full.",
+              })
+            : t("parent_hub.tiles.activities.lead")}
         </p>
         <AppLink href="/audio-lessons" source="hub-audio-lessons">
           <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-audio-lessons">
-            {t("pages.audio_lessons.amy_audio_lessons")}
+            {isAmyAudioLivingV1Enabled()
+              ? livingAmyAudioProductName()
+              : t("pages.audio_lessons.amy_audio_lessons")}
             <ArrowRight className="h-4 w-4 ml-auto" />
           </Button>
         </AppLink>

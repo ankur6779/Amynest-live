@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Baby, Blocks, BookOpen, GraduationCap, Users, Sparkles, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { lessonCountForNavGroup, type AgeTileMeta } from "@/lib/audio-lessons-nav";
+import { livingExploreCta } from "@/lib/amy-audio/living-room";
 
 const ICONS = {
   baby: Baby,
@@ -15,9 +16,10 @@ const ICONS = {
 type AgeTileProps = {
   meta: AgeTileMeta;
   onExplore: () => void;
+  living?: boolean;
 };
 
-export function AgeTile({ meta, onExplore }: AgeTileProps) {
+export function AgeTile({ meta, onExplore, living = false }: AgeTileProps) {
   const { t } = useTranslation();
   const Icon = ICONS[meta.iconName];
   const count = lessonCountForNavGroup(meta.group);
@@ -29,7 +31,27 @@ export function AgeTile({ meta, onExplore }: AgeTileProps) {
       data-testid={`age-tile-${meta.group}`}
       whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
-      style={{
+      className={living ? "aaudio-soft-tile" : undefined}
+      style={
+        living
+          ? {
+              textAlign: "left",
+              borderRadius: 18,
+              padding: 16,
+              color: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              minHeight: 148,
+              minWidth: 0,
+              width: "100%",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              position: "relative",
+              overflow: "hidden",
+            }
+          : {
         textAlign: "left",
         border: "1px solid rgba(139,92,246,0.28)",
         borderRadius: 18,
@@ -48,7 +70,8 @@ export function AgeTile({ meta, onExplore }: AgeTileProps) {
         boxSizing: "border-box",
         position: "relative",
         overflow: "hidden",
-      }}
+      }
+      }
     >
       <div
         style={{
@@ -105,7 +128,7 @@ export function AgeTile({ meta, onExplore }: AgeTileProps) {
           border: "1px solid rgba(255,255,255,0.2)",
         }}
       >
-        {t("pages.audio_lessons.explore")}
+        {living ? livingExploreCta() : t("pages.audio_lessons.explore")}
       </span>
     </motion.button>
   );

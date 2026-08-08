@@ -25,6 +25,11 @@ import {
 import { LessonCard, type LessonAccess } from "@/components/audio-lessons/lesson-card";
 import { SeriesCard } from "@/components/audio-lessons/series-card";
 import { LessonsSkeleton } from "@/components/audio-lessons/lessons-skeleton";
+import {
+  livingSeriesSubtitle,
+  livingSeriesTitle,
+  livingUnlockBanner,
+} from "@/lib/amy-audio/living-room";
 
 type AgeDetailScreenProps = {
   ageGroup: AgeNavGroup;
@@ -41,6 +46,7 @@ type AgeDetailScreenProps = {
   onPickLesson: (lesson: Lesson, opts?: { series?: LessonSeries | null; autoPlay?: boolean }) => void;
   onStartSeries: (series: LessonSeries) => void;
   onUnlock: () => void;
+  living?: boolean;
 };
 
 function lessonProgressPercent(lesson: Lesson, resumeMap: Record<string, number>, completed: boolean): number {
@@ -77,6 +83,7 @@ export function AgeDetailScreen({
   onPickLesson,
   onStartSeries,
   onUnlock,
+  living = false,
 }: AgeDetailScreenProps) {
   const { t } = useTranslation();
   const lang = "en";
@@ -174,6 +181,7 @@ export function AgeDetailScreen({
         highlight={highlight}
         disabled={unlocking}
         cta={lessonCta(lesson, resumeMap, completed)}
+        living={living}
         onPress={() => {
           if (access === "locked") {
             trackAudioLockedClick(ageGroup, lesson.id, itemIndex);
@@ -230,7 +238,22 @@ export function AgeDetailScreen({
         <button
           type="button"
           onClick={onUnlock}
-          style={{
+          className={living ? "aaudio-soft-card" : undefined}
+          style={
+            living
+              ? {
+                  width: "100%",
+                  marginBottom: 16,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  color: "rgba(232,212,184,0.92)",
+                }
+              : {
             width: "100%",
             marginBottom: 16,
             padding: "12px 14px",
@@ -243,10 +266,13 @@ export function AgeDetailScreen({
             gap: 10,
             cursor: "pointer",
             textAlign: "left",
-          }}
+          }
+          }
         >
           <Lock size={16} />
-          <span style={{ fontSize: 13, fontWeight: 700 }}>{t("pages.audio_lessons.unlock_banner")}</span>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>
+            {living ? livingUnlockBanner() : t("pages.audio_lessons.unlock_banner")}
+          </span>
         </button>
       )}
 
@@ -270,9 +296,15 @@ export function AgeDetailScreen({
 
           {ageSeries.length > 0 && (
             <section>
-              {sectionTitle("pages.audio_lessons.series_title")}
-              <p style={{ margin: "0 0 10px", fontSize: 12, color: "#a99fd9" }}>
-                {t("pages.audio_lessons.series_subtitle")}
+              {living ? (
+                <h3 className="aaudio-section-label" style={{ margin: "0 0 6px" }}>
+                  {livingSeriesTitle()}
+                </h3>
+              ) : (
+                sectionTitle("pages.audio_lessons.series_title")
+              )}
+              <p style={{ margin: "0 0 10px", fontSize: 12, color: living ? "rgba(232,212,184,0.72)" : "#a99fd9" }}>
+                {living ? livingSeriesSubtitle() : t("pages.audio_lessons.series_subtitle")}
               </p>
               <div style={{ display: "grid", gap: 10 }}>
                 {ageSeries.map((series) => {
@@ -292,6 +324,7 @@ export function AgeDetailScreen({
                       disabled={unlocking}
                       onStart={() => onStartSeries(series)}
                       onUnlock={onUnlock}
+                      living={living}
                     />
                   );
                 })}
