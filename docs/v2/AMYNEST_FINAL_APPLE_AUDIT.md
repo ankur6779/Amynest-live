@@ -513,7 +513,7 @@ C. Authorize narrowly scoped P1 craft (Speech mid-play · leave continuity · `/
 
 ## Commit SHA
 
-**Audit document commit:** stamped on push.  
+**Audit document commit:** `0602ee65e56dbeee6bd91fdf572dc0fb8e266091`  
 **Verified application HEAD:** `bc4828b417053df962db12b9041bd81b59944699`
 
 ---
