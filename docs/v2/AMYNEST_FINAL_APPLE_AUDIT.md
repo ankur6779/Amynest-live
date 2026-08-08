@@ -576,7 +576,7 @@ Prior captures remain useful contrast references where present under `/opt/curso
 
 **Verified application HEAD:** `72f140134b973a1f5c7bd3e27538313ff55e1e22`  
 **FA-02 hardening implementation:** `26b2c05ce8fe8d9cc10fad1dd2e7a95ac90e2bab`  
-**Audit document commit:** *(filled by stamp commit after this file lands)*
+**Audit document commit:** `a124753e911d6e08817cd6dd9cd885a01cfb8d44`
 
 ---
 
