@@ -30,6 +30,8 @@ import { TAB_TOPICS, type AssistantTabId } from "@/lib/assistant-tab-topics";
 import { FF_INFANT_PREMIUM } from "@/lib/infant-feature-flags";
 import { mapFeatureToPaywallReason } from "@/lib/subscription-gate";
 import type { PaywallReason } from "@/contexts/paywall-context";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import "@/components/ask-amy/ask-amy-living-room.css";
 
 function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
   return (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
@@ -282,14 +284,21 @@ export default function AssistantPage() {
           <div className="flex justify-center px-1">
             <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
               <p>
-                {isInfantAmyContext
-                  ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
-                  : t("ai.system_limit_message")}
+                {companionMode
+                  ? t("ask_amy.companion.limit", {
+                      defaultValue:
+                        "We've shared several questions today. We can continue supporting you whenever you're ready.",
+                    })
+                  : isInfantAmyContext
+                    ? t("ai.infant_system_limit_message", "You've used today's 3 free baby questions. Upgrade for unlimited Amy guidance.")
+                    : t("ai.system_limit_message")}
               </p>
               <Link href="/pricing" className="mt-2 inline-block">
                 <Button size="sm" className="gap-1.5 rounded-full" data-testid="button-upgrade-system">
-                  <Zap className="h-3.5 w-3.5" />
-                  {t("ai.upgrade_premium")}
+                  {!companionMode ? <Zap className="h-3.5 w-3.5" /> : null}
+                  {companionMode
+                    ? PREMIUM_VOICE.continueCta
+                    : t("ai.upgrade_premium")}
                 </Button>
               </Link>
             </div>
@@ -465,7 +474,13 @@ export default function AssistantPage() {
               {!isEmpty ? (
                 <Button variant="ghost" size="sm" onClick={clearChat} className="h-8 shrink-0 rounded-full px-2 text-muted-foreground">
                   <RefreshCw className="h-4 w-4" />
-                  <span className="sr-only">{t("ai.clear_chat")}</span>
+                  <span className="sr-only">
+                    {companionMode
+                      ? t("ask_amy.companion.clear", {
+                          defaultValue: "Start a fresh quiet talk",
+                        })
+                      : t("ai.clear_chat")}
+                  </span>
                 </Button>
               ) : null}
             </div>
@@ -489,7 +504,7 @@ export default function AssistantPage() {
             ) : (
               <p className="mt-1.5 text-xs text-muted-foreground">
                 {t("ask_amy.companion.subtitle", {
-                  defaultValue: "One calm conversation — no pressure.",
+                  defaultValue: "I'm with you — one calm conversation, no pressure.",
                 })}
               </p>
             )}

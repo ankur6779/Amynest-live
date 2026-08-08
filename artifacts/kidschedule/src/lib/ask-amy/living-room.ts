@@ -55,7 +55,7 @@ export function recommendAskAmyAction(
     tileId: "amy-ai",
     label: "Start here",
     title: `Amy is here for ${childName}`,
-    purpose: "Ask one calm question — never alone",
+    purpose: "One calm question — never alone",
   };
 }
 

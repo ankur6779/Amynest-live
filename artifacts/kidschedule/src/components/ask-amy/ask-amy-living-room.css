@@ -267,9 +267,57 @@
 }
 
 .aa-support-note {
-  margin: 0.45rem 1rem 0.9rem;
+  margin: 0.45rem 1rem 0.45rem;
   font-size: 0.72rem;
   font-weight: 500;
   line-height: 1.4;
   color: rgba(232, 212, 184, 0.55);
+}
+
+.aa-support-invite,
+.aa-support-continue {
+  margin-top: 0;
+  color: rgba(232, 212, 184, 0.48);
+  font-size: 0.7rem;
+}
+
+.aa-support-continue {
+  margin-bottom: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aa-recommend-btn,
+  .aa-quiet-path,
+  .aa-prompt-link {
+    transition: none;
+  }
+}
+
+/**
+ * Companion soft-enter on /assistant?companion=1
+ * Sanctuary continuity — never chatbot desk materials.
+ * Does not rewrite AI / memory / APIs.
+ */
+.assistant-chat-page[data-aa-companion="1"] {
+  color: rgba(255, 252, 248, 0.96);
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(232, 212, 184, 0.08) 0%, transparent 55%),
+    #08060c;
+}
+
+.assistant-chat-page[data-aa-companion="1"] .assistant-chat-header h1 {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.assistant-chat-page[data-aa-companion="1"] .assistant-chat-header p {
+  color: rgba(232, 212, 184, 0.72);
+}
+
+.assistant-chat-page[data-aa-companion="1"] [data-testid="button-upgrade-system"] {
+  background: rgba(232, 212, 184, 0.16);
+  color: rgba(244, 238, 230, 0.95);
+  border: 1px solid rgba(232, 212, 184, 0.28);
+  text-transform: none;
+  letter-spacing: normal;
 }

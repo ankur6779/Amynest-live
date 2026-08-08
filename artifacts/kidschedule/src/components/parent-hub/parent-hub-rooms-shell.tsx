@@ -55,7 +55,8 @@ export type GrowStreamRenderApi = {
 };
 
 export type AskAmyStreamRenderApi = {
-  activePath: AskAmyPathId;
+  /** null = companionship open only (no prompt catalogue yet) */
+  activePath: AskAmyPathId | null;
   onSelectPath: (pathId: AskAmyPathId) => void;
 };
 
@@ -132,8 +133,8 @@ export function ParentHubRoomsShell({
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   /** Grow living — deepened learning tile under the educational room */
   const [growDeepenTileId, setGrowDeepenTileId] = useState<string | null>(null);
-  /** Ask Amy living — ask vs feelings path inside companionship room */
-  const [askAmyPath, setAskAmyPath] = useState<AskAmyPathId>("ask");
+  /** Ask Amy living — ask vs feelings deepen (null = open only) */
+  const [askAmyPath, setAskAmyPath] = useState<AskAmyPathId | null>(null);
   /** Exit Law — show return-to-life after a destination has been opened */
   const [pathCompleted, setPathCompleted] = useState(false);
   const guidanceLiving =
@@ -160,7 +161,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(null);
       setSelectedTileId(null);
       setGrowDeepenTileId(null);
-      setAskAmyPath("ask");
+      setAskAmyPath(null);
       setPathCompleted(false);
       return;
     }
@@ -168,7 +169,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(null);
       setSelectedTileId(null);
       setGrowDeepenTileId(null);
-      setAskAmyPath("ask");
+      setAskAmyPath(null);
       setPathCompleted(false);
       return;
     }
@@ -206,18 +207,17 @@ export function ParentHubRoomsShell({
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
       // Ask Amy living — companionship room for Ask Amy + Emotional.
+      // Open without prompt catalogue; quiet path deepens later.
       if (
         askAmyLiving &&
         (dest.id === "ask-amy" || dest.id === "emotional")
       ) {
-        const path = askAmyPathForDestination(dest.id) ?? "ask";
         const closing =
           openDestinationId === dest.id &&
-          selectedTileId === ASK_AMY_STREAM_TILE_ID &&
-          askAmyPath === path;
+          selectedTileId === ASK_AMY_STREAM_TILE_ID;
         setOpenDestinationId(closing ? null : dest.id);
         setSelectedTileId(closing ? null : ASK_AMY_STREAM_TILE_ID);
-        setAskAmyPath(path);
+        setAskAmyPath(null);
         setGrowDeepenTileId(null);
         if (!closing) setPathCompleted(true);
         return;
@@ -300,7 +300,7 @@ export function ParentHubRoomsShell({
     setSelectedTileId(null);
     setOpenDestinationId(null);
     setGrowDeepenTileId(null);
-    setAskAmyPath("ask");
+    setAskAmyPath(null);
   };
 
   // Moments Phase 2 — one emotional room (skip peer product doors).

@@ -17,11 +17,14 @@ describe("ask-amy living-room", () => {
     expect(ASK_AMY_QUIET_PATHS[1]?.destinationId).toBe("emotional");
   });
 
-  it("recommends companionship — not chatbot language", () => {
+  it("recommends companionship — not chatbot / helpdesk / AI tool language", () => {
     const r = recommendAskAmyAction("Emma");
+    const blob = `${r.title} ${r.purpose}`.toLowerCase();
     expect(r.title.toLowerCase()).toContain("here");
-    expect(r.title.toLowerCase()).not.toContain("assistant");
-    expect(r.title.toLowerCase()).not.toContain("chatbot");
+    expect(blob).not.toContain("assistant");
+    expect(blob).not.toContain("chatbot");
+    expect(blob).not.toContain("helpdesk");
+    expect(blob).not.toContain("ai tool");
     expect(r.pathId).toBe("ask");
   });
 

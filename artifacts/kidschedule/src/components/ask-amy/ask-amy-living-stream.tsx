@@ -1,6 +1,6 @@
 /**
  * Ask Amy Phase 2 — Help companionship living surface.
- * Ask Amy + Emotional as one calm room. Keep prompts. Never chatbot desk.
+ * Ask Amy + Emotional as one calm room. Keep prompts. Never chatbot / helpdesk / AI tool.
  * Presentation only — AI / memory / APIs untouched.
  */
 import { useMemo } from "react";
@@ -24,13 +24,14 @@ const FEELING_IDS = ["overwhelmed", "anxious", "connect", "break"] as const;
 
 export type AskAmyLivingStreamProps = {
   childName: string;
+  /** null = companionship open only — no prompt catalogue under fold */
   activePath?: AskAmyPathId | null;
   onSelectPath: (pathId: AskAmyPathId) => void;
 };
 
 export function AskAmyLivingStream({
   childName,
-  activePath = "ask",
+  activePath = null,
   onSelectPath,
 }: AskAmyLivingStreamProps) {
   const { t } = useTranslation();
@@ -38,13 +39,13 @@ export function AskAmyLivingStream({
     () => recommendAskAmyAction(childName),
     [childName],
   );
-  const path = activePath ?? "ask";
 
   return (
     <div
       className="aa-living-surface"
       data-testid="ask-amy-living-stream"
       data-aa-living="1"
+      data-aa-hierarchy="deepen"
     >
       <header className="aa-today-hero" data-testid="ask-amy-today-hero">
         <div
@@ -74,12 +75,13 @@ export function AskAmyLivingStream({
               <h1 className="aa-today-title">
                 {t("ask_amy.living.title", {
                   name: childName,
-                  defaultValue: `You are not alone with ${childName}`,
+                  defaultValue: `I'm here with you and ${childName}.`,
                 })}
               </h1>
               <p className="aa-today-purpose">
                 {t("ask_amy.living.purpose", {
-                  defaultValue: "Companionship — never a chatbot desk.",
+                  defaultValue:
+                    "Amy is a companion — never a chatbot, helpdesk, or AI tool.",
                 })}
               </p>
             </div>
@@ -111,7 +113,8 @@ export function AskAmyLivingStream({
               type="button"
               className="aa-quiet-path"
               data-testid={`ask-amy-quiet-${p.id}`}
-              data-active={path === p.id ? "true" : "false"}
+              data-active={activePath === p.id ? "true" : "false"}
+              aria-current={activePath === p.id ? "true" : undefined}
               onClick={() => onSelectPath(p.id)}
             >
               <span className="aa-quiet-path-title">{p.title}</span>
@@ -121,7 +124,7 @@ export function AskAmyLivingStream({
         </div>
       </div>
 
-      {path === "ask" ? (
+      {activePath === "ask" ? (
         <div className="aa-deepen" data-testid="ask-amy-deepen-ask">
           <p className="aa-deepen-label">
             {t("ask_amy.living.ask_label", {
@@ -156,7 +159,9 @@ export function AskAmyLivingStream({
             })}
           </AppLink>
         </div>
-      ) : (
+      ) : null}
+
+      {activePath === "feelings" ? (
         <div className="aa-deepen" data-testid="ask-amy-deepen-feelings">
           <p className="aa-deepen-label">
             {t("ask_amy.living.feelings_label", {
@@ -193,9 +198,19 @@ export function AskAmyLivingStream({
             })}
           </AppLink>
         </div>
-      )}
+      ) : null}
 
-      <p className="aa-support-note">{PREMIUM_VOICE.invitation}</p>
+      <p className="aa-support-note">
+        {t("ask_amy.living.continuity", {
+          defaultValue: "We'll continue helping as your child grows.",
+        })}
+      </p>
+      <p className="aa-support-note aa-support-invite">{PREMIUM_VOICE.invitation}</p>
+      <p className="aa-support-note aa-support-continue">
+        {t("ask_amy.living.continue_support", {
+          defaultValue: PREMIUM_VOICE.continueCta,
+        })}
+      </p>
     </div>
   );
 }
