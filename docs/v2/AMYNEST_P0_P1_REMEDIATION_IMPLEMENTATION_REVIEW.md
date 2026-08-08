@@ -237,7 +237,7 @@ Closer to one home on leave/nav/premium voice. Speech neon chassis and Hub catal
 | Artifact | SHA |
 |---|---|
 | Audit baseline | `4893a7690ef57c165ed96981128c8cc34cad7f9a` |
-| This remediation |  |
+| This remediation | `75d3d4f828594eb46fd5b18ef0319cb1018bc2ea` |
 
 ---
 
