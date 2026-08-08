@@ -6,7 +6,7 @@
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 **Also binding:** AmyNest Philosophy · Parent Hub Constitution · Pack 5 Premium Continuity  
 
-**Commit SHA:** `PENDING_COMMIT_SHA`  
+**Commit SHA:** `e482ed9ab5075515d63724628e6193635a668127`  
 
 **STOP after this module.** Wait for Founder approval.  
 Do **not** begin Routine Generation.  
@@ -279,7 +279,7 @@ See Production Safety → Rollback.
 
 ## 22. Commit SHA
 
-**Feature commit:** `PENDING_COMMIT_SHA`
+**Feature commit:** `e482ed9ab5075515d63724628e6193635a668127`
 
 ---
 
