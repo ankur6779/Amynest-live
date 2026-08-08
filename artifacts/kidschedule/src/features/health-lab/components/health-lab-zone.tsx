@@ -27,6 +27,7 @@ import { CalmnessMeterGame } from "./games/calmness-meter-game";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import { cn } from "@/lib/utils";
 import { GAMES_HEADER_SHELL, GAMES_ICON_BUTTON } from "@/lib/game-theme";
 
@@ -58,6 +59,7 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
   const authFetch = useAuthFetch();
   const { t } = useHealthLabI18n();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   const [motionPrepGameId, setMotionPrepGameId] = useState<HealthGameId | null>(null);
   const [arrivalFlash, setArrivalFlash] = useState<{ gameId: HealthGameId; key: number } | null>(
     null,
@@ -92,8 +94,9 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
 
   const enterGame = (gameId: HealthGameId) => {
     audio.playTap();
-    audio.playMilestone();
-    if (!reduced) {
+    if (!living) audio.playMilestone();
+    /** Living Care room — soft settle, no galaxy portal flash. */
+    if (!reduced && !living) {
       setArrivalFlash({ gameId, key: Date.now() });
       window.setTimeout(() => setArrivalFlash(null), 420);
     }
@@ -204,7 +207,12 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
   return (
     <HealthLabShell showParticles={!inGame && !motionPrepGameId}>
       {showHeader && (
-        <header className={cn(GAMES_HEADER_SHELL, "border-violet-500/20")}>
+        <header
+          className={cn(
+            GAMES_HEADER_SHELL,
+            living ? "border-[rgba(232,212,184,0.2)] bg-[rgba(8,6,12,0.72)]" : "border-violet-500/20",
+          )}
+        >
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <button
               type="button"
@@ -218,8 +226,17 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">{t("title")}</p>
-              <p className="truncate text-xs text-violet-200/70">{childName}</p>
+              <p className="truncate text-sm font-semibold text-white">
+                {living ? "Care" : t("title")}
+              </p>
+              <p
+                className={cn(
+                  "truncate text-xs",
+                  living ? "text-[rgba(232,212,184,0.72)]" : "text-violet-200/70",
+                )}
+              >
+                {childName}
+              </p>
             </div>
           </div>
         </header>

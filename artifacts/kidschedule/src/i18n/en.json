@@ -3354,15 +3354,15 @@
         "description": "Fun mental math shortcuts — Vedic style!"
       },
       "health-lab": {
-        "title": "Amy Health Lab™",
-        "description": "Play, move, breathe & discover wellness superpowers",
-        "preview_banner": "Amy Health Lab unlocks at 24 months. You can preview how it works today.",
-        "preview_title": "Preview Amy Health Lab",
-        "preview_body": "For children up to 23 months, Health Lab is overview-only. You can see the wellness areas, but activities stay locked until age 2.",
+        "title": "Care · Wellness",
+        "description": "Gentle movement and calm practice for the body — one quiet step today.",
+        "preview_banner": "Wellness practices open from 24 months. You can preview how Care feels today.",
+        "preview_title": "Preview Care wellness",
+        "preview_body": "For children up to 23 months, wellness is overview-only. You can see the calm practices, but activities stay locked until age 2.",
         "preview_items": {
-          "movement": "Movement games for balance and coordination",
-          "breathing": "Breathing and calm-down activities",
-          "wellness": "Wellness discovery cards for healthy habits"
+          "movement": "Gentle movement for balance and coordination",
+          "breathing": "Breathing and calm-down practices",
+          "wellness": "Quiet wellness notes for healthy habits"
         }
       },
       "amy-ai": {

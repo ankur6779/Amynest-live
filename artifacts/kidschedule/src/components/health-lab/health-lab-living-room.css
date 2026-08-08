@@ -417,6 +417,34 @@
   line-height: 1.45;
 }
 
+.hl-today-purpose-soft {
+  margin-top: 0.15rem;
+  opacity: 0.88;
+  font-size: 0.82rem;
+}
+
+.hl-more-note {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.hl-grownups {
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.health-lab-stage-living {
+  box-shadow: inset 0 1px 0 rgba(255, 252, 248, 0.04);
+}
+
+.health-lab-living-rewards {
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.1) 0%, transparent 55%),
+    linear-gradient(180deg, #141018 0%, #1a141c 50%, #100e14 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hl-recommend-btn,
   .hl-quiet-path {

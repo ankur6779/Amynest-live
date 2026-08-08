@@ -192,95 +192,70 @@ export function HealthLabHome({
                 className="hl-more-body health-lab-home-scroll space-y-4"
                 data-testid="health-lab-more-body"
               >
-                {/* Subordinated game chrome — XP / shop / map / quests */}
-                <div
-                  className="flex min-w-0 flex-wrap gap-2 sm:flex-nowrap"
-                  role="group"
-                  aria-label={t("rewards_section", "Rewards")}
-                >
-                  {canSurprise && (
-                    <button
-                      type="button"
-                      onClick={onClaimSurprise}
-                      className="health-lab-pressable flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-400/25 px-3 font-bold text-amber-50"
-                    >
-                      <Gift className="h-5 w-5" aria-hidden />
-                      <span className="text-sm">{t("daily_surprise")}</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onOpenShop}
-                    className="health-lab-pressable flex min-h-[56px] items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.08] px-3"
-                    aria-label={`${t("open_shop", "Open shop")}, ${state.coins} ${t("coins_label", "coins")}`}
-                  >
-                    <ShoppingBag className="h-5 w-5 text-violet-200" />
-                    <span className="text-sm font-black text-amber-200">{state.coins}</span>
-                  </button>
-                </div>
-
-                <HealthLabWorldMap
-                  state={state}
-                  recommendedId={recommendedId}
-                  playLabel={playLabel}
-                  title={tRoot("health_lab.living.worlds", {
-                    defaultValue: "Wellness worlds",
+                {/* Deepen More — parent continuity only. No shop / coins / XP / surprise theatre. */}
+                <p className="hl-more-note">
+                  {tRoot("health_lab.living.more_note", {
+                    defaultValue:
+                      "Quiet notes for grown-ups — practices stay on the paths above.",
                   })}
-                  hint={tRoot("health_lab.living.worlds_hint", {
-                    defaultValue: "Choose a gentle practice",
-                  })}
-                  onSelectGame={onSelectGame}
-                />
+                </p>
 
-                <section className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.07]">
+                <section className="hl-grownups overflow-hidden rounded-2xl border border-[rgba(232,212,184,0.16)] bg-white/[0.05]">
                   <button
                     type="button"
                     onClick={() => setShowGrownUps((v) => !v)}
                     className="health-lab-pressable flex w-full min-h-[52px] items-center gap-3 px-4 py-3 text-left"
                     aria-expanded={showGrownUps}
                   >
-                    <Trophy className="h-5 w-5 shrink-0 text-amber-300" aria-hidden />
+                    <BookOpen className="h-5 w-5 shrink-0 text-[rgba(232,212,184,0.85)]" aria-hidden />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-white">
-                        {t("grown_ups_section", "For grown-ups")}
+                      <p className="text-sm font-semibold text-[rgba(255,252,248,0.96)]">
+                        {tRoot("health_lab.living.grownups", {
+                          defaultValue: "For grown-ups",
+                        })}
                       </p>
-                      <p className="text-xs text-violet-200/70">
-                        {t("grown_ups_hint", "Progress, passport & parent insights")}
+                      <p className="text-xs text-[rgba(232,212,184,0.72)]">
+                        {tRoot("health_lab.living.grownups_hint", {
+                          defaultValue: "Gentle progress & parent insights",
+                        })}
                       </p>
                     </div>
                     <ChevronDown
                       className={cn(
-                        "h-5 w-5 text-violet-200/70 transition-transform duration-200",
+                        "h-5 w-5 text-[rgba(232,212,184,0.7)] transition-transform duration-200",
                         showGrownUps && "rotate-180",
                       )}
                       aria-hidden
                     />
                   </button>
                   {showGrownUps ? (
-                    <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-3">
-                      <p className="rounded-xl bg-amber-400/10 px-3 py-2.5 text-sm leading-relaxed text-amber-50/95">
+                    <div className="space-y-3 border-t border-[rgba(232,212,184,0.12)] px-4 pb-4 pt-3">
+                      <p className="rounded-xl border border-[rgba(232,212,184,0.14)] bg-[rgba(232,212,184,0.08)] px-3 py-2.5 text-sm leading-relaxed text-[rgba(255,252,248,0.92)]">
                         {parentLine}
                       </p>
                       <button
                         type="button"
                         onClick={onViewProgress}
-                        className={cn(
-                          "health-lab-pressable w-full min-h-[48px] rounded-xl px-3 py-2 text-sm",
-                          HEALTH_LAB_THEME.ctaSecondary,
-                        )}
+                        className="health-lab-pressable w-full min-h-[48px] rounded-xl border border-[rgba(232,212,184,0.18)] bg-white/[0.06] px-3 py-2 text-sm font-semibold text-[rgba(255,252,248,0.94)]"
                       >
-                        {t("progress")}
+                        {tRoot("health_lab.living.progress", {
+                          defaultValue: "See gentle progress",
+                        })}
                       </button>
                       <button
                         type="button"
                         onClick={onOpenDashboard}
-                        className="health-lab-pressable flex w-full min-h-[48px] items-center gap-3 rounded-xl bg-white/[0.05] p-3 text-left"
+                        className="health-lab-pressable flex w-full min-h-[48px] items-center gap-3 rounded-xl border border-[rgba(232,212,184,0.14)] bg-white/[0.04] p-3 text-left"
                       >
-                        <Trophy className="h-7 w-7 text-amber-400" />
+                        <BookOpen className="h-6 w-6 text-[rgba(232,212,184,0.85)]" />
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-white">{t("dashboard", "Parent Insights")}</p>
+                          <p className="font-semibold text-[rgba(255,252,248,0.96)]">
+                            {tRoot("health_lab.living.insights", {
+                              defaultValue: "Parent insights",
+                            })}
+                          </p>
                         </div>
-                        <ChevronRight className="h-5 w-5 text-violet-300/50" />
+                        <ChevronRight className="h-5 w-5 text-[rgba(232,212,184,0.55)]" />
                       </button>
                     </div>
                   ) : null}

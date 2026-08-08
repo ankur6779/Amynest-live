@@ -1,7 +1,6 @@
 import type { HubPremiumCardVisual } from "@/lib/hub-premium-card-types";
 import {
   Apple,
-  FlaskConical,
   Heart,
   Leaf,
   Sparkles,
@@ -68,7 +67,7 @@ export const HEALTH_ZONE_CARD_VISUALS: Record<Exclude<HealthZoneCardId, "section
     chips: [
       { icon: Sparkles, labelKey: "parent_hub.health_zone_cards.health_lab.chip_1", defaultLabel: "Move" },
       { icon: Wind, labelKey: "parent_hub.health_zone_cards.health_lab.chip_2", defaultLabel: "Breathe" },
-      { icon: FlaskConical, labelKey: "parent_hub.health_zone_cards.health_lab.chip_3", defaultLabel: "Discover" },
+      { icon: Heart, labelKey: "parent_hub.health_zone_cards.health_lab.chip_3", defaultLabel: "Care" },
     ],
   },
 };

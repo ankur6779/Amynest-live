@@ -1,6 +1,9 @@
 /**
  * Health Lab Phase 2 — living room hierarchy helpers.
  * Presentation only. No health logic / medical content / API / DB changes.
+ *
+ * Emotional target: another Care room in the AmyNest home —
+ * never galaxy UI, XP marketplace, gamification theatre, or science-app desk.
  */
 
 import type { HealthGameId } from "@/features/health-lab/types";
@@ -16,6 +19,13 @@ export type HealthLabQuietPath = {
   gameId: HealthGameId;
   title: string;
   purpose: string;
+};
+
+export type HealthLabLivingOpen = {
+  eyebrow: string;
+  title: string;
+  purpose: string;
+  companionship: string;
 };
 
 /** Primary quiet wellness paths — Care-room opening (calm language). */
@@ -63,6 +73,46 @@ export function recommendHealthLabAction(
     title: match.title,
     purpose: match.purpose,
   };
+}
+
+/** Companionship open — same house as Nutrition / Moments. */
+export function healthLabLivingOpen(childName = "your child"): HealthLabLivingOpen {
+  return {
+    eyebrow: "Today's Care",
+    title: `How can we care for ${childName}'s body today?`,
+    purpose: "One calm wellness step — no pressure.",
+    companionship: `I'm here with you and ${childName}.`,
+  };
+}
+
+/** Soft completion language — never XP / quest / level theatre. */
+export function livingSessionCompleteTitle(personalBest: boolean): string {
+  return personalBest ? "A quiet best together" : "A calm practice complete";
+}
+
+export function livingCelebrationTitle(
+  type: "level-up" | "streak" | "badge" | "quest" | "treasure" | "surprise",
+): string {
+  switch (type) {
+    case "level-up":
+      return "Growing steadier";
+    case "streak":
+      return "Showing up again";
+    case "badge":
+      return "A quiet moment noted";
+    case "quest":
+      return "Today's care continuing";
+    case "treasure":
+      return "A soft surprise";
+    case "surprise":
+      return "A gentle gift";
+    default:
+      return "Well done";
+  }
+}
+
+export function livingCelebrationSubtitle(): string {
+  return "Keep going gently — no rush.";
 }
 
 /** Flag — Health Lab living room manufacturing. Default ON. */

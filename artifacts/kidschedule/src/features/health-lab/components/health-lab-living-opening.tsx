@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import {
   HEALTH_LAB_QUIET_PATHS,
+  healthLabLivingOpen,
   recommendHealthLabAction,
 } from "@/lib/health-lab/living-room";
 import type { HealthGameId } from "@/features/health-lab/types";
@@ -28,6 +29,7 @@ export function HealthLabLivingOpening({
 }: Props) {
   const { t } = useTranslation();
   const recommend = recommendHealthLabAction(recommendedGameId);
+  const open = healthLabLivingOpen(childName);
 
   return (
     <div className="hl-living-surface" data-testid="health-lab-living-surface">
@@ -52,17 +54,23 @@ export function HealthLabLivingOpening({
             <div className="hl-today-readability" aria-hidden="true" />
             <div className="hl-today-copy">
               <p className="hl-today-eyebrow">
-                {t("health_lab.living.eyebrow", { defaultValue: "Today's Care" })}
+                {t("health_lab.living.eyebrow", { defaultValue: open.eyebrow })}
               </p>
               <h1 className="hl-today-title" id="mission-heading">
                 {t("health_lab.living.title", {
                   name: childName,
-                  defaultValue: `How can we care for ${childName}'s body today?`,
+                  defaultValue: open.title,
                 })}
               </h1>
               <p className="hl-today-purpose">
+                {t("health_lab.living.companionship", {
+                  name: childName,
+                  defaultValue: open.companionship,
+                })}
+              </p>
+              <p className="hl-today-purpose hl-today-purpose-soft">
                 {t("health_lab.living.purpose", {
-                  defaultValue: "One calm wellness step — no pressure.",
+                  defaultValue: open.purpose,
                 })}
               </p>
             </div>

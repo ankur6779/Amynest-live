@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   HEALTH_LAB_QUIET_PATHS,
+  healthLabLivingOpen,
   isHealthLabLivingV1Enabled,
+  livingCelebrationTitle,
+  livingSessionCompleteTitle,
   recommendHealthLabAction,
 } from "./living-room";
 
@@ -23,5 +26,18 @@ describe("health-lab living-room", () => {
 
   it("living flag defaults ON", () => {
     expect(isHealthLabLivingV1Enabled()).toBe(true);
+  });
+
+  it("opens as Care companionship — never galaxy / XP marketing", () => {
+    const open = healthLabLivingOpen("Maya");
+    expect(open.companionship).toContain("Maya");
+    const joined = `${open.eyebrow} ${open.title} ${open.purpose} ${open.companionship}`.toLowerCase();
+    expect(joined).not.toMatch(/xp|galaxy|adventure|quest|superpower|lab™/);
+  });
+
+  it("softens session / celebration language", () => {
+    expect(livingSessionCompleteTitle(false).toLowerCase()).not.toMatch(/xp|level|quest/);
+    expect(livingCelebrationTitle("level-up").toLowerCase()).not.toContain("level up");
+    expect(livingCelebrationTitle("quest").toLowerCase()).not.toContain("quest");
   });
 });

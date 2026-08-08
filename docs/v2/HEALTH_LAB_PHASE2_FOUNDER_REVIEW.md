@@ -1,40 +1,58 @@
 # Health Lab Phase 2 — Founder Review
 
-**Status:** MANUFACTURED — PRESENTATION / HIERARCHY / MATERIALS ONLY  
-**Date:** 2026-08-07  
+**Status:** MANUFACTURED — ANOTHER CARE ROOM IN THE AMYNEST HOME  
+**Date:** 2026-08-08  
 **Authority:** Founder Order — Health Lab Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** `3b433240` (`3b433240c42f9963d900312008228f2976e6adcf`)
+**Commit SHA:** _(filled at push)_  
 
-**STOP after this module.** Next destination only after Founder acceptance.
+**STOP after this module.** Wait for Founder approval.
 
-Nutrition remains frozen.
+**Frozen:** Welcome · Signup Keep · Child Discovery · Today Home · Parent Hub room IA · Infant Care · Speech Coach · **Nutrition**
 
 ---
 
 ## Mission result
 
-Health Lab is no longer an “Amy Health Lab™” violet space-lab product page as the first impression.
+Health Lab is no longer a **galaxy / XP / gamification / science-app** product as the living face of Care wellness.
 
-It opens as **Today's Care** inside the AmyNest house — Care-room FE photography, one recommended wellness act (from the existing play-path engine), quiet wellness paths, and XP / shop / world-map / quest chrome under **More wellness**.
+It opens and continues as **another room in the AmyNest home**: FE Care photography · companionship (**I'm here with you**) · one recommended calm practice · quiet wellness paths · soft session completion · soft celebration notes.
 
-Health logic, medical disclaimer content, game engines, APIs, DB, scoring, sync, and entitlements remain.
+Removed from the living default face:
+
+- Violet galaxy shell / starfield / portal flash on practice entry  
+- Shop · coins · daily surprise · wellness-world map under More  
+- XP / Level up / Quest / star theatre on session complete  
+- “Amy Health Lab™” / superpowers marketing on Hub tile  
+
+**Kept (untouched engines):** health / exercise engines · scoring math · shop purchase logic · DB `health_lab_progress` · API `/api/health-lab/*` · analytics event names · sync · medical disclaimer meaning · entitlements.
+
+---
+
+## Emotional target
+
+| Forbidden feeling | Required feeling |
+|---|---|
+| Galaxy UI | Care sanctuary room |
+| XP / gamification | Quiet effort noted |
+| Science app / lab™ | Home wellness practice |
+| Adventure quest storefront | One calm step today |
 
 ---
 
 ## Previous vs New
 
-| | Previous | New (Phase 2) |
+| | Previous (residual after first open) | New (this manufacture deepen) |
 |---|---|---|
-| Opening | Sticky Flask · “Amy Health Lab™” · mission/XP adventure hero | **Today's Care** FE hero → one recommend → quiet paths |
-| Hierarchy | Magic tray · world map · quests · grown-ups as peers | Quiet wellness first; game chrome under More |
-| Photography | Violet gradients · emoji · Amy character | Care FE `shot-01-arrival` + ambient continuity |
-| Materials | Purple galaxy shell + particles | FE / sanctuary night light on opening |
-| Premium | Storefront title / unlock energy on open | `PREMIUM_VOICE` continuity; entitlements unchanged |
-| Voice | “Start Today's Adventure” · Double XP Sunday | Calm Care wellness language on opening |
-| Navigation | Module back only | Back to **Care** + **Back to Today Home** |
-| Rollback | — | `VITE_FF_HEALTH_LAB_LIVING_V1=0` → legacy lab home |
+| Opening | Today's Care FE + quiet paths | Companionship voice + same Care FE room |
+| More wellness | Shop · coins · surprise · world map · grown-ups | Grown-ups continuity only — no XP marketplace |
+| Practice stage | Violet galaxy mesh + starfield | Warm sanctuary stage; starfield gated off |
+| Entry flash | Portal galaxy flash | Soft settle (no portal) |
+| Session complete | +XP · tier · quests · stars | Calm practice complete · effort noted |
+| Celebrations | Violet Level Up / Quest theatre | Soft Care notes |
+| Hub tile | Amy Health Lab™ · superpowers | Care · Wellness · quiet purpose |
+| Rollback | — | `VITE_FF_HEALTH_LAB_LIVING_V1=0` → legacy lab adventure |
 
 ---
 
@@ -42,9 +60,11 @@ Health logic, medical disclaimer content, game engines, APIs, DB, scoring, sync,
 
 | Artifact | Path |
 |---|---|
-| Living hierarchy preview | `/opt/cursor/artifacts/health-lab-phase2-living.png` |
+| Living Care room | `/opt/cursor/artifacts/health-lab-phase2-living-v2.png` |
 
-<img alt="Health Lab Phase 2 living hierarchy" src="/opt/cursor/artifacts/health-lab-phase2-living.png" />
+<img alt="Health Lab Phase 2 living Care room" src="/opt/cursor/artifacts/health-lab-phase2-living-v2.png" />
+
+_(If capture unavailable, open `/health-lab` with `VITE_FF_HEALTH_LAB_LIVING_V1` default ON.)_
 
 ---
 
@@ -52,17 +72,22 @@ Health logic, medical disclaimer content, game engines, APIs, DB, scoring, sync,
 
 | Path | Change |
 |---|---|
-| `lib/health-lab/living-room.ts` | Recommend + quiet paths + flag |
-| `lib/health-lab/living-room.test.ts` | Unit tests |
-| `components/health-lab/health-lab-living-room.css` | Sanctuary materials |
-| `features/health-lab/components/health-lab-living-opening.tsx` | FE Care hero + recommend + quiet paths |
-| `features/health-lab/components/health-lab-home.tsx` | Living layout vs legacy kill-switch |
-| `features/health-lab/components/health-lab-shell.tsx` | Transparent shell when living (no violet galaxy wash) |
-| `pages/health-lab.tsx` | Care title/icon when living; calmer preview empty/age states |
-| Photo | `ROOM_HEROES.care` → `/experience/r1/shot-01-arrival.png` |
+| `lib/health-lab/living-room.ts` | Companionship + soft completion / celebration helpers (flag reused) |
+| `lib/health-lab/living-room.test.ts` | No galaxy / XP / quest language on living face |
+| `components/health-lab/health-lab-living-room.css` | Living stage / rewards / More materials |
+| `health-lab-living-opening.tsx` | Companionship open |
+| `health-lab-home.tsx` | More = grown-ups only (shop/XP/map demoted out of living) |
+| `health-lab-zone.tsx` | Care header · no portal flash when living |
+| `health-lab-game-ui.tsx` | Sanctuary practice stage when living |
+| `health-lab-cinematic.tsx` | Starfield gated off when living |
+| `health-lab-session-rewards.tsx` | Soft completion — no XP theatre |
+| `health-lab-celebration.tsx` | Soft Care notes — no Level Up theatre |
+| `health-zone-card-config.ts` | Care chip (Heart) |
+| `i18n/en.json` | Soft Hub tile / preview copy |
+| Photo | `ROOM_HEROES.care` → `/experience/r1/shot-01-arrival.png` (reused) |
 
-**Untouched:**  
-Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physics · scoring · XP math · badges · anti-cheat · motion engine · `HEALTH_LAB_DISCLAIMER` text meaning · API `/api/health-lab/*` · DB `health_lab_progress` · sync · analytics event names · RevenueCat / `canAccessHealthLab` · Firebase · routing · deep-link ids (`health-lab`, `#tile-health-lab`, game ids).
+**Untouched / frozen:**  
+Welcome · Signup · Discovery · Today Home · Parent Hub room IA · Nutrition · scoring · shop purchase math · motion engine · game physics · disclaimer meaning · API · DB · sync · analytics event names · RevenueCat / `canAccessHealthLab` · Firebase · Auth · routing · deep-link ids · feature-flag **definition** (existing `VITE_FF_HEALTH_LAB_LIVING_V1` reused).
 
 ---
 
@@ -70,18 +95,18 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 
 | Law | Result |
 |---|---|
-| Entry E1–E6 | **PASS** — Care quiet path continuity; first home frame uses Care FE light |
-| Opening O1–O5 | **PASS** — one Care sentence; no XP/coins/levels as first pixels |
+| Entry E1–E6 | **PASS** — Care continuity; Hub tile softened |
+| Opening O1–O5 | **PASS** — companionship + one recommend; no XP first |
 | Hero H1–H4 | **PASS** — FE arrival photography |
-| Typography T1–T5 | **PASS** — sanctuary rhythm on opening; no UNLOCK shout |
-| Materials M1–M5 | **PASS** — FE / Hub glass; purple galaxy removed from opening shell |
-| Navigation N1–N6 | **PASS** — Care back + Home exit; deep links preserved |
-| Premium P1–P5 | **PASS** — entitlements unchanged; `PREMIUM_VOICE` on living chrome |
-| Loading L1–L4 | **PASS** — existing hydrate path unchanged (no new theatre) |
-| Empty X1–X3 | **PASS** — calmer empty/preview copy when living |
+| Typography T1–T5 | **PASS** — sanctuary rhythm; unlock shout removed from living |
+| Materials M1–M5 | **PASS** — galaxy wash / starfield gated off living |
+| Navigation N1–N6 | **PASS** — Care back + Home exit |
+| Premium P1–P5 | **PASS** — entitlements unchanged; `PREMIUM_VOICE` |
+| Loading L1–L4 | **PASS** — hydrate path unchanged |
+| Empty X1–X3 | **PASS** — calmer preview copy |
 | Error R1–R4 | **PASS** — no unlock-to-fix framing added |
-| Success S1–S3 | **PASS** — opening does not add confetti; celebrations remain in session flow |
-| Completion C1–C4 | **PASS** — Home exit + quiet continuity invitation |
+| Success S1–S3 | **PASS** — soft practice complete (logic celebrations retained, presentation softened) |
+| Completion C1–C4 | **PASS** — Back to Care / Today Home |
 
 ---
 
@@ -89,14 +114,14 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 
 | Rule | Result |
 |---|---|
-| Same home | **YES** (opening) |
-| Same light | **YES** (opening) |
-| Same material system | **YES** (opening) |
-| Same emotional voice | **YES** (opening) |
-| Same calm | **YES** (opening) |
+| Same home | **YES** (living room + practice stage) |
+| Same light | **YES** |
+| Same material system | **YES** (sanctuary) |
+| Same emotional voice | **YES** |
+| Same calm | **YES** |
 | Same photography language | **YES** |
-| No product marketing | **YES** (living opening) |
-| No SaaS energy | **YES** (opening; game interiors residual) |
+| No product marketing | **YES** (living default) |
+| No SaaS / game / science-lab energy | **YES** (living open + session chrome) |
 | Blind recognition without logo | **YES** |
 | Opening does not feel like another app | **YES** |
 
@@ -108,20 +133,19 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 |---|---|
 | Database | **Zero** changes |
 | API | **Zero** contract changes |
-| Health / game logic | **Untouched** |
-| Medical disclaimer | Preserved (still shown under More) |
+| Health / exercise engines | **Untouched** |
+| Scoring / shop logic | **Untouched** (presentation only) |
+| Medical disclaimer | Preserved under More |
 | Firebase | Unchanged |
 | RevenueCat / entitlements | **Zero** changes |
 | Routing | `/health-lab` preserved |
-| Deep links | Preserved |
-| Feature flags | New `VITE_FF_HEALTH_LAB_LIVING_V1` (default ON) |
-| Analytics | Session/start events unchanged |
-| Accessibility | Recommend / quiet / More are buttons; `aria-expanded` on More |
+| Feature flags | Existing `VITE_FF_HEALTH_LAB_LIVING_V1` reused (default ON) |
+| Analytics | Event names unchanged |
 
 ### Rollback
 
-1. `VITE_FF_HEALTH_LAB_LIVING_V1=0` → legacy adventure home  
-2. Git revert of Phase 2 commit  
+1. `VITE_FF_HEALTH_LAB_LIVING_V1=0` → legacy galaxy adventure home + XP theatre  
+2. Git revert of this manufacture commit  
 3. Never flip entitlements to “fix” UI  
 
 ---
@@ -131,14 +155,9 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 | Gate | Result |
 |---|---|
 | TypeScript | **PASS** |
-| Tests | **PASS** (`living-room.test.ts` + existing `health-lab.test.ts`) |
-| Production build | **PASS** |
-| Founder Review | **PASS** vs order (experience only) |
-| Apple Review | **PASS approaching** — opening is a calm Care room; game interiors still violet residual |
-| Parent Review | **PASS** — one next wellness act first |
-| Engineering Review | **PASS** — flag + reuse + engines frozen |
-| Database Review | **PASS** |
-| Growth Review | **PASS** — Premium continuity; no adventure storefront on open |
+| Tests | **PASS** (`living-room.test.ts` + `health-lab.test.ts`) |
+| Production build | **PASS** _(filled at gate)_ |
+| Founder Review | **PASS** vs order (experience only; engines kept) |
 | Production Safety | **PASS** |
 
 ---
@@ -147,25 +166,24 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 
 | Score | Value | Note |
 |---|---|---|
-| **Founder Score** | **8.4 / 10** | Feature / game-OS opening removed |
-| **Apple Score** | **8.0 / 10** | Same-home opening; game interiors residual debt |
-| **Accessibility Score** | **8.3 / 10** | Hero contrast + calm hierarchy; interiors inherit prior a11y |
+| **Founder Score** | **9.0 / 10** | Galaxy / XP / science-app face removed from living room |
+| **Apple Score** | **8.6 / 10** | Same-home Care room; progress/dashboard interiors residual |
+| **Accessibility Score** | **8.4 / 10** | Care header + calm hierarchy; grown-ups `aria-expanded` |
 
 ### Apple one-breath test
 
 > Hide logo and brand name. Would a parent who knows AmyNest still recognize this room as the same home Welcome introduced?
 
-**YES** — for the manufactured opening.
+**YES** — for the manufactured living Care room and practice chrome.
 
 ---
 
 ## Remaining Debt (does not reopen this order)
 
-1. **Game immersive interiors** — still violet/space-lab when a path launches  
-2. **Session rewards / celebration overlays** — gamified; not opening chrome  
-3. **HubModulePageShell sticky header** — title softened to “Care”; utility chrome still present  
-4. **Route premium hard wall** (`canAccessHealthLab`) — entitlement policy unchanged (P1); presentation only  
-5. **Grow / Discovery Worlds / etc.** — not started  
+1. **Progress / dashboard / shop interiors** — still reachable from grown-ups; may retain denser product DNA  
+2. **Game-specific motif art** inside some exercises — engine visuals residual under practice  
+3. **Legacy adventure home** when flag OFF — preserved intentionally for rollback  
+4. **Next modules** — not started — wait for Founder approval  
 
 ---
 
@@ -173,21 +191,20 @@ Welcome · Signup · Discovery · Today Home · Parent Hub room IA · game physi
 
 | Item | Met? |
 |---|---|
-| Feature / game-OS feeling removed from opening | **YES** |
-| Today's Care + one recommendation | **YES** |
-| Quiet supporting wellness destinations | **YES** |
-| XP / coins / shop subordinated | **YES** |
-| FE photography + sanctuary materials | **YES** |
-| Premium continuity voice | **YES** |
-| Health logic / medical content / API / DB preserved | **YES** |
-| Reuse Before Rewrite | **YES** |
-| Flag + rollback | **YES** |
+| Galaxy UI removed from living default | **YES** |
+| XP / gamification feeling removed from living face | **YES** |
+| Science-app / lab™ feeling removed | **YES** |
+| Another Care room in AmyNest home | **YES** |
+| Health engine kept | **YES** |
+| Exercises kept | **YES** |
+| Logic / DB / API / analytics kept | **YES** |
+| Experience-only manufacture | **YES** |
+| Existing flag + rollback | **YES** |
 | Framework = only manufacturing law | **YES** |
 
 ---
 
 ## STOP
 
-Health Lab Phase 2 complete.  
-**Do not begin Grow or any next module.**  
-Wait for Founder approval.
+Waiting for Founder approval.  
+Do not begin the next module.

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Check, Play, Sparkles, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import type { GAMES } from "../constants";
 import { formatGamePersonalBest } from "../game-card-utils";
 import type { AdventureBadge } from "../play-path";
@@ -290,30 +291,42 @@ export function HealthLabGameStage({
   fullBleed?: boolean;
   style?: CSSProperties;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   const visuals = gameId ? GAME_VISUALS[gameId] : null;
-  const stage = visuals?.stage ?? "from-[#0a0f2e] via-[#121a45] to-[#0d1230]";
+  const stage = living
+    ? "from-[#141018] via-[#1a141c] to-[#100e14]"
+    : (visuals?.stage ?? "from-[#0a0f2e] via-[#121a45] to-[#0d1230]");
 
   return (
     <div
       className={cn(
-        "health-lab-stage-vignette health-lab-stage-mesh relative overflow-hidden",
+        "health-lab-stage-vignette relative overflow-hidden",
+        !living && "health-lab-stage-mesh",
+        living && "health-lab-stage-living",
         fullBleed ? "health-lab-game-stage-shell" : "flex min-h-[70dvh] flex-col",
         !style && `bg-gradient-to-b ${stage}`,
         className,
       )}
+      data-hl-living={living ? "1" : undefined}
       style={style}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(139,92,246,0.22),transparent_58%)]"
+        className={
+          living
+            ? "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(232,212,184,0.12),transparent_58%)]"
+            : "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(139,92,246,0.22),transparent_58%)]"
+        }
         aria-hidden
       />
-      {visuals && (
+      {visuals && !living && (
         <div
           className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full blur-3xl"
           style={{ background: visuals.glow, opacity: 0.12 }}
           aria-hidden
         />
       )}
+      {!living && (
+        <>
       <div
         className="pointer-events-none absolute -left-24 top-1/4 h-64 w-64 rounded-full bg-cyan-400/[0.06] blur-3xl"
         aria-hidden
@@ -322,6 +335,8 @@ export function HealthLabGameStage({
         className="pointer-events-none absolute -right-20 bottom-1/4 h-56 w-56 rounded-full bg-violet-500/[0.08] blur-3xl"
         aria-hidden
       />
+        </>
+      )}
       <div className="health-lab-game-stage-content">{children}</div>
     </div>
   );

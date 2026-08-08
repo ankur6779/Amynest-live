@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 
 export function HealthLabFilmGrain({ className }: { className?: string }) {
   return null;
@@ -16,6 +17,8 @@ export const HealthLabStarfield = memo(function HealthLabStarfield({
   className?: string;
 }) {
   const reduced = useReducedMotion();
+  /** Living Care room — no galaxy starfield. */
+  if (isHealthLabLivingV1Enabled()) return null;
   const effectiveCount = reduced ? Math.min(count, 8) : Math.min(count, 24);
   const stars = useMemo(
     () =>
