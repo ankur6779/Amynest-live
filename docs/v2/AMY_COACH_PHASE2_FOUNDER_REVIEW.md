@@ -6,7 +6,7 @@
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 **Also binding:** AmyNest Philosophy · Parent Hub Constitution · Pack 5 Premium Continuity  
 
-**Commit SHA:** `PENDING_COMMIT_SHA`  
+**Commit SHA:** `11922b54519e0da36485630828ce68a946e0fb81`  
 
 **STOP after this module.** Wait for Founder approval.  
 Do **not** begin Amy Audio.  
@@ -266,7 +266,7 @@ See Production Safety → Rollback. Flag default ON; set `0` for instant legacy 
 
 ## 20. Commit SHA
 
-**Feature commit:** `PENDING_COMMIT_SHA`
+**Feature commit:** `11922b54519e0da36485630828ce68a946e0fb81`
 
 ---
 
