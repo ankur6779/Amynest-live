@@ -263,7 +263,8 @@ Engines / destinations data retained either way.
 
 ## 27. Commit SHA
 
-_Filled after commit._
+**Implementation commit:** `411588228cbabae35ea7871bd2f7133fb275c830`  
+**Branch:** `cursor/product-execution-model-v2`
 
 ---
 
