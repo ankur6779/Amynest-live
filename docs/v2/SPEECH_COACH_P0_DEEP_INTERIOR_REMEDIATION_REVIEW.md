@@ -327,8 +327,8 @@ Restores legacy neon Live / Talk / Pronounce / V2 / Games presentation. Engines/
 
 ## 31. Commit SHA
 
-**Implementation commit:**   
-**Branch:** 
+**Implementation commit:** `58dc053fd51c0b90e4cc4678606e499219dbad69`  
+**Branch:** `cursor/product-execution-model-v2` 
 
 ---
 
