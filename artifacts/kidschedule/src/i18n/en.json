@@ -166,7 +166,7 @@
     "amy_learning_tutor": "Learn with Amy",
     "amy_quick_tutor": "Quick Tutor",
     "learning_zone": "Learning Zone",
-    "amy_astro_intelligence": "Amy Astro Intelligence",
+    "amy_astro_intelligence": "Birth Sky",
     "current_child": "Child",
     "games": "Gaming Hub",
     "my_recipes": "My Recipes",
@@ -188,7 +188,7 @@
     },
     "descriptions": {
       "learning_zone": "Skills, subjects & practice",
-      "amy_astro_intelligence": "Cosmic Portrait · Birth Sky · Amy",
+      "amy_astro_intelligence": "Soft identity · Birth Sky · Reflect",
       "dashboard": "Today’s next right thing",
       "parenting_hub": "Articles, tools & support",
       "amy_coach": "Learning goals & progress",
@@ -3391,8 +3391,8 @@
         "age_hint": "Personalised for your child ({{months}} months)"
       },
       "birth-sky": {
-        "title": "Amy Astro Intelligence",
-        "description": "Your child's cosmic portrait · Birth Sky · Soft parenting insights"
+        "title": "Birth Sky",
+        "description": "Soft identity · reflective understanding · never a prediction"
       },
       "articles": {
         "title": "Parenting Articles",
@@ -3775,7 +3775,7 @@
       "today": "Today For You",
       "parent": "Gaming Hub",
       "learning": "Learning Zone",
-      "amyAstro": "Amy Astro Intelligence",
+      "amyAstro": "Birth Sky",
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
       "health": "Health Zone",
@@ -3787,7 +3787,7 @@
       "collapsed_nav": {
         "today": "Routine • AI Coach • Daily Picks",
         "learning": "Math • Phonics • Speech",
-        "amyAstro": "Cosmic Portrait • Birth Sky • Soft insights",
+        "amyAstro": "Soft portrait • Birth Sky • Reflect",
         "creativity": "Crafts • Drawing • DIY",
         "stories": "Reading • Communication",
         "health": "Nutrition • Sleep • Wellness",
@@ -3801,8 +3801,8 @@
         "chip_2": "Portrait"
       },
       "launch": {
-        "chip_1": "Cosmic Portrait",
-        "chip_2": "Ask Amy"
+        "chip_1": "Soft portrait",
+        "chip_2": "Reflect"
       }
     },
     "section_preview": {

@@ -9,7 +9,6 @@ import {
 } from "../../infrastructure/geocoding/recent-places";
 import type { PlaceLookupResult } from "../../domain/ports/place-lookup-port";
 import type { SetupDraft } from "../../domain/models/setup-draft";
-import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -79,7 +78,7 @@ export function BirthSkyPlacePage({ draft, onChange, onBack, onContinue }: Props
   const canContinue = Boolean(draft.birthPlace) || draft.placeSkipped;
 
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-place">
+    <BirthSkyModuleShell onBack={onBack} testId="birth-sky-setup-place">
       <h2 className="font-quicksand text-2xl font-bold">Where were they born?</h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
         Location is used only to place the sky — never for ads.

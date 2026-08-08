@@ -12,6 +12,12 @@ import {
 } from "../../domain/validators/setup-validators";
 import type { SetupDraft } from "../../domain/models/setup-draft";
 import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingCreateCta,
+  livingReviewTitle,
+} from "@/lib/birth-sky/living-room";
 
 type Props = {
   draft: SetupDraft;
@@ -81,11 +87,21 @@ export function BirthSkyReviewPage({
       ? "Unknown (Day Sky)"
       : `${draft.birthTime ?? "—"} (${draft.timePrecision})`;
 
+  const living = isBirthSkyLivingV1Enabled();
+
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-review">
-      <h2 className="font-quicksand text-2xl font-bold">Reveal their sky</h2>
+    <BirthSkyModuleShell
+      title={living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME}
+      onBack={onBack}
+      testId="birth-sky-setup-review"
+    >
+      <h2 className="font-quicksand text-2xl font-bold">
+        {living ? livingReviewTitle() : "Reveal their sky"}
+      </h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
-        Review birth details before the sky is formed. Create is free.
+        {living
+          ? "Confirm birth details before a quiet understanding is prepared. Continue is free."
+          : "Review birth details before the sky is formed. Create is free."}
       </p>
 
       <div className="mt-6 space-y-3">
@@ -133,7 +149,9 @@ export function BirthSkyReviewPage({
 
       {offline ? (
         <p className="mt-4 text-sm text-amber-200" role="alert" data-testid="birth-sky-review-offline">
-          Creating Amy Astro Intelligence needs a connection. Your draft is saved.
+          {living
+            ? "Continuing needs a connection. Your draft is saved."
+            : "Creating Amy Astro Intelligence needs a connection. Your draft is saved."}
         </p>
       ) : null}
       {!gate.ok ? (
@@ -149,7 +167,13 @@ export function BirthSkyReviewPage({
         onClick={onCreate}
         data-testid="birth-sky-create"
       >
-        {creating ? "Creating…" : `Create ${childName}’s Amy Astro Intelligence`}
+        {creating
+          ? living
+            ? "Preparing…"
+            : "Creating…"
+          : living
+            ? livingCreateCta(childName)
+            : `Create ${childName}’s Amy Astro Intelligence`}
       </Button>
     </BirthSkyModuleShell>
   );

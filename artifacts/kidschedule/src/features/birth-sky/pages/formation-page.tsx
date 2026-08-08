@@ -29,6 +29,11 @@ import type { SkySnapshot } from "../domain/models/birth-profile";
 import { userFacingGenerationMessage } from "../domain/models/snapshot-generation";
 import { AMY_ASTRO_PRODUCT_NAME } from "../lib/branding";
 import { AmyAstroCosmicAmbient } from "../components/cosmic-ambient";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingFormationCopy,
+} from "@/lib/birth-sky/living-room";
 import "../design/amy-astro.css";
 
 type Props = {
@@ -69,7 +74,10 @@ export function BirthSkyFormationPage({
   const stageAnnounced = useRef<string | null>(null);
   const completedRef = useRef(false);
   const lastAnnounce = useRef(0);
-  const [liveMessage, setLiveMessage] = useState("Forming Amy Astro Intelligence…");
+  const living = isBirthSkyLivingV1Enabled();
+  const [liveMessage, setLiveMessage] = useState(
+    living ? "Preparing a quiet understanding…" : "Forming Amy Astro Intelligence…",
+  );
   const [statusIdx, setStatusIdx] = useState(0);
   const reduced = prefersReducedMotion();
   const wallOrigin = useRef(0);
@@ -204,8 +212,9 @@ export function BirthSkyFormationPage({
   }, [snapshot, computeFailed, isGenerating, onReady, reduced, retryToken]);
 
   const backDisabled = isBackDisabled(machine.state) || isGenerating;
-  const copy =
-    machine.state === "soft_wait" || isGenerating
+  const copy = living
+    ? livingFormationCopy(machine.elapsedMs, FORMATION_HARD_TIMEOUT_MS)
+    : machine.state === "soft_wait" || isGenerating
       ? FORMATION_SOFT_WAIT_COPY
       : FORMATION_STATUS_LINES[statusIdx]!;
 
@@ -213,13 +222,19 @@ export function BirthSkyFormationPage({
 
   if (showFailed) {
     return (
-      <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onExit} testId="birth-sky-formation-failed">
+      <BirthSkyModuleShell
+        title={living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME}
+        onBack={onExit}
+        testId="birth-sky-formation-failed"
+      >
         <div className="flex flex-col items-center pt-10 text-center">
           <BirthSkyContinuousSeal
             size={SEAL_SLOT_SIZES.formationFailed}
             slotId="seal-formation"
           />
-          <h2 className="mt-6 font-quicksand text-2xl font-bold">Sky paused</h2>
+          <h2 className="mt-6 font-quicksand text-2xl font-bold">
+            {living ? "Paused for a moment" : "Sky paused"}
+          </h2>
           <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]" role="alert">
             {userFacingGenerationMessage(failureReason ?? machine.errorCode)}
           </p>
@@ -254,21 +269,23 @@ export function BirthSkyFormationPage({
 
   return (
     <BirthSkyModuleShell
-      title={AMY_ASTRO_PRODUCT_NAME}
+      title={living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME}
       backDisabled={backDisabled}
       testId="birth-sky-formation"
       hideTopBar
       reducedMotion={reduced}
-      ambientIntensity="full"
+      ambientIntensity={living ? "static" : "full"}
     >
       <div className="relative flex min-h-[70dvh] flex-col items-center justify-center pt-8 text-center">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-          <AmyAstroCosmicAmbient reducedMotion={reduced} living showMeteor={!reduced} />
-        </div>
+        {!living ? (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+            <AmyAstroCosmicAmbient reducedMotion={reduced} living showMeteor={!reduced} />
+          </div>
+        ) : null}
         <div
           className={cn(
             "relative z-10",
-            !reduced && "amy-astro-pulse-glow amy-astro-float",
+            !living && !reduced && "amy-astro-pulse-glow amy-astro-float",
           )}
         >
           <BirthSkyContinuousSeal
@@ -278,7 +295,12 @@ export function BirthSkyFormationPage({
           />
         </div>
         <p
-          className="amy-astro-display relative z-10 mt-8 text-xl text-[hsl(42_75%_82%)]"
+          className={cn(
+            "relative z-10 mt-8 text-xl",
+            living
+              ? "font-semibold text-[rgba(232,212,184,0.92)]"
+              : "amy-astro-display text-[hsl(42_75%_82%)]",
+          )}
           data-testid="birth-sky-formation-copy"
         >
           {copy}
@@ -286,10 +308,17 @@ export function BirthSkyFormationPage({
         <p className="sr-only" aria-live="polite">
           {liveMessage}
         </p>
-        <p className="relative z-10 mt-4 text-xs uppercase tracking-[0.18em] text-[hsl(40_20%_96%/0.45)]">
-          {machine.elapsedMs > 0 && machine.elapsedMs < FORMATION_HARD_TIMEOUT_MS
-            ? "Deep space is listening…"
-            : "Entering silence…"}
+        <p
+          className={cn(
+            "relative z-10 mt-4 text-xs uppercase tracking-[0.18em]",
+            living ? "text-[rgba(232,212,184,0.55)]" : "text-[hsl(40_20%_96%/0.45)]",
+          )}
+        >
+          {living
+            ? livingFormationCopy(machine.elapsedMs, FORMATION_HARD_TIMEOUT_MS)
+            : machine.elapsedMs > 0 && machine.elapsedMs < FORMATION_HARD_TIMEOUT_MS
+              ? "Deep space is listening…"
+              : "Entering silence…"}
         </p>
         {!reduced ? (
           <div
@@ -297,7 +326,12 @@ export function BirthSkyFormationPage({
             aria-hidden
           >
             <div
-              className="h-full bg-gradient-to-r from-[hsl(275_50%_50%)] to-[hsl(42_70%_55%)] transition-[width] duration-500"
+              className={cn(
+                "h-full transition-[width] duration-500",
+                living
+                  ? "bg-gradient-to-r from-[rgba(232,212,184,0.55)] to-[rgba(180,140,120,0.65)]"
+                  : "bg-gradient-to-r from-[hsl(275_50%_50%)] to-[hsl(42_70%_55%)]",
+              )}
               style={{
                 width: `${Math.min(100, (machine.visualElapsedMs / 3200) * 100)}%`,
               }}

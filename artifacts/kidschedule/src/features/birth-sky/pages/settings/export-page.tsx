@@ -226,8 +226,8 @@ export function BirthSkyExportPage({
           data-testid="birth-sky-pdf-paywall-hint"
         >
           <p className="text-sm text-[hsl(40_20%_96%/0.88)]">
-            Premium unlocks unlimited PDF export, download, and history. AI insight quota is
-            unchanged.
+            We can support you further with PDF export, download, and history whenever you're
+            ready. AI insight quota is unchanged.
           </p>
           <Button
             type="button"
@@ -235,7 +235,7 @@ export function BirthSkyExportPage({
             onClick={requirePremium}
             data-testid="birth-sky-pdf-upgrade"
           >
-            Unlock Premium PDF
+            Continue with Premium whenever you're ready
           </Button>
         </div>
       ) : null}

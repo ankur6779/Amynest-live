@@ -20,6 +20,7 @@ import {
 } from "../lib/branding";
 import {
   BIRTH_SKY_QUIET_PATHS,
+  birthSkyLivingOpen,
   isBirthSkyLivingV1Enabled,
   recommendBirthSkyAction,
 } from "@/lib/birth-sky/living-room";
@@ -53,6 +54,7 @@ export function BirthSkyWelcomePage({
   const childName =
     childFirstName?.trim() ||
     t("parent_hub.journey.your_child", { defaultValue: "your child" });
+  const livingOpen = birthSkyLivingOpen(childName);
 
   useEffect(() => {
     trackBirthSkyEvent("birth_sky.welcome_viewed", { referrer: "parenting_hub" });
@@ -121,18 +123,24 @@ export function BirthSkyWelcomePage({
                   <div className="bs-today-copy">
                     <p className="bs-today-eyebrow">
                       {t("birth_sky.living.eyebrow", {
-                        defaultValue: "Today's Understanding",
+                        defaultValue: livingOpen.eyebrow,
                       })}
                     </p>
                     <h1 className="bs-today-title">
                       {t("birth_sky.living.title", {
                         name: childName,
-                        defaultValue: `What helps you understand ${childName}?`,
+                        defaultValue: livingOpen.title,
                       })}
                     </h1>
                     <p className="bs-today-purpose">
+                      {t("birth_sky.living.companionship", {
+                        name: childName,
+                        defaultValue: livingOpen.companionship,
+                      })}
+                    </p>
+                    <p className="bs-today-purpose bs-today-purpose-soft">
                       {t("birth_sky.living.purpose", {
-                        defaultValue: "Soft identity — reflective, never fate.",
+                        defaultValue: livingOpen.purpose,
                       })}
                     </p>
                   </div>

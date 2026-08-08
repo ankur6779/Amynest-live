@@ -4,7 +4,6 @@ import { BirthSkyModuleShell } from "../../components/birth-sky-module-shell";
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { validateBirthTime } from "../../domain/validators/setup-validators";
 import type { SetupDraft, TimePrecision } from "../../domain/models/setup-draft";
-import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -29,10 +28,10 @@ export function BirthSkyTimePage({ draft, onChange, onBack, onContinue }: Props)
   const validation = validateBirthTime(precision, draft.birthTime);
 
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-time">
+    <BirthSkyModuleShell onBack={onBack} testId="birth-sky-setup-time">
       <h2 className="font-quicksand text-2xl font-bold">Do you know the exact time?</h2>
       <p className="mt-2 text-sm text-[hsl(40_20%_96%/0.72)]">
-        Time unlocks Ascendant and houses. Without it, a Day Sky is still meaningful.
+        A birth time adds finer detail. Without it, a Day Sky is still meaningful.
       </p>
 
       <div className="mt-6 space-y-2" role="radiogroup" aria-label="Birth time precision">

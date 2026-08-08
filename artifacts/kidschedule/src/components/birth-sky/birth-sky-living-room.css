@@ -421,6 +421,36 @@
   line-height: 1.45;
 }
 
+.bs-today-purpose-soft {
+  margin-top: 0.15rem;
+  opacity: 0.88;
+  font-size: 0.82rem;
+}
+
+/** Post-welcome living shell — same house as Welcome / Understand room. */
+.birth-sky-living-shell {
+  color: rgba(255, 252, 248, 0.96);
+  background:
+    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(232, 212, 184, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 85% 90%, rgba(180, 140, 120, 0.1) 0%, transparent 50%),
+    linear-gradient(180deg, #141018 0%, #1a141c 42%, #100e14 100%);
+}
+
+.birth-sky-living-shell-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 60% 40% at 20% 30%,
+    rgba(232, 212, 184, 0.06),
+    transparent 60%
+  );
+}
+
+.birth-sky-living-topbar {
+  border-bottom: 1px solid rgba(232, 212, 184, 0.1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bs-recommend-btn,
   .bs-quiet-path {

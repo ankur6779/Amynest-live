@@ -42,26 +42,25 @@ export const AMY_ASTRO_LAUNCH_VISUAL: HubPremiumCardVisual = {
   iconSrc: `${BASE}/amy-astro-icon.png?v=${ASSET_V}`,
   heroSrc: `${BASE}/amy-astro-hero.png?v=${ASSET_V}`,
   surfaceGradient:
-    "linear-gradient(135deg, rgba(30,64,175,0.62) 0%, rgba(79,70,229,0.56) 46%, rgba(245,158,11,0.42) 100%)",
+    "linear-gradient(135deg, rgba(42,34,38,0.92) 0%, rgba(58,46,42,0.88) 48%, rgba(36,30,34,0.94) 100%)",
   ambientGlow:
-    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(129,140,248,0.42), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(251,191,36,0.28), transparent 55%)",
-  borderHover: "group-hover:border-indigo-300/40",
-  chipBorder: "border-indigo-200/15",
-  ctaGradient: "from-amber-400 via-indigo-500 to-violet-600",
-  ctaShadow:
-    "shadow-[0_0_24px_rgba(99,102,241,0.48)] group-hover:shadow-[0_0_32px_rgba(251,191,36,0.42)]",
-  glyphColor: "text-indigo-100/80",
-  floatingGlyphs: ["☾", "✦", "✧"],
+    "radial-gradient(ellipse 75% 65% at 18% 45%, rgba(232,212,184,0.22), transparent 58%), radial-gradient(ellipse 65% 75% at 88% 42%, rgba(180,140,120,0.16), transparent 55%)",
+  borderHover: "group-hover:border-[rgba(232,212,184,0.28)]",
+  chipBorder: "border-[rgba(232,212,184,0.16)]",
+  ctaGradient: "from-amber-200/70 via-stone-300/55 to-rose-200/60",
+  ctaShadow: "shadow-[0_8px_24px_rgba(0,0,0,0.28)] group-hover:shadow-[0_10px_28px_rgba(0,0,0,0.34)]",
+  glyphColor: "text-[rgba(232,212,184,0.75)]",
+  floatingGlyphs: ["·", "✦", "·"],
   chips: [
     {
       icon: Moon,
       labelKey: "parent_hub.amy_astro_cards.launch.chip_1",
-      defaultLabel: "Cosmic Portrait",
+      defaultLabel: "Soft portrait",
     },
     {
       icon: Compass,
       labelKey: "parent_hub.amy_astro_cards.launch.chip_2",
-      defaultLabel: "Ask Amy",
+      defaultLabel: "Reflect",
     },
   ],
 };

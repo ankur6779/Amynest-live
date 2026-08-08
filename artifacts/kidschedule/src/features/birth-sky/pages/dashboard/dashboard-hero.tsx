@@ -15,6 +15,10 @@ import {
 import type { CompletenessChip, DashboardHeroVM } from "../../application/view-models/dashboard-vm";
 import { trackBirthSkyEvent } from "../../lib/analytics";
 import { AMY_ASTRO_PRODUCT_SHORT } from "../../lib/branding";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingDashboardEditionLabel,
+} from "@/lib/birth-sky/living-room";
 import { buildPersonalizedGreeting } from "../../lib/personalized-greetings";
 import type { ContinuityFacts } from "../../lib/emotional-continuity";
 import { loadReplyMemory, rememberGreeting } from "../../lib/reply-memory";
@@ -58,6 +62,7 @@ export function BirthSkyDashboardHero({
   onContinueJourney,
   continuity = null,
 }: Props) {
+  const living = isBirthSkyLivingV1Enabled();
   const painted = useRef(false);
   const greeting = useMemo(() => {
     const mem = loadReplyMemory(profileId);
@@ -108,9 +113,14 @@ export function BirthSkyDashboardHero({
         collapsed ? "py-3" : "py-4",
         !reducedMotion && "amy-astro-enter",
       )}
-      aria-label={`Welcome to ${vm.childName}'s universe`}
+      aria-label={
+        living
+          ? `Understanding ${vm.childName}`
+          : `Welcome to ${vm.childName}'s universe`
+      }
       data-testid="birth-sky-dashboard-hero"
       data-collapsed={collapsed ? "true" : "false"}
+      data-bs-living={living ? "1" : undefined}
     >
       <button
         type="button"
@@ -126,7 +136,9 @@ export function BirthSkyDashboardHero({
         />
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(42_60%_70%/0.7)]">
-            {AMY_ASTRO_PRODUCT_SHORT} · Signature Edition
+            {living
+              ? livingDashboardEditionLabel()
+              : `${AMY_ASTRO_PRODUCT_SHORT} · Signature Edition`}
           </p>
           <p
             className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-1.5 text-left text-xl font-semibold leading-snug"

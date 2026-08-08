@@ -15,6 +15,12 @@ import { buildRevealViewModel } from "../application/view-models/reveal-vm";
 import type { BirthProfile, SkySnapshot } from "../domain/models/birth-profile";
 import { trackBirthSkyEvent } from "../lib/analytics";
 import { AMY_ASTRO_PRODUCT_NAME, AMY_ASTRO_TAGLINE } from "../lib/branding";
+import {
+  isBirthSkyLivingV1Enabled,
+  livingBirthSkyProductName,
+  livingBirthSkyTagline,
+  livingRevealCta,
+} from "@/lib/birth-sky/living-room";
 import { playSkySound } from "../lib/sky-sounds";
 import { loadPreferences } from "../infrastructure/repositories/settings-store";
 import "../design/amy-astro.css";
@@ -32,16 +38,18 @@ function prefersReducedMotion(): boolean {
 }
 
 export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Props) {
+  const living = isBirthSkyLivingV1Enabled();
   const vm = buildRevealViewModel(profile, snapshot, childName);
-  const [ceremonyDone, setCeremonyDone] = useState(false);
-  const [ctaEnabled, setCtaEnabled] = useState(false);
+  /** Living Understand room — skip cosmic ceremony theatre. */
+  const [ceremonyDone, setCeremonyDone] = useState(living);
+  const [ctaEnabled, setCtaEnabled] = useState(living);
   const reduced = prefersReducedMotion();
 
   const finishCeremony = useCallback(() => {
     setCeremonyDone(true);
     const prefs = loadPreferences(profile.userId);
-    playSkySound("reveal", { enabled: prefs.skySounds, reducedMotion: reduced });
-  }, [profile.userId, reduced]);
+    playSkySound("reveal", { enabled: prefs.skySounds && !living, reducedMotion: reduced });
+  }, [profile.userId, reduced, living]);
 
   useEffect(() => {
     trackBirthSkyEvent("birth_sky.reveal_viewed", {
@@ -70,7 +78,7 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
 
   return (
     <>
-      {!ceremonyDone ? (
+      {!living && !ceremonyDone ? (
         <AmyAstroCinematicRevealCeremony
           profileId={profile.profileId}
           childName={childName}
@@ -81,14 +89,19 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
       ) : null}
 
       <BirthSkyModuleShell
-        title={AMY_ASTRO_PRODUCT_NAME}
+        title={living ? livingBirthSkyProductName() : AMY_ASTRO_PRODUCT_NAME}
         hideTopBar
         testId="birth-sky-reveal"
-        ambientIntensity="full"
-        className={ceremonyDone ? "amy-astro-enter" : "opacity-0 pointer-events-none"}
+        ambientIntensity={living ? "static" : "full"}
+        className={ceremonyDone || living ? (living ? undefined : "amy-astro-enter") : "opacity-0 pointer-events-none"}
       >
         <div className="flex flex-col items-center pt-10 text-center">
           <BirthSkyContinuousSeal size={SEAL_SLOT_SIZES.reveal} slotId="seal-reveal" />
+          {living ? (
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[rgba(232,212,184,0.72)]">
+              {livingBirthSkyTagline()}
+            </p>
+          ) : null}
           {vm.daySkyBadge ? (
             <p
               className="mt-4 rounded-full border border-[hsl(42_50%_60%/0.3)] px-3 py-1 text-xs font-semibold text-[hsl(42_70%_78%)]"
@@ -98,7 +111,11 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
             </p>
           ) : null}
           <h2
-            className="amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-6 px-1 text-[clamp(1.25rem,5vw,1.65rem)] font-semibold leading-snug"
+            className={
+              living
+                ? "mt-6 px-1 text-[clamp(1.25rem,5vw,1.65rem)] font-semibold leading-snug text-[rgba(255,252,248,0.98)]"
+                : "amy-astro-display amy-astro-gold-text amy-astro-hero-title mt-6 px-1 text-[clamp(1.25rem,5vw,1.65rem)] font-semibold leading-snug"
+            }
             data-testid="birth-sky-essence-line"
           >
             {vm.essenceLine}
@@ -107,7 +124,11 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
 
           {vm.essenceCard ? (
             <div
-              className="amy-astro-glass amy-astro-breathe mt-8 w-full rounded-3xl p-5 text-left"
+              className={
+                living
+                  ? "mt-8 w-full rounded-3xl border border-[rgba(232,212,184,0.18)] bg-[rgba(8,6,12,0.55)] p-5 text-left"
+                  : "amy-astro-glass amy-astro-breathe mt-8 w-full rounded-3xl p-5 text-left"
+              }
               data-testid="birth-sky-essence-card"
             >
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(42_60%_70%/0.7)]">
@@ -125,7 +146,11 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
 
           <Button
             type="button"
-            className="mt-10 min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-base font-semibold shadow-[0_0_28px_hsl(275_70%_40%/0.35)]"
+            className={
+              living
+                ? "mt-10 min-h-12 w-full rounded-xl border border-[rgba(232,212,184,0.28)] bg-[rgba(232,212,184,0.14)] text-base font-semibold text-[rgba(255,252,248,0.98)]"
+                : "mt-10 min-h-12 w-full rounded-xl bg-gradient-to-r from-[hsl(275_50%_38%)] to-[hsl(42_55%_38%)] text-base font-semibold shadow-[0_0_28px_hsl(275_70%_40%/0.35)]"
+            }
             disabled={!ctaEnabled}
             aria-disabled={!ctaEnabled}
             onClick={() => {
@@ -137,7 +162,7 @@ export function BirthSkyRevealPage({ profile, snapshot, childName, onEnter }: Pr
             }}
             data-testid="birth-sky-reveal-cta"
           >
-            Enter the living sky
+            {living ? livingRevealCta() : "Enter the living sky"}
           </Button>
           {!ctaEnabled ? (
             <p className="sr-only" aria-live="polite">

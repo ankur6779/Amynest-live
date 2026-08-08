@@ -14,7 +14,6 @@ import {
 } from "../../constants/consent";
 import type { SetupDraft } from "../../domain/models/setup-draft";
 import { saveSetupDraft } from "../../infrastructure/repositories/setup-draft-store";
-import { AMY_ASTRO_PRODUCT_NAME } from "../../lib/branding";
 
 type Props = {
   draft: SetupDraft;
@@ -42,7 +41,7 @@ export function BirthSkyConsentPage({
   const checked = draft.consent.disclaimerAccepted;
 
   return (
-    <BirthSkyModuleShell title={AMY_ASTRO_PRODUCT_NAME} onBack={onBack} testId="birth-sky-setup-consent">
+    <BirthSkyModuleShell onBack={onBack} testId="birth-sky-setup-consent">
       <h2 className="font-quicksand text-2xl font-bold">Your privacy</h2>
       <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-[hsl(40_20%_96%/0.78)]">
         <li>Private</li>
