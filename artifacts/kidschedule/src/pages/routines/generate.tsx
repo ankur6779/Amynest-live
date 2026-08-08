@@ -82,6 +82,7 @@ import { weekdayLabelFromRoutineDate } from "@/lib/fixed-activities-utils";
 import type { FixedActivitiesResult } from "@workspace/api-client-react";
 import { extractApiErrorMessage } from "@/lib/api-error-message";
 import { RoutineLivingOpening } from "@/components/routines/routine-living-opening";
+import { RoutineLivingResult } from "@/components/routines/routine-living-result";
 import {
   buildRoutineContextChips,
   isRoutineLivingV1Enabled,
@@ -237,6 +238,7 @@ function toGeneratedRoutine(data: RoutineGenerateResult): GeneratedRoutine {
     adaptations: data.adaptations ?? undefined,
     fixedActivitiesResult:
       (data.fixedActivitiesResult as FixedActivitiesResult | null | undefined) ?? null,
+    fallback: data.fallback,
   };
 }
 
@@ -621,6 +623,13 @@ export default function RoutineGenerate() {
     shouldOverride: boolean | undefined;
     wakeTime: string | null;
   } | null>(null);
+  /** R3 living result preview — experience hold before existing save path */
+  const [livingResultState, setLivingResultState] = useState<{
+    routine: GeneratedRoutine;
+    shouldOverride: boolean | undefined;
+    wakeTime: string | null;
+  } | null>(null);
+  const livingResultRef = useRef<HTMLDivElement | null>(null);
   const [blockingSaveConfirmed, setBlockingSaveConfirmed] = useState(false);
   const [inlineFixedBlocking, setInlineFixedBlocking] =
     useState<FixedActivitiesResult | null>(null);
@@ -1194,9 +1203,11 @@ export default function RoutineGenerate() {
       setPendingRoutineSave({ generatedData: data, shouldOverride });
       setShowTaskCheck(true);
       setFixedReviewState(null);
+      setLivingResultState(null);
       return;
     }
     setFixedReviewState(null);
+    setLivingResultState(null);
     saveGeneratedRoutine(data, shouldOverride);
   }, [applyWakeAndTodayAdjustments, saveGeneratedRoutine]);
 
@@ -1212,6 +1223,27 @@ export default function RoutineGenerate() {
     const needsFixedReview =
       serializedFixedActivities.length > 0 ||
       !!generatedData.fixedActivitiesResult?.fixedActivitiesApplied;
+
+    // R3 living result — hold preview above existing save contract (do not auto-navigate).
+    if (living) {
+      setLivingResultState({ routine: generatedData, shouldOverride, wakeTime });
+      if (needsFixedReview) {
+        setFixedReviewState({ routine: generatedData, shouldOverride, wakeTime });
+        setBlockingSaveConfirmed(false);
+      } else {
+        setFixedReviewState(null);
+      }
+      toast({
+        title: t("routines.living.result.toast_ready", {
+          defaultValue: "Here's today's plan",
+        }),
+      });
+      requestAnimationFrame(() => {
+        livingResultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+
     if (needsFixedReview) {
       setFixedReviewState({ routine: generatedData, shouldOverride, wakeTime });
       setBlockingSaveConfirmed(false);
@@ -1226,7 +1258,7 @@ export default function RoutineGenerate() {
       return;
     }
     commitGeneratedRoutine(generatedData, shouldOverride, wakeTime);
-  }, [serializedFixedActivities, commitGeneratedRoutine, toast, t]);
+  }, [serializedFixedActivities, commitGeneratedRoutine, toast, t, living]);
 
   const buildGeneratePayload = React.useCallback((
     wakeTime: string | null,
@@ -1655,6 +1687,9 @@ export default function RoutineGenerate() {
       notifyExistingRoutineBlock();
       return;
     }
+    if (living) {
+      setLivingResultState(null);
+    }
     const weatherForCall = await ensureWeatherDetected();
     triggerWithWakeCheck("ai", forceOverride, weatherForCall);
   };
@@ -1887,8 +1922,65 @@ export default function RoutineGenerate() {
         </div>
       </header>
 
-      {living && mode === "single" && !isGenerating && !isAiGenerating ? (
+      {living && mode === "single" && !isGenerating && !isAiGenerating && !livingResultState ? (
         <RoutineLivingOpening childName={livingChildName} chips={livingContextChips} />
+      ) : null}
+
+      {living && mode === "single" && livingResultState && !isGenerating && !isAiGenerating ? (
+        <div ref={livingResultRef} className="space-y-4">
+          <RoutineLivingResult
+            childName={livingChildName}
+            dateIso={date}
+            title={livingResultState.routine.title}
+            items={livingResultState.routine.items}
+            adaptations={livingResultState.routine.adaptations}
+            hasSchool={hasSchool}
+            mood={mood}
+            weatherOutdoor={weatherOutdoor}
+            caregiver={handlerType}
+            goals={selectedChildData?.goals ?? null}
+            fixedHonored={
+              !!livingResultState.routine.fixedActivitiesResult?.fixedActivitiesApplied
+            }
+            isFallback={!!livingResultState.routine.fallback}
+            isSaving={createMutation.isPending}
+            isRebuilding={isGenerating || isAiGenerating}
+            onBegin={() => {
+              const { routine, shouldOverride, wakeTime } = livingResultState;
+              commitGeneratedRoutine(routine, shouldOverride, wakeTime);
+            }}
+            onRebuild={() => {
+              const force = !!livingResultState.shouldOverride || overrideMode;
+              setLivingResultState(null);
+              setFixedReviewState(null);
+              void handleAiGenerate(force);
+            }}
+          >
+            {fixedReviewState ? (
+              <FixedActivitiesReviewPanel
+                date={date}
+                childName={selectedChildData?.name}
+                fixedActivities={fixedActivities}
+                onFixedActivitiesChange={setFixedActivities}
+                result={lastFixedActivitiesResult}
+                blockingConfirmed={blockingSaveConfirmed}
+                onBlockingConfirmedChange={setBlockingSaveConfirmed}
+                onRegenerate={() => {
+                  const { shouldOverride, wakeTime } = fixedReviewState;
+                  setLivingResultState(null);
+                  proceedAiGenerate(!!shouldOverride, wakeTime);
+                }}
+                onSave={() => {
+                  if (!fixedReviewState) return;
+                  const { routine, shouldOverride, wakeTime } = fixedReviewState;
+                  commitGeneratedRoutine(routine, shouldOverride, wakeTime);
+                }}
+                isRegenerating={isGenerating || isAiGenerating}
+                isSaving={createMutation.isPending}
+              />
+            ) : null}
+          </RoutineLivingResult>
+        </div>
       ) : null}
 
       {!living && showFirstRoutineProgress ? (
@@ -2034,6 +2126,25 @@ export default function RoutineGenerate() {
             </Card>
           ) : null}
 
+          {living && livingResultState && !isGenerating && !isAiGenerating ? (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                className="rg-family-quiet"
+                data-testid="routine-living-result-adjust"
+                onClick={() => {
+                  setLivingResultState(null);
+                  setFixedReviewState(null);
+                  setDeltasOpen(true);
+                }}
+              >
+                {t("routines.living.result.adjust_details", {
+                  defaultValue: "Change today's details",
+                })}
+              </button>
+            </div>
+          ) : null}
+
           {isGenerating || isAiGenerating ? <Card className={cn("rounded-3xl border-none shadow-sm overflow-hidden mt-4", living ? "rg-handoff-card" : "bg-card")}>
               <CardContent className="p-12 flex flex-col items-center justify-center text-center space-y-6">
                 {living ? (
@@ -2112,7 +2223,7 @@ export default function RoutineGenerate() {
                   </>
                 )}
               </CardContent>
-            </Card> : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
+            </Card> : living && livingResultState ? null : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-6 sm:p-8 space-y-8">
 
                 {/* Step 1 — Select Child (hidden when only 1 child registered) */}
@@ -2552,7 +2663,8 @@ export default function RoutineGenerate() {
                   </div>
                 )}
 
-                {fixedReviewState && (
+                {/* Legacy fixed-review chrome — living path renders this inside RoutineLivingResult */}
+                {!living && fixedReviewState && (
                   <div ref={fixedReviewRef} className="space-y-4">
                   <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
                     <div className="flex items-start gap-3">
@@ -3186,7 +3298,7 @@ export default function RoutineGenerate() {
         </div>}
 
       {/* Mobile sticky generate bar — single mode only, mirrors inline CTA */}
-      {mode === "single" && !isGenerating && !isAiGenerating && !(existingRoutine?.exists && !overrideMode) && (
+      {mode === "single" && !isGenerating && !isAiGenerating && !livingResultState && !(existingRoutine?.exists && !overrideMode) && (
         <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           <div className="max-w-2xl mx-auto">
             <RoutinePremiumCta
