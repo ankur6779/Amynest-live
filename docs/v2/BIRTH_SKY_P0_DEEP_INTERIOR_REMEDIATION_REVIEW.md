@@ -331,9 +331,8 @@ Engines / data / entitlements unchanged either way.
 
 ## 24. Commit SHA
 
-_Implementation commit will be stamped immediately after push in a follow-up docs stamp if required._
-
-**Working tree for this remediation:** see git commit on `cursor/product-execution-model-v2` titled Birth Sky P0 deep interior.
+**Implementation:** `8e4a97ab4fd29320e48098de56e4c94d049c7f2e`  
+**Branch:** `cursor/product-execution-model-v2`
 
 ---
 
