@@ -150,6 +150,7 @@ import { ParentHubRoomsShell } from "@/components/parent-hub/parent-hub-rooms-sh
 import { GuidanceLivingStream } from "@/components/guidance/guidance-living-stream";
 import { MomentsLivingStream } from "@/components/moments/moments-living-stream";
 import { GrowLivingStream } from "@/components/grow/grow-living-stream";
+import { RoomLivingStream } from "@/components/parent-hub/room-living-stream";
 import { AskAmyLivingStream } from "@/components/ask-amy/ask-amy-living-stream";
 import "@/components/parent-hub/parent-hub-living-room.css";
 import { isParentHubRoomsV1Enabled } from "@/lib/parent-hub/feature-flags";
@@ -2379,6 +2380,15 @@ function ParentingHubPage() {
                     )
                   : undefined
               }
+              renderRoomLivingStream={({ room, activeTileId, onSelectTile }) => (
+                <RoomLivingStream
+                  room={room}
+                  childName={effectiveChild.name}
+                  isInfant={isInfant}
+                  activeTileId={activeTileId}
+                  onSelectTile={onSelectTile}
+                />
+              )}
             />
           ) : (
           <>

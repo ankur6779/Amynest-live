@@ -279,4 +279,116 @@ describe("Parent Hub Pack 4 living flow", () => {
       "Today's care",
     );
   });
+
+  it("P0-6 Help living — one companionship spine, never peer product doors", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "emotional", "speech-coach", "ptm-prep"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="help-recommend"
+              onClick={() => onSelectTile("amy-ai")}
+            >
+              Start here
+            </button>
+            <button
+              type="button"
+              data-testid="help-quiet-speech-coach"
+              onClick={() => onSelectTile("speech-coach")}
+            >
+              Speech
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("help-living-stream")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-rooms-shell")).toHaveAttribute(
+      "data-ph-room-living",
+      "1",
+    );
+    expect(screen.queryByTestId("hub-dest-row-ask-amy")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-emotional")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-speech-coach")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-ptm-prep")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("help-recommend"));
+    expect(screen.getByTestId("mod-amy-ai")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
+
+  it("P0-6 Understand living — Guidance leads, peers removed", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="understand"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["daily-tips", "birth-sky", "phonics"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="understand-recommend"
+              onClick={() => onSelectTile("daily-tips")}
+            >
+              Today's guidance
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("understand-living-stream")).toBeTruthy();
+    expect(screen.queryByTestId("hub-dest-row-guidance")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-birth-sky")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-grow")).toBeNull();
+    fireEvent.click(screen.getByTestId("understand-recommend"));
+    expect(screen.getByTestId("mod-daily-tips")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
+
+  it("P0-6 Care living — Today's care leads, equal care cards removed", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["nutrition", "health-lab", "infant-hub"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="care-recommend"
+              onClick={() => onSelectTile("nutrition")}
+            >
+              Today's care
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("care-living-stream")).toBeTruthy();
+    expect(screen.queryByTestId("hub-dest-row-nutrition")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-health-lab")).toBeNull();
+    expect(screen.queryByTestId("hub-dest-row-infant-care")).toBeNull();
+    fireEvent.click(screen.getByTestId("care-recommend"));
+    expect(screen.getByTestId("mod-nutrition")).toBeTruthy();
+    expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
+  });
 });

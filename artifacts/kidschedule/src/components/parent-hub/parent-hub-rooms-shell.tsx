@@ -42,10 +42,21 @@ import {
   isAskAmyLivingV1Enabled,
   type AskAmyPathId,
 } from "@/lib/ask-amy/living-room";
+import {
+  destinationIdForRoomLivingTile,
+  isRoomLivingPeerRoom,
+  type RoomLivingPeerRoom,
+} from "@/lib/parent-hub/room-living";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
 export type MomentsStreamRenderApi = {
+  activeTileId: string | null;
+  onSelectTile: (tileId: string) => void;
+};
+
+export type RoomLivingStreamRenderApi = {
+  room: RoomLivingPeerRoom;
   activeTileId: string | null;
   onSelectTile: (tileId: string) => void;
 };
@@ -93,6 +104,11 @@ export type ParentHubRoomsShellProps = {
    * When provided + living flag ON, skips emoji shelf / chatbot first impression.
    */
   renderAskAmyStream?: (api: AskAmyStreamRenderApi) => ReactNode;
+  /**
+   * P0-6 — Help / Understand / Care one-room living (Moments law).
+   * When provided, skips equal peer destination catalogues for those rooms.
+   */
+  renderRoomLivingStream?: (api: RoomLivingStreamRenderApi) => ReactNode;
   homeHref?: string;
 };
 
@@ -127,6 +143,7 @@ export function ParentHubRoomsShell({
   renderMomentsStream,
   renderGrowStream,
   renderAskAmyStream,
+  renderRoomLivingStream,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
@@ -145,6 +162,7 @@ export function ParentHubRoomsShell({
   const growLiving = Boolean(renderGrowStream) && isGrowLivingV1Enabled();
   const askAmyLiving =
     Boolean(renderAskAmyStream) && isAskAmyLivingV1Enabled();
+  const roomLivingEnabled = Boolean(renderRoomLivingStream);
 
   const recommendation = useMemo(
     () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
@@ -198,12 +216,40 @@ export function ParentHubRoomsShell({
       setSelectedTileId(focusTileId);
       setOpenDestinationId(destId ?? "presence");
       setGrowDeepenTileId(null);
+    } else if (
+      roomLivingEnabled &&
+      isRoomLivingPeerRoom(activeRoom)
+    ) {
+      setSelectedTileId(focusTileId);
+      setOpenDestinationId(
+        destId ??
+          destinationIdForRoomLivingTile(activeRoom, focusTileId, { isInfant }),
+      );
+      setGrowDeepenTileId(
+        destId === "grow" && isGrowTileId(focusTileId) ? focusTileId : null,
+      );
+      if (destId === "ask-amy" || destId === "emotional") {
+        setAskAmyPath(
+          askAmyPathForTile(focusTileId) ??
+            askAmyPathForDestination(destId) ??
+            "ask",
+        );
+      }
     } else {
       setSelectedTileId(focusTileId);
       setGrowDeepenTileId(null);
     }
     setPathCompleted(true);
-  }, [activeRoom, focusTileId, guidanceLiving, momentsLiving, growLiving, askAmyLiving]);
+  }, [
+    activeRoom,
+    focusTileId,
+    guidanceLiving,
+    momentsLiving,
+    growLiving,
+    askAmyLiving,
+    roomLivingEnabled,
+    isInfant,
+  ]);
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
@@ -297,12 +343,186 @@ export function ParentHubRoomsShell({
     setPathCompleted(true);
   };
 
+  const selectRoomLivingTile = (tileId: string, room: RoomLivingPeerRoom) => {
+    let openTile = tileId;
+    if (tileId === ASK_AMY_STREAM_TILE_ID && !askAmyLiving) openTile = "amy-ai";
+    if (tileId === GUIDANCE_STREAM_TILE_ID && !guidanceLiving) openTile = "daily-tips";
+    if (tileId === GROW_STREAM_TILE_ID && !growLiving) openTile = "phonics";
+    if (tileId === "emotional" && askAmyLiving) openTile = ASK_AMY_STREAM_TILE_ID;
+
+    const closing = selectedTileId === openTile;
+    const destId = destinationIdForRoomLivingTile(room, tileId, { isInfant });
+    setOpenDestinationId(closing ? null : destId);
+    setSelectedTileId(closing ? null : openTile);
+    setGrowDeepenTileId(null);
+    if (
+      destId === "ask-amy" ||
+      destId === "emotional" ||
+      openTile === ASK_AMY_STREAM_TILE_ID
+    ) {
+      setAskAmyPath(
+        closing
+          ? null
+          : tileId === "emotional"
+            ? "feelings"
+            : askAmyPathForTile(tileId) ?? "ask",
+      );
+    } else {
+      setAskAmyPath(null);
+    }
+    if (!closing) setPathCompleted(true);
+  };
+
   const clearDestination = () => {
     setSelectedTileId(null);
     setOpenDestinationId(null);
     setGrowDeepenTileId(null);
     setAskAmyPath(null);
   };
+
+  // P0-6 — Help / Understand / Care one-room living (skip peer product doors).
+  if (
+    roomLivingEnabled &&
+    renderRoomLivingStream &&
+    isRoomLivingPeerRoom(activeRoom) &&
+    recommendation
+  ) {
+    const hero = heroForRoom(activeRoom);
+    const title = t(hero.titleKey, { defaultValue: hero.titleFallback });
+    const deepenTile = selectedTileId;
+
+    return (
+      <div
+        className="fe-shell ph-living-shell"
+        data-testid="parent-hub-rooms-shell"
+        data-ph-mode="entered"
+        data-ph-pack="4"
+        data-hub-room={activeRoom}
+        data-ph-room-living="1"
+        data-ph-mode-room="one-room"
+        data-fe-shot={hero.shot}
+        data-fe-room="reveal"
+        data-fe-presence="settle"
+      >
+        <div className="fe-ambient" aria-hidden="true">
+          <img src={hero.src} alt="" decoding="async" loading="lazy" fetchPriority="low" />
+          <div className="fe-ambient-wash" />
+        </div>
+        <div className="fe-breath fe-breath-a" aria-hidden="true" />
+        <div className="fe-breath fe-breath-b" aria-hidden="true" />
+        <div className="fe-living-shade" aria-hidden="true" />
+
+        <div className="ph-living-content">
+          <button
+            type="button"
+            className="ph-back-rooms"
+            data-testid="parent-hub-exit-room"
+            onClick={onExitRoom}
+          >
+            {t("parent_hub.rooms.back_rooms", {
+              defaultValue: "All rooms",
+            })}
+          </button>
+
+          <p className="ph-room-eyebrow" data-testid={`hub-room-title-${activeRoom}`}>
+            {title}
+          </p>
+
+          <section id={`hub-room-${activeRoom}`} data-testid={`hub-room-${activeRoom}`}>
+            <div
+              data-testid={`hub-room-destinations-${activeRoom}`}
+              data-pack="living-flow"
+              data-ph-mode="one-room"
+            >
+              <ParentHubQuietModuleProvider>
+                {renderRoomLivingStream({
+                  room: activeRoom,
+                  activeTileId: deepenTile,
+                  onSelectTile: (tileId) => selectRoomLivingTile(tileId, activeRoom),
+                })}
+              </ParentHubQuietModuleProvider>
+            </div>
+
+            {selectedTileId === ASK_AMY_STREAM_TILE_ID &&
+            askAmyLiving &&
+            renderAskAmyStream ? (
+              <div
+                className="ph-module-quiet"
+                data-testid="hub-room-module-ask-amy"
+                data-section-id={askAmyPath === "feelings" ? "emotional" : "amy-ai"}
+                data-ph-pack="5"
+                data-aa-living="1"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderAskAmyStream({
+                    activePath: askAmyPath,
+                    onSelectPath: selectAskAmyPath,
+                  })}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : selectedTileId === GUIDANCE_STREAM_TILE_ID &&
+              guidanceLiving &&
+              renderGuidanceStream ? (
+              <div
+                className="ph-module-quiet"
+                data-testid="hub-room-module-guidance"
+                data-section-id="guidance"
+                data-ph-pack="5"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderGuidanceStream()}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : selectedTileId === GROW_STREAM_TILE_ID &&
+              growLiving &&
+              renderGrowStream ? (
+              <div
+                className="ph-module-quiet"
+                data-testid="hub-room-module-grow"
+                data-section-id="grow"
+                data-ph-pack="5"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderGrowStream({
+                    activeTileId: growDeepenTileId,
+                    onSelectTile: selectGrowTile,
+                  })}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : deepenTile ? (
+              <div
+                className="ph-module-quiet mo-deepen"
+                data-testid={`hub-room-module-${deepenTile}`}
+                data-section-id={deepenTile}
+                data-ph-pack="5"
+                data-ph-deepen="1"
+              >
+                <ParentHubQuietModuleProvider>
+                  {renderDestination(deepenTile)}
+                </ParentHubQuietModuleProvider>
+              </div>
+            ) : null}
+
+            {pathCompleted ? (
+              <ParentHubExitPanel
+                homeHref={homeHref}
+                onContinueInRoom={clearDestination}
+                onAnotherRoom={onExitRoom}
+              />
+            ) : null}
+
+            <div
+              id={`hub-room-deeplink-${activeRoom}`}
+              data-testid={`hub-room-deeplink-${activeRoom}`}
+              data-pack="deep-link"
+              className="sr-only"
+              aria-hidden
+            />
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   // Moments Phase 2 — one emotional room (skip peer product doors).
   if (
