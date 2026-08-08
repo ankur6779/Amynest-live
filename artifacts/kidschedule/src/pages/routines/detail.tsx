@@ -61,6 +61,17 @@ import {
   livingRegenRestTitle,
   livingRegenTriggerLabel,
 } from "@/lib/routine-generation/living-result";
+import {
+  livingAutoSkipReasonDisplay,
+  livingAutoSkipToastBody,
+  livingAutoSkipToastTitle,
+  livingDayCompleteHeadline,
+  livingDayCompleteSubline,
+  livingLetGoLabel,
+  livingMissedWindowHint,
+  livingSkipBadgeLabel,
+} from "@/lib/routine-generation/living-execution";
+import { RoutineLivingContinuityExits } from "@/components/routines/routine-living-continuity-exits";
 import { SubscriptionValueBridgeBanner } from "@/components/subscription-value-bridge-banner";
 import {
   markFirstRoutineItemEverCompleted,
@@ -435,10 +446,10 @@ function RoutineItemModal({
         <div className="p-5 space-y-4">
           {/* Skip reason */}
           {item.skipReason && <div className="flex items-start gap-2 bg-muted border border-border rounded-2xl p-3">
-              <span className="text-primary mt-0.5">⚠️</span>
+              <span className="text-primary mt-0.5">{isRoutineLivingV1Enabled() ? "🌿" : "⚠️"}</span>
               <p className="text-sm text-primary font-medium leading-relaxed" style={{
             wordBreak: "break-word"
-          }}>{item.skipReason}</p>
+          }}>{isRoutineLivingV1Enabled() ? (livingAutoSkipReasonDisplay(item.skipReason) ?? item.skipReason) : item.skipReason}</p>
             </div>}
 
           {/* Notes / meal options */}
@@ -931,18 +942,38 @@ export default function RoutineDetail() {
       } = smartCascade(base, index + 1, totalDelay);
       if (autoSkipped > 0) {
         toast({
-          title: `⏭️ ${autoSkipped} task${autoSkipped > 1 ? "s" : ""} auto-skipped`,
-          description: "Low-priority activities cleared to protect bedtime."
+          title: living
+            ? livingAutoSkipToastTitle()
+            : `⏭️ ${autoSkipped} task${autoSkipped > 1 ? "s" : ""} auto-skipped`,
+          description: living
+            ? livingAutoSkipToastBody()
+            : "Low-priority activities cleared to protect bedtime.",
         });
       } else if (totalDelay > 0) {
         toast({
-          title: `⏩ Shifted +${totalDelay} min`,
-          description: "Upcoming tasks adjusted."
+          title: living
+            ? t("routines.living.execution.shifted_later", {
+                defaultValue: "The day shifted gently",
+              })
+            : `⏩ Shifted +${totalDelay} min`,
+          description: living
+            ? t("routines.living.execution.shifted_later_body", {
+                defaultValue: "Upcoming steps adjusted.",
+              })
+            : "Upcoming tasks adjusted.",
         });
       } else {
         toast({
-          title: `⏪ Shifted ${Math.abs(totalDelay)} min earlier`,
-          description: "Upcoming tasks moved forward."
+          title: living
+            ? t("routines.living.execution.shifted_earlier", {
+                defaultValue: "A little more room opened",
+              })
+            : `⏪ Shifted ${Math.abs(totalDelay)} min earlier`,
+          description: living
+            ? t("routines.living.execution.shifted_earlier_body", {
+                defaultValue: "Upcoming steps moved forward.",
+              })
+            : "Upcoming tasks moved forward.",
         });
       }
       saveItemsMutation.mutate(cascaded);
@@ -1162,8 +1193,12 @@ export default function RoutineDetail() {
         updated = cascaded;
         if (autoSkipped > 0) {
           toast({
-            title: `⏱ Delayed · ${autoSkipped} task${autoSkipped > 1 ? "s" : ""} auto-skipped`,
-            description: "Low-priority activities removed to protect bedtime."
+            title: living
+              ? livingAutoSkipToastTitle()
+              : `⏱ Delayed · ${autoSkipped} task${autoSkipped > 1 ? "s" : ""} auto-skipped`,
+            description: living
+              ? livingAutoSkipToastBody()
+              : "Low-priority activities removed to protect bedtime.",
           });
         } else {
           toast({
@@ -1177,6 +1212,7 @@ export default function RoutineDetail() {
       if (status === "completed") {
         const item = prev[index];
         // Award points for completing task — use per-task points if present
+        // Living ON: earn silently (engine untouched) — hide points/badge theatre.
         const childName = (childData as any)?.name ?? routine?.childName ?? "Child";
         const earned = (item as any).rewardPoints ?? 10;
         if (isSignedIn && routine?.id != null) {
@@ -1193,13 +1229,15 @@ export default function RoutineDetail() {
         } else {
           addPoints(childName, item.activity, earned);
         }
-        toast({
-          title: `+${earned} points earned 🎉`,
-          description: item.activity
-        });
+        if (!living) {
+          toast({
+            title: `+${earned} points earned 🎉`,
+            description: item.activity
+          });
+        }
         const completedSoFar = updated.filter(i => i.status === "completed").length;
         const newBadges = checkAndAwardBadges(completedSoFar, 0);
-        if (newBadges.length > 0) {
+        if (!living && newBadges.length > 0) {
           toast({
             title: `🏆 Badge earned: ${newBadges[0].emoji} ${newBadges[0].label}!`
           });
@@ -1219,7 +1257,7 @@ export default function RoutineDetail() {
       saveItemsMutation.mutate(updated);
       return updated;
     });
-  }, [saveItemsMutation, toast, routine, childData, isSignedIn, authFetch]);
+  }, [saveItemsMutation, toast, routine, childData, isSignedIn, authFetch, living, t]);
 
   // Server-pushed routine reminders (claim → guard → rate limit → send).
   // No client-side Notification() timers — single delivery authority on the API.
@@ -1450,6 +1488,7 @@ export default function RoutineDetail() {
   const completedCount = items.filter(i => i.status === "completed").length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
+  const pendingCount = items.filter((i) => (i.status ?? "pending") === "pending").length;
   const todayPoints = items.reduce(
     (sum, i) => (i.status === "completed" ? sum + ((i as any).rewardPoints ?? 10) : sum),
     0,
@@ -1978,20 +2017,34 @@ export default function RoutineDetail() {
             }
             nextActivity={timelineFocus.nextItem?.activity}
             nextTime={formatRoutineTime(timelineFocus.nextItem?.time)}
+            living={living}
           />
         )}
 
         {/* Progress bar — past/future (today shows the hero ring instead) */}
         {totalCount > 0 && dateMode !== "today" && <div className={cn(HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT.border, "rounded-[20px] p-4")}>
             <div className="flex items-center justify-between mb-2 text-sm font-medium">
-              <span className="text-foreground">{completedCount} of {totalCount} {t("pages.routines.detail.tasks_done")}</span>
-              <span className="text-primary font-bold">{progress}%</span>
+              <span className="text-foreground">
+                {living && dateMode === "past"
+                  ? t("routines.living.execution.day_rested", {
+                      defaultValue: livingDayCompleteHeadline(),
+                    })
+                  : `${completedCount} of ${totalCount} ${t("pages.routines.detail.tasks_done")}`}
+              </span>
+              {!living && <span className="text-primary font-bold">{progress}%</span>}
             </div>
             <div className="h-2.5 bg-background rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all duration-500" style={{
             width: `${progress}%`
           }} />
             </div>
+            {living && dateMode === "past" ? (
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                {t("routines.living.execution.day_rested_body", {
+                  defaultValue: livingDayCompleteSubline(),
+                })}
+              </p>
+            ) : null}
           </div>}
 
         <RoutineDayPanel
@@ -2014,7 +2067,13 @@ export default function RoutineDetail() {
           total={totalCount}
           dayArcSegments={dayArcSegments}
           arcOnly
+          living={living}
         />
+      )}
+
+      {/* R5 — Continuity exits when today's pending work is clear */}
+      {living && dateMode === "today" && totalCount > 0 && pendingCount === 0 && (
+        <RoutineLivingContinuityExits className="mt-1" />
       )}
 
       <RoutineTrustRibbon signals={trustRibbonSignals} />
@@ -2117,7 +2176,9 @@ export default function RoutineDetail() {
             isCurrentTask
               ? "border-primary ring-2 ring-primary/20 shadow-md"
               : isPastTask && status === "pending"
-                ? "border-amber-500/20"
+                ? living
+                  ? "border-white/[0.10]"
+                  : "border-amber-500/20"
                 : isUpcomingTask
                   ? "border-white/[0.08]"
                   : statusStyle || "border-white/[0.08]",
@@ -2310,8 +2371,24 @@ export default function RoutineDetail() {
                           {/* Status & category chips — wrap onto new line on small screens */}
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
                             {status === "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.done_2")}</Badge>}
-                            {status === "skipped" && item.skipReason && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.auto_skipped")}</Badge>}
-                            {status === "skipped" && !item.skipReason && <Badge className="bg-muted text-muted-foreground border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.skipped_2")}</Badge>}
+                            {status === "skipped" && item.skipReason && (
+                              <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">
+                                {living
+                                  ? t("routines.living.execution.skip_badge", {
+                                      defaultValue: livingSkipBadgeLabel(),
+                                    })
+                                  : t("pages.routines.detail.auto_skipped")}
+                              </Badge>
+                            )}
+                            {status === "skipped" && !item.skipReason && (
+                              <Badge className="bg-muted text-muted-foreground border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">
+                                {living
+                                  ? t("routines.living.execution.skip_badge", {
+                                      defaultValue: livingSkipBadgeLabel(),
+                                    })
+                                  : t("pages.routines.detail.skipped_2")}
+                              </Badge>
+                            )}
                             {status === "delayed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.delayed_3")}</Badge>}
                             {item.adjusted && status !== "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5" title={t("pages.routines.detail.auto_adjusted_by_amy_ai")}>
                                 {t("pages.routines.detail.adjusted")}
@@ -2340,9 +2417,20 @@ export default function RoutineDetail() {
                               </span>}
                           </div>
                           {/* Auto-skip reason */}
-                          {item.skipReason && <p className="text-[11px] text-primary bg-muted border border-border rounded-lg px-2 py-1 mt-1 font-medium">
-                              {item.skipReason}
-                            </p>}
+                          {item.skipReason && (
+                            <p className="text-[11px] text-primary bg-muted border border-border rounded-lg px-2 py-1 mt-1 font-medium">
+                              {living
+                                ? livingAutoSkipReasonDisplay(item.skipReason) ?? item.skipReason
+                                : item.skipReason}
+                            </p>
+                          )}
+                          {living && isPastTask && status === "pending" && (
+                            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                              {t("routines.living.execution.missed_hint", {
+                                defaultValue: livingMissedWindowHint(),
+                              })}
+                            </p>
+                          )}
                           {isDinnerAnchor && dinnerFoodChips.length > 0 ? (
                             <MealOptionPills
                               pills={dinnerFoodChips}
@@ -2417,16 +2505,21 @@ export default function RoutineDetail() {
                             <button
                               type="button"
                               onClick={() => updateItemStatus(index, "completed")}
-                              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted text-primary hover:bg-muted transition-colors border border-border"
+                              className="flex items-center gap-1.5 text-xs font-bold min-h-12 px-3 py-1.5 rounded-full bg-muted text-primary hover:bg-muted transition-colors border border-border"
                             >
                               <Check className="h-3 w-3" /> {t("pages.routines.detail.complete_2")}
                             </button>
                             <button
                               type="button"
                               onClick={() => updateItemStatus(index, "skipped")}
-                              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors border border-border"
+                              className="flex items-center gap-1.5 text-xs font-bold min-h-12 px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors border border-border"
                             >
-                              <SkipForward className="h-3 w-3" /> {t("pages.routines.detail.skip_2")}
+                              <SkipForward className="h-3 w-3" />{" "}
+                              {living
+                                ? t("routines.living.execution.let_go", {
+                                    defaultValue: livingLetGoLabel(),
+                                  })
+                                : t("pages.routines.detail.skip_2")}
                             </button>
                           </div>
                         ) : isUpcomingTask ? (
@@ -2862,6 +2955,7 @@ export default function RoutineDetail() {
         childName={routine?.childName}
         total={totalCount}
         points={todayPoints}
+        living={living}
       />
     </div>;
 }

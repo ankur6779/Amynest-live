@@ -1,18 +1,20 @@
 import type { DayArcChip } from "@/lib/routine-detail-premium";
 import { cn } from "@/lib/utils";
+import { livingArcAriaLabel } from "@/lib/routine-generation/living-execution";
 
 type RoutineDayArcStripProps = {
   segments: DayArcChip[];
+  living?: boolean;
 };
 
-export function RoutineDayArcStrip({ segments }: RoutineDayArcStripProps) {
+export function RoutineDayArcStrip({ segments, living = false }: RoutineDayArcStripProps) {
   if (segments.length === 0) return null;
 
   return (
     <div
       className="flex flex-wrap items-center gap-x-1 gap-y-1.5 text-[11px] font-semibold"
       role="status"
-      aria-label="Day progress"
+      aria-label={living ? livingArcAriaLabel() : "Day progress"}
     >
       {segments.map((seg, idx) => (
         <span key={seg.id} className="inline-flex items-center gap-1">
