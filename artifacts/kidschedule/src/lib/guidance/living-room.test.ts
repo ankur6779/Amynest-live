@@ -4,19 +4,27 @@ import {
   GUIDANCE_STREAM_TILE_ID,
   guidanceLanesForContext,
   isGuidanceLivingV1Enabled,
+  isGuidanceStreamLaneId,
   pickAmySuggestsSentence,
   pickGuidanceSacredSentence,
   recommendGuidanceAction,
 } from "./living-room";
 
 describe("guidance living-room", () => {
-  it("orders one continuous stream — not a peer catalogue", () => {
+  it("orders one continuous stream — not a peer catalogue or blog", () => {
     expect(GUIDANCE_STREAM_LANES.map((l) => l.id)).toEqual([
       "daily-tips",
       "new-parent-tips",
       "amy-suggests",
       "articles",
     ]);
+    const blob = GUIDANCE_STREAM_LANES.map((l) => `${l.title} ${l.purpose}`)
+      .join(" ")
+      .toLowerCase();
+    expect(blob).not.toContain("blog");
+    expect(blob).not.toContain("catalogue");
+    expect(isGuidanceStreamLaneId("daily-tips")).toBe(true);
+    expect(isGuidanceStreamLaneId("blog")).toBe(false);
   });
 
   it("recommends today's sacred sentence", () => {

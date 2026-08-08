@@ -1,9 +1,10 @@
 /**
  * Guidance Phase 2 — one calm guidance stream.
- * Understand FE photography + sacred first sentence + continuous depth.
+ * Merges Daily Tips · Articles · Amy Suggests · New Parent Tips.
+ * Never a blog. Never a content catalogue.
  * Presentation only — tip/article engines reused as-is.
  */
-import { Suspense, lazy, useMemo, type ReactNode } from "react";
+import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
@@ -47,7 +48,7 @@ export type GuidanceLivingStreamProps = {
 
 function LaneFallback() {
   return (
-    <p className="gd-lane-purpose" aria-hidden>
+    <p className="gd-lane-purpose" role="status">
       Preparing a quiet thought…
     </p>
   );
@@ -62,6 +63,9 @@ export function GuidanceLivingStream({
   wrapLane,
 }: GuidanceLivingStreamProps) {
   const { t } = useTranslation();
+  const [activeLane, setActiveLane] = useState<GuidanceStreamLaneId | null>(
+    null,
+  );
   const recommend = useMemo(() => recommendGuidanceAction(), []);
   const sacred = useMemo(
     () => pickGuidanceSacredSentence(ageGroup),
@@ -80,6 +84,10 @@ export function GuidanceLivingStream({
       ? ageGroup
       : "infant"
     : ageGroup;
+
+  const deepen = (laneId: GuidanceStreamLaneId) => {
+    setActiveLane((prev) => (prev === laneId ? null : laneId));
+  };
 
   const renderLaneBody = (id: GuidanceStreamLaneId): ReactNode => {
     switch (id) {
@@ -128,11 +136,34 @@ export function GuidanceLivingStream({
     }
   };
 
+  const activeMeta = lanes.find((l) => l.id === activeLane) ?? null;
+  const deepenBody =
+    activeLane && activeMeta
+      ? (() => {
+          const body = (
+            <section
+              className="gd-lane gd-deepen-lane"
+              data-testid={`guidance-lane-${activeLane}`}
+              data-section-id={activeLane}
+              id={`guidance-lane-${activeLane}`}
+            >
+              <div className="gd-lane-head">
+                <span className="gd-lane-title">{activeMeta.title}</span>
+                <span className="gd-lane-purpose">{activeMeta.purpose}</span>
+              </div>
+              <div className="gd-lane-body">{renderLaneBody(activeLane)}</div>
+            </section>
+          );
+          return wrapLane ? wrapLane(activeLane, body) : body;
+        })()
+      : null;
+
   return (
     <div
       className="gd-living-surface"
       data-testid="guidance-living-stream"
       data-gd-living="1"
+      data-gd-hierarchy="deepen"
     >
       <header className="gd-today-hero" data-testid="guidance-today-hero">
         <div
@@ -162,12 +193,13 @@ export function GuidanceLivingStream({
               <h1 className="gd-today-title">
                 {t("guidance.living.title", {
                   name: childName,
-                  defaultValue: `One clearer sentence about ${childName}`,
+                  defaultValue: `I'm here with you and ${childName}.`,
                 })}
               </h1>
               <p className="gd-today-purpose">
                 {t("guidance.living.purpose", {
-                  defaultValue: "A calm stream of understanding — not a catalogue.",
+                  defaultValue:
+                    "One calm guidance stream — never a blog or content catalogue.",
                 })}
               </p>
             </div>
@@ -175,11 +207,16 @@ export function GuidanceLivingStream({
         </div>
       </header>
 
-      <div className="gd-sacred" data-testid="guidance-sacred-sentence">
+      <button
+        type="button"
+        className="gd-sacred"
+        data-testid="guidance-sacred-sentence"
+        onClick={() => deepen("daily-tips")}
+      >
         <span className="gd-sacred-cue">{recommend.label}</span>
         <span className="gd-sacred-title">{recommend.title}</span>
         <p className="gd-sacred-text">{sacred.en}</p>
-      </div>
+      </button>
 
       <div className="gd-stream" data-testid="guidance-stream-lanes">
         <p className="gd-stream-label">
@@ -188,30 +225,41 @@ export function GuidanceLivingStream({
           })}
         </p>
 
-        {lanes.map((lane) => {
-          const body = (
-            <section
-              className="gd-lane"
-              data-testid={`guidance-lane-${lane.id}`}
-              data-section-id={lane.id}
-              id={`guidance-lane-${lane.id}`}
+        <div className="gd-quiet-list" data-testid="guidance-quiet-paths">
+          {lanes.map((lane) => (
+            <button
+              key={lane.id}
+              type="button"
+              className="gd-quiet-path"
+              data-testid={`guidance-quiet-${lane.id}`}
+              data-active={activeLane === lane.id ? "true" : "false"}
+              aria-current={activeLane === lane.id ? "true" : undefined}
+              onClick={() => deepen(lane.id)}
             >
-              <div className="gd-lane-head">
-                <span className="gd-lane-title">{lane.title}</span>
-                <span className="gd-lane-purpose">{lane.purpose}</span>
-              </div>
-              <div className="gd-lane-body">{renderLaneBody(lane.id)}</div>
-            </section>
-          );
-          return (
-            <div key={lane.id}>
-              {wrapLane ? wrapLane(lane.id, body) : body}
-            </div>
-          );
-        })}
+              <span className="gd-quiet-path-title">{lane.title}</span>
+              <span className="gd-quiet-path-purpose">{lane.purpose}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <p className="gd-support-note">{PREMIUM_VOICE.invitation}</p>
+      {deepenBody ? (
+        <div className="gd-deepen" data-testid="guidance-deepen">
+          {deepenBody}
+        </div>
+      ) : null}
+
+      <p className="gd-support-note">
+        {t("guidance.living.continuity", {
+          defaultValue: "We'll continue helping as your child grows.",
+        })}
+      </p>
+      <p className="gd-support-note gd-support-invite">{PREMIUM_VOICE.invitation}</p>
+      <p className="gd-support-note gd-support-continue">
+        {t("guidance.living.continue_support", {
+          defaultValue: PREMIUM_VOICE.continueCta,
+        })}
+      </p>
     </div>
   );
 }

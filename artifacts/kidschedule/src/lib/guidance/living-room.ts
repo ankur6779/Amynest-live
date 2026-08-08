@@ -47,9 +47,17 @@ export const GUIDANCE_STREAM_LANES: readonly GuidanceStreamLane[] = [
   {
     id: "articles",
     title: "Read a little more",
-    purpose: "When you have a calm minute",
+    purpose: "One quiet page when you have a minute",
   },
 ] as const;
+
+export function isGuidanceStreamLaneId(
+  id: string,
+): id is GuidanceStreamLaneId {
+  return (GUIDANCE_STREAM_LANES as readonly { id: string }[]).some(
+    (lane) => lane.id === id,
+  );
+}
 
 /** One recommended Understand act — first insight is sacred. */
 export function recommendGuidanceAction(): GuidanceRecommend {
