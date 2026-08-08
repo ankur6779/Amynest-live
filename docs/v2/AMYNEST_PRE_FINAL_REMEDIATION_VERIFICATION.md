@@ -433,7 +433,7 @@ Do **not** reopen modules for these:
 
 ## Commit SHA
 
-Verification document commit will be stamped on push.
+**Verification commit:** `2951305335cd0a42015431094539da233ead98b4`
 
 **Verified implementation HEAD at audit time:** `91c9c2b7693f22cc0deebd0f92e274e69bc79cde`
 
