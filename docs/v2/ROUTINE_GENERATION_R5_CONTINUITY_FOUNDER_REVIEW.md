@@ -13,7 +13,7 @@
 
 **Baseline HEAD before R5 re-apply:** `9cc4bef2044dabe0576565845ef1c6e6c5977939` (R4 stamp)  
 **Implementation Commit SHA:** `7e8e41fdfc095e9946f7fa18da725eefe3980e0f`  
-**Docs Commit SHA:** _(filled after docs commit)_
+**Docs Commit SHA:** `42d401d8b7d753fcfa92cd4c5a1fd0805d96af50`
 
 **STOP after R5.** Wait for Founder approval.  
 Do **not** begin another Routine Generation phase.  
@@ -350,7 +350,7 @@ No DB/API rollback required.
 |---|---|
 | Baseline (R4 stamp) | `9cc4bef2044dabe0576565845ef1c6e6c5977939` |
 | R5 implementation | `7e8e41fdfc095e9946f7fa18da725eefe3980e0f` |
-| This Founder Review | _(filled after docs commit)_ |
+| This Founder Review | `42d401d8b7d753fcfa92cd4c5a1fd0805d96af50` |
 
 ---
 
