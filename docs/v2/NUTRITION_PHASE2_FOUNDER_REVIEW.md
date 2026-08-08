@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Nutrition Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `b8abc864` (`b8abc86440a86596ef22bd3246063d644dabdef0`)  
 
 **STOP after this module.** Wait for Founder approval.
 
