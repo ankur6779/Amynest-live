@@ -8,6 +8,10 @@ import { AmyFab } from "@/components/amy-fab";
 import { AppLink } from "@/components/app-link";
 import { safePathStartsWithSegment } from "@/lib/safe-route";
 import { PRESS_FEEDBACK, TRANSITION } from "@/lib/experience-system";
+import {
+  isAmyCoachLivingV1Enabled,
+  livingAmyCoachNavLabel,
+} from "@/lib/amy-coach/living-room";
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home, center: false },
@@ -69,7 +73,9 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
                       <item.icon className="h-7 w-7" />
                     </motion.div>
                     <span className="mt-1 text-[10px] font-semibold text-muted-foreground">
-                      {t(item.labelKey)}
+                      {item.href === "/amy-coach" && isAmyCoachLivingV1Enabled()
+                        ? livingAmyCoachNavLabel()
+                        : t(item.labelKey)}
                     </span>
                   </AppLink>
                 );

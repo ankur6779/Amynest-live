@@ -30,6 +30,12 @@ import {
 } from "@/lib/coach-graduation-state";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { resolveActiveChild, isCoachEligible } from "@/lib/coach-age-nav";
+import {
+  isAmyCoachLivingV1Enabled,
+  livingProgressSubtitle,
+  livingProgressTitle,
+} from "@/lib/amy-coach/living-room";
+import "@/components/amy-coach/amy-coach-living-room.css";
 
 const TREND_STYLE: Record<
   ProgressTrend,
@@ -466,11 +472,17 @@ export default function AICoachProgressPage() {
     })();
   }, [authFetch, coachEligible]);
 
+  const living = isAmyCoachLivingV1Enabled();
+
   if (!coachEligible) {
     return (
       <div
-        className="min-h-full pb-8"
-        style={{ background: "linear-gradient(180deg, #0f0c29 0%, #141028 40%, #0c1220 100%)" }}
+        className={`min-h-full pb-8 ${living ? "amy-coach-living-phase" : ""}`}
+        style={
+          living
+            ? undefined
+            : { background: "linear-gradient(180deg, #0f0c29 0%, #141028 40%, #0c1220 100%)" }
+        }
       >
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
           <AppLink
@@ -501,8 +513,12 @@ export default function AICoachProgressPage() {
 
   return (
     <div
-      className="min-h-full pb-8"
-      style={{ background: "linear-gradient(180deg, #0f0c29 0%, #141028 40%, #0c1220 100%)" }}
+      className={`min-h-full pb-8 ${living ? "amy-coach-living-phase" : ""}`}
+      style={
+        living
+          ? undefined
+          : { background: "linear-gradient(180deg, #0f0c29 0%, #141028 40%, #0c1220 100%)" }
+      }
     >
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <AppLink
@@ -510,15 +526,18 @@ export default function AICoachProgressPage() {
           source="ai-coach-progress-back"
           className="flex items-center gap-1 text-sm text-violet-300/80 hover:text-violet-200"
         >
-          <ChevronLeft className="h-4 w-4" /> {t("screens.ai_coach_progress.back_to_coach")}
+          <ChevronLeft className="h-4 w-4" />{" "}
+          {living
+            ? t("amy_coach.living.back_beside", { defaultValue: "Back beside Amy" })
+            : t("screens.ai_coach_progress.back_to_coach")}
         </AppLink>
 
         <div>
           <h1 className="font-quicksand text-2xl font-bold text-white">
-            {t("screens.ai_coach_progress.title")}
+            {living ? livingProgressTitle() : t("screens.ai_coach_progress.title")}
           </h1>
           <p className="text-sm text-white/55 mt-1 leading-relaxed">
-            {t("screens.ai_coach_progress.subtitle")}
+            {living ? livingProgressSubtitle() : t("screens.ai_coach_progress.subtitle")}
           </p>
         </div>
 

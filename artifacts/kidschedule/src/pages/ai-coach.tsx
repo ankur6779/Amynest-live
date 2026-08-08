@@ -21,6 +21,19 @@ import {
   AmyCoachSearchInput,
 } from "@/components/amy-coach/coach-keyboard-shell";
 import { AmyAudioLessonsCard } from "@/components/amy-coach/amy-audio-lessons-card";
+import { AmyCoachLivingOpening } from "@/components/amy-coach/amy-coach-living-opening";
+import {
+  isAmyCoachLivingV1Enabled,
+  livingCatalogBannerBody,
+  livingCatalogBannerTitle,
+  livingGoalLockedCta,
+  livingGoalOpenCta,
+  livingPremiumBadge,
+  livingProgressTitle,
+  livingTryFreeBadge,
+  type AmyCoachQuietPath,
+} from "@/lib/amy-coach/living-room";
+import "@/components/amy-coach/amy-coach-living-room.css";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
@@ -559,10 +572,16 @@ function GoalBadge({
   const {
     t
   } = useTranslation();
+  const living = isAmyCoachLivingV1Enabled();
   if (access === "open") return null;
   if (access === "try-free") {
-    return <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full shadow-md pointer-events-none select-none">
-        {t("pages.ai_coach.try_free")}
+    return <span className={`absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none select-none ${living ? "ac-soft-badge" : "bg-primary text-white shadow-md"}`}>
+        {living ? livingTryFreeBadge() : t("pages.ai_coach.try_free")}
+      </span>;
+  }
+  if (living) {
+    return <span data-on-dark className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-semibold ac-soft-badge px-1.5 py-0.5 rounded-full pointer-events-none select-none">
+        {livingPremiumBadge()}
       </span>;
   }
   return <span data-on-dark className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold bg-black/30 text-white/90 px-1.5 py-0.5 rounded-full border border-white/25 backdrop-blur-sm pointer-events-none select-none">
@@ -572,6 +591,13 @@ function GoalBadge({
 
 function FreemiumCatalogBanner() {
   const { t } = useTranslation();
+  const living = isAmyCoachLivingV1Enabled();
+  if (living) {
+    return <div data-on-dark className="rounded-2xl px-4 py-3 text-sm ac-soft-banner">
+        <p className="font-semibold text-white">{livingCatalogBannerTitle()}</p>
+        <p className="text-xs mt-1 text-white/80">{livingCatalogBannerBody()}</p>
+      </div>;
+  }
   return <div data-on-dark className="rounded-2xl border border-violet-400/25 px-4 py-3 text-sm" style={{
     background: "linear-gradient(135deg,rgba(76,29,149,0.35) 0%,rgba(124,58,237,0.22) 100%)",
   }}>
@@ -908,6 +934,8 @@ export default function AICoachPage() {
   );
   const coachEligible = useMemo(() => isCoachEligible(activeChild), [activeChild]);
   const coachPreviewChildId = activeChild?.id ?? null;
+  const living = isAmyCoachLivingV1Enabled();
+  const childDisplayName = activeChild?.name?.trim() || "your child";
 
   useEffect(() => {
     if (coachAgeBand !== null || resumeSessionId || phase !== "goals") return;
@@ -1114,6 +1142,30 @@ export default function AICoachPage() {
   const groupedCategories = useMemo(
     () => (coachAgeBand ? groupCategoriesForBand(GOAL_CATEGORIES, coachAgeBand) : []),
     [coachAgeBand],
+  );
+
+  const openFirstConcernCategory = useCallback(() => {
+    const first = groupedCategories[0]?.categories[0];
+    if (first) {
+      setSelectedCategoryId(first.id);
+      return;
+    }
+    openForYouCategory();
+  }, [groupedCategories, openForYouCategory]);
+
+  const handleLivingQuietPath = useCallback(
+    (pathId: AmyCoachQuietPath["id"]) => {
+      if (pathId === "for-you") {
+        openForYouCategory();
+        return;
+      }
+      if (pathId === "continue") {
+        setLocation(coachEligible ? "/amy-coach/progress" : "/amy-coach");
+        return;
+      }
+      openFirstConcernCategory();
+    },
+    [coachEligible, openFirstConcernCategory, openForYouCategory, setLocation],
   );
 
   const selectedAgeOption = useMemo(
@@ -1949,7 +2001,9 @@ export default function AICoachPage() {
                               color: access === "locked" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.5)",
                             }}
                           >
-                            {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
+                            {access === "locked"
+                              ? (living ? livingGoalLockedCta() : "Unlock with Premium")
+                              : (living ? livingGoalOpenCta() : "Tap to start →")}
                           </p>
                         </div>
                       </button>
@@ -2084,7 +2138,9 @@ export default function AICoachPage() {
                         color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(199,192,232,0.9)",
                       }}
                     >
-                      {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
+                      {access === "locked"
+                        ? (living ? livingGoalLockedCta() : "Unlock with Premium")
+                        : (living ? livingGoalOpenCta() : "Tap to start →")}
                     </p>
                   </div>
                 </button>
@@ -2112,7 +2168,7 @@ export default function AICoachPage() {
 
     // ── Age band picker (step 1) ──────────────────────────────────────
     if (!coachAgeBand) {
-      return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+      return <div className={`max-w-2xl mx-auto px-4 py-6 space-y-5 ${living ? "amy-coach-living amy-coach-living-shell" : ""}`}>
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
@@ -2120,12 +2176,39 @@ export default function AICoachPage() {
             {coachEligible ? (
             <Link href="/amy-coach/progress">
               <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
-                <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
+                <BarChart3 className="h-3.5 w-3.5" /> {living ? livingProgressTitle() : t("pages.ai_coach.my_progress_3")}
               </button>
             </Link>
             ) : null}
           </div>
 
+          {living ? (
+            <AmyCoachLivingOpening
+              childName={childDisplayName}
+              onRecommend={() => {
+                if (activeChild) {
+                  setCoachAgeBand(childToCoachAgeBand(activeChild.age, activeChild.ageMonths ?? 0));
+                  return;
+                }
+                setCoachAgeBand("2-4");
+              }}
+              onSelectQuietPath={(pathId) => {
+                if (pathId === "for-you") {
+                  openForYouCategory();
+                  return;
+                }
+                if (pathId === "continue") {
+                  setLocation(coachEligible ? "/amy-coach/progress" : "/amy-coach");
+                  return;
+                }
+                if (activeChild) {
+                  setCoachAgeBand(childToCoachAgeBand(activeChild.age, activeChild.ageMonths ?? 0));
+                  return;
+                }
+                setCoachAgeBand("2-4");
+              }}
+            />
+          ) : (
           <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
           background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
           boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
@@ -2143,6 +2226,18 @@ export default function AICoachPage() {
               </div>
             </div>
           </div>
+          )}
+
+          {living && (
+            <div className="ac-living-surface px-4 py-3">
+              <p className="ac-section-label text-[11px] font-semibold uppercase tracking-wide">
+                {t("pages.ai_coach.pick_child_age")}
+              </p>
+              <p className="text-xs mt-1" style={{ color: "rgba(232,212,184,0.8)" }}>
+                {t("pages.ai_coach.pick_child_age_sub")}
+              </p>
+            </div>
+          )}
 
           {activeChild && <p className="text-xs text-muted-foreground px-1">
               {t("pages.ai_coach.suggested_from_profile", {
@@ -2204,12 +2299,12 @@ export default function AICoachPage() {
     }
 
     // ── Category grid: grouped by topic (step 2) ──────────────────────
-    const renderCategoryTile = (cat: GoalCategory) => <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden flex flex-col gap-3 min-h-[132px]" style={{
+    const renderCategoryTile = (cat: GoalCategory) => <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className={`relative rounded-[18px] p-4 text-left backdrop-blur-md transition-all duration-200 overflow-hidden flex flex-col gap-3 min-h-[132px] ${living ? "ac-soft-tile hover:scale-[1.01] active:scale-[0.99]" : "hover:scale-[1.02] active:scale-[0.97]"}`} style={living ? undefined : {
       background: coachCategoryGradient(cat.id),
       border: COACH_TILE_BORDER,
       boxShadow: "0 0 20px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
     }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
+        {!living && <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />}
         <div className="flex items-start justify-between gap-2 relative">
           <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl" style={{ background: "rgba(255,255,255,0.12)" }}>
             {cat.emoji}
@@ -2218,14 +2313,16 @@ export default function AICoachPage() {
         </div>
         <div className="relative flex-1 flex flex-col">
           <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{cat.title}</p>
-          <p className="text-[11px] mt-1" style={{ color: "rgba(169,159,217,0.85)" }}>
+          <p className="text-[11px] mt-1" style={{ color: living ? "rgba(232,212,184,0.8)" : "rgba(169,159,217,0.85)" }}>
             {categoryGoalCount(cat.id, cat.items.length)} {t("pages.ai_coach.goals")}
           </p>
         </div>
       </button>;
 
     return (
+      <div className={living ? "amy-coach-living amy-coach-living-shell" : undefined}>
       <AmyCoachGoalsShell
+        className={living ? "amy-coach-living" : undefined}
         header={
           <div className="flex items-center justify-between px-4 pt-2">
             <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -2234,7 +2331,7 @@ export default function AICoachPage() {
             {coachEligible ? (
               <Link href="/amy-coach/progress">
                 <button className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-primary dark:bg-card dark:text-muted-foreground">
-                  <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
+                  <BarChart3 className="h-3.5 w-3.5" /> {living ? livingProgressTitle() : t("pages.ai_coach.my_progress_3")}
                 </button>
               </Link>
             ) : null}
@@ -2244,10 +2341,19 @@ export default function AICoachPage() {
           <AmyCoachSearchInput
             value={goalSearch}
             onChange={setGoalSearch}
-            placeholder={t("pages.ai_coach.search_all_goals")}
+            placeholder={living
+              ? t("amy_coach.living.search", { defaultValue: "Search a concern…" })
+              : t("pages.ai_coach.search_all_goals")}
           />
         }
       >
+        {living ? (
+          <AmyCoachLivingOpening
+            childName={childDisplayName}
+            onRecommend={openFirstConcernCategory}
+            onSelectQuietPath={handleLivingQuietPath}
+          />
+        ) : (
         <div
           data-on-dark
           className="relative overflow-hidden rounded-3xl border border-border p-5"
@@ -2279,19 +2385,29 @@ export default function AICoachPage() {
             </div>
           </div>
         </div>
+        )}
 
-        {journeyBanner}
+        {!living && journeyBanner}
+        {living && journeyBanner}
 
         {!coachEligible && (
           <div
             data-testid="coach-goals-preview-banner"
-            className="rounded-2xl border border-violet-400/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-100"
+            className={`rounded-2xl px-4 py-3 text-sm ${living ? "ac-soft-banner text-white/85" : "border border-violet-400/30 bg-violet-500/10 text-violet-100"}`}
           >
             <p className="font-semibold text-white">
               {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
             </p>
             <p className="mt-1 leading-snug text-white/75">
-              {t(
+              {living
+                ? t(
+                    "amy_coach.living.preview_body",
+                    {
+                      defaultValue:
+                        "You can browse gently now. Personalized plans continue when your child is 2 or older.",
+                    },
+                  )
+                : t(
                 "pages.ai_coach.preview_age_gate_body",
                 "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
               )}
@@ -2311,14 +2427,16 @@ export default function AICoachPage() {
           </button>
         )}
 
+        {!living && (
         <AmyAudioLessonsCard
           onClick={() => {
             const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
             setLocation(`/audio-lessons${q}`);
           }}
         />
+        )}
 
-        {forYouCategory && (
+        {forYouCategory && !living && (
           <section>
             <h2 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {t("pages.ai_coach.for_you_section")}
@@ -2360,12 +2478,14 @@ export default function AICoachPage() {
 
         {groupedCategories.length > 0 && (
           <section className="space-y-6">
-            <h2 className="px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {t("pages.ai_coach.for_your_child")}
+            <h2 className={`px-1 font-quicksand text-xs font-bold uppercase tracking-wide ${living ? "ac-section-label" : "text-muted-foreground"}`}>
+              {living
+                ? t("amy_coach.living.more_concerns", { defaultValue: "More concerns when you're ready" })
+                : t("pages.ai_coach.for_your_child")}
             </h2>
             {groupedCategories.map(({ group, categories }) => (
               <div key={group.id}>
-                <h3 className="mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <h3 className={`mb-2 px-1 font-quicksand text-xs font-bold uppercase tracking-wide ${living ? "ac-section-label" : "text-muted-foreground"}`}>
                   {group.label}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">{categories.map((cat) => renderCategoryTile(cat))}</div>
@@ -2373,7 +2493,24 @@ export default function AICoachPage() {
             ))}
           </section>
         )}
+
+        {living && (
+          <button
+            type="button"
+            className="ac-more-link"
+            data-testid="amy-coach-more-audio"
+            onClick={() => {
+              const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
+              setLocation(`/audio-lessons${q}`);
+            }}
+          >
+            {t("amy_coach.living.more_audio", {
+              defaultValue: "Listen later — quiet audio lessons",
+            })}
+          </button>
+        )}
       </AmyCoachGoalsShell>
+      </div>
     );
   }
 
@@ -2385,13 +2522,13 @@ export default function AICoachPage() {
     const visibleNum = ageSkipped ? qIndex : qIndex + 1;
     const progressPct = visibleNum / visibleTotal * 100;
     const questionCategoryId = coachGoalCategoryId(goalId);
-    return <div className="app-fixed-below-header fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background">
+    return <div className={`app-fixed-below-header fixed inset-0 z-40 flex flex-col overflow-y-auto ${living ? "amy-coach-living-phase" : "bg-background"}`}>
         <div className="mx-auto flex w-full max-w-xl flex-1 flex-col space-y-6 px-4 py-6">
         <button onClick={handleBackQ} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_3")}
         </button>
 
-        <div data-on-dark className="coach-question-panel relative rounded-3xl overflow-hidden backdrop-blur-md p-5 space-y-5" style={{
+        <div data-on-dark className={`coach-question-panel relative rounded-3xl overflow-hidden backdrop-blur-md p-5 space-y-5 ${living ? "ac-living-card" : ""}`} style={living ? undefined : {
         background: coachCategoryPanelBackground(questionCategoryId),
         border: COACH_TILE_BORDER,
         boxShadow: COACH_TILE_SHADOW
@@ -2459,6 +2596,7 @@ export default function AICoachPage() {
         onBack={() => setPhase("questions")}
         onGenerate={() => void submitPlan()}
         canGenerate={coachEligible}
+        living={living}
       />
     );
   }
@@ -2476,7 +2614,7 @@ export default function AICoachPage() {
         </div>;
     }
     const lang = i18n?.language as string || "en";
-    return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    return <div className={`max-w-2xl mx-auto px-4 py-6 space-y-5 ${living ? "amy-coach-living amy-coach-living-shell" : ""}`}>
         <div className="flex items-center justify-between">
           <button onClick={() => setPhase("goals")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground" data-testid="button-infant-problem-back">
             <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_4")}
@@ -2484,7 +2622,7 @@ export default function AICoachPage() {
         </div>
 
         {/* Hero card */}
-        <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
+        <div className={`relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5 ${living ? "ac-living-card" : ""}`} style={living ? undefined : {
         background: "linear-gradient(135deg,rgba(244,114,182,0.22) 0%,rgba(251,146,60,0.12) 100%)",
         boxShadow: "0 0 35px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.07)"
       }}>
@@ -2527,15 +2665,17 @@ export default function AICoachPage() {
           </ol>
         </section>
 
-        {/* (C) Amy AI Insight */}
-        <section className="rounded-2xl p-4 border border-border backdrop-blur-md" style={{
+        {/* (C) Amy insight — living face softens AI branding */}
+        <section className={`rounded-2xl p-4 border border-border backdrop-blur-md ${living ? "ac-living-card" : ""}`} style={living ? undefined : {
         background: "linear-gradient(135deg,rgba(139,92,246,0.22) 0%,rgba(236,72,153,0.12) 100%)",
         boxShadow: "0 0 22px rgba(139,92,246,0.18)"
       }}>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-4 w-4 text-muted-foreground" />
             <h2 className="font-quicksand text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("pages.ai_coach.amy_ai_insight")}
+              {living
+                ? t("amy_coach.living.quiet_note", { defaultValue: "A quiet note from Amy" })
+                : t("pages.ai_coach.amy_ai_insight")}
             </h2>
           </div>
           <p className="text-sm text-white leading-relaxed italic">"{pickInfLang(problem.insight, lang)}"</p>
@@ -2560,12 +2700,16 @@ export default function AICoachPage() {
 
   // ── PHASE: LOADING ───────────────────────────────────────────────────
   if (phase === "resuming") {
-    return <div className="app-fixed-below-header fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
+    return <div className={`app-fixed-below-header fixed inset-0 z-50 flex items-center justify-center ${living ? "amy-coach-living-phase" : "bg-gradient-to-br from-primary via-primary to-primary"}`}>
         <div className="text-center text-white px-8 space-y-6">
           <div className="relative w-20 h-20 mx-auto">
             <Loader2 className="absolute inset-0 w-20 h-20 animate-spin" />
           </div>
-          <h2 className="font-quicksand text-2xl font-bold">{t("pages.ai_coach.resuming_your_plan")}</h2>
+          <h2 className="font-quicksand text-2xl font-bold">
+            {living
+              ? t("amy_coach.living.resuming", { defaultValue: "Returning to where we left off…" })
+              : t("pages.ai_coach.resuming_your_plan")}
+          </h2>
           <p className="text-sm text-white/80 max-w-xs mx-auto">
             {t("pages.ai_coach.loading_where_you_left_off")}
           </p>
@@ -2577,6 +2721,7 @@ export default function AICoachPage() {
       <CoachGeneratingScreen
         messageKey={COACH_LOADING_MESSAGES[loadingMessageIdx]!}
         userMessage={loadingUserMessage}
+        living={living}
       />
     );
   }
@@ -2587,6 +2732,7 @@ export default function AICoachPage() {
         view={graduationView}
         onChoosePath={handleGraduationPath}
         onPickRecommendedGoal={handleGraduationRecommendedGoal}
+        living={living}
       />
     );
   }
@@ -2594,7 +2740,7 @@ export default function AICoachPage() {
   // ── PHASE: RESULT ────────────────────────────────────────────────────
   if (phase === "result" && plan) {
     const isCoachPreview = !coachEligible;
-    return <div className="app-fixed-below-header fixed inset-0 z-50 flex flex-col" style={{
+    return <div className={`app-fixed-below-header fixed inset-0 z-50 flex flex-col ${living ? "amy-coach-living-phase" : ""}`} style={living ? undefined : {
       background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
     }}>
         {/* Top bar — dark glass */}

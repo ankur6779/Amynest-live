@@ -1,6 +1,12 @@
 import { ChevronLeft, Sparkles, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AmyUnderstandingView } from "@/lib/coach-understanding";
+import {
+  livingGenerateCta,
+  livingLoadingHeadline,
+  livingUnderstandingTitle,
+} from "@/lib/amy-coach/living-room";
+import "@/components/amy-coach/amy-coach-living-room.css";
 
 export function CoachUnderstandingScreen({
   goalTitle,
@@ -8,6 +14,7 @@ export function CoachUnderstandingScreen({
   onBack,
   onGenerate,
   canGenerate = true,
+  living = false,
 }: {
   goalTitle: string;
   understanding: AmyUnderstandingView;
@@ -15,6 +22,8 @@ export function CoachUnderstandingScreen({
   onGenerate: () => void;
   /** When false (child under 24m), show preview-only age gate instead of generate CTA. */
   canGenerate?: boolean;
+  /** Experience-only sanctuary face. */
+  living?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -27,8 +36,12 @@ export function CoachUnderstandingScreen({
 
   return (
     <div
-      className="app-fixed-below-header fixed inset-0 z-40 overflow-y-auto"
-      style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)" }}
+      className={`app-fixed-below-header fixed inset-0 z-40 overflow-y-auto ${living ? "amy-coach-living-phase" : ""}`}
+      style={
+        living
+          ? undefined
+          : { background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)" }
+      }
     >
       <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6 pb-10">
         <button
@@ -42,11 +55,16 @@ export function CoachUnderstandingScreen({
         {/* Amy presence + header */}
         <div className="flex items-center gap-3">
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-              boxShadow: "0 0 24px rgba(139,92,246,0.45)",
-            }}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${living ? "ac-presence" : ""}`}
+            style={
+              living
+                ? undefined
+                : {
+                    background:
+                      "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                    boxShadow: "0 0 24px rgba(139,92,246,0.45)",
+                  }
+            }
           >
             <Sparkles className="h-6 w-6 text-white" />
           </div>
@@ -55,22 +73,32 @@ export function CoachUnderstandingScreen({
               {goalTitle}
             </p>
             <h1 className="font-quicksand text-xl font-bold text-white">
-              {t("pages.ai_coach.amys_understanding", "Amy's Understanding")}
+              {living
+                ? livingUnderstandingTitle()
+                : t("pages.ai_coach.amys_understanding", "Amy's Understanding")}
             </h1>
           </div>
         </div>
 
         {/* Main summary card */}
         <section
-          className="rounded-3xl p-5 space-y-4"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(139,92,246,0.22)",
-            boxShadow: "0 8px 32px rgba(15,12,41,0.35)",
-          }}
+          className={`rounded-3xl p-5 space-y-4 ${living ? "ac-living-card" : ""}`}
+          style={
+            living
+              ? undefined
+              : {
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(139,92,246,0.22)",
+                  boxShadow: "0 8px 32px rgba(15,12,41,0.35)",
+                }
+          }
         >
           <p className="text-sm font-semibold text-violet-200/95">
-            {t("pages.ai_coach.heres_what_im_hearing", "Here's what I'm hearing:")}
+            {living
+              ? t("amy_coach.living.hearing", {
+                  defaultValue: "From what you shared:",
+                })
+              : t("pages.ai_coach.heres_what_im_hearing", "Here's what I'm hearing:")}
           </p>
           <ul className="space-y-2.5">
             {understanding.bullets.map((bullet) => (
@@ -87,11 +115,20 @@ export function CoachUnderstandingScreen({
 
         {/* Amy's approach */}
         <section
-          className="rounded-2xl p-4 space-y-2"
-          style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.18)" }}
+          className={`rounded-2xl p-4 space-y-2 ${living ? "ac-living-card" : ""}`}
+          style={
+            living
+              ? undefined
+              : {
+                  background: "rgba(139,92,246,0.08)",
+                  border: "1px solid rgba(139,92,246,0.18)",
+                }
+          }
         >
           <p className="text-[11px] font-bold uppercase tracking-wide text-violet-300/85">
-            {t("pages.ai_coach.amys_approach", "Amy's Approach")}
+            {living
+              ? t("amy_coach.living.approach", { defaultValue: "How we'll begin" })
+              : t("pages.ai_coach.amys_approach", "Amy's Approach")}
           </p>
           <p className="text-sm text-white/78 leading-relaxed">
             {t(
@@ -103,11 +140,22 @@ export function CoachUnderstandingScreen({
 
         {/* Personalization signals */}
         <section
-          className="rounded-2xl p-4 space-y-3"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          className={`rounded-2xl p-4 space-y-3 ${living ? "ac-living-card" : ""}`}
+          style={
+            living
+              ? undefined
+              : {
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }
+          }
         >
           <p className="text-[11px] font-bold uppercase tracking-wide text-violet-300/85">
-            {t("pages.ai_coach.coaching_tailored_using", "Your coaching will be tailored using:")}
+            {living
+              ? t("amy_coach.living.using_what_you_shared", {
+                  defaultValue: "Using what you shared:",
+                })
+              : t("pages.ai_coach.coaching_tailored_using", "Your coaching will be tailored using:")}
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {personalizationItems.map((item) => (
@@ -121,11 +169,22 @@ export function CoachUnderstandingScreen({
 
         {/* Journey preview — examples, not commitments */}
         <section
-          className="rounded-2xl p-4 space-y-3"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          className={`rounded-2xl p-4 space-y-3 ${living ? "ac-living-card" : ""}`}
+          style={
+            living
+              ? undefined
+              : {
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }
+          }
         >
           <p className="text-[11px] font-bold uppercase tracking-wide text-violet-300/85">
-            {t("pages.ai_coach.what_coaching_may_focus_on", "What coaching may focus on")}
+            {living
+              ? t("amy_coach.living.may_focus", {
+                  defaultValue: "What we may focus on together",
+                })
+              : t("pages.ai_coach.what_coaching_may_focus_on", "What coaching may focus on")}
           </p>
           <ul className="space-y-2">
             {understanding.focusAreas.map((area) => (
@@ -151,31 +210,47 @@ export function CoachUnderstandingScreen({
               data-on-dark
               data-testid="coach-generate-plan"
               onClick={onGenerate}
-              className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all"
-              style={{
-                background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-                boxShadow: "0 0 28px rgba(139,92,246,0.4)",
-              }}
+              className={`w-full py-4 rounded-2xl font-bold text-base text-white transition-all ${living ? "ac-living-cta" : ""}`}
+              style={
+                living
+                  ? undefined
+                  : {
+                      background:
+                        "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                      boxShadow: "0 0 28px rgba(139,92,246,0.4)",
+                    }
+              }
             >
-              {t("pages.ai_coach.generate_my_first_win", "Generate My First Win")}
+              {living
+                ? livingGenerateCta()
+                : t("pages.ai_coach.generate_my_first_win", "Generate My First Win")}
             </button>
           ) : (
             <div
               data-testid="coach-preview-age-gate"
-              className="w-full py-4 px-4 rounded-2xl text-center space-y-1"
-              style={{
-                background: "rgba(139,92,246,0.12)",
-                border: "1px solid rgba(167,139,250,0.28)",
-              }}
+              className={`w-full py-4 px-4 rounded-2xl text-center space-y-1 ${living ? "ac-living-card" : ""}`}
+              style={
+                living
+                  ? undefined
+                  : {
+                      background: "rgba(139,92,246,0.12)",
+                      border: "1px solid rgba(167,139,250,0.28)",
+                    }
+              }
             >
               <p className="font-bold text-base text-white">
                 {t("pages.ai_coach.preview_available_from_age_2", "Available from age 2+")}
               </p>
               <p className="text-sm text-white/70 leading-snug">
-                {t(
-                  "pages.ai_coach.preview_age_gate_body",
-                  "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
-                )}
+                {living
+                  ? t("amy_coach.living.preview_body", {
+                      defaultValue:
+                        "You can browse gently now. Personalized plans continue when your child is 2 or older.",
+                    })
+                  : t(
+                      "pages.ai_coach.preview_age_gate_body",
+                      "Browse goals and sample wins now. Personalized plan generation unlocks when your child turns 2.",
+                    )}
               </p>
             </div>
           )}
@@ -203,30 +278,44 @@ export const COACH_LOADING_MESSAGES = [
 export function CoachGeneratingScreen({
   messageKey,
   userMessage,
+  living = false,
 }: {
   messageKey: string;
   /** Primary user-facing status line (never raw server errors). */
   userMessage?: string;
+  living?: boolean;
 }) {
   const { t } = useTranslation();
 
   return (
     <div
-      className="app-fixed-below-header fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)" }}
+      className={`app-fixed-below-header fixed inset-0 z-50 flex items-center justify-center ${living ? "amy-coach-living-phase" : ""}`}
+      style={
+        living
+          ? undefined
+          : { background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)" }
+      }
     >
       <div className="text-center text-white px-8 space-y-6 w-full max-w-sm">
         <div
-          className="relative w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-            boxShadow: "0 0 32px rgba(139,92,246,0.45)",
-          }}
+          className={`relative w-16 h-16 mx-auto rounded-2xl flex items-center justify-center ${living ? "ac-presence" : ""}`}
+          style={
+            living
+              ? undefined
+              : {
+                  background:
+                    "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                  boxShadow: "0 0 32px rgba(139,92,246,0.45)",
+                }
+          }
         >
           <Sparkles className="w-8 h-8 animate-pulse" />
         </div>
         <h2 className="font-quicksand text-2xl font-bold">
-          {userMessage ?? t("pages.ai_coach.loading_headline", "Amy is preparing your coaching")}
+          {userMessage ??
+            (living
+              ? livingLoadingHeadline()
+              : t("pages.ai_coach.loading_headline", "Amy is preparing your coaching"))}
         </h2>
         <p className="text-sm text-white/75 min-h-[2.5rem] transition-opacity duration-500">
           {t(messageKey)}
@@ -236,7 +325,9 @@ export function CoachGeneratingScreen({
             className="h-full rounded-full animate-pulse"
             style={{
               width: "45%",
-              background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
+              background: living
+                ? "linear-gradient(90deg, rgba(232,212,184,0.75), rgba(167,139,250,0.55))"
+                : "linear-gradient(90deg, #8b5cf6, #ec4899)",
             }}
           />
         </div>

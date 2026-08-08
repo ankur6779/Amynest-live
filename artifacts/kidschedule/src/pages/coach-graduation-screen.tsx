@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles, ArrowRight, Heart, TrendingUp, Compass } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CoachGraduationViewModel, GraduationPath } from "@workspace/coach-journey";
+import "@/components/amy-coach/amy-coach-living-room.css";
 
 function ProgressRingComplete({ size = 88 }: { size?: number }) {
   const r = (size - 10) / 2;
@@ -57,12 +58,15 @@ export interface CoachGraduationScreenProps {
   view: CoachGraduationViewModel;
   onChoosePath: (path: GraduationPath, strengthenGoalId?: string) => void;
   onPickRecommendedGoal?: (goalId: string) => void;
+  /** Experience-only sanctuary face. */
+  living?: boolean;
 }
 
 export function CoachGraduationScreen({
   view,
   onChoosePath,
   onPickRecommendedGoal,
+  living = false,
 }: CoachGraduationScreenProps) {
   const { t } = useTranslation();
 
@@ -103,10 +107,14 @@ export function CoachGraduationScreen({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
-      style={{
-        background: "linear-gradient(165deg, #0f0c29 0%, #1a1040 50%, #0c1220 100%)",
-      }}
+      className={`fixed inset-0 z-50 overflow-y-auto ${living ? "amy-coach-living-phase" : ""}`}
+      style={
+        living
+          ? undefined
+          : {
+              background: "linear-gradient(165deg, #0f0c29 0%, #1a1040 50%, #0c1220 100%)",
+            }
+      }
     >
       <div className="max-w-lg mx-auto px-5 py-10 pb-16 space-y-7">
         <div className="flex flex-col items-center text-center space-y-4 pt-4">
@@ -172,7 +180,11 @@ export function CoachGraduationScreen({
           }}
         >
           <p className="text-[11px] font-bold uppercase tracking-wide text-violet-300/90">
-            {t("pages.ai_coach.graduation_amy_observation", "Amy's Observation")}
+            {living
+              ? t("amy_coach.living.quiet_note", {
+                  defaultValue: "A quiet note from Amy",
+                })
+              : t("pages.ai_coach.graduation_amy_observation", "Amy's Observation")}
           </p>
           <p className="text-sm text-white/75">
             {t("pages.ai_coach.graduation_amy_strengths_intro", "The biggest improvements came from:")}

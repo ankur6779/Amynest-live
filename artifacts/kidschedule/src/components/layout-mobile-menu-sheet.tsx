@@ -33,6 +33,11 @@ import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import { useNavItemDescription } from "@/components/premium-nav-item";
 import { DrawerNavItem, type DrawerTone } from "@/components/drawer-nav-item";
 import { NAV_PREMIUM_HEADER, groupDrawerItems } from "@/lib/nav-premium-config";
+import {
+  isAmyCoachLivingV1Enabled,
+  livingAmyCoachNavDescription,
+  livingAmyCoachNavLabel,
+} from "@/lib/amy-coach/living-room";
 import { cn } from "@/lib/utils";
 import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 
@@ -112,8 +117,16 @@ function DrawerRow({
     <div onPointerDown={() => prefetchRouteChunk(item.href)}>
       <DrawerNavItem
         href={item.href}
-        label={t(item.labelKey)}
-        description={description}
+        label={
+          item.href === "/amy-coach" && isAmyCoachLivingV1Enabled()
+            ? livingAmyCoachNavLabel()
+            : t(item.labelKey)
+        }
+        description={
+          item.href === "/amy-coach" && isAmyCoachLivingV1Enabled()
+            ? livingAmyCoachNavDescription()
+            : description
+        }
         badge={item.badge}
         icon={item.icon}
         tone={tone}
