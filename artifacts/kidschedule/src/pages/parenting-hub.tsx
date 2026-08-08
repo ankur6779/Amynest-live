@@ -1398,7 +1398,7 @@ function ParentingHubPage() {
       );
     }
   },
-  // ── Abacus PRO Zone (age 2–10, full-screen route) ────────────────────
+  // ── Abacus / Beads & counting leave (age 2–10, full-screen route) ────
   {
     id: "abacus",
     bands: ["2-4", "4-6", "6-8", "8-10"] as AgeBand[],

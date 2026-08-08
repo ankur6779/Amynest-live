@@ -9,8 +9,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { PremiumActionGate, PremiumBenefitsPanel } from "@/components/hub-module-page-shell";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { cn } from "@/lib/utils";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowEmptyPhonics,
+  livingGrowLeaveEyebrow,
+  livingGrowPageTitle,
+} from "@/lib/grow/living-room";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
@@ -22,6 +30,8 @@ import {
   resolvePrimaryCta,
   type PhonicsPrimaryCta,
 } from "@/lib/phonics-journey-roadmap";
+
+import "@/components/grow/grow-living-deep.css";
 
 type Child = {
   id: number;
@@ -47,6 +57,7 @@ export default function PhonicsPage() {
   const { back } = useAppNavigate();
   const search = useSearch();
   const { locked, isPremium, onEngage } = useHubModuleGate("hub_phonics");
+  const living = isGrowLivingV1Enabled();
   const phonicsShipped = isPhonicsModuleAvailable();
   const [primaryCta, setPrimaryCta] = useState<PhonicsPrimaryCta>(DEFAULT_CTA);
   const [lessonLaunchToken, setLessonLaunchToken] = useState(0);
@@ -122,9 +133,14 @@ export default function PhonicsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+      <div
+        className={cn(
+          "flex min-h-screen items-center justify-center bg-background text-muted-foreground",
+          living && "gw-living-deep",
+        )}
+      >
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Loading phonics...
+        {living ? "Preparing today's practice…" : "Loading phonics..."}
       </div>
     );
   }
@@ -132,9 +148,9 @@ export default function PhonicsPage() {
   if (!activeChild) {
     const noEligibleChild = childList.length > 0 && eligibleChildren.length === 0;
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className={cn("flex min-h-screen flex-col bg-background", living && "gw-living-deep")}>
         <header className={PAGE_STICKY_HEADER_BASE}>
-          <button type="button" onClick={goBack} className="inline-flex items-center gap-2 text-sm font-bold text-foreground">
+          <button type="button" onClick={goBack} className="inline-flex min-h-12 items-center gap-2 text-sm font-bold text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
@@ -143,15 +159,27 @@ export default function PhonicsPage() {
           <Card className="max-w-md rounded-3xl border-border bg-card">
             <CardContent className="space-y-4 p-6">
               <UserPlus className="mx-auto h-10 w-10 text-primary" />
-              <h1 className="font-quicksand text-2xl font-bold text-foreground">Add a child to start phonics</h1>
+              <h1 className="font-quicksand text-2xl font-bold text-foreground">
+                {living ? "Add a child to begin gently" : "Add a child to start phonics"}
+              </h1>
               <p className="text-sm text-muted-foreground">
                 {noEligibleChild
-                  ? "Phonics Learning supports ages 1–6. Select or add a child in that range."
-                  : "Phonics Learning is personalised by age, so create a child profile first."}
+                  ? living
+                    ? livingGrowEmptyPhonics()
+                    : "Phonics Learning supports ages 1–6. Select or add a child in that range."
+                  : living
+                    ? "Sounds & letters is personalised by age — create a child profile first."
+                    : "Phonics Learning is personalised by age, so create a child profile first."}
               </p>
               <AddChildLink source="phonics-add-child">
-                <Button className="w-full rounded-2xl">Add Child</Button>
+                <Button className="w-full min-h-12 rounded-2xl">Add Child</Button>
               </AddChildLink>
+              {living ? (
+                <AmyNestLeaveContinuity
+                  continueHref="/parenting-hub"
+                  continueLabel="Back to rooms"
+                />
+              ) : null}
             </CardContent>
           </Card>
         </main>
@@ -160,24 +188,38 @@ export default function PhonicsPage() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-background">
+    <div
+      className={cn("flex min-h-dvh w-full flex-col bg-background", living && "gw-living-deep")}
+      data-gw-living={living ? "1" : undefined}
+      data-gw-shell={living ? "1" : undefined}
+    >
       <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")}>
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
+            className="inline-flex h-10 w-10 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0">
-            <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">
-              Learning Hub
+            {living ? <p className="gw-living-deep-eyebrow">{livingGrowLeaveEyebrow()}</p> : null}
+            <h1
+              className={cn(
+                "font-quicksand text-xl leading-tight text-foreground",
+                living ? "gw-living-deep-title font-bold" : "font-black",
+              )}
+            >
+              {living ? livingGrowPageTitle("sounds") : "Learning Hub"}
             </h1>
             <p className="truncate text-xs text-muted-foreground">
               {activeChild.name}
-              {currentLevel ? ` · ${currentLevel.shortLabel}` : " · today's lesson"}
+              {currentLevel
+                ? ` · ${currentLevel.shortLabel}`
+                : living
+                  ? " · today's practice"
+                  : " · today's lesson"}
             </p>
           </div>
         </div>
@@ -224,11 +266,22 @@ export default function PhonicsPage() {
               }
             />
             )}
+            {living ? (
+              <AmyNestLeaveContinuity
+                continueHref="/parenting-hub"
+                continueLabel="Back to rooms"
+              />
+            ) : null}
         </div>
       </main>
 
       {!lessonSessionOpen ? (
-        <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
+        <div
+          className={cn(
+            "bottom-controls z-50 border-t border-border px-4 pt-2 shadow-lg backdrop-blur",
+            living ? "bg-background/95" : "bg-[#0B1220]",
+          )}
+        >
             <div className="mx-auto max-w-4xl">
               <PremiumActionGate
                 gate={{
@@ -238,12 +291,17 @@ export default function PhonicsPage() {
                   module: "hub_phonics",
                   entitlementState: isPremium ? "premium" : "free",
                 }}
-                label="Unlock phonics learning"
+                label={living ? PREMIUM_VOICE.continueCta : "Unlock phonics learning"}
               >
                 <Button
                   type="button"
                   onClick={handlePrimaryCtaClick}
-                  className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
+                  className={cn(
+                    "h-12 min-h-12 w-full rounded-2xl gap-2 font-semibold",
+                    living
+                      ? "gw-living-deep-primary-btn"
+                      : "bg-primary text-primary-foreground",
+                  )}
                   data-testid="phonics-primary-cta"
                 >
                   <Play className="h-4 w-4" />

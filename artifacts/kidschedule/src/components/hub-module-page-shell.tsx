@@ -15,7 +15,15 @@ import { isExploreNextStageHubFeature, isHealthLabPreviewAge, isGamingHubPreview
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import {
+  isGrowLeaveFeatureId,
+  isGrowLivingV1Enabled,
+  livingGrowLeaveEyebrow,
+  livingGrowPageTitleForFeature,
+} from "@/lib/grow/living-room";
 import { cn } from "@/lib/utils";
+
+import "@/components/grow/grow-living-deep.css";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 const seenPremiumGateKeys = new Set<string>();
@@ -162,6 +170,10 @@ export function HubModulePageShell({
   const { navigate, back } = useAppNavigate();
   const { tryAddChild } = useAddChildGate();
   const { locked, journeySoft, onEngage, isPremium } = useHubModuleGate(featureId);
+  const growLiving =
+    isGrowLivingV1Enabled() && isGrowLeaveFeatureId(featureId);
+  const resolvedTitle =
+    growLiving ? livingGrowPageTitleForFeature(featureId) ?? title : title;
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -285,13 +297,21 @@ export function HubModulePageShell({
   );
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-background" data-hub-module-shell>
+    <div
+      className={cn(
+        "flex min-h-dvh w-full flex-col bg-background",
+        growLiving && "gw-living-deep",
+      )}
+      data-hub-module-shell
+      data-gw-shell={growLiving ? "1" : undefined}
+      data-gw-living={growLiving ? "1" : undefined}
+    >
       <header className={cn(PAGE_STICKY_HEADER_BASE, "backdrop-blur")} data-hub-module-header>
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
+            className="inline-flex h-10 w-10 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -300,7 +320,17 @@ export function HubModulePageShell({
             {icon}
           </div>
           <div className="min-w-0">
-            <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">{title}</h1>
+            {growLiving ? (
+              <p className="gw-living-deep-eyebrow">{livingGrowLeaveEyebrow()}</p>
+            ) : null}
+            <h1
+              className={cn(
+                "font-quicksand text-xl leading-tight text-foreground",
+                growLiving ? "gw-living-deep-title font-bold" : "font-black",
+              )}
+            >
+              {resolvedTitle}
+            </h1>
             <p className="truncate text-xs text-muted-foreground">{headerSubtitle}</p>
           </div>
         </div>

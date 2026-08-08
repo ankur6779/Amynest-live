@@ -150,3 +150,109 @@ export function isGrowLivingV1Enabled(): boolean {
 
 /** Synthetic quiet-module tile id for the unified Grow room surface. */
 export const GROW_STREAM_TILE_ID = "__grow_stream__" as const;
+
+/** Hub module featureIds that belong to Grow leave destinations. */
+const GROW_LEAVE_FEATURE_IDS = new Set([
+  "hub_abacus",
+  "hub_phonics",
+  "hub_spelling_mastery",
+  "hub_olympiad",
+  "hub_smart_math_tricks",
+  "hub_smart_study",
+]);
+
+export function isGrowLeaveFeatureId(featureId: string): boolean {
+  return GROW_LEAVE_FEATURE_IDS.has(featureId);
+}
+
+/** Calm deep-leave materials — same house as Understand / Speech deep / Health deep. */
+export const GROW_LIVING_DEEP_PALETTE = {
+  sand: "rgba(232,212,184,0.95)",
+  sandBorder: "rgba(232,212,184,0.28)",
+  night: "#120e18",
+  textBright: "rgba(255,252,248,0.96)",
+} as const;
+
+export function livingGrowLeaveEyebrow(): string {
+  return "Today's growth";
+}
+
+/** Calm page title for a Grow leave — never PRO / Zone / Academy / Mastery. */
+export function livingGrowPageTitle(pathId: GrowPathId | "phonics-hub"): string {
+  switch (pathId) {
+    case "beads":
+      return "Beads & counting";
+    case "sounds":
+    case "phonics-hub":
+      return "Sounds & letters";
+    case "numbers":
+      return "Numbers gently";
+    case "spelling":
+      return "Spelling calmly";
+    case "study":
+      return "Quiet study";
+    case "challenge":
+      return "Challenge later";
+    default:
+      return "Today's practice";
+  }
+}
+
+export function livingGrowPageTitleForFeature(featureId: string): string | null {
+  if (featureId === "hub_abacus") return livingGrowPageTitle("beads");
+  if (featureId === "hub_phonics") return livingGrowPageTitle("sounds");
+  if (featureId === "hub_smart_math_tricks") return livingGrowPageTitle("numbers");
+  if (featureId === "hub_spelling_mastery") return livingGrowPageTitle("spelling");
+  if (featureId === "hub_olympiad") return livingGrowPageTitle("challenge");
+  if (featureId === "hub_smart_study") return livingGrowPageTitle("study");
+  return null;
+}
+
+export function livingGrowPrimaryCta(): string {
+  return "Begin gently";
+}
+
+export function livingGrowContinueCta(): string {
+  return "Continue calmly";
+}
+
+export function livingGrowCompleteTitle(): string {
+  return "We practiced something useful";
+}
+
+export function livingGrowStreakLabel(days: number): string {
+  if (days <= 0) return "";
+  return `Showing up · ${days} days`;
+}
+
+export function livingGrowPointsLabel(): string {
+  return "Practice notes";
+}
+
+export function livingGrowAcademyEyebrow(): string {
+  return "Sounds & letters";
+}
+
+export function livingGrowMissionEyebrow(): string {
+  return "Today's practice";
+}
+
+export function livingGrowAdventureEyebrow(): string {
+  return "Today's reading practice";
+}
+
+export function livingGrowEmptyAbacus(): string {
+  return "Beads & counting is available from age 2+. Add or select an eligible child.";
+}
+
+export function livingGrowEmptyPhonics(): string {
+  return "Sounds & letters supports ages 1–6. Select or add a child in that range.";
+}
+
+export function livingGrowPremiumGateTitle(): string {
+  return "Continue learning with AmyNest";
+}
+
+export function livingGrowPremiumGateBody(): string {
+  return "Your free Parent Hub exploration has ended. Amy can keep supporting calm daily practice whenever you're ready.";
+}

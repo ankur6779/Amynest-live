@@ -21,6 +21,11 @@ import type { PhonicsMasteryState } from "@/lib/phonics-v3/mastery-engine";
 import type { PhonicsRetentionState } from "@/lib/phonics-v3/spaced-repetition";
 import { loadPhonicsHabitState } from "@/lib/phonics-journey-habit";
 import { Target, Flame, CheckCircle2 } from "lucide-react";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowMissionEyebrow,
+  livingGrowStreakLabel,
+} from "@/lib/grow/living-room";
 import { KaraokeBlendRound } from "./KaraokeBlendRound";
 import { DecodableStoryReader } from "./DecodableStoryReader";
 
@@ -153,22 +158,34 @@ export function DailyMissionPanel({
     <Card
       id="phonics-today-mission"
       data-testid="phonics-v2-daily-mission"
-      className="rounded-3xl border border-white/[0.08] bg-card/90 scroll-mt-24"
+      data-gw-living={isGrowLivingV1Enabled() ? "1" : undefined}
+      className={cn(
+        "rounded-3xl scroll-mt-24",
+        isGrowLivingV1Enabled()
+          ? "gw-living-deep-panel border-[rgba(232,212,184,0.28)]"
+          : "border border-white/[0.08] bg-card/90",
+      )}
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="font-quicksand text-base font-bold">Today&apos;s Mission</h3>
+              <h3 className="font-quicksand text-base font-bold">
+                {isGrowLivingV1Enabled()
+                  ? livingGrowMissionEyebrow()
+                  : "Today's Mission"}
+              </h3>
               <p className="text-[11px] text-muted-foreground">
                 ~{mission.estimatedMinutes} min · {doneCount}/{mission.tasks.length} done
               </p>
             </div>
           </div>
           <Badge variant="secondary" className="gap-1 text-[10px]">
-            <Flame className="h-3 w-3" />
-            Day {mission.streakDay}
+            {!isGrowLivingV1Enabled() && <Flame className="h-3 w-3" />}
+            {isGrowLivingV1Enabled()
+              ? livingGrowStreakLabel(mission.streakDay) || `Day ${mission.streakDay}`
+              : `Day ${mission.streakDay}`}
           </Badge>
         </div>
 

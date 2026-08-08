@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  GROW_LIVING_DEEP_PALETTE,
   GROW_QUIET_PATHS,
   GROW_STREAM_TILE_ID,
   growDeepenCueForTile,
   growPathForTile,
   growPathsForAge,
+  isGrowLeaveFeatureId,
   isGrowLivingV1Enabled,
   isGrowTileId,
+  livingGrowAcademyEyebrow,
+  livingGrowPageTitle,
+  livingGrowPageTitleForFeature,
+  livingGrowPremiumGateTitle,
+  livingGrowPrimaryCta,
   recommendGrowAction,
 } from "./living-room";
 
@@ -59,5 +66,24 @@ describe("grow living-room", () => {
   it("living flag defaults ON", () => {
     expect(isGrowLivingV1Enabled()).toBe(true);
     expect(GROW_STREAM_TILE_ID).toBe("__grow_stream__");
+  });
+
+  it("deep leave titles stay Care/Understand — never PRO / Academy / Unlock theatre", () => {
+    expect(livingGrowPageTitle("beads")).toBe("Beads & counting");
+    expect(livingGrowPageTitleForFeature("hub_abacus")).toBe("Beads & counting");
+    expect(livingGrowPageTitle("sounds")).toBe("Sounds & letters");
+    expect(livingGrowAcademyEyebrow()).toBe("Sounds & letters");
+    expect(livingGrowPrimaryCta()).toBe("Begin gently");
+    expect(isGrowLeaveFeatureId("hub_abacus")).toBe(true);
+    expect(isGrowLeaveFeatureId("hub_phonics")).toBe(true);
+    const joined = [
+      livingGrowPageTitle("beads"),
+      livingGrowAcademyEyebrow(),
+      livingGrowPremiumGateTitle(),
+      GROW_LIVING_DEEP_PALETTE.night,
+    ]
+      .join(" ")
+      .toLowerCase();
+    expect(joined).not.toMatch(/pro zone|reading academy|unlock all|olympiad zone|mastery/);
   });
 });

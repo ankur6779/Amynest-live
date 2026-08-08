@@ -6,6 +6,10 @@ import { Progress } from "@/components/ui/progress";
 import { BookOpen, Sparkles, Trophy, Lock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  isGrowLivingV1Enabled,
+  livingGrowAcademyEyebrow,
+} from "@/lib/grow/living-room";
+import {
   DECODABLE_BOOK_LIBRARY,
   getUnlockedBooks,
   isBookUnlocked,
@@ -252,24 +256,38 @@ export function ReadingAcademyHub({
   }
 
   const teacher = teacherModeStatus();
+  const living = isGrowLivingV1Enabled();
 
   return (
     <Card
       id="reading-academy"
       data-testid="reading-academy-hub"
+      data-gw-living={living ? "1" : undefined}
       className={cn(
-        "rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.07] via-card/90 to-sky-500/[0.05] scroll-mt-24",
+        "rounded-3xl scroll-mt-24",
+        living
+          ? "gw-living-deep-panel border-[rgba(232,212,184,0.28)]"
+          : "border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.07] via-card/90 to-sky-500/[0.05]",
         className,
       )}
     >
       <CardContent className="space-y-5 p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-              Reading Academy
+            <p
+              className={cn(
+                "text-[10px] font-bold uppercase tracking-wide",
+                living
+                  ? "gw-living-deep-eyebrow"
+                  : "font-black text-emerald-700 dark:text-emerald-300",
+              )}
+            >
+              {living ? livingGrowAcademyEyebrow() : "Reading Academy"}
             </p>
-            <h3 className="font-quicksand text-lg font-black">
-              {level.emoji} Level {level.id}: {level.name}
+            <h3 className={cn("font-quicksand text-lg", living ? "font-bold" : "font-black")}>
+              {living
+                ? `${level.emoji} ${level.name}`
+                : `${level.emoji} Level ${level.id}: ${level.name}`}
             </h3>
             <p className="text-xs text-muted-foreground">{level.description}</p>
           </div>

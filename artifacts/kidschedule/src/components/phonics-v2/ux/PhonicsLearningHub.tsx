@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowAdventureEyebrow,
+  livingGrowPointsLabel,
+} from "@/lib/grow/living-room";
 import type { LearningHubModel, HubLessonRow } from "@/lib/phonics-v3/learning-hub";
 import type { DailySessionPlanItem } from "@/lib/phonics-v3/daily-session";
 import { PulseCta } from "./PulseCta";
@@ -84,13 +89,24 @@ export function PhonicsLearningHub({
         <GuidedAmyCue
           line={
             sessionCompleteToday
-              ? `${model.greeting} You finished today's adventure!`
+              ? isGrowLivingV1Enabled()
+                ? `${model.greeting} You finished today's practice.`
+                : `${model.greeting} You finished today's adventure!`
               : `${model.greeting} Amy prepared today's session.`
           }
         />
 
-        <p className="mt-3 text-[10px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-          Today&apos;s Reading Adventure
+        <p
+          className={cn(
+            "mt-3 text-[10px] font-bold uppercase tracking-wide",
+            isGrowLivingV1Enabled()
+              ? "gw-living-deep-eyebrow"
+              : "font-black text-amber-700 dark:text-amber-300",
+          )}
+        >
+          {isGrowLivingV1Enabled()
+            ? livingGrowAdventureEyebrow()
+            : "Today's Reading Adventure"}
         </p>
         <h2 className="mt-1 font-quicksand text-xl font-black leading-tight text-foreground">
           Group {model.group.id}
@@ -244,22 +260,28 @@ export function PhonicsLearningHub({
               aria-expanded={journeyOpen}
             >
               <Map className="h-4 w-4 text-muted-foreground" />
-              Journey / Adventure Map
+              {isGrowLivingV1Enabled() ? "Practice path" : "Journey / Adventure Map"}
             </button>
 
-            <div className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-muted-foreground">
-              <PawPrint className="h-4 w-4" />
-              Reading Pet · {model.petLabel}
-            </div>
+            {!isGrowLivingV1Enabled() ? (
+              <div className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-muted-foreground">
+                <PawPrint className="h-4 w-4" />
+                Reading Pet · {model.petLabel}
+              </div>
+            ) : null}
 
             <div className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-muted-foreground">
               <Award className="h-4 w-4" />
-              Achievements · {model.starsEarned} stars
+              {isGrowLivingV1Enabled()
+                ? `${livingGrowPointsLabel()} · ${model.starsEarned}`
+                : `Achievements · ${model.starsEarned} stars`}
             </div>
 
             <div className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-muted-foreground">
               <Star className="h-4 w-4" />
-              Badges · {model.dailyGoalLabel}
+              {isGrowLivingV1Enabled()
+                ? `Today · ${model.dailyGoalLabel}`
+                : `Badges · ${model.dailyGoalLabel}`}
             </div>
 
             <div className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-muted-foreground">

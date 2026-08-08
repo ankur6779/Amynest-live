@@ -64,6 +64,11 @@ import {
   AbacusLearnToProUpsell,
   AbacusPremiumValuePanel,
 } from "@/components/abacus/abacus-premium-upsell";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowPointsLabel,
+  livingGrowStreakLabel,
+} from "@/lib/grow/living-room";
 import { AbacusReminderBanner } from "@/components/abacus/abacus-reminder-banner";
 import { AbacusWarmupCard, AbacusWarmupSession } from "@/components/abacus/abacus-warmup";
 import { AbacusDailyAdventureCard } from "@/components/abacus/abacus-daily-adventure";
@@ -626,39 +631,70 @@ function ProgressHeader({
   streakDays: number;
   t: ReturnType<typeof useAbacusTranslation>["t"];
 }) {
+  const living = isGrowLivingV1Enabled();
   const pct = totalLevels === 0 ? 0 : Math.round((completedCount / totalLevels) * 100);
   return (
     <div
-      className="rounded-2xl border border-teal-500/20 bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-background px-3 py-3 space-y-2"
+      className={cn(
+        "rounded-2xl px-3 py-3 space-y-2",
+        living
+          ? "gw-living-deep-panel"
+          : "border border-teal-500/20 bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-background",
+      )}
       data-testid="abacus-progress-header"
+      data-gw-living={living ? "1" : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-            🧮 {childName}
+          <p
+            className={cn(
+              "text-[11px] font-semibold uppercase tracking-wide",
+              living
+                ? "gw-living-deep-eyebrow"
+                : "text-teal-700 dark:text-teal-300",
+            )}
+          >
+            {living ? childName : `🧮 ${childName}`}
           </p>
           <p className="text-xs text-muted-foreground truncate">
             {t("abacus.practice_today", { correct: dailyCorrect, goal: DAILY_PRACTICE_GOAL })}
             {streakDays > 0 && (
-              <span className="ml-1.5 text-orange-600 dark:text-orange-400">🔥 {streakDays}</span>
+              <span
+                className={cn(
+                  "ml-1.5",
+                  living ? "text-muted-foreground" : "text-orange-600 dark:text-orange-400",
+                )}
+              >
+                {living ? livingGrowStreakLabel(streakDays) : `🔥 ${streakDays}`}
+              </span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-foreground">
-            <Medal className="h-3.5 w-3.5 text-amber-600" />
-            {progress.totalPoints} {t("abacus.points")}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-foreground",
+              living ? "gw-living-deep-chip" : "bg-amber-500/15",
+            )}
+          >
+            {!living && <Medal className="h-3.5 w-3.5 text-amber-600" />}
+            {living
+              ? livingGrowPointsLabel()
+              : `${progress.totalPoints} ${t("abacus.points")}`}
           </span>
         </div>
       </div>
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-          <span>{t("abacus.level_progress")}</span>
+          <span>{living ? "What we're learning" : t("abacus.level_progress")}</span>
           <span>
-            {completedCount} / {totalLevels} {t("abacus.levels")}
+            {completedCount} / {totalLevels} {living ? "practices" : t("abacus.levels")}
           </span>
         </div>
-        <Progress value={pct} className="h-2 bg-muted/80" />
+        <Progress
+          value={pct}
+          className={cn("h-2", living ? "gw-living-deep-progress bg-[rgba(120,96,64,0.12)]" : "bg-muted/80")}
+        />
       </div>
     </div>
   );

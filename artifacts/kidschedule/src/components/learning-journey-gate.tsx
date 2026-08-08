@@ -6,6 +6,16 @@ import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ROUTE_LOADING_FAIL_OPEN_MS, useFailOpenAfter } from "@/lib/loading-fail-open";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowPremiumGateBody,
+  livingGrowPremiumGateTitle,
+} from "@/lib/grow/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import { cn } from "@/lib/utils";
+
+import "@/components/grow/grow-living-deep.css";
 
 type Props = {
   children: ReactNode;
@@ -14,6 +24,7 @@ type Props = {
 /**
  * After Parent Hub journey ends, block Learning routes for free users.
  * Premium and free-journey users pass through.
+ * Presentation only when Grow living ON — entitlement logic unchanged.
  */
 export function LearningJourneyGate({ children }: Props) {
   const { isPremium, loading: subscriptionLoading } = useSubscription();
@@ -56,28 +67,66 @@ function resolveActiveChildId(
 }
 
 function LearningPremiumPreview() {
+  const living = isGrowLivingV1Enabled();
+
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="rounded-[28px] border border-violet-500/20 bg-white/[0.04] p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-300">
-          What you unlock
+    <main
+      className={cn(
+        "mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-6 py-10 text-center",
+        living && "gw-living-deep",
+      )}
+      data-gw-living={living ? "1" : undefined}
+    >
+      <div
+        className={cn(
+          "rounded-[28px] p-6",
+          living
+            ? "gw-living-deep-panel border border-[rgba(232,212,184,0.28)]"
+            : "border border-violet-500/20 bg-white/[0.04]",
+        )}
+      >
+        <p
+          className={cn(
+            "text-xs font-bold uppercase tracking-[0.22em]",
+            living ? "gw-living-deep-eyebrow" : "text-violet-300",
+          )}
+        >
+          {living ? PREMIUM_VOICE.includesLabel : "What you unlock"}
         </p>
-        <h1 className="mt-3 text-2xl font-black text-foreground">
-          Unlock complete learning journeys
+        <h1
+          className={cn(
+            "mt-3 text-2xl text-foreground",
+            living ? "gw-living-deep-title font-bold" : "font-black",
+          )}
+        >
+          {living ? livingGrowPremiumGateTitle() : "Unlock complete learning journeys"}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Your free Parent Hub exploration has ended. Keep phonics, study,
-          abacus, olympiad, and spelling progressing every day.
+          {living
+            ? livingGrowPremiumGateBody()
+            : "Your free Parent Hub exploration has ended. Keep phonics, study, abacus, olympiad, and spelling progressing every day."}
         </p>
         <ul className="mt-5 space-y-2 text-left text-sm text-muted-foreground">
-          {[
-            "Full phonics & reading path",
-            "Smart Study and math practice",
-            "Olympiad & spelling mastery",
-          ].map((benefit) => (
+          {(living
+            ? [
+                "Calm phonics & reading practice",
+                "Quiet study and number practice",
+                "Spelling without pressure",
+              ]
+            : [
+                "Full phonics & reading path",
+                "Smart Study and math practice",
+                "Olympiad & spelling mastery",
+              ]
+          ).map((benefit) => (
             <li
               key={benefit}
-              className="rounded-2xl border border-white/5 bg-white/[0.04] px-4 py-3"
+              className={cn(
+                "rounded-2xl px-4 py-3",
+                living
+                  ? "border border-[rgba(232,212,184,0.2)] bg-[rgba(232,212,184,0.06)]"
+                  : "border border-white/5 bg-white/[0.04]",
+              )}
             >
               {benefit}
             </li>
@@ -85,7 +134,12 @@ function LearningPremiumPreview() {
         </ul>
         <button
           type="button"
-          className="mt-6 min-h-11 w-full rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white"
+          className={cn(
+            "mt-6 min-h-12 w-full rounded-2xl px-5 py-3 text-sm font-bold",
+            living
+              ? "gw-living-deep-primary-btn"
+              : "bg-violet-600 text-white",
+          )}
           onClick={() =>
             openSubscriptionGate({
               reason: "learning_locked",
@@ -93,11 +147,22 @@ function LearningPremiumPreview() {
             })
           }
         >
-          Unlock All Learning
+          {living ? PREMIUM_VOICE.continueCta : "Unlock All Learning"}
         </button>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Cancel anytime · Secure purchase · Restore purchases anytime
-        </p>
+        {living ? (
+          <p className="mt-3 text-[11px] text-muted-foreground">{PREMIUM_VOICE.invitation}</p>
+        ) : (
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Cancel anytime · Secure purchase · Restore purchases anytime
+          </p>
+        )}
+        {living ? (
+          <AmyNestLeaveContinuity
+            className="mt-4 text-left"
+            continueHref="/parenting-hub"
+            continueLabel="Back to rooms"
+          />
+        ) : null}
       </div>
     </main>
   );
