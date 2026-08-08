@@ -251,7 +251,7 @@ VITE_FF_GROW_LIVING_V1=0
 
 ## 17. Commit SHA
 
-_Implementation commit stamped after push._
+**Implementation:** `2ca49cd29451ab385038031bc771d95fd7a1ccc4`
 
 ---
 
