@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 import type { PaywallReason } from "@/contexts/paywall-context";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
@@ -47,7 +46,6 @@ export function LockedBlock({
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {
-  const { t } = useTranslation();
   const quietRoom = useParentHubQuietModule();
   const openGate = () =>
     openSubscriptionGate({
@@ -70,17 +68,10 @@ export function LockedBlock({
     return <>{children}</>;
   }
 
-  // Pack 5 — continuity voice inside rooms; mall keeps unlock theatre.
-  const ariaLabel = quietRoom
-    ? PREMIUM_VOICE.invitation
-    : t("parent_hub.badges.premium_unlock_aria", {
-        defaultValue: "Unlock what this unlocks with Premium",
-      });
-  const badgeLabel = quietRoom
-    ? PREMIUM_VOICE.continueCta
-    : t("parent_hub.badges.premium_unlock", {
-        defaultValue: "Unlock with Premium",
-      });
+  // Portfolio P0 — continuity voice portfolio-wide (gates unchanged).
+  // Quiet rooms keep sand continuity chrome; mall loses Unlock theatre copy.
+  const ariaLabel = PREMIUM_VOICE.invitation;
+  const badgeLabel = PREMIUM_VOICE.continueCta;
 
   return (
     <div
@@ -112,10 +103,10 @@ export function LockedBlock({
             data-testid="premium-feature-lock"
             aria-label={ariaLabel}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full shadow-md px-2 py-0.5 text-[10px] font-bold cursor-pointer transition",
+              "inline-flex min-h-11 items-center gap-1 rounded-full shadow-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition tracking-normal normal-case",
               quietRoom
-                ? "bg-[rgba(232,212,184,0.16)] text-[rgba(244,238,230,0.95)] border border-[rgba(232,212,184,0.28)] tracking-normal normal-case hover:bg-[rgba(232,212,184,0.24)]"
-                : "bg-violet-600 text-white uppercase tracking-wide hover:brightness-110",
+                ? "bg-[rgba(232,212,184,0.16)] text-[rgba(244,238,230,0.95)] border border-[rgba(232,212,184,0.28)] hover:bg-[rgba(232,212,184,0.24)]"
+                : "bg-primary/90 text-primary-foreground border border-primary/30 hover:brightness-110",
             )}
           >
             {!quietRoom ? <Lock className="h-2.5 w-2.5" /> : null}

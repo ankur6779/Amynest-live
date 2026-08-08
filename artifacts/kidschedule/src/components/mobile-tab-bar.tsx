@@ -12,6 +12,11 @@ import {
   isAmyCoachLivingV1Enabled,
   livingAmyCoachNavLabel,
 } from "@/lib/amy-coach/living-room";
+import {
+  livingNavHomeLabel,
+  livingNavHubLabel,
+  livingNavRoutinesLabel,
+} from "@/lib/portfolio-nav-labels";
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home, center: false },
@@ -99,7 +104,11 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
                 >
                   <item.icon className={`h-5 w-5 transition-transform duration-150 ${isActive ? "fill-primary scale-105" : ""}`} />
                   <span className="text-[11px] font-medium leading-none">
-                    {t(item.labelKey)}
+                    {item.href === "/dashboard"
+                      ? livingNavHomeLabel()
+                      : item.href === "/routines"
+                        ? livingNavRoutinesLabel()
+                        : livingNavHubLabel()}
                   </span>
                   {isActive && !reducedMotion ? (
                     <motion.span

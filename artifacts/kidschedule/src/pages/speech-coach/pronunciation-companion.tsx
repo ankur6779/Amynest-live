@@ -29,6 +29,11 @@ import type {
 import { coachActivityIntroHint, pickCoachDisplayFeedback, createCoachDialogueContext, getPromptSpeakText } from "@workspace/speech-coach";
 import type { SpeechPromptKind } from "@workspace/api-client-react";
 import type { SpeechViewMode } from "./speech-coach-utils";
+import {
+  isSpeechCoachLivingV1Enabled,
+  livingSpeechSessionPresenceLabel,
+} from "@/lib/speech-coach/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 
 // ── Exported types (imported by index.tsx) ────────────────────────────────────
 export type SessionPhase = "setup" | "practice" | "done";
@@ -271,12 +276,14 @@ function SessionXPBar({
   sessionResults,
   progressLabel,
   xpLabel,
+  living = false,
 }: {
   sessionIdx: number;
   total: number;
   sessionResults: Array<{ feedback: TranscriptFeedback }>;
   progressLabel: string;
   xpLabel: string;
+  living?: boolean;
 }) {
   const xp = sessionResults.reduce(
     (n, r) =>
@@ -296,13 +303,23 @@ function SessionXPBar({
         >
           {progressLabel}
         </span>
-        <span
-          className="text-[10px] font-bold"
-          style={{ color: C.amber }}
-          data-on-dark
-        >
-          {xpLabel} {xp}/{maxXp}
-        </span>
+        {!living ? (
+          <span
+            className="text-[10px] font-bold"
+            style={{ color: C.amber }}
+            data-on-dark
+          >
+            {xpLabel} {xp}/{maxXp}
+          </span>
+        ) : (
+          <span
+            className="text-[10px] font-bold"
+            style={{ color: C.amber }}
+            data-on-dark
+          >
+            {livingSpeechSessionPresenceLabel()}
+          </span>
+        )}
       </div>
       <div
         className="h-1.5 rounded-full overflow-hidden"
@@ -516,6 +533,7 @@ export function PronunciationCompanion({
   ageMonths = 48,
 }: PronunciationCompanionProps) {
   const { t } = useTranslation();
+  const living = isSpeechCoachLivingV1Enabled();
   const capIos = isCapacitorIOS();
   const nativePf =
     typeof window !== "undefined" && Capacitor.isNativePlatform()
@@ -788,6 +806,7 @@ export function PronunciationCompanion({
                     { done: sessionIdx + 1, total: sessionItems.length },
                   )}
                   xpLabel="XP"
+                  living={living}
                 />
               </div>
 
@@ -1244,7 +1263,7 @@ export function PronunciationCompanion({
                 );
                 return (
                   <div className="w-full space-y-2">
-                    {/* XP earned */}
+                    {/* Presence note — XP theatre suppressed when living */}
                     <div
                       className="rounded-xl px-4 py-3 text-center"
                       style={{
@@ -1256,20 +1275,41 @@ export function PronunciationCompanion({
                         className="text-2xl font-black"
                         style={{
                           color: C.amber,
-                          textShadow: `0 0 16px rgba(251,191,36,0.5)`,
+                          textShadow: living
+                            ? undefined
+                            : `0 0 16px rgba(251,191,36,0.5)`,
                         }}
                         data-on-dark
                       >
-                        {totalXP} XP
+                        {living
+                          ? livingSpeechSessionPresenceLabel()
+                          : `${totalXP} XP`}
                       </span>
-                      <p
-                        className="text-sm mt-0.5"
-                        style={{ color: C.purpleDim }}
-                        data-on-dark
-                      >
-                        {"⭐".repeat(Math.min(strong.length, 5))}
-                      </p>
+                      {!living ? (
+                        <p
+                          className="text-sm mt-0.5"
+                          style={{ color: C.purpleDim }}
+                          data-on-dark
+                        >
+                          {"⭐".repeat(Math.min(strong.length, 5))}
+                        </p>
+                      ) : (
+                        <p
+                          className="text-sm mt-0.5"
+                          style={{ color: C.purpleDim }}
+                          data-on-dark
+                        >
+                          Gentle practice — enough for now.
+                        </p>
+                      )}
                     </div>
+                    {living ? (
+                      <AmyNestLeaveContinuity
+                        className="mt-3"
+                        continueHref="/speech-coach"
+                        continueLabel="Back to today's help"
+                      />
+                    ) : null}
 
                     {strong.length > 0 && (
                       <div

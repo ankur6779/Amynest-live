@@ -1380,7 +1380,13 @@ function ParentingHubPage() {
             title={t("parent_hub.web_tiles.smart-math-tricks.title")}
             description={t("parent_hub.web_tiles.smart-math-tricks.description")}
             tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_smart_math")}
-            previewBadge={hubJourney.isJourneyLocked ? "Premium" : "Explore Free"}
+            previewBadge={
+              roomsV1
+                ? undefined
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : "Explore Free"
+            }
             testId="smart-math-tricks-launch-card"
             sectionId="smart-math-tricks"
           />
@@ -1410,7 +1416,11 @@ function ParentingHubPage() {
             description="Learn the soroban — beads, brain & speed math"
             tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_abacus")}
             previewBadge={
-              hubJourney.isJourneyLocked ? "Premium" : "Preview Available"
+              roomsV1
+                ? undefined
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : "Preview Available"
             }
             testId="abacus-launch-card"
             sectionId="abacus"
@@ -1441,7 +1451,9 @@ function ParentingHubPage() {
             title={t("parent_hub.web_tiles.health-lab.title")}
             description={t("parent_hub.web_tiles.health-lab.description")}
             tryFree={healthLabRouteOpen && tryFreeFor("hub_health_lab")}
-            previewBadge={!healthLabRouteOpen ? "Premium" : undefined}
+            previewBadge={
+              roomsV1 ? undefined : !healthLabRouteOpen ? "Premium" : undefined
+            }
             testId="health-lab-launch-card"
             sectionId="health-lab"
           />
@@ -1532,8 +1544,8 @@ function ParentingHubPage() {
           href="/birth-sky"
           title={t("parent_hub.web_tiles.birth-sky.title")}
           description={t("parent_hub.web_tiles.birth-sky.description")}
-          previewBadge="Explore Free"
-          tryFree
+          previewBadge={roomsV1 ? undefined : "Explore Free"}
+          tryFree={!roomsV1}
           testId="birth-sky-launch-card"
           sectionId="birth-sky"
           onNavigate={() => {
@@ -1640,11 +1652,15 @@ function ParentingHubPage() {
             description={t("parent_hub.web_tiles.gaming-rewards.description")}
             tryFree={!gamingHubPreview && tryFreeFor("hub_gaming_rewards")}
             previewBadge={
-              gamingHubPreview
-                ? "Coming at age 2+"
-                : hubJourney.isJourneyLocked
-                  ? "Premium"
+              roomsV1
+                ? gamingHubPreview
+                  ? "Coming at age 2+"
                   : undefined
+                : gamingHubPreview
+                  ? "Coming at age 2+"
+                  : hubJourney.isJourneyLocked
+                    ? "Premium"
+                    : undefined
             }
             testId="gaming-rewards-launch-card"
             sectionId="gaming-rewards"
@@ -1723,7 +1739,11 @@ function ParentingHubPage() {
               description={t("parent_hub.web_tiles.phonics.description")}
               tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_phonics")}
               previewBadge={
-                hubJourney.isJourneyLocked ? "Premium" : "Preview Available"
+                roomsV1
+                  ? undefined
+                  : hubJourney.isJourneyLocked
+                    ? "Premium"
+                    : "Preview Available"
               }
               testId="phonics-launch-card"
               sectionId="phonics"
@@ -1771,7 +1791,11 @@ function ParentingHubPage() {
             description={t("parent_hub.web_tiles.smart-study.description")}
             tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_smart_study")}
             previewBadge={
-              hubJourney.isJourneyLocked ? "Premium" : "Premium Experience"
+              roomsV1
+                ? undefined
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : "Premium Experience"
             }
             testId="smart-study-launch-card"
             sectionId="smart-study"
@@ -1800,7 +1824,13 @@ function ParentingHubPage() {
             title={t("parent_hub.web_tiles.spelling-mastery.title")}
             description={t("parent_hub.web_tiles.spelling-mastery.description")}
             tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_spelling_mastery")}
-            previewBadge={hubJourney.isJourneyLocked ? "Premium" : undefined}
+            previewBadge={
+              roomsV1
+                ? undefined
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : undefined
+            }
             testId="spelling-mastery-launch-card"
             sectionId="spelling-mastery"
           />
@@ -1827,7 +1857,13 @@ function ParentingHubPage() {
             title={t("parent_hub.web_tiles.olympiad.title")}
             description={t("parent_hub.web_tiles.olympiad.description")}
             tryFree={!hubJourney.isJourneyLocked && tryFreeFor("hub_olympiad")}
-            previewBadge={hubJourney.isJourneyLocked ? "Premium" : undefined}
+            previewBadge={
+              roomsV1
+                ? undefined
+                : hubJourney.isJourneyLocked
+                  ? "Premium"
+                  : undefined
+            }
             testId="olympiad-launch-card"
             sectionId="olympiad"
           />

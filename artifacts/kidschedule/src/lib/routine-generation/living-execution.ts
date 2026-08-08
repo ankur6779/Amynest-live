@@ -119,7 +119,8 @@ export function livingContinuityExits(): readonly LivingContinuityExit[] {
     {
       id: "today",
       label: "Today Home",
-      href: "/",
+      // Land on Today Home sanctuary directly (HomeRedirect also maps `/` → here).
+      href: "/dashboard",
       purpose: "Return to the heart of the day",
     },
     {

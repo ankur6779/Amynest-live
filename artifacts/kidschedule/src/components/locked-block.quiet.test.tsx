@@ -15,14 +15,17 @@ vi.mock("@/lib/subscription-gate", () => ({
 }));
 
 describe("Pack 5 LockedBlock quiet continuity", () => {
-  it("uses unlock theatre outside quiet rooms", () => {
+  it("uses PREMIUM_VOICE continuity outside quiet rooms (portfolio P0 — no Unlock theatre)", () => {
     render(
       <LockedBlock locked>
         <div>child</div>
       </LockedBlock>,
     );
     expect(screen.getByTestId("premium-feature-lock")).toHaveTextContent(
-      "Unlock with Premium",
+      PREMIUM_VOICE.continueCta,
+    );
+    expect(screen.getByTestId("premium-feature-lock")).not.toHaveTextContent(
+      /unlock/i,
     );
   });
 

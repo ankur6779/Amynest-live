@@ -31,6 +31,8 @@ import { FF_INFANT_PREMIUM } from "@/lib/infant-feature-flags";
 import { mapFeatureToPaywallReason } from "@/lib/subscription-gate";
 import type { PaywallReason } from "@/contexts/paywall-context";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import "@/components/ask-amy/ask-amy-living-room.css";
 
 function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
@@ -71,10 +73,15 @@ export default function AssistantPage() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
-  /** Ask Amy Phase 2 — companionship chrome only. APIs untouched. */
+  /** Ask Amy Phase 2 — companionship chrome only. APIs/quotas untouched.
+   * Portfolio P0-5: when living ON, companion chrome is the default face
+   * (modes/Zap theatre off) even without ?companion=1. */
   const companionMode = useMemo(() => {
     if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("companion") === "1";
+    if (new URLSearchParams(window.location.search).get("companion") === "1") {
+      return true;
+    }
+    return isAskAmyLivingV1Enabled();
   }, []);
 
   useEffect(() => {
@@ -511,6 +518,11 @@ export default function AssistantPage() {
           </header>
         )}
       />
+      {companionMode ? (
+        <div className="mx-auto w-full max-w-3xl px-4 pb-6">
+          <AmyNestLeaveContinuity />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -49,7 +49,7 @@ describe("routine-generation living-execution (R5)", () => {
   it("continuity exits reuse existing routes only — no catalogue/upsell", () => {
     const exits = livingContinuityExits();
     expect(exits.map((e) => e.id)).toEqual(["today", "hub", "coach", "audio"]);
-    expect(exits.find((e) => e.id === "today")?.href).toBe("/");
+    expect(exits.find((e) => e.id === "today")?.href).toBe("/dashboard");
     expect(exits.find((e) => e.id === "hub")?.href).toBe("/parenting-hub");
     expect(exits.find((e) => e.id === "coach")?.href).toBe("/amy-coach");
     expect(exits.find((e) => e.id === "audio")?.href).toBe("/audio-lessons");

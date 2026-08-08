@@ -13,6 +13,8 @@ import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { track } from "@/lib/analytics";
 import { isExploreNextStageHubFeature, isHealthLabPreviewAge, isGamingHubPreviewAge } from "@/lib/hub-visibility";
 import { PAGE_STICKY_HEADER_BASE } from "@/lib/page-sticky-header";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
@@ -35,19 +37,26 @@ export type HubModuleActionGateState = {
 
 export function PremiumBenefitsPanel({ className }: { className?: string }) {
   return (
-    <section className={cn("rounded-3xl border border-primary/25 bg-primary/10 p-4", className)}>
+    <section
+      className={cn("rounded-3xl border border-primary/25 bg-primary/10 p-4", className)}
+      data-testid="premium-benefits-panel"
+    >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
           <Sparkles className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="font-quicksand text-base font-black text-foreground">Unlock All Learning</p>
+          <p className="font-quicksand text-base font-bold text-foreground">
+            {PREMIUM_VOICE.includesLabel}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+            {PREMIUM_VOICE.invitation}
+          </p>
           <div className="mt-2 grid gap-1 text-sm font-semibold text-muted-foreground sm:grid-cols-2">
-            <span>✓ Unlimited Lessons</span>
-            <span>✓ Progress Tracking</span>
-            <span>✓ AI Learning Coach</span>
-            <span>✓ Certificates</span>
-            <span>✓ Advanced Content</span>
+            <span>✓ Calm daily practice</span>
+            <span>✓ Gentle progress notes</span>
+            <span>✓ Amy beside you</span>
+            <span>✓ Deeper support when ready</span>
           </div>
         </div>
       </div>
@@ -122,9 +131,9 @@ export function PremiumActionGate({
         aria-label={label}
         className="absolute inset-0 z-10 flex cursor-pointer items-center justify-center rounded-2xl bg-background/35 px-3 backdrop-blur-[2px] transition-colors hover:bg-background/45"
       >
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-foreground shadow-md">
+        <span className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold tracking-normal normal-case text-foreground shadow-md">
           <Lock className="h-3 w-3" />
-          Unlock with Premium
+          {PREMIUM_VOICE.continueCta}
         </span>
       </button>
     </div>
@@ -320,7 +329,7 @@ export function HubModulePageShell({
       )}
 
       <main className="scroll-safe min-h-0 flex-1 px-4 py-4">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-4xl space-y-4">
           {infantExplorePreview ? (
             <InfantExplorePreviewBanner className="mb-4" messageKey={previewBannerKey} />
           ) : null}
@@ -353,6 +362,10 @@ export function HubModulePageShell({
               </div>
             </LockedBlock>
           )}
+          <AmyNestLeaveContinuity
+            continueHref="/parenting-hub"
+            continueLabel="Back to rooms"
+          />
         </div>
       </main>
     </div>

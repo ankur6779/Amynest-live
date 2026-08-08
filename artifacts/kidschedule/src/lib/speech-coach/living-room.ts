@@ -120,3 +120,18 @@ export function isSpeechCoachLivingV1Enabled(): boolean {
   if (raw === undefined || raw === "") return true;
   return raw === "true" || raw === "1";
 }
+
+/** Portfolio P0-2 — session chrome labels (scoring side-effects untouched). */
+export function livingSpeechSessionPresenceLabel(): string {
+  return "Together";
+}
+
+export function livingSpeechSessionCompleteBody(score: number, bestStreak: number): string {
+  void score;
+  void bestStreak;
+  return "You practiced gently together. That is enough for now.";
+}
+
+export function livingSpeechLiveEyebrow(): string {
+  return "Voice together";
+}

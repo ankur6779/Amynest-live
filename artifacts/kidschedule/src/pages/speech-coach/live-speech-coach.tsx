@@ -43,6 +43,12 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useConversationSilenceStop } from "./conversation-silence-detector";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
+import {
+  isSpeechCoachLivingV1Enabled,
+  livingSpeechLiveEyebrow,
+  livingSpeechSessionCompleteBody,
+} from "@/lib/speech-coach/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { enqueueBehaviorWarmup } from "@/lib/behavior-audio-warmup";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
@@ -299,6 +305,7 @@ export function LiveSpeechCoach({
     [search],
   );
   const ageMonths = totalMonths(child);
+  const living = isSpeechCoachLivingV1Enabled();
   const mode = useMemo(() => getAgeMode(ageMonths, preset), [ageMonths, preset]);
 
   useEffect(() => {
@@ -887,8 +894,12 @@ export function LiveSpeechCoach({
             </Button>
           </AppLink>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Live AI Speech Coach</p>
-            <h1 className="truncate font-quicksand text-xl font-black">{child.name}'s voice session</h1>
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
+              {living ? livingSpeechLiveEyebrow() : "Live AI Speech Coach"}
+            </p>
+            <h1 className="truncate font-quicksand text-xl font-black">
+              {living ? `${child.name} · voice together` : `${child.name}'s voice session`}
+            </h1>
           </div>
           {onOpenParentTools ? (
             <Button
@@ -938,20 +949,35 @@ export function LiveSpeechCoach({
             )}
             {state === "complete" && (
               <div className="space-y-2">
-                <Trophy className="mx-auto h-12 w-12 fill-yellow-300 text-yellow-300" />
-                <p className="font-quicksand text-3xl font-black">Amazing work today!</p>
-                <p className="text-white/70">Score: {score} points · Best streak: {bestStreak}</p>
+                {!living ? (
+                  <Trophy className="mx-auto h-12 w-12 fill-yellow-300 text-yellow-300" />
+                ) : null}
+                <p className="font-quicksand text-3xl font-black">
+                  {living ? "We practiced gently" : "Amazing work today!"}
+                </p>
+                <p className="text-white/70">
+                  {living
+                    ? livingSpeechSessionCompleteBody(score, bestStreak)
+                    : `Score: ${score} points · Best streak: ${bestStreak}`}
+                </p>
               </div>
             )}
           </div>
         </section>
 
         <section className="mt-auto space-y-4 pb-4 pt-5">
-          <div className="grid grid-cols-3 gap-2">
-            <Stat label="Points" value={score} />
-            <Stat label="Streak" value={streak} />
-            <Stat label="Mode" value={stt.mode === "native" ? "STT" : stt.mode} />
-          </div>
+          {!living ? (
+            <div className="grid grid-cols-3 gap-2">
+              <Stat label="Points" value={score} />
+              <Stat label="Streak" value={streak} />
+              <Stat label="Mode" value={stt.mode === "native" ? "STT" : stt.mode} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Stat label="Steps" value={Math.min(idx + 1, tasks.length)} />
+              <Stat label="With you" value={tasks.length} />
+            </div>
+          )}
 
           {lastResult && (
             <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-4">
@@ -1016,27 +1042,35 @@ export function LiveSpeechCoach({
               )}
             </div>
           ) : (
-            <div className="flex justify-center gap-3">
-              <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={restart}>
-                <RotateCcw className="h-4 w-4" />
-                New Session
-              </Button>
-              {onOpenParentTools ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
-                  onClick={onOpenParentTools}
-                >
-                  Parent Tools
+            <div className="space-y-3">
+              <div className="flex justify-center gap-3">
+                <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={restart}>
+                  <RotateCcw className="h-4 w-4" />
+                  {living ? "Practice again" : "New Session"}
                 </Button>
-              ) : (
-                <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
-                  <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
-                    Parent Tools
+                {onOpenParentTools ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+                    onClick={onOpenParentTools}
+                  >
+                    {living ? "Today's help" : "Parent Tools"}
                   </Button>
-                </AppLink>
-              )}
+                ) : (
+                  <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
+                    <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+                      {living ? "Today's help" : "Parent Tools"}
+                    </Button>
+                  </AppLink>
+                )}
+              </div>
+              {living ? (
+                <AmyNestLeaveContinuity
+                  continueHref="/speech-coach"
+                  continueLabel="Back to today's help"
+                />
+              ) : null}
             </div>
           )}
         </section>
