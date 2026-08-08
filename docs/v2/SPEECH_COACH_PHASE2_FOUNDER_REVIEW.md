@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Speech Coach Manufacturing (Phase 2)  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:**  ()
+**Commit SHA:** `afdfb50d` (`afdfb50d18d073f975990a3e14d5364efaa30b39`)
 
 **STOP after this module.** Do **not** begin Nutrition. Wait for Founder approval.
 
