@@ -5,7 +5,7 @@
 **Authority:** Founder Order — Ask Amy Manufacturing  
 **Framework (only law):** `docs/v2/MODULE_MANUFACTURING_FRAMEWORK.md`  
 
-**Commit SHA:** _(filled at push)_  
+**Commit SHA:** `cf982fce` (`cf982fce4fd0d4939530b18e3a261b50694dc6e0`)  
 
 **STOP after this module.** Wait for Founder approval.
 
