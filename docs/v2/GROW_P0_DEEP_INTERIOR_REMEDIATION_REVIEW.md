@@ -266,11 +266,10 @@ Restores: Abacus PRO Zone · Learning Hub · Unlock All Learning · Reading Acad
 
 ## 24. Commit SHA
 
-_Fill after commit:_
-
 | Item | Value |
 |---|---|
-| Implementation commit | _(pending)_ |
+| Implementation commit | `97e3e474` |
+| Review doc | included in `97e3e474` (+ SHA stamp follow-up if present) |
 
 ---
 
