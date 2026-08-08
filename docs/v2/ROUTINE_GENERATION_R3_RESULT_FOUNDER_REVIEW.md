@@ -10,7 +10,7 @@
 **Engine:** PRODUCTION FROZEN (June 2026) — not thawed
 
 **Implementation Commit SHA:** `80eb1bae4d5d7ef403716d9f21172cea4a3eb4b9`  
-**Docs Commit SHA:** (this commit)
+**Docs Commit SHA:** `10f672c1bd330797e3706a5b5dd55775d5402c5d`
 
 **STOP after R3.** Wait for Founder approval.  
 Do **not** begin R4.  
@@ -350,7 +350,7 @@ No DB/API rollback required.
 | Artifact | SHA |
 |---|---|
 | R3 implementation | `80eb1bae4d5d7ef403716d9f21172cea4a3eb4b9` |
-| This Founder Review | (docs commit after impl) |
+| This Founder Review | `10f672c1bd330797e3706a5b5dd55775d5402c5d` |
 
 ---
 
