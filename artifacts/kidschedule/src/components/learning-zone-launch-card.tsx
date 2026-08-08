@@ -20,12 +20,25 @@ type LearningZoneLaunchCardProps = {
   onNavigate?: () => void;
 };
 
-/** Calm title when Grow living deepen — strip PRO / Zone / Mastery SKU language. */
+/** Calm title when Grow living deepen — strip marketplace / unlock SKU language. */
 function calmLearningTitle(title: string): string {
   return title
     .replace(/\bPRO\b/gi, "")
     .replace(/\bZone\b/gi, "")
     .replace(/\bMastery\b/gi, "")
+    .replace(/\bOlympiad\b/gi, "Challenge")
+    .replace(/\bUnlock\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Quiet deepen descriptions — never unlock / explore-free theatre. */
+function calmLearningDescription(description: string): string {
+  return description
+    .replace(/\bUnlock\b[^.!?]*[.!?]?/gi, "")
+    .replace(/\bExplore Free\b/gi, "")
+    .replace(/\bTry Free\b/gi, "")
+    .replace(/\bPremium\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
@@ -47,6 +60,9 @@ export function LearningZoneLaunchCard({
   const awardSectionPoints = useHubSectionPoints();
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
   const displayTitle = quietRoom ? calmLearningTitle(title) : title;
+  const displayDescription = quietRoom
+    ? calmLearningDescription(description)
+    : description;
   // Pack 5 / Grow living — no unlock theatre on quiet deepen.
   const effectiveBadge = quietRoom ? undefined : previewBadge;
   const effectiveTryFree = quietRoom ? false : !!tryFree && previewBadge !== "Premium";
@@ -68,15 +84,16 @@ export function LearningZoneLaunchCard({
           onNavigate?.();
         }}
         className={cn(HUB_TILE_TRIGGER, "block h-full overflow-visible p-0 rounded-[30px]")}
-        aria-label={hubTileAriaLabel(displayTitle, description)}
+        aria-label={hubTileAriaLabel(displayTitle, displayDescription)}
         data-testid={testId}
         data-section-id={sectionId}
+        data-gw-quiet={quietRoom ? "1" : undefined}
         source="hub-launch-card"
       >
         <LearningZonePremiumCard
           cardId={cardId}
           title={displayTitle}
-          description={description}
+          description={displayDescription}
           previewBadge={effectiveBadge}
           tryFree={effectiveTryFree}
           showTryFreeBadge={

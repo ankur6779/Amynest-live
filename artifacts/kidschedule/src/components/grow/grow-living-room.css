@@ -209,9 +209,71 @@
 }
 
 .gw-support-note {
-  margin: 0.35rem 1rem 0.9rem;
+  margin: 0.35rem 1rem 0.55rem;
   font-size: 0.72rem;
   font-weight: 500;
   line-height: 1.4;
   color: rgba(232, 212, 184, 0.55);
+}
+
+.gw-support-invite,
+.gw-support-continue {
+  margin-top: 0;
+  margin-bottom: 0.45rem;
+  color: rgba(232, 212, 184, 0.48);
+  font-size: 0.7rem;
+}
+
+.gw-support-continue {
+  margin-bottom: 0.9rem;
+}
+
+/* Quiet deepen — one practice door, never a course marketplace nest */
+.gw-deepen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.gw-deepen-cue {
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background: rgba(8, 6, 12, 0.42);
+  padding: 0.7rem 0.9rem;
+}
+
+.gw-deepen-cue-title {
+  margin: 0;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.gw-deepen-cue-purpose {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(232, 212, 184, 0.74);
+}
+
+.gw-deepen [data-gw-quiet="1"],
+.gw-deepen .rounded-\[30px\],
+.gw-deepen [class*="rounded-[30px]"] {
+  filter: saturate(0.92);
+}
+
+.gw-deepen [data-testid$="-launch-card"] {
+  border-radius: 1.15rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.05),
+    0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gw-recommend-btn,
+  .gw-quiet-path {
+    transition: none;
+  }
 }

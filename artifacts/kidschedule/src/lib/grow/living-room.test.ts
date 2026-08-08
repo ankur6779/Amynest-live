@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GROW_QUIET_PATHS,
   GROW_STREAM_TILE_ID,
+  growDeepenCueForTile,
   growPathForTile,
   growPathsForAge,
   isGrowLivingV1Enabled,
@@ -46,6 +47,13 @@ describe("grow living-room", () => {
     const youngPaths = growPathsForAge(30).map((p) => p.id);
     expect(youngPaths).toContain("sounds");
     expect(youngPaths).not.toContain("challenge");
+  });
+
+  it("deepen cues stay calm — never unlock theatre", () => {
+    const cue = growDeepenCueForTile("abacus");
+    expect(cue?.title).toBe("Beads & counting");
+    expect(cue?.purpose.toLowerCase()).not.toContain("unlock");
+    expect(growDeepenCueForTile("daily-tips")).toBeNull();
   });
 
   it("living flag defaults ON", () => {

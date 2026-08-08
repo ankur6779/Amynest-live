@@ -92,6 +92,16 @@ export function tileIdForGrowPath(pathId: GrowPathId): string {
   return GROW_QUIET_PATHS.find((p) => p.id === pathId)?.tileId ?? "phonics";
 }
 
+/** Quiet deepen cue for a legacy Hub tile — never SKU / unlock language. */
+export function growDeepenCueForTile(tileId: string): {
+  title: string;
+  purpose: string;
+} | null {
+  const path = GROW_QUIET_PATHS.find((p) => p.tileId === tileId);
+  if (!path) return null;
+  return { title: path.title, purpose: path.purpose };
+}
+
 /**
  * One recommended Understand practice act.
  * Younger children → sounds; older → numbers. Never olympiad first.

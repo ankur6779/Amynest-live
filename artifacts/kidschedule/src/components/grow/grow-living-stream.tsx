@@ -1,7 +1,8 @@
 /**
  * Grow Phase 2 — one calm educational room.
  * Understand FE photography + one practice recommend + quiet learning paths.
- * No SaaS catalogue. No unlock theatre. Presentation only.
+ * No course marketplace. No learning catalogue. No unlock theatre.
+ * Presentation only — engines / routes / entitlements reused.
  */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,6 +45,7 @@ export function GrowLivingStream({
       className="gw-living-surface"
       data-testid="grow-living-stream"
       data-gw-living="1"
+      data-gw-hierarchy="deepen"
     >
       <header className="gw-today-hero" data-testid="grow-today-hero">
         <div
@@ -73,12 +75,13 @@ export function GrowLivingStream({
               <h1 className="gw-today-title">
                 {t("grow.living.title", {
                   name: childName,
-                  defaultValue: `Skills growing quietly with ${childName}`,
+                  defaultValue: `I'm here with you and ${childName}.`,
                 })}
               </h1>
               <p className="gw-today-purpose">
                 {t("grow.living.purpose", {
-                  defaultValue: "One calm educational room — never a learning mall.",
+                  defaultValue:
+                    "One calm educational room — never a course marketplace.",
                 })}
               </p>
             </div>
@@ -113,6 +116,7 @@ export function GrowLivingStream({
               data-testid={`grow-quiet-${path.id}`}
               data-active={activePath === path.id ? "true" : "false"}
               data-demoted={path.demoted ? "true" : "false"}
+              aria-current={activePath === path.id ? "true" : undefined}
               onClick={() => onSelectTile(path.tileId)}
             >
               <span className="gw-quiet-path-title">{path.title}</span>
@@ -122,7 +126,17 @@ export function GrowLivingStream({
         </div>
       </div>
 
-      <p className="gw-support-note">{PREMIUM_VOICE.invitation}</p>
+      <p className="gw-support-note">
+        {t("grow.living.continuity", {
+          defaultValue: "We'll continue helping as your child grows.",
+        })}
+      </p>
+      <p className="gw-support-note gw-support-invite">{PREMIUM_VOICE.invitation}</p>
+      <p className="gw-support-note gw-support-continue">
+        {t("grow.living.continue_support", {
+          defaultValue: PREMIUM_VOICE.continueCta,
+        })}
+      </p>
     </div>
   );
 }

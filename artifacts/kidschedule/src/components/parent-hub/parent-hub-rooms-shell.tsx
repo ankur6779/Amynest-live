@@ -29,6 +29,7 @@ import {
 } from "@/lib/moments/living-room";
 import {
   GROW_STREAM_TILE_ID,
+  growDeepenCueForTile,
   isGrowLivingV1Enabled,
   isGrowTileId,
 } from "@/lib/grow/living-room";
@@ -411,6 +412,9 @@ export function ParentHubRoomsShell({
     const recommendLabel = t(recommendation.labelKey, {
       defaultValue: recommendation.labelFallback,
     });
+    const growDeepenCue = growDeepenTileId
+      ? growDeepenCueForTile(growDeepenTileId)
+      : null;
 
     return (
       <div
@@ -564,11 +568,18 @@ export function ParentHubRoomsShell({
                 </div>
                 {growDeepenTileId ? (
                   <div
-                    className="ph-module-quiet"
+                    className="ph-module-quiet gw-deepen"
                     data-testid={`hub-room-module-${growDeepenTileId}`}
                     data-section-id={growDeepenTileId}
                     data-ph-pack="5"
+                    data-gw-deepen="1"
                   >
+                    {growDeepenCue ? (
+                      <div className="gw-deepen-cue" data-testid="grow-deepen-cue">
+                        <p className="gw-deepen-cue-title">{growDeepenCue.title}</p>
+                        <p className="gw-deepen-cue-purpose">{growDeepenCue.purpose}</p>
+                      </div>
+                    ) : null}
                     <ParentHubQuietModuleProvider>
                       {renderDestination(growDeepenTileId)}
                     </ParentHubQuietModuleProvider>
