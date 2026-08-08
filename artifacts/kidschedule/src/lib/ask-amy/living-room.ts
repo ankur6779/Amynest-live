@@ -6,6 +6,8 @@
  * Covers Ask Amy + Emotional Support as one Help spine.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type AskAmyPathId = "ask" | "feelings";
 
 export type AskAmyRecommend = {
@@ -85,9 +87,7 @@ export function destinationIdForAskAmyPath(
 
 /** Flag — Ask Amy + Emotional companionship manufacturing. Default ON. */
 export function isAskAmyLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_ASK_AMY_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_ASK_AMY_LIVING_V1);
 }
 
 /** Synthetic quiet-module tile id for Help companionship surface. */

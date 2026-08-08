@@ -6,6 +6,8 @@
  * Never chatbot, AI demo, support desk, prompt playground, SaaS dashboard, marketplace.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type AmyCoachRecommend = {
   id: "begin";
   label: string;
@@ -142,7 +144,5 @@ export function livingUnderstandingTitle(): string {
 
 /** Flag — Amy Coach living room manufacturing. Default ON. */
 export function isAmyCoachLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_AMY_COACH_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_AMY_COACH_LIVING_V1);
 }

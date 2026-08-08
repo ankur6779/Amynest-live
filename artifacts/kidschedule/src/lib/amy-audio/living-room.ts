@@ -6,6 +6,8 @@
  * Never Spotify player, podcast app, audio marketplace, catalogue, SaaS shelf.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type AmyAudioRecommend = {
   id: "listen";
   label: string;
@@ -141,7 +143,5 @@ export function livingMoreAgesLabel(): string {
 
 /** Flag — Amy Audio living room manufacturing. Default ON. */
 export function isAmyAudioLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_AMY_AUDIO_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_AMY_AUDIO_LIVING_V1);
 }

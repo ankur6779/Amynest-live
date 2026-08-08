@@ -1,10 +1,11 @@
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 /**
  * Today Home V1 — Phase 2 manufacturing flag.
- * Default ON. Set VITE_FF_TODAY_HOME_V1=0 to restore legacy weather-hero dashboard.
+ * Portfolio lock (FA-02): VITE_FF_AMYNEST_LIVING_UNIVERSE controls production coherence.
+ * Per-module VITE_FF_TODAY_HOME_V1=0 only honored in mixed/dev mode.
  */
 
 export function isTodayHomeV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_TODAY_HOME_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_TODAY_HOME_V1);
 }

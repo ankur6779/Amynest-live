@@ -1,10 +1,11 @@
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 /**
  * Parent Hub Rooms V1 — Pack 1 Room Shell.
- * Default ON. Set VITE_FF_PARENT_HUB_ROOMS_V1=0 to restore legacy eight-group mall.
+ * Portfolio lock (FA-02): VITE_FF_AMYNEST_LIVING_UNIVERSE controls production coherence.
+ * Per-module VITE_FF_PARENT_HUB_ROOMS_V1=0 only honored in mixed/dev mode.
  */
 
 export function isParentHubRoomsV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_PARENT_HUB_ROOMS_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_PARENT_HUB_ROOMS_V1);
 }

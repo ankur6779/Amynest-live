@@ -3,6 +3,8 @@
  * Presentation only. No API / entitlement changes.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type InfantCarePrimaryId =
   | "infant-cry"
   | "infant-sleep"
@@ -70,7 +72,5 @@ export function recommendInfantCareAction(
 
 /** Flag — Infant Care living room manufacturing. Default ON. */
 export function isInfantCareLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_INFANT_CARE_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_INFANT_CARE_LIVING_V1);
 }

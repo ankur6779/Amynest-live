@@ -3,6 +3,8 @@
  * Presentation only. No API / entitlement / engine changes.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type SpeechCoachRecommendKind = "deepen";
 
 export type SpeechCoachRecommend = {
@@ -116,9 +118,7 @@ export function recommendSpeechCoachAction(opts: {
 
 /** Flag — Speech Coach living room manufacturing. Default ON. */
 export function isSpeechCoachLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_SPEECH_COACH_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_SPEECH_COACH_LIVING_V1);
 }
 
 /** Portfolio P0-2 — session chrome labels (scoring side-effects untouched). */

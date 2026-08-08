@@ -1,3 +1,5 @@
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 /**
  * Onboarding conversion experiment flags — env-driven rollout.
  * See docs/startup-funnel-telemetry.md for funnel SQL; enable via Render env.
@@ -26,9 +28,7 @@ export function isOnboardingShortChildBranchExperimentEnabled(): boolean {
  * Default ON — Scene 2 manufacturing. Set VITE_FF_CHILD_DISCOVERY_FILM=0 to rollback to legacy chat.
  */
 export function isChildDiscoveryFilmEnabled(): boolean {
-  const raw = import.meta.env.VITE_FF_CHILD_DISCOVERY_FILM;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_CHILD_DISCOVERY_FILM);
 }
 
 export type OnboardingShortBranchVariant = "control" | "short";

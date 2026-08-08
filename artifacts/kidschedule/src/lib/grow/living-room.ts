@@ -5,6 +5,8 @@
  * Emotional target: one calm educational room — not a SaaS catalogue.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type GrowPathId =
   | "numbers"
   | "beads"
@@ -143,9 +145,7 @@ export function growPathsForAge(ageMonths: number): GrowQuietPath[] {
 
 /** Flag — Grow living room manufacturing. Default ON. */
 export function isGrowLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_GROW_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_GROW_LIVING_V1);
 }
 
 /** Synthetic quiet-module tile id for the unified Grow room surface. */

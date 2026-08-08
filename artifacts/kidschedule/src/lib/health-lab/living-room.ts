@@ -6,6 +6,8 @@
  * never galaxy UI, XP marketplace, gamification theatre, or science-app desk.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 import type { HealthGameId } from "@/features/health-lab/types";
 
 export type HealthLabRecommend = {
@@ -117,9 +119,7 @@ export function livingCelebrationSubtitle(): string {
 
 /** Flag — Health Lab living room manufacturing. Default ON. */
 export function isHealthLabLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_HEALTH_LAB_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_HEALTH_LAB_LIVING_V1);
 }
 
 /** Calm deep-practice materials — same house as Speech deep / Care FE. */

@@ -5,6 +5,8 @@
  * Emotional target: one emotional room — never four products.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type MomentsPathId = "presence" | "story" | "make" | "talking-amy";
 
 export type MomentsRecommend = {
@@ -152,9 +154,7 @@ export function momentsDeepenCueForTile(tileId: string): {
 
 /** Flag — Moments living room manufacturing. Default ON. */
 export function isMomentsLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_MOMENTS_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_MOMENTS_LIVING_V1);
 }
 
 /** Synthetic quiet-module tile id for the unified Moments room surface. */

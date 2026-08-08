@@ -6,6 +6,8 @@
  * never neon game OS, never toy store, never marketing SKU.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type TalkingAmyLivingOpen = {
   eyebrow: string;
   title: string;
@@ -31,9 +33,7 @@ export const TALKING_AMY_LIVING_MIC = {
 } as const;
 
 export function isTalkingAmyLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_TALKING_AMY_LIVING_V1;
-  if (raw === "0" || raw === "false") return false;
-  return true;
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_TALKING_AMY_LIVING_V1);
 }
 
 /** Companionship open — same house as Moments / Guidance. */

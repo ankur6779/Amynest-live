@@ -6,6 +6,8 @@
  * Never: Standard vs AI picker · planner wizard · patent/AI theatre · unlock FOMO.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 import { getAgeGroup, getAgeGroupInfo, type AgeGroup } from "@/lib/age-groups";
 
 export type RoutineLivingOpen = {
@@ -270,7 +272,5 @@ export function isRoutineContextSufficient(input: {
 
 /** Flag — Routine Generation living entry manufacturing. Default ON. */
 export function isRoutineLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_ROUTINE_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_ROUTINE_LIVING_V1);
 }

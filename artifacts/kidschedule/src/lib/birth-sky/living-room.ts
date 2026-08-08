@@ -6,6 +6,8 @@
  * Never astrology app, prediction, horoscope, cosmic dashboard, SaaS, marketplace.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 export type BirthSkyRecommend = {
   id: "begin";
   label: string;
@@ -111,11 +113,9 @@ export function livingLoadingCopy(): string {
   return "Preparing a quiet understanding…";
 }
 
-/** Flag — Birth Sky living room manufacturing. Default ON. */
+/** Flag — Birth Sky living room manufacturing. Portfolio lock: FA-02. */
 export function isBirthSkyLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_BIRTH_SKY_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_BIRTH_SKY_LIVING_V1);
 }
 
 /** Calm deep-interior materials — same house as Understand / Grow / Health deep. */

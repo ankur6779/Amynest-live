@@ -5,6 +5,8 @@
  * Emotional target: one calm guidance stream — not a content catalogue.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 import { PARENTING_TIPS, type TipEntry } from "@/lib/parenting-tips-data";
 import type { AgeGroup } from "@/lib/age-groups";
 
@@ -131,9 +133,7 @@ export function guidanceLanesForContext(opts: {
 
 /** Flag — Guidance living stream manufacturing. Default ON. */
 export function isGuidanceLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_GUIDANCE_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_GUIDANCE_LIVING_V1);
 }
 
 /** Synthetic quiet-module tile id for the unified Guidance stream. */

@@ -6,6 +6,8 @@
  * Sticky journey nav / score theatre are not opening truth.
  */
 
+import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
+
 import type { NutritionTab } from "@/features/nutrition/types/nutrition-hub.types";
 
 export type NutritionRecommend = {
@@ -89,7 +91,5 @@ export function recommendNutritionAction(
 
 /** Flag — Nutrition living room manufacturing. Default ON. */
 export function isNutritionLivingV1Enabled(): boolean {
-  const raw = import.meta.env.VITE_FF_NUTRITION_LIVING_V1;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return resolvePortfolioLivingFlag(import.meta.env.VITE_FF_NUTRITION_LIVING_V1);
 }
