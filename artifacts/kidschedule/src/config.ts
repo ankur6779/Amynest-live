@@ -27,6 +27,16 @@ export function getDefaultApiOrigin(): string {
     import.meta.env.DEV &&
     (import.meta.env.VITE_USE_LOCAL_API as string | undefined)?.trim() === "1";
   if (useLocal) return API_ORIGINS.local;
+  // Mobile / tunnel DEV: same-origin `/api/*` via Vite proxy (avoids Coolify CORS).
+  const useSameOriginApi =
+    import.meta.env.DEV &&
+    (import.meta.env.VITE_USE_SAME_ORIGIN_API as string | undefined)?.trim() === "1";
+  if (useSameOriginApi) {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return window.location.origin.replace(/\/$/, "");
+    }
+    return "http://localhost:3000";
+  }
   return env === "production" ? API_ORIGINS.production : API_ORIGINS.development;
 }
 

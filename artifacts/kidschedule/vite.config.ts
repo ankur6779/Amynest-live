@@ -223,6 +223,10 @@ export default defineConfig(async ({ command, mode }) => {
     env.VITE_FF_AMYNEST_LIVING_UNIVERSE ??
       process.env.VITE_FF_AMYNEST_LIVING_UNIVERSE,
   );
+  const devApiProxyTarget =
+    env.DEV_API_PROXY_TARGET ||
+    process.env.DEV_API_PROXY_TARGET ||
+    "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
 
   return {
   envDir: repoRoot,
@@ -432,6 +436,14 @@ export default defineConfig(async ({ command, mode }) => {
     fs: {
       strict: true,
       deny: ["**/.git", "**/.env*", "**/node_modules/.cache"],
+    },
+    // Mobile/tunnel DEV: browser hits same-origin /api → Coolify (CORS-safe).
+    proxy: {
+      "/api": {
+        target: devApiProxyTarget,
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
   preview: {
