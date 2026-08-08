@@ -12,6 +12,8 @@ import {
 import { HealthLabPhaseFlash, HealthLabStarfield } from "../health-lab-cinematic";
 import { HealthLabGameOnboarding } from "../health-lab-onboarding";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
+import { cn } from "@/lib/utils";
 import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 import type { SessionCompleteOptions } from "../../types";
 import {
@@ -105,8 +107,9 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
   );
   const { playTap, playSuccess, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
 
-  useReactorHum(active && !reduced);
+  useReactorHum(active && !living && !reduced);
 
   const ringScale = Math.max(0.5, 1 - (elapsed / REACTOR_DURATION_SEC) * 0.35);
   const powerPct = getPowerPercent(elapsed);
@@ -252,14 +255,18 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
   }
 
   return (
-    <HealthLabGameStage gameId="finger-stability" fullBleed className="relative overflow-hidden">
+    <HealthLabGameStage
+      gameId="finger-stability"
+      fullBleed
+      className={cn("relative overflow-hidden", living && "hl-living-deep")}
+    >
       <HealthLabLiveRegion message={liveMsg} />
-      <CrystalReactorCity stage={cityStage} reduced={reduced} />
+      {!living && <CrystalReactorCity stage={cityStage} reduced={reduced} />}
       <HealthLabStarfield count={14} />
       <HealthLabPhaseFlash active={milestoneBurst} color="rgba(139,92,246,0.35)" />
 
       <div className="relative z-20 shrink-0">
-        <HealthLabGameTopBar onExit={onExit} title="Crystal Core" />
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Steady hands" : "Crystal Core"} />
       </div>
 
       {/* Touch zone fills remaining viewport between chrome and HUD */}

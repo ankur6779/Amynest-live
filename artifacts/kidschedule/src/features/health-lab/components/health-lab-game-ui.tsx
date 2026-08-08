@@ -18,6 +18,8 @@ import {
   HEALTH_LAB_THEME,
 } from "../theme";
 
+import "@/components/health-lab/health-lab-living-deep.css";
+
 type GameDef = (typeof GAMES)[number];
 
 const SENSOR_KID: Record<GameDef["sensor"], string> = {
@@ -351,24 +353,36 @@ export function HealthLabGameTopBar({
   title?: string;
   exitLabel?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
-    <div className={cn("health-lab-topbar-glass sticky top-0 z-20 px-4 py-3")}>
+    <div
+      className={cn(
+        "sticky top-0 z-20 px-4 py-3",
+        living ? "hl-living-deep-topbar" : "health-lab-topbar-glass",
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={onExit}
           className={cn(
             HEALTH_LAB_TOUCH_TARGET,
-            "inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.08] px-3.5 py-2",
-            "text-xs font-semibold text-white/85 shadow-[0_4px_16px_-6px_rgba(0,0,0,0.45)] backdrop-blur-md",
-            "transition-all hover:border-white/25 hover:bg-white/[0.14] hover:text-white",
+            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold",
+            living
+              ? "hl-living-deep-ghost-btn text-[rgba(255,252,248,0.92)]"
+              : "border border-white/12 bg-white/[0.08] text-white/85 shadow-[0_4px_16px_-6px_rgba(0,0,0,0.45)] backdrop-blur-md transition-all hover:border-white/25 hover:bg-white/[0.14] hover:text-white",
           )}
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {exitLabel}
         </button>
         {title && (
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-200/55">
+          <p
+            className={cn(
+              "truncate text-[11px] font-semibold uppercase tracking-[0.16em]",
+              living ? "hl-living-deep-eyebrow" : "text-violet-200/55",
+            )}
+          >
             {title}
           </p>
         )}
@@ -392,30 +406,51 @@ export function HealthLabGameHero({
   gameId?: GameDef["id"];
 }) {
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   const accent = gameId ? GAME_VISUALS[gameId].accent : "from-violet-400/70 to-cyan-400/70";
 
   return (
     <div className={cn("flex flex-col items-center px-6 text-center", className)}>
       <div className="relative">
-        <div
-          className={cn("health-lab-icon-halo absolute -inset-4 rounded-[2rem] blur-2xl", `bg-gradient-to-br ${accent}`)}
-          style={{ opacity: 0.4 }}
-          aria-hidden
-        />
+        {!living && (
+          <div
+            className={cn("health-lab-icon-halo absolute -inset-4 rounded-[2rem] blur-2xl", `bg-gradient-to-br ${accent}`)}
+            style={{ opacity: 0.4 }}
+            aria-hidden
+          />
+        )}
         <div
           className={cn(
-            HEALTH_LAB_THEME.cardGlass,
-            "relative flex h-24 w-24 items-center justify-center rounded-[1.75rem] border-white/15 text-5xl",
-            "shadow-[0_16px_48px_-12px_rgba(139,92,246,0.55)]",
-            !reduced && "health-lab-icon-float",
+            living
+              ? "hl-living-deep-panel relative flex h-24 w-24 items-center justify-center rounded-[1.75rem] text-5xl"
+              : cn(
+                  HEALTH_LAB_THEME.cardGlass,
+                  "relative flex h-24 w-24 items-center justify-center rounded-[1.75rem] border-white/15 text-5xl",
+                  "shadow-[0_16px_48px_-12px_rgba(139,92,246,0.55)]",
+                  !reduced && "health-lab-icon-float",
+                ),
           )}
         >
           {emoji}
         </div>
       </div>
-      <h2 className="mt-6 text-2xl font-bold tracking-tight health-lab-title-shine sm:text-3xl">{title}</h2>
+      <h2
+        className={cn(
+          "mt-6 text-2xl font-bold tracking-tight sm:text-3xl",
+          living ? "hl-living-deep-title" : "health-lab-title-shine",
+        )}
+      >
+        {title}
+      </h2>
       {subtitle && (
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-violet-100/70">{subtitle}</p>
+        <p
+          className={cn(
+            "mt-3 max-w-sm text-sm leading-relaxed",
+            living ? "text-[rgba(232,212,184,0.82)]" : "text-violet-100/70",
+          )}
+        >
+          {subtitle}
+        </p>
       )}
     </div>
   );
@@ -432,6 +467,7 @@ export function HealthLabGameCta({
   variant?: "primary" | "rose" | "emerald" | "violet" | "amber";
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   const variants = {
     primary: HEALTH_LAB_THEME.ctaPrimary,
     rose: "bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 text-white font-bold",
@@ -446,14 +482,15 @@ export function HealthLabGameCta({
       onClick={onClick}
       className={cn(
         HEALTH_LAB_TOUCH_TARGET,
-        "health-lab-cta-premium min-w-[12rem] rounded-2xl px-8 py-3.5 text-sm tracking-wide",
-        variants[variant],
-        "active:scale-[0.97] transition-transform",
+        "min-w-[12rem] rounded-2xl px-8 py-3.5 text-sm tracking-wide",
+        living
+          ? "hl-living-deep-primary-btn"
+          : cn("health-lab-cta-premium", variants[variant], "active:scale-[0.97] transition-transform"),
         className,
       )}
     >
       <span className="relative z-[1] inline-flex items-center justify-center gap-2">
-        <Zap className="h-4 w-4 opacity-90" aria-hidden />
+        {!living && <Zap className="h-4 w-4 opacity-90" aria-hidden />}
         {children}
       </span>
     </button>
@@ -471,6 +508,7 @@ export function HealthLabGameChips<T extends string>({
   onSelect: (index: number) => void;
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
     <div className={cn("flex flex-wrap justify-center gap-2", className)}>
       {options.map((label, i) => (
@@ -481,9 +519,13 @@ export function HealthLabGameChips<T extends string>({
           className={cn(
             HEALTH_LAB_TOUCH_TARGET,
             "rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200",
-            selected === i
-              ? "border-white/25 bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-[0_6px_20px_-6px_rgba(139,92,246,0.65)]"
-              : "border-white/10 bg-white/[0.05] text-violet-100/75 hover:border-white/20 hover:bg-white/[0.1] hover:text-white",
+            living
+              ? selected === i
+                ? "hl-living-deep-chip border-[rgba(232,212,184,0.45)] bg-[rgba(232,212,184,0.18)] text-[rgba(255,252,248,0.96)]"
+                : "border-[rgba(232,212,184,0.16)] bg-[rgba(8,6,12,0.35)] text-[rgba(232,212,184,0.78)]"
+              : selected === i
+                ? "border-white/25 bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-[0_6px_20px_-6px_rgba(139,92,246,0.65)]"
+                : "border-white/10 bg-white/[0.05] text-violet-100/75 hover:border-white/20 hover:bg-white/[0.1] hover:text-white",
           )}
         >
           {label}
@@ -500,16 +542,23 @@ export function HealthLabGamePanel({
   children: ReactNode;
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
     <div
       className={cn(
-        HEALTH_LAB_THEME.cardGlass,
-        "relative overflow-hidden border-white/[0.14] bg-white/[0.06] p-4",
-        "shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)]",
+        living
+          ? "hl-living-deep-panel relative overflow-hidden p-4"
+          : cn(
+              HEALTH_LAB_THEME.cardGlass,
+              "relative overflow-hidden border-white/[0.14] bg-white/[0.06] p-4",
+              "shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)]",
+            ),
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
+      {!living && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
+      )}
       {children}
     </div>
   );
@@ -524,13 +573,32 @@ export function HealthLabGameTimer({
   label?: string;
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
-    <div className={cn("health-lab-timer-glass rounded-2xl px-6 py-4 text-center", className)}>
-      <p className="font-mono text-4xl font-bold tabular-nums tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-5xl">
+    <div
+      className={cn(
+        "rounded-2xl px-6 py-4 text-center",
+        living ? "hl-living-deep-timer" : "health-lab-timer-glass",
+        className,
+      )}
+    >
+      <p
+        className={cn(
+          "font-mono text-4xl font-bold tabular-nums tracking-tight sm:text-5xl",
+          living ? "text-[rgba(255,252,248,0.96)]" : "text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]",
+        )}
+      >
         {value}
       </p>
       {label && (
-        <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">{label}</p>
+        <p
+          className={cn(
+            "mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]",
+            living ? "text-[rgba(232,212,184,0.65)]" : "text-white/45",
+          )}
+        >
+          {label}
+        </p>
       )}
     </div>
   );
@@ -559,34 +627,44 @@ export function HealthLabHoldOrb({
   buttonRef?: RefObject<HTMLButtonElement | null>;
   ariaLabel: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
     <div className="relative flex items-center justify-center">
-      <div
-        className={cn(
-          "pointer-events-none absolute h-44 w-44 rounded-full border border-cyan-300/20",
-          holding ? "scale-100 opacity-80" : "scale-90 opacity-40",
-          "transition-all duration-300",
-        )}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          "pointer-events-none absolute h-36 w-36 rounded-full border border-violet-300/25",
-          holding ? "scale-105 opacity-90" : "scale-95 opacity-50",
-          "transition-all duration-300",
-        )}
-        aria-hidden
-      />
+      {!living && (
+        <>
+          <div
+            className={cn(
+              "pointer-events-none absolute h-44 w-44 rounded-full border border-cyan-300/20",
+              holding ? "scale-100 opacity-80" : "scale-90 opacity-40",
+              "transition-all duration-300",
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute h-36 w-36 rounded-full border border-violet-300/25",
+              holding ? "scale-105 opacity-90" : "scale-95 opacity-50",
+              "transition-all duration-300",
+            )}
+            aria-hidden
+          />
+        </>
+      )}
       <button
         ref={buttonRef}
         type="button"
         disabled={disabled}
+        data-holding={holding ? "true" : "false"}
         className={cn(
-          "relative flex h-32 w-32 items-center justify-center rounded-full touch-none select-none",
-          "border border-white/25 bg-gradient-to-br from-cyan-300 via-violet-500 to-fuchsia-600",
-          "health-lab-glow-pulse health-lab-cta-premium",
-          "shadow-[0_0_50px_rgba(139,92,246,0.75)]",
-          holding && "scale-95 border-cyan-200/40 shadow-[0_0_70px_rgba(34,211,238,0.85)]",
+          "relative flex touch-none select-none items-center justify-center rounded-full",
+          living
+            ? "hl-living-deep-hold"
+            : cn(
+                "h-32 w-32 border border-white/25 bg-gradient-to-br from-cyan-300 via-violet-500 to-fuchsia-600",
+                "health-lab-glow-pulse health-lab-cta-premium",
+                "shadow-[0_0_50px_rgba(139,92,246,0.75)]",
+                holding && "scale-95 border-cyan-200/40 shadow-[0_0_70px_rgba(34,211,238,0.85)]",
+              ),
           className,
         )}
         onPointerDown={onPointerDown}

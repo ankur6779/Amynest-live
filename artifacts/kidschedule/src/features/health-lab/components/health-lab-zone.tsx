@@ -75,22 +75,25 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
   useEffect(() => {
     const c = pendingCelebrations[0];
     if (!c) return;
+    /** Living Care practice — quiet completion; no XP/quest celebration theatre. */
+    if (living) return;
     if (c.type === "level-up") audio.playLevelUp();
     else if (c.type === "badge") audio.playAchievement();
     else if (c.type === "streak") audio.playCelebration();
     else if (c.type === "quest") audio.playQuestComplete();
     else if (c.type === "treasure" || c.type === "surprise") audio.playCelebration();
-  }, [pendingCelebrations, audio]);
+  }, [pendingCelebrations, audio, living]);
 
   useEffect(() => {
     if (typeof view !== "object" || view.kind !== "session-rewards") return;
+    if (living) return;
     const { celebrations } = view;
     if (celebrations.some((c) => c.type === "level-up")) audio.playLevelUp();
     else if (celebrations.some((c) => c.type === "badge")) audio.playAchievement();
     else if (celebrations.some((c) => c.type === "streak")) audio.playCelebration();
     else if (celebrations.some((c) => c.type === "quest")) audio.playQuestComplete();
     else audio.playCelebration();
-  }, [view, audio]);
+  }, [view, audio, living]);
 
   const enterGame = (gameId: HealthGameId) => {
     audio.playTap();

@@ -1,6 +1,11 @@
 import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  isHealthLabLivingV1Enabled,
+  livingPracticeVictoryCta,
+  livingPracticeVictoryTitle,
+} from "@/lib/health-lab/living-room";
 import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 
 export const BalloonJourneyToast = memo(function BalloonJourneyToast({
@@ -199,6 +204,7 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
 }) {
   const dismissRef = useRef<HTMLButtonElement>(null);
   useHealthLabDialogEscape(show, onDismiss, dismissRef);
+  const living = isHealthLabLivingV1Enabled();
 
   return (
     <AnimatePresence>
@@ -206,7 +212,7 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
         <motion.div
           className={cn(
             "fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm",
-            !reduced && "health-lab-balloon-victory-shake",
+            !living && !reduced && "health-lab-balloon-victory-shake",
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -214,8 +220,9 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
           role="dialog"
           aria-modal="true"
           aria-labelledby="balloon-journey-victory-title"
+          data-hl-living={living ? "1" : undefined}
         >
-          {!reduced && (
+          {!living && !reduced && (
             <>
               {[...Array(16)].map((_, i) => (
                 <motion.span
@@ -249,31 +256,63 @@ export const BalloonJourneyVictory = memo(function BalloonJourneyVictory({
           )}
 
           <motion.div
-            className="relative max-w-sm rounded-3xl border border-violet-300/30 bg-gradient-to-br from-indigo-950/95 via-violet-950/95 to-slate-950/95 p-8 text-center shadow-[0_24px_80px_-20px_rgba(139,92,246,0.65)]"
-            initial={{ scale: 0.6, y: 40 }}
-            animate={{ scale: 1, y: 0 }}
+            className={cn(
+              "relative max-w-sm rounded-3xl p-8 text-center",
+              living
+                ? "hl-living-deep-panel"
+                : "border border-violet-300/30 bg-gradient-to-br from-indigo-950/95 via-violet-950/95 to-slate-950/95 shadow-[0_24px_80px_-20px_rgba(139,92,246,0.65)]",
+            )}
+            initial={living || reduced ? { opacity: 0 } : { scale: 0.6, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
           >
             <p className="text-5xl" aria-hidden>
-              🚀
+              {living ? "✦" : "🚀"}
             </p>
-            <h2 id="balloon-journey-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">SPACE EXPLORER</h2>
-            <p className="mt-3 text-sm text-violet-200/75">You held for:</p>
-            <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-amber-200">
+            <h2
+              id="balloon-journey-victory-title"
+              className={cn(
+                "mt-4 text-2xl font-bold tracking-tight",
+                living ? "hl-living-deep-title" : "text-white",
+              )}
+            >
+              {living ? livingPracticeVictoryTitle() : "SPACE EXPLORER"}
+            </h2>
+            <p className={cn("mt-3 text-sm", living ? "text-[rgba(232,212,184,0.78)]" : "text-violet-200/75")}>
+              {living ? "You held gently for:" : "You held for:"}
+            </p>
+            <p
+              className={cn(
+                "mt-1 font-mono text-4xl font-bold tabular-nums",
+                living ? "text-[rgba(255,252,248,0.96)]" : "text-amber-200",
+              )}
+            >
               {holdSeconds.toFixed(1)} Seconds
             </p>
             {isPersonalBest && (
-              <p className="mt-4 inline-flex rounded-full border border-amber-300/35 bg-amber-500/20 px-4 py-1.5 text-sm font-bold text-amber-100">
-                NEW BEST SCORE
+              <p
+                className={cn(
+                  "mt-4 inline-flex rounded-full px-4 py-1.5 text-sm font-bold",
+                  living
+                    ? "hl-living-deep-chip"
+                    : "border border-amber-300/35 bg-amber-500/20 text-amber-100",
+                )}
+              >
+                {living ? "A quiet best for today" : "NEW BEST SCORE"}
               </p>
             )}
             <button
               ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className={cn(
+                "mt-6 min-h-[48px] min-w-[48px] rounded-2xl px-8 py-3 text-sm font-bold",
+                living
+                  ? "hl-living-deep-primary-btn"
+                  : "bg-gradient-to-r from-violet-500 to-cyan-500 text-white",
+              )}
             >
-              Amazing!
+              {living ? livingPracticeVictoryCta() : "Amazing!"}
             </button>
           </motion.div>
         </motion.div>

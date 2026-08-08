@@ -16,6 +16,10 @@ import { HealthLabGameOnboarding } from "../health-lab-onboarding";
 import { HealthLabGuidance } from "../health-lab-amy-character";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import {
+  isHealthLabLivingV1Enabled,
+  livingPracticeProgressLabel,
+} from "@/lib/health-lab/living-room";
 import type { SessionCompleteOptions } from "../../types";
 
 const ROUNDS = 5;
@@ -36,12 +40,15 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
   const [comboStreak, setComboStreak] = useState(0);
   const [showTier, setShowTier] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
-  const [liveMsg, setLiveMsg] = useState("Rocket Launch Academy");
+  const [liveMsg, setLiveMsg] = useState(
+    isHealthLabLivingV1Enabled() ? "Attention practice" : "Rocket Launch Academy",
+  );
   const goTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const startRef = useRef(Date.now());
   const { playTap, playSuccess, playMiss, playCombo, playCelebration } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
 
   const clearTimer = () => {
     if (timeoutRef.current != null) {
@@ -166,11 +173,14 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
     <HealthLabGameStage
       gameId="reaction-time"
       fullBleed
-      className={cn("transition-colors duration-500", `bg-gradient-to-b ${phaseStyles}`)}
+      className={cn(
+        "transition-colors duration-500",
+        living ? "hl-living-deep" : `bg-gradient-to-b ${phaseStyles}`,
+      )}
     >
       <HealthLabLiveRegion message={liveMsg} />
       <div className="relative z-20 shrink-0">
-        <HealthLabGameTopBar onExit={onExit} title="Rocket Launch" />
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Attention" : "Rocket Launch"} />
       </div>
       <HealthLabStarfield count={16} />
       <HealthLabPhaseFlash active={phase === "go"} color="rgba(16,185,129,0.45)" />
@@ -180,7 +190,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
         <HealthLabRoundRail
           current={Math.min(round - 1, ROUNDS - 1)}
           total={ROUNDS}
-          label="Mission progress"
+          label={living ? livingPracticeProgressLabel() : "Mission progress"}
           className="relative z-[3] shrink-0 px-3 pt-2"
         />
       )}
@@ -189,7 +199,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
         type="button"
         className="health-lab-game-region-grow relative z-[3] touch-manipulation select-none px-4 pb-6 sm:px-6"
         onClick={handleTap}
-        aria-label={phase === "go" ? "Tap now — rocket launch" : "Reaction tap zone"}
+        aria-label={phase === "go" ? (living ? "Tap now" : "Tap now — rocket launch") : "Reaction tap zone"}
       >
         <HealthLabLaunchPad
           phase={phase === "countdown" ? "countdown" : phase}
@@ -200,17 +210,25 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
 
         {phase === "countdown" && (
           <motion.p
-            className="mt-6 text-6xl font-bold text-amber-300"
+            className={cn(
+              "mt-6 text-6xl font-bold",
+              living ? "text-[rgba(232,212,184,0.95)]" : "text-amber-300",
+            )}
             key={countdown}
             initial={{ scale: 1.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            {countdown > 0 ? countdown : "GO!"}
+            {countdown > 0 ? countdown : living ? "Now" : "GO!"}
           </motion.p>
         )}
 
-        <h2 className="mt-6 text-[clamp(1.25rem,5vw,1.875rem)] font-bold tracking-tight health-lab-title-shine">
-          Rocket Launch Academy
+        <h2
+          className={cn(
+            "mt-6 text-[clamp(1.25rem,5vw,1.875rem)] font-bold tracking-tight",
+            living ? "hl-living-deep-title" : "health-lab-title-shine",
+          )}
+        >
+          {living ? "Attention practice" : "Rocket Launch Academy"}
         </h2>
 
         <div className="mt-4">
@@ -222,36 +240,42 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
             {phase === "wait" && (
               <HealthLabMissionBanner
                 key="wait"
-                eyebrow="T-minus hold"
-                title="🛑 Stand by…"
-                subtitle="Do not tap until the rocket turns green"
+                eyebrow={living ? "Wait" : "T-minus hold"}
+                title={living ? "Stay ready…" : "🛑 Stand by…"}
+                subtitle={
+                  living
+                    ? "Do not tap until the signal"
+                    : "Do not tap until the rocket turns green"
+                }
                 tone="danger"
               />
             )}
             {phase === "go" && (
               <HealthLabMissionBanner
                 key="go"
-                eyebrow="Launch authorized"
-                title="🚀 LAUNCH — TAP NOW!"
-                subtitle="Reaction window open"
+                eyebrow={living ? "Now" : "Launch authorized"}
+                title={living ? "Tap now" : "🚀 LAUNCH — TAP NOW!"}
+                subtitle={living ? "Your turn" : "Reaction window open"}
                 tone="go"
               />
             )}
             {phase === "too-early" && (
               <HealthLabMissionBanner
                 key="early"
-                eyebrow="Abort sequence"
+                eyebrow={living ? "Gently" : "Abort sequence"}
                 title="Too early!"
-                subtitle="Wait for the rocket — tap to retry"
+                subtitle={
+                  living ? "Wait for the signal — tap to try again" : "Wait for the rocket — tap to retry"
+                }
                 tone="danger"
               />
             )}
             {phase === "result" && (
               <HealthLabMissionBanner
                 key="result"
-                eyebrow="Mission complete"
-                title="✅ All launches successful"
-                subtitle="Calculating pilot score…"
+                eyebrow={living ? "Done" : "Mission complete"}
+                title={living ? "Practice complete" : "✅ All launches successful"}
+                subtitle={living ? "Noting your effort…" : "Calculating pilot score…"}
                 tone="success"
               />
             )}

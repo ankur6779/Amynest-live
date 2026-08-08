@@ -13,6 +13,7 @@ import { HealthLabMotionCalibration } from "../health-lab-motion-calibration";
 import { HealthLabMotionDebugOverlay } from "../health-lab-debug-overlay";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { cn } from "@/lib/utils";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import { playProceduralTone } from "@/lib/procedural-sfx";
 import type { SessionCompleteOptions } from "../../types";
 import {
@@ -90,6 +91,7 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
   const sensor = useMotionSensor(sensorActive, childId);
   const { playTap, playSuccess, playMiss, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
 
   const gardenStage = getGardenStage(crystals);
   const motionTier = getFreezeMotionTier(sensor.stabilityPercent, sensor.variance);
@@ -279,24 +281,26 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
       fullBleed
       className={cn(
         "relative overflow-hidden",
-        phase === "dance"
-          ? "bg-gradient-to-b from-violet-900/95 via-fuchsia-950/85 to-emerald-900/80"
-          : "bg-gradient-to-b from-indigo-950/90 via-violet-950/80 to-emerald-950/70",
+        living
+          ? "hl-living-deep"
+          : phase === "dance"
+            ? "bg-gradient-to-b from-violet-900/95 via-fuchsia-950/85 to-emerald-900/80"
+            : "bg-gradient-to-b from-indigo-950/90 via-violet-950/80 to-emerald-950/70",
       )}
     >
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabStarfield count={18} />
-      <CrystalGardenDanceLights active={phase === "dance" && !reduced} />
+      <CrystalGardenDanceLights active={!living && phase === "dance" && !reduced} />
       <HealthLabPhaseFlash active={phase === "freeze"} color="rgba(34,211,238,0.35)" />
       <HealthLabPhaseFlash
         active={statueRating !== null && statueRating !== "fail"}
         color="rgba(52,211,153,0.35)"
       />
       <HealthLabMotionDebugOverlay sensor={sensor} />
-      <CrystalGardenFreezeCinematic active={freezeCinematic} reduced={reduced} />
+      {!living && <CrystalGardenFreezeCinematic active={freezeCinematic} reduced={reduced} />}
 
       <div className="relative z-20 shrink-0">
-        <HealthLabGameTopBar onExit={onExit} title="Crystal Garden" />
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Stillness" : "Crystal Garden"} />
       </div>
 
       {phase === "calibrating" && (

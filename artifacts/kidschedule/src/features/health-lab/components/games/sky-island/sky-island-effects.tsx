@@ -1,6 +1,11 @@
 import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  isHealthLabLivingV1Enabled,
+  livingPracticeVictoryCta,
+  livingPracticeVictoryTitle,
+} from "@/lib/health-lab/living-room";
 import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 
 export const SkyIslandToast = memo(function SkyIslandToast({
@@ -149,6 +154,7 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
 }) {
   const dismissRef = useRef<HTMLButtonElement>(null);
   useHealthLabDialogEscape(show, onDismiss, dismissRef);
+  const living = isHealthLabLivingV1Enabled();
 
   return (
     <AnimatePresence>
@@ -156,7 +162,7 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
         <motion.div
           className={cn(
             "fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm",
-            !reduced && "health-lab-balloon-victory-shake",
+            !living && !reduced && "health-lab-balloon-victory-shake",
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -164,8 +170,9 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
           role="dialog"
           aria-modal="true"
           aria-labelledby="sky-island-victory-title"
+          data-hl-living={living ? "1" : undefined}
         >
-          {!reduced && (
+          {!living && !reduced && (
             <>
               <motion.div
                 className="pointer-events-none absolute inset-x-0 top-[15%] h-24 bg-gradient-to-r from-red-400/40 via-yellow-300/50 to-blue-400/40 blur-sm"
@@ -206,29 +213,58 @@ export const SkyIslandVictory = memo(function SkyIslandVictory({
           )}
 
           <motion.div
-            className="relative max-w-sm rounded-3xl border border-emerald-300/30 bg-gradient-to-br from-emerald-950/95 via-teal-950/95 to-cyan-950/95 p-8 text-center shadow-[0_24px_80px_-20px_rgba(16,185,129,0.55)]"
-            initial={{ scale: 0.6, y: 40 }}
-            animate={{ scale: 1, y: 0 }}
+            className={cn(
+              "relative max-w-sm rounded-3xl p-8 text-center",
+              living
+                ? "hl-living-deep-panel"
+                : "border border-emerald-300/30 bg-gradient-to-br from-emerald-950/95 via-teal-950/95 to-cyan-950/95 shadow-[0_24px_80px_-20px_rgba(16,185,129,0.55)]",
+            )}
+            initial={living || reduced ? { opacity: 0 } : { scale: 0.6, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
           >
             <p className="text-5xl" aria-hidden>
-              {legendary ? "🏆" : "👑"}
+              {living ? "✦" : legendary ? "🏆" : "👑"}
             </p>
-            <h2 id="sky-island-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">
-              {legendary ? "Legendary Balance Master" : "Sky Kingdom Protector"}
+            <h2
+              id="sky-island-victory-title"
+              className={cn(
+                "mt-4 text-2xl font-bold tracking-tight",
+                living ? "hl-living-deep-title" : "text-white",
+              )}
+            >
+              {living
+                ? livingPracticeVictoryTitle()
+                : legendary
+                  ? "Legendary Balance Master"
+                  : "Sky Kingdom Protector"}
             </h2>
-            <p className="mt-3 text-sm text-emerald-200/75">You kept the island alive for</p>
-            <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-amber-200">
+            <p className={cn("mt-3 text-sm", living ? "text-[rgba(232,212,184,0.78)]" : "text-emerald-200/75")}>
+              {living ? "You stayed steady for" : "You kept the island alive for"}
+            </p>
+            <p
+              className={cn(
+                "mt-1 font-mono text-4xl font-bold tabular-nums",
+                living ? "text-[rgba(255,252,248,0.96)]" : "text-amber-200",
+              )}
+            >
               {elapsed.toFixed(0)} Seconds
             </p>
-            <p className="mt-3 text-sm text-emerald-100/70">The floating paradise is blooming! 🌈</p>
+            <p className={cn("mt-3 text-sm", living ? "text-[rgba(232,212,184,0.72)]" : "text-emerald-100/70")}>
+              {living ? "A calm balance practice — enough for now." : "The floating paradise is blooming! 🌈"}
+            </p>
             <button
               ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className={cn(
+                "mt-6 min-h-[48px] min-w-[48px] rounded-2xl px-8 py-3 text-sm font-bold",
+                living
+                  ? "hl-living-deep-primary-btn"
+                  : "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white",
+              )}
             >
-              Amazing!
+              {living ? livingPracticeVictoryCta() : "Amazing!"}
             </button>
           </motion.div>
         </motion.div>

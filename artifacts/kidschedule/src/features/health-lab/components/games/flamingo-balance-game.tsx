@@ -13,6 +13,7 @@ import { HealthLabMotionCalibration } from "../health-lab-motion-calibration";
 import { HealthLabMotionDebugOverlay } from "../health-lab-debug-overlay";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import type { SessionCompleteOptions } from "../../types";
 import {
   getIslandEvolution,
@@ -61,6 +62,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
   const sensor = useMotionSensor(sensorActive, childId);
   const { playTap, playSuccess, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
 
   const minDuration = FLAMINGO_MIN_DURATION[difficulty] ?? 15;
   const progress = Math.min(1, elapsed / minDuration);
@@ -217,7 +219,12 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
     <HealthLabGameStage
       gameId="flamingo-balance"
       fullBleed
-      className="relative overflow-hidden bg-gradient-to-b from-sky-400/80 via-teal-300/40 to-emerald-200/30"
+      className={cn(
+        "relative overflow-hidden",
+        living
+          ? "hl-living-deep"
+          : "bg-gradient-to-b from-sky-400/80 via-teal-300/40 to-emerald-200/30",
+      )}
     >
       <HealthLabLiveRegion message={liveMsg} />
       <HealthLabStarfield count={14} />
@@ -225,7 +232,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
       <HealthLabMotionDebugOverlay sensor={sensor} />
 
       <div className="relative z-20 shrink-0">
-        <HealthLabGameTopBar onExit={onExit} title="Sky Island" />
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Balance" : "Sky Island"} />
       </div>
 
       {phase === "calibrating" && (

@@ -121,3 +121,55 @@ export function isHealthLabLivingV1Enabled(): boolean {
   if (raw === undefined || raw === "") return true;
   return raw === "true" || raw === "1";
 }
+
+/** Calm deep-practice materials — same house as Speech deep / Care FE. */
+export const HEALTH_LAB_LIVING_DEEP_PALETTE = {
+  sand: "rgba(232,212,184,0.95)",
+  sandMid: "rgba(232,212,184,0.45)",
+  sandDim: "rgba(232,212,184,0.16)",
+  sandBorder: "rgba(232,212,184,0.28)",
+  textBright: "rgba(255,252,248,0.96)",
+  textMid: "rgba(255,252,248,0.92)",
+  textDim: "rgba(232,212,184,0.78)",
+  night: "#120e18",
+  panelBg:
+    "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232,212,184,0.1) 0%, transparent 55%), rgba(8,6,12,0.72)",
+  holdFlash: "rgba(232,212,184,0.22)",
+} as const;
+
+/** Practice briefing — never Mission / Adventure / Reward theatre. */
+export function livingPracticeBriefingEyebrow(): string {
+  return "Today's care practice";
+}
+
+export function livingPracticeStartCta(): string {
+  return "Begin gently";
+}
+
+export function livingPracticeHoldLabel(): string {
+  return "Hold gently";
+}
+
+export function livingPracticeReadyCta(): string {
+  return "I'm ready";
+}
+
+export function livingPracticeVictoryTitle(): string {
+  return "We did this";
+}
+
+export function livingPracticeVictoryCta(): string {
+  return "Continue";
+}
+
+export function livingPracticeProgressLabel(): string {
+  return "Practice steps";
+}
+
+export function livingProgressPageTitle(): string {
+  return "How we've been practicing";
+}
+
+export function livingProgressEffortLabel(): string {
+  return "Practice notes";
+}

@@ -6,7 +6,7 @@ import {
   isHealthLabLivingV1Enabled,
   livingSessionCompleteTitle,
 } from "@/lib/health-lab/living-room";
-import { HEALTH_LAB_THEME } from "../theme";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { useHealthLabDialogEscape } from "../hooks/use-health-lab-dialog-escape";
 import { useHealthLabI18n } from "../hooks/use-health-lab-i18n";
 import {
@@ -337,7 +337,7 @@ export const HealthLabSessionRewards = memo(function HealthLabSessionRewards({
               "mt-6 w-full min-h-[56px] rounded-2xl py-3.5 text-base font-bold",
               "health-lab-pressable",
               living
-                ? "border border-[rgba(232,212,184,0.28)] bg-[rgba(232,212,184,0.14)] text-[rgba(255,252,248,0.98)]"
+                ? "hl-living-deep-primary-btn"
                 : cn("font-black text-white", world.ctaClass),
             )}
           >
@@ -345,6 +345,14 @@ export const HealthLabSessionRewards = memo(function HealthLabSessionRewards({
               ? t("living_continue", "Back to Care")
               : t("celebration_continue", "Continue")}
           </button>
+
+          {living && (
+            <AmyNestLeaveContinuity
+              className="mt-4 border-[rgba(232,212,184,0.2)] bg-[rgba(8,6,12,0.55)] text-[rgba(255,252,248,0.92)]"
+              continueHref="/health-lab"
+              continueLabel={t("living_continue_care", "Continue in Care")}
+            />
+          )}
         </div>
       </div>
     </div>

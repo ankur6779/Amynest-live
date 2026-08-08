@@ -2,6 +2,11 @@ import { memo, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import {
+  isHealthLabLivingV1Enabled,
+  livingPracticeVictoryCta,
+  livingPracticeVictoryTitle,
+} from "@/lib/health-lab/living-room";
 import { useHealthLabDialogEscape } from "../../../hooks/use-health-lab-dialog-escape";
 import { REACTOR_STATE_COLORS, type ReactorState } from "./crystal-reactor-constants";
 
@@ -140,6 +145,7 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
 }) {
   const dismissRef = useRef<HTMLButtonElement>(null);
   useHealthLabDialogEscape(show, onDismiss, dismissRef);
+  const living = isHealthLabLivingV1Enabled();
 
   return (
     <AnimatePresence>
@@ -147,7 +153,7 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
         <motion.div
           className={cn(
             "fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm",
-            !reduced && "health-lab-balloon-victory-shake",
+            !living && !reduced && "health-lab-balloon-victory-shake",
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -155,8 +161,9 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
           role="dialog"
           aria-modal="true"
           aria-labelledby="crystal-reactor-victory-title"
+          data-hl-living={living ? "1" : undefined}
         >
-          {!reduced && (
+          {!living && !reduced && (
             <>
               <motion.div
                 className="pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/20 blur-3xl"
@@ -181,27 +188,54 @@ export const CrystalReactorVictory = memo(function CrystalReactorVictory({
           )}
 
           <motion.div
-            className="relative max-w-sm rounded-3xl border border-violet-300/30 bg-gradient-to-br from-indigo-950/95 via-violet-950/95 to-cyan-950/95 p-8 text-center shadow-[0_24px_80px_-20px_rgba(139,92,246,0.65)]"
-            initial={{ scale: 0.6, y: 40 }}
-            animate={{ scale: 1, y: 0 }}
+            className={cn(
+              "relative max-w-sm rounded-3xl p-8 text-center",
+              living
+                ? "hl-living-deep-panel"
+                : "border border-violet-300/30 bg-gradient-to-br from-indigo-950/95 via-violet-950/95 to-cyan-950/95 shadow-[0_24px_80px_-20px_rgba(139,92,246,0.65)]",
+            )}
+            initial={living || reduced ? { opacity: 0 } : { scale: 0.6, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
           >
             <p className="text-5xl" aria-hidden>
-              🏆
+              {living ? "✦" : "🏆"}
             </p>
-            <h2 id="crystal-reactor-victory-title" className="mt-4 text-2xl font-bold tracking-tight text-white">CRYSTAL REACTOR SAVIOR</h2>
-            <p className="mt-3 text-sm text-violet-200/75">The megacity is fully powered!</p>
-            <p className="mt-2 font-mono text-4xl font-bold tabular-nums text-cyan-200">
+            <h2
+              id="crystal-reactor-victory-title"
+              className={cn(
+                "mt-4 text-2xl font-bold tracking-tight",
+                living ? "hl-living-deep-title" : "text-white",
+              )}
+            >
+              {living ? livingPracticeVictoryTitle() : "CRYSTAL REACTOR SAVIOR"}
+            </h2>
+            <p className={cn("mt-3 text-sm", living ? "text-[rgba(232,212,184,0.78)]" : "text-violet-200/75")}>
+              {living ? "Steady hands practice complete." : "The megacity is fully powered!"}
+            </p>
+            <p
+              className={cn(
+                "mt-2 font-mono text-4xl font-bold tabular-nums",
+                living ? "text-[rgba(255,252,248,0.96)]" : "text-cyan-200",
+              )}
+            >
               {Math.round(powerPct)}%
             </p>
-            <p className="mt-3 text-sm text-emerald-100/70">Crystal towers online · vehicles in the sky 🚀</p>
+            <p className={cn("mt-3 text-sm", living ? "text-[rgba(232,212,184,0.72)]" : "text-emerald-100/70")}>
+              {living ? "A quiet effort — enough for now." : "Crystal towers online · vehicles in the sky 🚀"}
+            </p>
             <button
               ref={dismissRef}
               type="button"
               onClick={onDismiss}
-              className="mt-6 min-h-[48px] min-w-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white"
+              className={cn(
+                "mt-6 min-h-[48px] min-w-[48px] rounded-2xl px-8 py-3 text-sm font-bold",
+                living
+                  ? "hl-living-deep-primary-btn"
+                  : "bg-gradient-to-r from-violet-500 to-cyan-500 text-white",
+              )}
             >
-              Amazing!
+              {living ? livingPracticeVictoryCta() : "Amazing!"}
             </button>
           </motion.div>
         </motion.div>

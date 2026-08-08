@@ -10,6 +10,7 @@ import { HealthLabGameStage, HealthLabGameTopBar, HealthLabGameTimer } from "../
 import { HealthLabPhaseFlash } from "../health-lab-cinematic";
 import { HealthLabGameOnboarding } from "../health-lab-onboarding";
 import { cn } from "@/lib/utils";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 import type { SessionCompleteOptions } from "../../types";
@@ -210,6 +211,7 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
   const victoryTriggeredRef = useRef(false);
   const { playTap, playSuccess, playMilestone, playCompletion } = useHealthLabAudio();
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   const physics = useBalloonPhysics(holding, !finished, reduced);
 
   useBalloonWindAmbience(holding && !finished && !reduced);
@@ -350,20 +352,24 @@ export function BreathControlGame({ onComplete, onExit, previousBestScore = 0 }:
           playTap();
           setPhase("playing");
         }}
-        startLabel="Start Journey"
+        startLabel={living ? undefined : "Start Journey"}
         ctaVariant="primary"
       />
     );
   }
 
   return (
-    <HealthLabGameStage gameId="breath-control" fullBleed className="relative overflow-hidden">
+    <HealthLabGameStage
+      gameId="breath-control"
+      fullBleed
+      className={cn("relative overflow-hidden", living && "hl-living-deep")}
+    >
       <HealthLabLiveRegion message={liveMsg} />
-      <BalloonJourneySky elapsed={elapsed} altitude={altitude} reduced={reduced} />
+      {!living && <BalloonJourneySky elapsed={elapsed} altitude={altitude} reduced={reduced} />}
       <HealthLabPhaseFlash active={milestoneBurst} color="rgba(251,191,36,0.4)" />
 
       <div className="relative z-20 shrink-0">
-        <HealthLabGameTopBar onExit={onExit} title="Balloon Journey" />
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Breath & focus" : "Balloon Journey"} />
       </div>
 
       <div className="relative z-[3] shrink-0 px-3 pt-1">

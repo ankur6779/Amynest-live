@@ -2,6 +2,7 @@ import type { PointerEvent, ReactNode, RefObject } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
 
 export function BalloonJourneyHoldButton({
   holding,
@@ -25,10 +26,11 @@ export function BalloonJourneyHoldButton({
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
 
   return (
     <div className="relative flex h-[8.5rem] w-[8.5rem] items-center justify-center">
-      {!reduced && holding && (
+      {!living && !reduced && holding && (
         <>
           {[0, 1, 2].map((i) => (
             <motion.div
@@ -43,41 +45,52 @@ export function BalloonJourneyHoldButton({
         </>
       )}
 
-      <div
-        className={cn(
-          "pointer-events-none absolute h-44 w-44 rounded-full border border-cyan-300/20 transition-all duration-300",
-          holding ? "scale-100 opacity-80" : "scale-90 opacity-40",
-        )}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          "pointer-events-none absolute h-36 w-36 rounded-full border border-violet-300/25 transition-all duration-300",
-          holding ? "scale-105 opacity-90" : "scale-95 opacity-50",
-        )}
-        aria-hidden
-      />
+      {!living && (
+        <>
+          <div
+            className={cn(
+              "pointer-events-none absolute h-44 w-44 rounded-full border border-cyan-300/20 transition-all duration-300",
+              holding ? "scale-100 opacity-80" : "scale-90 opacity-40",
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute h-36 w-36 rounded-full border border-violet-300/25 transition-all duration-300",
+              holding ? "scale-105 opacity-90" : "scale-95 opacity-50",
+            )}
+            aria-hidden
+          />
+        </>
+      )}
 
       <motion.button
         ref={buttonRef}
         type="button"
         disabled={disabled}
+        data-holding={holding ? "true" : "false"}
         className={cn(
-          "relative flex h-32 w-32 touch-none select-none items-center justify-center rounded-full",
-          "border border-white/25 bg-gradient-to-br from-cyan-300 via-violet-500 to-fuchsia-600",
-          "health-lab-glow-pulse health-lab-cta-premium will-change-transform",
-          "shadow-[0_0_50px_rgba(139,92,246,0.75)]",
-          holding && "border-cyan-200/40 shadow-[0_0_80px_rgba(34,211,238,0.95)]",
+          "relative flex touch-none select-none items-center justify-center rounded-full will-change-transform",
+          living
+            ? "hl-living-deep-hold"
+            : cn(
+                "h-32 w-32 border border-white/25 bg-gradient-to-br from-cyan-300 via-violet-500 to-fuchsia-600",
+                "health-lab-glow-pulse health-lab-cta-premium",
+                "shadow-[0_0_50px_rgba(139,92,246,0.75)]",
+                holding && "border-cyan-200/40 shadow-[0_0_80px_rgba(34,211,238,0.95)]",
+              ),
         )}
         animate={
-          reduced
+          living
             ? { scale: holding ? 0.96 : 1 }
-            : {
-                scale: holding ? 0.92 : 1,
-                boxShadow: holding
-                  ? "0 0 80px rgba(34,211,238,0.95), 0 0 120px rgba(139,92,246,0.5)"
-                  : "0 0 50px rgba(139,92,246,0.75)",
-              }
+            : reduced
+              ? { scale: holding ? 0.96 : 1 }
+              : {
+                  scale: holding ? 0.92 : 1,
+                  boxShadow: holding
+                    ? "0 0 80px rgba(34,211,238,0.95), 0 0 120px rgba(139,92,246,0.5)"
+                    : "0 0 50px rgba(139,92,246,0.75)",
+                }
         }
         transition={{ type: "spring", stiffness: 400, damping: 22 }}
         onPointerDown={onPointerDown}

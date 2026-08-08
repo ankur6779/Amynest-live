@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   HEALTH_LAB_QUIET_PATHS,
+  HEALTH_LAB_LIVING_DEEP_PALETTE,
   healthLabLivingOpen,
   isHealthLabLivingV1Enabled,
   livingCelebrationTitle,
+  livingPracticeBriefingEyebrow,
+  livingPracticeStartCta,
+  livingPracticeVictoryTitle,
+  livingProgressPageTitle,
   livingSessionCompleteTitle,
   recommendHealthLabAction,
 } from "./living-room";
@@ -39,5 +44,21 @@ describe("health-lab living-room", () => {
     expect(livingSessionCompleteTitle(false).toLowerCase()).not.toMatch(/xp|level|quest/);
     expect(livingCelebrationTitle("level-up").toLowerCase()).not.toContain("level up");
     expect(livingCelebrationTitle("quest").toLowerCase()).not.toContain("quest");
+  });
+
+  it("deep practice helpers stay Care — never mission/adventure/XP theatre", () => {
+    const joined = [
+      livingPracticeBriefingEyebrow(),
+      livingPracticeStartCta(),
+      livingPracticeVictoryTitle(),
+      livingProgressPageTitle(),
+      HEALTH_LAB_LIVING_DEEP_PALETTE.night,
+    ]
+      .join(" ")
+      .toLowerCase();
+    expect(joined).not.toMatch(/mission|adventure|galaxy|xp|unlock|launch|quest/);
+    expect(livingPracticeStartCta()).toBe("Begin gently");
+    expect(livingPracticeVictoryTitle()).toBe("We did this");
+    expect(HEALTH_LAB_LIVING_DEEP_PALETTE.sand).toContain("232,212,184");
   });
 });

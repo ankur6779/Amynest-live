@@ -70,18 +70,20 @@ export function HealthLabPhaseFlash({
   color?: string;
 }) {
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   if (reduced) return null;
+  const flashColor = living ? "rgba(232,212,184,0.18)" : color;
 
   return (
     <AnimatePresence>
       {active && (
         <motion.div
           className="pointer-events-none absolute inset-0 z-[2]"
-          style={{ background: `radial-gradient(circle at center, ${color}, transparent 70%)` }}
+          style={{ background: `radial-gradient(circle at center, ${flashColor}, transparent 70%)` }}
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.9, 0] }}
+          animate={{ opacity: living ? [0, 0.45, 0] : [0, 0.9, 0] }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.55 }}
+          transition={{ duration: living ? 0.35 : 0.55 }}
           aria-hidden
         />
       )}
@@ -102,6 +104,7 @@ export function HealthLabMissionBanner({
   tone?: "neutral" | "danger" | "go" | "success" | "freeze";
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   const tones = {
     neutral: "border-white/15 from-white/[0.1] to-white/[0.03] text-white",
     danger: "border-rose-400/30 from-rose-500/20 to-rose-950/20 text-rose-50 health-lab-pulse-danger",
@@ -113,11 +116,17 @@ export function HealthLabMissionBanner({
   return (
     <motion.div
       key={title}
-      initial={{ opacity: 0, y: 12, scale: 0.96 }}
+      initial={{ opacity: 0, y: living ? 6 : 12, scale: living ? 1 : 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
+      data-tone={tone}
       className={cn(
-        "rounded-2xl border bg-gradient-to-br px-5 py-4 text-center shadow-[0_12px_40px_-16px_rgba(0,0,0,0.65)] backdrop-blur-md",
-        tones[tone],
+        "rounded-2xl border px-5 py-4 text-center backdrop-blur-md",
+        living
+          ? "hl-living-deep-banner"
+          : cn(
+              "bg-gradient-to-br shadow-[0_12px_40px_-16px_rgba(0,0,0,0.65)]",
+              tones[tone],
+            ),
         className,
       )}
     >
@@ -143,10 +152,16 @@ export function HealthLabRoundRail({
   label?: string;
   className?: string;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   return (
     <div className={cn("mx-auto w-full max-w-xs px-4", className)}>
       {label && (
-        <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+        <p
+          className={cn(
+            "mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em]",
+            living ? "text-[rgba(232,212,184,0.65)]" : "text-white/45",
+          )}
+        >
           {label}
         </p>
       )}
@@ -156,18 +171,28 @@ export function HealthLabRoundRail({
             <div
               className={cn(
                 "h-2.5 w-2.5 rounded-full transition-all duration-300",
-                i < current
-                  ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"
-                  : i === current
-                    ? "scale-125 bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.85)]"
-                    : "bg-white/15",
+                living
+                  ? "hl-living-deep-rail-dot"
+                  : i < current
+                    ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"
+                    : i === current
+                      ? "scale-125 bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.85)]"
+                      : "bg-white/15",
               )}
+              data-done={living && i < current ? "true" : undefined}
+              data-current={living && i === current ? "true" : undefined}
             />
             {i < total - 1 && (
               <div
                 className={cn(
                   "h-0.5 w-4 rounded-full",
-                  i < current ? "bg-emerald-400/70" : "bg-white/10",
+                  living
+                    ? i < current
+                      ? "bg-[rgba(232,212,184,0.55)]"
+                      : "bg-[rgba(232,212,184,0.12)]"
+                    : i < current
+                      ? "bg-emerald-400/70"
+                      : "bg-white/10",
                 )}
               />
             )}
@@ -216,6 +241,7 @@ export function HealthLabLaunchPad({
   comboStreak?: number;
   megaLaunch?: boolean;
 }) {
+  const living = isHealthLabLivingV1Enabled();
   const glow =
     phase === "go" || megaLaunch
       ? "from-emerald-400/50 via-cyan-400/30 to-transparent"
@@ -225,7 +251,7 @@ export function HealthLabLaunchPad({
 
   return (
     <div className="relative flex flex-col items-center" aria-hidden>
-      {!reduced && (phase === "go" || megaLaunch) && (
+      {!living && !reduced && (phase === "go" || megaLaunch) && (
         <>
           {[0, 1, 2, 3].map((i) => (
             <motion.div
@@ -250,7 +276,7 @@ export function HealthLabLaunchPad({
         </>
       )}
       {/* Countdown display */}
-      {phase === "countdown" && !reduced && (
+      {phase === "countdown" && !living && !reduced && (
         <motion.p
           className="absolute -top-8 text-4xl font-bold text-amber-300"
           animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
@@ -262,29 +288,51 @@ export function HealthLabLaunchPad({
       {/* Launch pad structure */}
       <div
         className={cn(
-          "relative flex h-32 w-36 items-center justify-center rounded-[2rem] border border-white/20",
-          "bg-gradient-to-br from-slate-600/90 via-slate-700/95 to-slate-950/95",
-          "shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]",
+          "relative flex h-32 w-36 items-center justify-center rounded-[2rem] border",
+          living
+            ? "hl-living-deep-panel border-[rgba(232,212,184,0.22)]"
+            : cn(
+                "border-white/20 bg-gradient-to-br from-slate-600/90 via-slate-700/95 to-slate-950/95",
+                "shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]",
+              ),
         )}
       >
-        <div className={cn("absolute -inset-4 rounded-[2.4rem] bg-gradient-to-t blur-2xl", glow)} />
+        {!living && <div className={cn("absolute -inset-4 rounded-[2.4rem] bg-gradient-to-t blur-2xl", glow)} />}
         {/* Engine glow */}
-        {!reduced && (phase === "go" || phase === "wait") && (
+        {!living && !reduced && (phase === "go" || phase === "wait") && (
           <motion.div
             className="absolute bottom-2 h-6 w-16 rounded-full bg-orange-400/40 blur-md"
             animate={{ opacity: phase === "go" ? [0.5, 1, 0.5] : [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
             transition={{ duration: phase === "go" ? 0.3 : 1, repeat: Infinity }}
           />
         )}
-        <span className="relative text-5xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]">
-          {phase === "go" || megaLaunch ? "🚀" : phase === "wait" || phase === "too-early" || phase === "countdown" ? "🛑" : phase === "result" ? "✅" : "🚀"}
+        <span className={cn("relative text-5xl", !living && "drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]")}>
+          {living
+            ? phase === "go" || megaLaunch
+              ? "✦"
+              : phase === "wait" || phase === "too-early" || phase === "countdown"
+                ? "·"
+                : phase === "result"
+                  ? "✓"
+                  : "✦"
+            : phase === "go" || megaLaunch
+              ? "🚀"
+              : phase === "wait" || phase === "too-early" || phase === "countdown"
+                ? "🛑"
+                : phase === "result"
+                  ? "✅"
+                  : "🚀"}
         </span>
       </div>
       {/* Pad base */}
-      <div className="mt-2 h-4 w-44 rounded-full bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 shadow-inner" />
-      <div className="mt-1 h-10 w-52 rounded-b-[2rem] bg-gradient-to-b from-orange-500/30 to-transparent blur-sm" />
+      {!living && (
+        <>
+          <div className="mt-2 h-4 w-44 rounded-full bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 shadow-inner" />
+          <div className="mt-1 h-10 w-52 rounded-b-[2rem] bg-gradient-to-b from-orange-500/30 to-transparent blur-sm" />
+        </>
+      )}
       {/* Smoke particles */}
-      {!reduced && (phase === "go" || phase === "wait" || phase === "countdown") && (
+      {!living && !reduced && (phase === "go" || phase === "wait" || phase === "countdown") && (
         <>
           {[0, 1, 2].map((i) => (
             <motion.div
