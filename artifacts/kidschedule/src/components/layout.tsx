@@ -28,6 +28,7 @@ import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
+import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
 
 export function Layout({
   children
@@ -64,7 +65,10 @@ export function Layout({
     safePathStartsWithSegment(location, "/amy-ai-tutor");
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
   const isDashboard = location === "/" || location === "/dashboard";
-  const showDashboardChrome = location === "/dashboard";
+  const isRoutinesDashboard = location === "/routines";
+  const showDashboardChrome =
+    location === "/dashboard" ||
+    (isRoutinesDashboard && isRoutineLivingV1Enabled());
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
@@ -158,7 +162,7 @@ export function Layout({
               !["/sign-in", "/onboarding", "/notify-prompt"].some((p) =>
                 safePathStartsWith(location, p),
               ) && (
-                <div className={showDashboardChrome ? "mb-4 dashboard-inline-inset" : "mb-4"}>
+                <div className={showDashboardChrome ? "dashboard-inline-inset" : "mb-4"}>
                   <NotificationNudgeBanner />
                 </div>
               )}

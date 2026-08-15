@@ -33,6 +33,8 @@ import ExplainPage from "@/pages/explain";
 import { SafetyPanel } from "@/components/safety/safety-panel";
 import { cn } from "@/lib/utils";
 import { formatRoutineDateKey } from "@/lib/routine-ux";
+import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
+import { RoutineLivingDashboard } from "@/components/routines/routine-living-dashboard";
 import {
   PARENT_HUB_PAGE,
   ROUTINES_HUB_ACCENT,
@@ -347,6 +349,88 @@ export default function RoutinesList() {
     "data-[state=active]:shadow-[0_0_16px_rgba(255,184,0,0.28)] data-[state=active]:text-foreground data-[state=active]:scale-[1.02]",
     "data-[state=inactive]:shadow-none",
   );
+
+  const livingDashboard = isRoutineLivingV1Enabled();
+  const firstPlanItem = activeTodayRoutine?.items?.[0];
+  const supporting = (
+    <>
+      <AmyTrustLayer />
+      <RoutinesEnvironmentPreview />
+      <ChildTodaySignal />
+      {isLoading ? (
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      ) : (
+        <WeekCalendar
+          routines={allRoutines}
+          isPremium={isPremium}
+          routinesMax={routinesMax}
+          activeChildId={activeChildId}
+          onGatedNavigate={handleGatedNavigate}
+          onLockedRoutineTap={() => openPaywall("routines_limit")}
+        />
+      )}
+      <CollapsibleRoutinesSection
+        title={t("intelligence.weekly.title")}
+        subtitle={t("pages.routines.index.weekly_collapsed_hint", {
+          defaultValue: "Tap to view your 7-day intelligence report",
+        })}
+      >
+        <WeeklyReportCard />
+      </CollapsibleRoutinesSection>
+      <CollapsibleRoutinesSection
+        title={t("pages.routines.index.more_insights_title", {
+          defaultValue: "More insights",
+        })}
+        subtitle={t("pages.routines.index.more_insights_subtitle", {
+          defaultValue: "Learning patterns and helpful nudges",
+        })}
+      >
+        <div className="flex flex-col gap-4">
+          <LearningWeightsCard />
+          <ProductiveNudgesCard />
+        </div>
+      </CollapsibleRoutinesSection>
+      <SmartMealSuggestions />
+      <p className="rg-dash-more-title">{t("routines.tabs.forecast", { defaultValue: "Forecast" })}</p>
+      <ForecastPage />
+      <p className="rg-dash-more-title">{t("routines.tabs.household", { defaultValue: "Household" })}</p>
+      <HouseholdPage />
+      <p className="rg-dash-more-title">{t("routines.tabs.explain", { defaultValue: "Why?" })}</p>
+      <ExplainPage />
+      <p className="rg-dash-more-title">{t("routines.tabs.safety", { defaultValue: "Safety" })}</p>
+      <SafetyPanel />
+    </>
+  );
+
+  if (livingDashboard) {
+    return (
+      <RoutineLivingDashboard
+        childName={activeChildName ?? "your child"}
+        childrenList={childrenList}
+        activeChildId={activeChildId}
+        onSelectChild={setSelectedChildId}
+        childIdsWithTodayRoutine={childIdsWithTodayRoutine}
+        hasPlan={activeChildHasRoutine}
+        firstAction={
+          firstPlanItem
+            ? {
+                time: firstPlanItem.time,
+                activity: firstPlanItem.activity,
+                duration: firstPlanItem.duration,
+              }
+            : null
+        }
+        arcPreview={(activeTodayRoutine?.items ?? []).slice(0, 4).map((item) => ({
+          time: item.time,
+          label: item.activity,
+        }))}
+        onPrimary={handlePrimaryCta}
+        onRebuild={() => handleGenerateClick(activeChildId ?? undefined)}
+        isLoading={isLoading}
+        supporting={supporting}
+      />
+    );
+  }
 
   return <div className={cn(PARENT_HUB_PAGE, "max-w-4xl mx-auto space-y-4 pb-28 animate-in fade-in duration-500")}>
       <header className="hub-page-enter">

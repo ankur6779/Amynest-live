@@ -683,3 +683,159 @@
     transition: none;
   }
 }
+
+/* ── Living dashboard + generate shell (kill purple hub wash) ── */
+
+.parent-hub-premium.routine-living-shell {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 8%, rgba(232, 212, 184, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%);
+  padding-top: 0;
+}
+
+.routine-living-page {
+  position: relative;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0 0.75rem 7.5rem;
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  color: rgba(244, 238, 230, 0.94);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 8%, rgba(232, 212, 184, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%);
+}
+
+.rg-dash-surface {
+  margin: 0;
+}
+
+.rg-dash-body {
+  padding: 0.95rem 1.1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  border-top: 1px solid rgba(232, 212, 184, 0.12);
+}
+
+.rg-dash-body .ph-quiet-child-identity {
+  padding-top: 0;
+}
+
+.rg-dash-today,
+.rg-dash-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.rg-dash-arc-quiet {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.rg-dash-arc-quiet li {
+  display: grid;
+  grid-template-columns: 4.4rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(232, 212, 184, 0.72);
+}
+
+.rg-dash-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rg-dash-cta {
+  width: 100%;
+  min-height: 3.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 1rem;
+  border: 0;
+  background: rgb(245, 158, 11);
+  color: #0a1024;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.25);
+}
+
+.rg-dash-cta-title,
+.rg-dash-cta-sub {
+  color: inherit;
+}
+
+.rg-dash-cta:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.55);
+  outline-offset: 2px;
+}
+
+.rg-dash-cta-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.rg-dash-cta-sub {
+  font-size: 0.75rem;
+  font-weight: 550;
+  color: rgba(10, 16, 36, 0.72);
+}
+
+.rg-dash-more-title {
+  margin: 0.35rem 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.rg-dash-more {
+  margin-top: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.28);
+  padding: 0.35rem 0.75rem 0.55rem;
+}
+
+.rg-dash-more > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: rgba(232, 212, 184, 0.78);
+}
+
+.rg-dash-more-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.rg-dash-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .routine-living-page {
+    padding-bottom: 3rem;
+  }
+}
