@@ -34,6 +34,7 @@ import {
   type AmyCoachQuietPath,
 } from "@/lib/amy-coach/living-room";
 import "@/components/amy-coach/amy-coach-living-room.css";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
@@ -2509,6 +2510,13 @@ export default function AICoachPage() {
             })}
           </button>
         )}
+        {living ? (
+          <AmyNestLeaveContinuity
+            className="mt-3"
+            continueHref="/parenting-hub"
+            continueLabel="Back to rooms"
+          />
+        ) : null}
       </AmyCoachGoalsShell>
       </div>
     );

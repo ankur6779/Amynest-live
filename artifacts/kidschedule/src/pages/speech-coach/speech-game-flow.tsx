@@ -43,7 +43,10 @@ import {
 } from "./speech-game-rewards";
 import {
   isSpeechCoachLivingV1Enabled,
+  livingSpeechGameAccentClass,
+  livingSpeechGameCardClass,
   livingSpeechGameCompleteBody,
+  livingSpeechGamePlayLabel,
 } from "@/lib/speech-coach/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import {
@@ -77,14 +80,32 @@ function StarsBurst({ show }: { show: boolean }) {
   );
 }
 
-function BreathingBubble({ active }: { active: boolean }) {
+function BreathingBubble({ active, living }: { active: boolean; living: boolean }) {
   if (!active) return null;
   return (
     <div className="flex justify-center py-2" aria-hidden>
       <div className="relative h-20 w-20">
-        <div className="absolute inset-0 animate-pulse rounded-full bg-cyan-300/30" />
-        <div className="absolute inset-2 animate-[ping_2s_ease-in-out_infinite] rounded-full bg-cyan-400/40" />
-        <div className="absolute inset-4 rounded-full bg-cyan-200/60 blur-sm" />
+        <div
+          className={
+            living
+              ? "absolute inset-0 animate-pulse rounded-full bg-[rgba(232,212,184,0.22)]"
+              : "absolute inset-0 animate-pulse rounded-full bg-cyan-300/30"
+          }
+        />
+        <div
+          className={
+            living
+              ? "absolute inset-2 rounded-full bg-[rgba(232,212,184,0.28)]"
+              : "absolute inset-2 animate-[ping_2s_ease-in-out_infinite] rounded-full bg-cyan-400/40"
+          }
+        />
+        <div
+          className={
+            living
+              ? "absolute inset-4 rounded-full bg-[rgba(255,252,248,0.35)]"
+              : "absolute inset-4 rounded-full bg-cyan-200/60 blur-sm"
+          }
+        />
       </div>
     </div>
   );
@@ -204,10 +225,13 @@ export function SpeechGameFlow({
   onRewardsChange?: () => void;
 }) {
   const { t } = useTranslation();
+  const living = isSpeechCoachLivingV1Enabled();
   const ageMonths = totalMonths(child);
   const log = useLogSpeechPracticeAttempt();
   const voice = useAmyVoice();
   const theme = SPEECH_GAME_THEMES[gameId];
+  const cardClass = living ? livingSpeechGameCardClass() : theme.cardClass;
+  const accentClass = living ? livingSpeechGameAccentClass() : theme.accentClass;
   const gameMeta = SPEECH_GAMES.find((g) => g.id === gameId)!;
   const sessionIdRef = useRef(`speech_game_${child.id}_pending`);
 
@@ -482,18 +506,19 @@ export function SpeechGameFlow({
 
   return (
     <div
-      className={`relative rounded-2xl border p-3 space-y-3 ${theme.cardClass}`}
+      className={`relative rounded-2xl border p-3 space-y-3 ${cardClass}`}
       data-testid={`speech-game-flow-${gameId}`}
+      data-living-midplay={living ? "true" : "false"}
     >
-      <StarsBurst show={successFlash} />
+      <StarsBurst show={!living && successFlash} />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-2xl shrink-0">{theme.emoji}</span>
+          <span className="text-2xl shrink-0">{living ? "·" : theme.emoji}</span>
           <p className="font-bold text-sm text-foreground truncate">
             {t("screens.speech_coach.games.session_title", { game: gameTitle })}
           </p>
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={onClose}>
+        <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={onClose}>
           {t("screens.speech_coach.games.exit")}
         </Button>
       </div>
@@ -508,21 +533,23 @@ export function SpeechGameFlow({
                   total: sessionItems.length,
                 })}
               </span>
-              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                <Coins className="h-3.5 w-3.5" />
-                {sessionCoins}
-              </span>
+              {living ? null : (
+                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <Coins className="h-3.5 w-3.5" />
+                  {sessionCoins}
+                </span>
+              )}
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
               <div
-                className={`h-full rounded-full bg-gradient-to-r ${theme.accentClass} transition-all duration-500`}
+                className={`h-full rounded-full bg-gradient-to-r ${accentClass} transition-all duration-500`}
                 style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>
 
           {gameId === "breathing" && sessionPhase === "practice" ? (
-            <BreathingBubble active={promptPhase === "recording"} />
+            <BreathingBubble active={promptPhase === "recording"} living={living} />
           ) : null}
 
           {currentItem && wordEmoji ? (
@@ -543,6 +570,7 @@ export function SpeechGameFlow({
           <p className="text-xs text-muted-foreground leading-relaxed">
             {t(gameMeta.i18nKeyDescription)}
           </p>
+          {living ? null : (
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
             {Array.from({ length: gameMeta.rewardStars }).map((_, i) => (
               <Star key={i} className="h-4 w-4 fill-current" />
@@ -553,13 +581,18 @@ export function SpeechGameFlow({
               })}
             </span>
           </div>
+          )}
           <Button
             type="button"
-            className={`w-full rounded-full bg-gradient-to-r ${theme.accentClass} text-white border-0`}
+            className={
+              living
+                ? "w-full min-h-12 rounded-full border-0 bg-[rgba(232,212,184,0.92)] text-[#12081f]"
+                : `w-full rounded-full bg-gradient-to-r ${theme.accentClass} text-white border-0`
+            }
             onClick={startSession}
             data-testid="speech-game-play-now"
           >
-            {t("screens.speech_coach.games.play_now")}
+            {living ? livingSpeechGamePlayLabel() : t("screens.speech_coach.games.play_now")}
           </Button>
         </div>
       ) : (

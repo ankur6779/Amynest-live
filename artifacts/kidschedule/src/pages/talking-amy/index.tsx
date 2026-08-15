@@ -12,6 +12,7 @@ import { AddChildLink } from "@/components/add-child-link";
 import { AchievementUnlockCard } from "@/components/talking-amy/achievement-unlock-card";
 import { TalkingAmyHero } from "@/components/talking-amy/talking-amy-hero";
 import "@/components/talking-amy/talking-amy-living-room.css";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { PAGE_BACK_BTN, PAGE_SAFE_TOP } from "@/lib/page-sticky-header";
 import { Button } from "@/components/ui/button";
 import { useListChildren } from "@workspace/api-client-react";
@@ -1313,6 +1314,13 @@ export default function TalkingAmyPage() {
             </div>
           )}
         </section>
+        {living ? (
+          <AmyNestLeaveContinuity
+            className="mt-4"
+            continueHref="/parenting-hub"
+            continueLabel="Back to rooms"
+          />
+        ) : null}
       </div>
     </div>
   );

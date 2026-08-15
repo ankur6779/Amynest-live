@@ -39,6 +39,7 @@ import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-context";
 import { buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
 import { AppLink } from "@/components/app-link";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import type { NutritionTab } from "@/features/nutrition/types/nutrition-hub.types";
 import "@/pages/first-experience-material.css";
 import "@/components/nutrition/nutrition-living-room.css";
@@ -187,13 +188,11 @@ function NutritionHubContent() {
               })}
             </p>
             <p className="nu-support-note nu-support-invite">{PREMIUM_VOICE.invitation}</p>
-            <AppLink href="/dashboard" source="nutrition-exit-home">
-              <span className="nu-exit-home" data-testid="nutrition-exit-home">
-                {t("nutrition.living.exit_home", {
-                  defaultValue: "Back to Today Home",
-                })}
-              </span>
-            </AppLink>
+            <AmyNestLeaveContinuity
+              className="mt-2"
+              continueHref="/parenting-hub"
+              continueLabel="Back to rooms"
+            />
             <p className="nu-support-note nu-support-continue">
               {t("nutrition.living.continue_support", {
                 defaultValue: "Continue with AmyNest",

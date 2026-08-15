@@ -696,7 +696,7 @@ export default function SignUpPage() {
           }}
         >
           <Link
-            href="/welcome"
+            href="/begin"
             data-testid="sign-up-not-now"
             style={{
               color: "rgba(244,238,230,0.65)",

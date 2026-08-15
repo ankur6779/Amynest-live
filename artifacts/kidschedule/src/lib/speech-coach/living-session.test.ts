@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  livingSpeechGameAccentClass,
+  livingSpeechGameCardClass,
   livingSpeechGameCompleteBody,
+  livingSpeechGamePlayLabel,
   livingSpeechHeardLabel,
   livingSpeechLimitTitle,
   livingSpeechLiveEyebrow,
@@ -32,6 +35,7 @@ describe("speech living session chrome (P0-2 + deep interior)", () => {
       livingSpeechV2CompleteTitle(),
       livingSpeechV2CompleteBody(),
       livingSpeechGameCompleteBody(),
+      livingSpeechGamePlayLabel(),
       livingSpeechLimitTitle(),
       livingSpeechHeardLabel("hello"),
     ]
@@ -44,5 +48,12 @@ describe("speech living session chrome (P0-2 + deep interior)", () => {
   it("living deep palette stays cream sanctuary (no neon violet)", () => {
     expect(SPEECH_LIVING_DEEP_PALETTE.panelBorder).toMatch(/232,\s*212,\s*184/);
     expect(SPEECH_LIVING_DEEP_PALETTE.violet).not.toMatch(/139,\s*92,\s*246/);
+  });
+
+  it("living mid-play chrome is sanctuary not themed game gradients", () => {
+    expect(livingSpeechGameCardClass()).toMatch(/bg-card/);
+    expect(livingSpeechGameCardClass().toLowerCase()).not.toMatch(/violet|fuchsia|cyan|amber/);
+    expect(livingSpeechGameAccentClass().toLowerCase()).not.toMatch(/violet|fuchsia|cyan/);
+    expect(livingSpeechGamePlayLabel().toLowerCase()).not.toMatch(/coin|xp|streak|play now/);
   });
 });

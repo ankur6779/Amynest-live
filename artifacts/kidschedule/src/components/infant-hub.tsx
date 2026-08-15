@@ -47,6 +47,7 @@ import {
   isInfantCareLivingV1Enabled,
   recommendInfantCareAction,
 } from "@/lib/infant-care/living-room";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import "@/pages/first-experience-material.css";
 import "@/components/infant/infant-care-living-room.css";
@@ -1023,6 +1024,12 @@ export function InfantHub({
             "We'll continue helping as your child grows.",
           )}
         </p>
+
+        <AmyNestLeaveContinuity
+          className="mx-3 mb-4"
+          continueHref="/parenting-hub"
+          continueLabel="Back to rooms"
+        />
 
         <div className="flex items-start gap-2 text-[11px] text-muted-foreground px-1">
           <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />

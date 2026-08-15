@@ -192,6 +192,19 @@ export function livingSpeechGameCompleteBody(): string {
   return "You played and spoke gently together. Enough for now.";
 }
 
+/** Mid-play living chrome — sanctuary card, not themed game gradients. */
+export function livingSpeechGameCardClass(): string {
+  return "border-border/60 bg-card/80";
+}
+
+export function livingSpeechGameAccentClass(): string {
+  return "from-[rgba(232,212,184,0.75)] to-[rgba(196,168,132,0.9)]";
+}
+
+export function livingSpeechGamePlayLabel(): string {
+  return "Begin this practice";
+}
+
 export function livingSpeechLimitTitle(): string {
   return "We've practiced enough for today";
 }

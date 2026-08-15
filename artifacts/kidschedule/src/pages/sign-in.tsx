@@ -1014,7 +1014,7 @@ export default function SignInPage() {
           }}
         >
           <Link
-            href="/welcome"
+            href="/begin"
             data-testid="sign-in-not-now"
             style={{
               color: "rgba(244,238,230,0.65)",

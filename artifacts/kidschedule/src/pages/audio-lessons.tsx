@@ -77,6 +77,7 @@ import {
   type AmyAudioQuietPath,
 } from "@/lib/amy-audio/living-room";
 import "@/components/amy-audio/amy-audio-living-room.css";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 
 export default function AudioLessonsPage() {
   const { navigate, back } = useAppNavigate();
@@ -763,6 +764,14 @@ export default function AudioLessonsPage() {
         onClose={() => setEmergencyOpen(false)}
         onSelect={handleEmergencySelect}
       />
+      {living ? (
+        <div className="amynest-page-inset pb-6">
+          <AmyNestLeaveContinuity
+            continueHref="/parenting-hub"
+            continueLabel="Back to rooms"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

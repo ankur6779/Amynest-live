@@ -299,9 +299,9 @@ export default function FirstExperiencePage() {
               className="fe-btn fe-btn-quiet"
               style={{ marginTop: "var(--space-3)" }}
               data-testid="fe-welcome-later"
-              onClick={() => setLocation("/welcome")}
+              onClick={() => setLocation("/sign-in?from=first-experience")}
             >
-              Not now
+              Sign in
             </button>
           </div>
         </div>
@@ -678,15 +678,7 @@ export default function FirstExperiencePage() {
               style={{ marginTop: "var(--space-4)", textAlign: "center", color: "rgba(244,238,230,0.5)" }}
               data-testid="fe-kept-local"
             >
-              Today stays on this device.{" "}
-              <Link
-                href="/welcome"
-                className="underline-offset-2 hover:underline"
-                style={{ color: "rgba(244,238,230,0.7)" }}
-                data-testid="fe-keep-leave"
-              >
-                Continue without an account
-              </Link>
+              Today stays on this device. You can keep going here whenever you are ready.
             </p>
           ) : null}
           <p

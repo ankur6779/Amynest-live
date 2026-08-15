@@ -227,8 +227,17 @@ export default function LandingPage() {
                 <ArrowRight className="h-5 w-5" />
               </button>
             </Link>
+            <Link href="/begin" className="w-full max-w-sm">
+              <button
+                type="button"
+                className="v3-ghost w-full inline-flex items-center justify-center text-sm font-semibold px-7 py-3 rounded-2xl text-white/85 min-h-[48px]"
+                data-testid="welcome-enter-begin"
+              >
+                Begin with today
+              </button>
+            </Link>
             <p className="text-[12px] text-white/40">
-              Free to start · Private · Built for real family days
+              Free to start · Private · The AmyNest home is Begin with today
             </p>
           </div>
 
