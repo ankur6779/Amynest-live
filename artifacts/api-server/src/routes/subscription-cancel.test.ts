@@ -222,6 +222,7 @@ const subscriptionServiceMock = {
     startTrial: async () => state.sub,
     activateSubscription: async () => state.sub,
     maybeAutoGrantPremium: async () => undefined,
+    isPremiumNow: (row: SubRow | null | undefined) => isPremium(row ?? null),
     FREE_LIMITS: {},
     formatPlanPrice: (amount: number, currency = "INR") => `${currency} ${amount}`,
     PLAN_PRICES: {},

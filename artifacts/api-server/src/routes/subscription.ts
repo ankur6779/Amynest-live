@@ -9,6 +9,7 @@ import {
   startTrial,
   activateSubscription,
   maybeAutoGrantPremium,
+  isPremiumNow,
   PLAN_PRICES,
   RAZORPAY_PLAN_PRICES_INR,
   type Plan,
@@ -34,6 +35,7 @@ import {
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
+import { shouldApplyRazorpayTerminalEvent } from "../services/razorpay-webhook-guards.js";
 import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
@@ -996,7 +998,17 @@ router.post(
     // (or refresh on the `amynest:refresh-subscription` event) until the
     // webhook lands, which usually takes a few seconds.
     const { db, subscriptionsTable } = await import("@workspace/db");
-    await getOrCreateSubscription(userId);
+    const existing = await getOrCreateSubscription(userId);
+    // Never rebind a live App Store / Play subscription to Razorpay from a
+    // web checkout verify — a later Razorpay halt/cancel would otherwise
+    // revoke store-managed premium while the store keeps billing.
+    if (existing.provider === "revenuecat" && isPremiumNow(existing)) {
+      res.status(409).json({
+        error: "store_subscription_active",
+        message: "An App Store or Play subscription is already active. Manage it in store settings.",
+      });
+      return;
+    }
     await db
       .update(subscriptionsTable)
       .set({
@@ -1155,6 +1167,28 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
         case "subscription.expired":
         case "subscription.paused":
         case "subscription.halted": {
+          const existingRows = await tx
+            .select({
+              provider: subscriptionsTable.provider,
+              providerSubscriptionId: subscriptionsTable.providerSubscriptionId,
+            })
+            .from(subscriptionsTable)
+            .where(eq(subscriptionsTable.userId, userId))
+            .limit(1);
+          const existing = existingRows[0];
+          const guard = shouldApplyRazorpayTerminalEvent(existing, sub.id);
+          if (!guard.apply) {
+            return {
+              kind: "ignored",
+              reason: guard.reason,
+              extra: {
+                eventType,
+                eventSubscriptionId: sub.id ?? null,
+                localProvider: existing?.provider ?? null,
+                localSubscriptionId: existing?.providerSubscriptionId ?? null,
+              },
+            };
+          }
           const now = new Date();
           const periodStillActive = Boolean(periodEnd && periodEnd.getTime() > now.getTime());
           const pausedOrHalted = eventType === "subscription.paused" || eventType === "subscription.halted";
