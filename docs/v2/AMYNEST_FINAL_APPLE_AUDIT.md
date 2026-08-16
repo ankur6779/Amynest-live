@@ -1,298 +1,336 @@
-# AmyNest — Final Apple Audit (Re-Run)
+# AmyNest — Final Apple Audit
 
-**Status:** FINAL APPLE AUDIT · RE-RUN · SCORING GATE · NO IMPLEMENTATION  
-**Authority:** Founder Order — Final Apple Audit Re-Run  
-**Date:** 2026-08-08  
-**Branch:** `cursor/product-execution-model-v2`  
-**Verified HEAD:** `72f140134b973a1f5c7bd3e27538313ff55e1e22`  
+**Status:** FINAL APPLE AUDIT · SCORING GATE · NO IMPLEMENTATION  
+**Authority:** Founder Order — Final Apple Audit  
+**Date:** 2026-08-16  
+**Branch:** `main`  
+**Git HEAD:** `13d7de55` (`13d7de558efe406f6d0ec1e2b4030317c2a9a403`)  
 **App source:** `artifacts/kidschedule/src`
 
-**Review entry (mandatory):** `/begin` with  
-`VITE_FF_AMYNEST_LIVING_UNIVERSE=living` (or unset / `1`) → **all 16 living surfaces ON**
+**This document supersedes** `docs/v2/AMYNEST_FINAL_APPLE_AUDIT.md` stamped 2026-08-08 at HEAD `72f14013` on `cursor/product-execution-model-v2`. That prior verdict must not be reused: it predated living navigation remanufacture, P1 leave-path containment, and P2/P3 legacy triage on `main`.
 
-**Not review entry:** `/welcome` neon marketing `LandingPage`
+**Review entry (mandatory):** `/begin` with living production universe  
+(`VITE_FF_AMYNEST_LIVING_UNIVERSE` unset / `living` / `1`) → all 16 living surfaces ON.
 
-**This document supersedes** the prior Final Apple Audit stamped at `8b68e5bd` / application HEAD `bc4828b4`. That prior verdict **must not** be reused: it predated FA-02 living-universe lock (`2ca49cd2`) and FA-02 P1 mixed-mode production hardening (`26b2c05c`).
+**Not review entry:** `/welcome` marketing `LandingPage`.
 
-**Law:** Audit only. No React · CSS · DB · API · Firebase · RevenueCat · Auth · routing · flag · feature changes. Findings are not implementations. This audit does **not** guarantee Apple approval.
+**Law:** Audit only. No React, CSS, routes, flags, copy, assets, DB, API, Firebase, RevenueCat, auth, analytics, AI, prompts, engines, or P0/P1/P2 repairs. Findings are not implementations. This audit does **not** guarantee Apple approval.
+
+**Method honesty:** This run inspected current `main` HEAD in a Linux VM. TypeScript, targeted Vitest, and production build were executed. Authenticated Today Home / Rooms / interiors were **not** recaptured on a signed-in device. Scoring uses HEAD code + frozen living reviews + P1 containment + P2 triage + this-run gates.
 
 ---
 
 ## Executive Summary
 
-AmyNest, reviewed through **`/begin`** under the **production-intended living universe** (FA-02 master living / all 16 surfaces forced ON), presents as **one calm parenting house** from first impression through remade deep interiors and the Routine Generation crown path.
+AmyNest, reviewed as a first-time Apple reviewer would from `/begin` under the production living universe, is **one calm parenting house at the door** and **one house after leave** on the normal living journey.
 
-FA-02 is now **fully hardened**: accidental mixed living/legacy production faces are blocked, and **explicit** `mixed` in production is **rejected** (build fail + resolver throw).
+P1 accidental production escapes (mobile tab bar + Amy FAB, More → Games/Study/Insights/Progress, leftover URLs, phonics unlock theatre, speech live/talk + independent legacy switch, worksheet studio) are **contained**. FA-02 still forbids mixed production. P0-7 Hard-Day Law is intact. Remaining residue is **accepted P2/P3 debt**, not a second production universe.
+
+Device accessibility is **not certified**. That is the honest cap on an unqualified “Apple Ready” claim.
 
 | Lens | Verdict |
 |---|---|
-| One coherent application (living `/begin`) | **YES** (craft residuals → portfolio **MOSTLY→YES**) |
-| Deep interiors foreign products? | **NO** for named Pre-Final blockers; portfolio **MOSTLY→YES** |
-| Parent Hub coherent? | **YES** |
-| Premium trustworthy on hard day? | **YES** (P0-7 intact) |
-| Routine Generation Apple-quality? | **MOSTLY→YES** |
-| Production living universe locked? | **YES** |
-| Accessibility device-certified? | **NO** |
-| Genuine product P0 blockers? | **NO** |
-| Ready for uncontrolled “ship to millions”? | **NO** |
-| Ready for **controlled** Apple review with accepted cert debt? | **CONDITIONAL → YES under conditions** |
+| One coherent application (living `/begin`) | **YES** on the normal journey; portfolio **MOSTLY YES** |
+| One home at the door | **YES** |
+| One home after leave | **YES** on the normal living path |
+| Accidental legacy visual universe | **NO** for a normal living user |
+| Parent Hub coherent | **YES** |
+| Premium trustworthy on a hard day | **YES** (P0-7 intact) |
+| Routine Generation Apple-quality | **YES**, with accepted P2 honesty debt on timed stages |
+| Amy AI Apple-quality | **YES** as companion, not a ChatGPT clone |
+| Navigation Apple-quality | **YES** (living drawer is authority) |
+| Living universe production-locked | **YES** |
+| Accessibility device-certified | **NO** |
+| Genuine product P0 | **NO** |
+| Genuine product P1 remaining | **NO** |
+| Ready for uncontrolled ship to millions | **NO** |
+| Ready for **controlled** App Store submission | **YES, with certification debt** |
 
 ### One sentence
 
-> Under living `/begin` with FA-02 hardened, AmyNest is one coherent parenting product ready for controlled Apple submission **with accepted device-accessibility certification debt** — not a mass-scale or accessibility-certified ship, and not a promise of Apple approval.
-
-### Absolute judgments (preview)
-
-| # | Question | Answer |
-|---|---|---|
-| 1 | ONE coherent product? | **YES** (living production path) / portfolio craft **MOSTLY→YES** |
-| 2 | Deep interiors remain coherent? | **MOSTLY→YES** |
-| 3 | Parent Hub coherent? | **YES** |
-| 4 | Premium trustworthy? | **YES** |
-| 5 | Routine Generation Apple-quality? | **MOSTLY→YES** |
-| 6 | Production living universe locked? | **YES** |
-| 7 | Accessibility fully device-certified? | **NO** |
-| 8 | P0 product blockers? | **NO** |
-| 9 | P1 blockers? | **YES** |
-| 10 | Controlled release ready? | **CONDITIONAL** |
-| 11 | Recommend Apple submission today? | **CONDITIONAL** |
+> If submitted today as a living-universe production build, reviewed from `/begin`, an honest senior Apple reviewer should understand AmyNest as one parenting home — not a catalogue of leftover products — and should not be blocked by identity federation. They cannot be told the app is VoiceOver / Dynamic Type / TalkBack certified.
 
 ---
 
-## Review Entry
+## Audit Baseline
 
-| Item | Evidence |
+Frozen and treated as complete (not remanufactured in this audit):
+
+- Living Universe manufacturing + 66K living experience layer
+- Amy Coach, Amy Audio, Routine Generation, Amy AI conversation workspace
+- Living navigation
+- P0-6 Parent Hub · P0-7 Hard-Day · P0-9 accessibility evidence (open cert)
+- P1 remediation + P1 leave-path containment
+- P2/P3 legacy triage
+- FA-02 Living Universe production lock
+- Main / SEO integration
+- Approved module interiors
+
+Documents used:
+
+- `docs/v2/AMYNEST_FULL_LEGACY_RESIDUE_AUDIT.md`
+- `docs/v2/AMYNEST_P1_LEAVE_PATH_REMEDIATION_REVIEW.md`
+- `docs/v2/AMYNEST_P2_LEGACY_TRIAGE.md`
+- `docs/v2/AMYNEST_PRE_FINAL_REMEDIATION_VERIFICATION.md`
+- `docs/v2/AMYNEST_FINAL_PRODUCTION_RELEASE_CANDIDATE.md`
+- `docs/v2/AMYNEST_FINAL_VISUAL_REGRESSION.md` (2026-08-07; **superseded for leave/nav** by later P1 work)
+- `docs/v2/AMYNEST_P0_9_ACCESSIBILITY_CERTIFICATION.md`
+- `docs/v2/AMYNEST_FOUNDER_PORTFOLIO_AUDIT.md`
+- `docs/v2/AMYNEST_PRE_FINAL_APPLE_PORTFOLIO_CONSISTENCY_AUDIT.md`
+
+HEAD after those documents: `13d7de55` — P2 triage docs commit on `main` (product containment at `1ec739ec`).
+
+---
+
+## Production Configuration
+
+| Item | Value |
 |---|---|
-| Canonical path | `AppCore.tsx` `path="/begin"` → `FirstExperiencePage` |
-| Unsigned / auth timeout | Redirect → `/begin` (“Value-before-identity”) |
-| Production universe | FA-02: unset / `living` / `1` / `true` → all 16 surfaces ON |
-| First-impression copy | “Begin with today” · “One next right thing — formed only from what you share.” (`first-experience.tsx`) |
-| Keep → identity | `/sign-up?from=first-experience` — identity protects value |
-| Non-review contrast | `/welcome` → neon `LandingPage` (`landing.tsx`) — **excluded from scoring as production first experience** |
+| Branch | `main` |
+| HEAD | `13d7de55` |
+| Intended production universe | FA-02 living (unset / `living` / `1`) |
+| `.env.production.example` | Documents living default; mixed **forbidden**; rollback `0` / `legacy` |
+| Per-module `VITE_FF_*_LIVING_V1=0` under living master | **Ignored** |
+| Production + `mixed` / `allow_mixed` | **Rejected** (Vite build throw + resolver throw) |
+| Speech `?speechLegacy=1` / `localStorage.speech-coach-legacy` / remote | **Ignored when living ON** |
+| Tests | Vitest defaults mixed so per-module tests still work |
 
-**Verified:** Reviewers must use `/begin`. Scoring the neon `/welcome` universe as the production door would be incorrect.
-
----
-
-## Portfolio Scope
-
-Audited under living universe ON:
-
-Welcome `/begin` · Signup Keep · Child Discovery · Today Home · Parent Hub (Help / Understand / Care / Moments) · Infant Care · Speech Coach · Nutrition · Health Lab · Grow · Birth Sky · Ask Amy · Guidance · Moments · Talking Amy · Amy Coach · Amy Audio · Routine Generation
-
-**Sources of truth re-checked (not blindly assumed):**
-
-- `AMYNEST_PRE_FINAL_REMEDIATION_VERIFICATION.md` — Decision A; Health/Grow/Birth Sky cleared; Speech P1 acceptable; Hub/P0-7 intact; P0-9 OPEN  
-- `AMYNEST_PRE_FINAL_APPLE_PORTFOLIO_CONSISTENCY_AUDIT.md`  
-- FA-02 lock / verification / hardening reviews (`2ca49cd2` · `fa775176` · `26b2c05c`)  
-- P0-6 · P0-7 · P0-9 · Speech / Health / Grow / Birth Sky deep reviews  
-- Current HEAD implementation (`amynest-living-universe.ts`, living helpers, Hub rooms, hard-day monetization)
-
-Auth-gated deep leaves verified primarily by **code + remediation evidence**. Authenticated Today Home / Hub full visual re-capture remains limited in this Linux VM (**NOT TESTABLE** fully authenticated).
+Surfaces FA-02 owns (16): Today Home, Parent Hub rooms, Child Discovery Film, Infant, Speech, Nutrition, Health Lab, Grow, Birth Sky, Ask Amy, Guidance, Moments, Talking Amy, Amy Coach, Amy Audio, Routine Generation.
 
 ---
 
-## Currently Accepted Remediations — Verification
+## Front Door Review
 
-| Remediation | Status at HEAD | Evidence |
+**Path:** unsigned `/` → `/begin` → `FirstExperiencePage`. Identity Keep → `/sign-up?from=first-experience`. After auth: Today Home `/dashboard` → Parent Hub `/parenting-hub`.
+
+| Question | Answer | Evidence |
 |---|---|---|
-| P0-7 Hard-Day Monetization | **INTACT** | `hard-day-monetization.ts` — MFHO floor 4; soft-continue; no auto-paywall; FOMO suppressed; `PREMIUM_VOICE` |
-| P0-6 Parent Hub peer catalogue | **INTACT** | Rooms V1: Help/Understand/Care/Moments; one recommend + quiet paths; no peer mall on living face |
-| Speech Coach deep interior | **ACCEPTABLE** (P1 mid-play debt) | `speech-coach-living-deep.css` + living sanctuary; mid-play coins/themes residual |
-| Health Lab deep interior | **CLEARED** | `health-lab-living-deep.css`; neon HoldOrb/starfield gated OFF when living |
-| Grow deep interior | **CLEARED** | Beads & counting / Sounds & letters; PRO Zone / Unlock theatre gated |
-| Birth Sky deep interior | **CLEARED** | `birth-sky-living-deep.css`; Amy Astro chassis behind living OFF only |
-| FA-02 Living Universe lock | **VERIFIED** | Master forces 16 surfaces; accidental per-module mix blocked |
-| FA-02 mixed-mode hardening | **VERIFIED** | Production + `mixed`/`allow_mixed` → build throw + resolver throw (`26b2c05c`) |
+| Does AmyNest immediately communicate what it is? | **YES** | “Begin with today” / “One next right thing — formed only from what you share.” |
+| First experience calm? | **YES** | Soft-morning photography rooms, whisper kickers, one intention |
+| Value proposition understandable? | **YES** | Next right thing, formed only from what is shared |
+| Parent know what to do next? | **YES** | Continue · child name · age · Keep / Sign in |
+| Unnecessary friction? | **LOW** | Value before identity; Sign in is quiet |
+| Trustworthy? | **YES** | Privacy-respecting framing; no storefront theatre at the door |
+| One coherent product? | **YES** | Not neon SaaS splash; `/welcome` is excluded |
+
+Primary Continue is `.fe-btn-primary`: cream ceramic `#fbf6ee` → `#e6d8c4` with text `#1a120c`, min-height 50px. Prior “taupe-on-dark” P1 is **not** the current button. Contrast of photographic title vs scrim remains **static-only** (not device-certified).
+
+**Front Door score: 8.5 / 10**
 
 ---
 
-## First Impression
+## Portfolio Review
 
-**Entry:** `/begin` soft-morning First Experience (living photography rooms).
+Living production path, one-home questions (1–10) applied to each required surface.
 
-| Criterion | Result | Evidence |
-|---|---|---|
-| Calm | **YES** | Soft photography · one intention · whisper kickers |
-| Human | **YES** | Mother/child presence before features |
-| Trustworthy | **YES** | “formed only from what you share” · privacy-respecting framing |
-| Purposeful | **YES** | “Begin with today” · next right thing |
-| Parent-first | **YES** | Value before identity; Keep protects progress |
-| Premium | **YES** | Restraint · materials · spacing |
-| Coherent | **YES** | One continuous day language — not neon SaaS splash |
-| CTA legibility | **RISK** | Continue taupe-on-dark — calm aesthetic vs contrast debt (**P1**) |
-
-**Score contribution:** Strong production door. Not neon. Not game. Not helpdesk.
-
----
-
-## One Product Test
-
-**Question:** Hide the logo. Did I leave the same application when entering another destination?
-
-| Destination | Same application? (living ON) | Notes |
-|---|---|---|
-| Welcome `/begin` | **YES** | Soft-morning house |
-| Today Home | **YES** | One next action |
-| Parent Hub Help/Understand/Care/Moments | **YES** | Room streams, not mall |
-| Infant Care | **MOSTLY→YES** | Nested care density |
-| Speech Coach | **MOSTLY→YES** | Sanctuary; mid-play P1 peek |
-| Nutrition | **MOSTLY→YES** | Living open; score theatre can peek |
-| Health Lab | **YES** | Care sanctuary deep (blocker cleared) |
-| Grow | **YES** | Growth practice (edtech cleared) |
-| Birth Sky | **YES** | Understand deep (Astro cleared) |
-| Ask Amy / Guidance / Moments | **YES** | Companion / stream |
-| Talking Amy / Amy Coach / Amy Audio | **MOSTLY→YES** | Mode/desk residue |
-| Routine Generation | **YES** | Today's plan crown path |
-| `/welcome` marketing | **NO** | Other OS — **excluded** |
-
-### Answer
-
-**MOSTLY → YES** on the production living path.
-
-Residual “different app” feeling comes from **craft density / mid-session peeks**, not from a second visual universe under FA-02 living. Accidental Living A + Legacy B is no longer a production default path.
-
----
-
-## Deep Interior Audit
-
-For every major destination: Entry → Opening → Core → Deep → Result → Premium → Completion → Exit.
-
-| Destination | Entry | Deep | Becomes another product? | Blind (one app?) |
+| Surface | Same home? | Voice / materials | Purpose / next / leave | Another app? |
 |---|---|---|---|---|
-| Health Lab | Care open | `hl-living-deep` practice | **NO** | **YES** |
-| Grow | Understand stream | Beads & counting / Sounds & letters | **NO** | **YES** |
-| Birth Sky | Understand open | `bs-living-deep` | **NO** | **YES** |
-| Speech Coach | Sanctuary | Sanctuary deep; mid-play coin/theme peek | **MOSTLY NO** | **MOSTLY** |
-| Infant Care | Living Care | Nested care panels denser | **MOSTLY NO** | **MOSTLY** |
-| Ask Amy | Companion | Soft-continue help-first | **NO** | **YES** |
-| Talking Amy | Sanctuary open | Mode residue | **MOSTLY NO** | **MOSTLY** |
-| Amy Coach | Beside you | Goal/category desk | **MOSTLY NO** | **MOSTLY** |
-| Amy Audio | Quiet listen | Age/listen desk | **MOSTLY NO** | **MOSTLY** |
-| Routine Generation | Today's plan | Build → Here it is → Begin → Care → Exit | **NO** | **YES** |
-| Nutrition / Guidance / Moments | Living streams | Mild deepen | **NO** | **YES** |
-
-**Independent verification of Pre-Final remediation conclusions:** **CONFIRMED** under FA-02 living for Health Lab · Grow · Birth Sky clearances; Speech remains acceptable P1 debt; Hub P0-6 and P0-7 intact.
+| Welcome `/begin` | YES | FE photography | Begin with today | NO |
+| Signup / Keep | YES | Continuity of FE | Identity protects value | NO |
+| Child Discovery | YES | Film / sanctuary | Name, age, context | NO |
+| Today Home | YES | One next action | NRT | NO |
+| Parent Hub Rooms | YES | Help / Understand / Care / Moments | One recommend + quiet paths | NO |
+| Infant Care | YES | Care living | Nested density P2 | MOSTLY NO |
+| Speech Coach | YES | Sanctuary; living mid-play coins **off** | Leave continuity present | MOSTLY NO |
+| Nutrition | YES | Living opening | Deepen leftover panels P2 | MOSTLY NO |
+| Health Lab | YES | Care sanctuary; shop HUD `!living` only | Leave on session complete | NO |
+| Grow | YES | Quiet paths | Sounds & letters / Quiet study leaves | MOSTLY NO if Practice library / study body opened |
+| Birth Sky | YES | Understand deep | Leave continuity | NO |
+| Ask Amy | YES | Companion | Soft-continue; leave | NO |
+| Guidance | YES | Stream in Understand | In-hub | NO |
+| Moments | YES | Presence stream | In-hub | NO |
+| Talking Amy | YES | Sanctuary | Leave continuity | MOSTLY NO |
+| Amy Coach | YES | Beside you | Leave continuity | MOSTLY NO |
+| Amy Audio | YES | Quiet listen | Leave continuity | MOSTLY NO |
+| Amy AI | YES | Same companion as Ask Amy | Drawer/sidebar + leave | NO |
+| Routine Generation | YES | Today's plan crown | Own continuity exits | NO |
 
 ---
 
-## Parent Hub
+## One-Home Test
+
+Hide the logo. On the **normal** living journey (Home → Rooms → manufactured interior → leave):
+
+**YES — it is the same application.**
+
+Rooms differ by **purpose** (Help vs Care vs practice vs plan), not by a second design system. FA-02 prevents Living A + Legacy B as a production default.
+
+Craft residuals that keep a portfolio-wide **MOSTLY YES**:
+
+- Grow → Quiet study body still `study-zone-premium` (accepted P2)
+- Phonics Practice library `<details>` still holds academy widgets (accepted P2)
+- Nutrition deepen / More care leftover panels (accepted P2)
+- More → Quick help (`/amy-ai-tutor`) leftover tutor (accepted P2)
+
+These are **chosen secondary paths**, not the door.
+
+---
+
+## Leave-Path Test
+
+`AmyNestLeaveContinuity` now offers Home `/dashboard`, Today's plan `/routines`, Amy `/assistant`, Rooms `/parenting-hub`.
+
+Wired at HEAD on: Speech (game / pronunciation / live / conversation), Nutrition, Infant, Coach, Audio, Talking Amy, Ask Amy / Amy AI history, Health session rewards, Birth Sky, Hub module shell, Phonics, Study living, speech-v2 celebration/limit.
+
+Routine uses its own living continuity (`livingContinuityExits`: Today Home, Parent Hub, Beside you, Quiet listen) — not a second nav wall.
+
+Living drawer remains available after leave. Tab bar / FAB are **not mounted** when living.
+
+**After leave, the parent is still inside AmyNest.**
+
+Prior FA-05 (Infant / Nutrition / Coach / Audio / Talking Amy missing leave continuity) is **cleared**.
+
+---
+
+## Navigation Review
 
 | Check | Result |
 |---|---|
-| Help / Understand / Care / Moments | **YES** — `PARENT_HUB_ROOM_IDS` + living streams |
-| One intention | **YES** |
-| One recommended path | **YES** |
-| Quiet secondary paths | **YES** (`data-demoted`) |
-| No catalogue / mall / gaming / dashboard theatre / browsing loop | **YES** on living Rooms V1 |
-| P0-6 regression | **NONE found** |
+| Primary IA | Home, Today's plan, Beside you, Amy, Rooms |
+| Rooms | Help, Understand, Care, Moments |
+| More | Quiet leftovers only (Birth Sky, Nutrition, Quick help, Children, Patterns, Recipes, Plans, Invite, Feedback, Account) |
+| Catalogue / product launcher | **NO** — Games, Learning, Insights, Progress, Kids Control removed from living More |
+| Duplicate nav universe | Living drawer/sidebar is authority. Legacy tab bar + FAB **not mounted** when living |
+| Confusing labels | Primary IA is living language |
+| Deep links | Hash rooms living; leftover product URLs redirect (see Legacy Escape) |
 
-**Verdict:** Parent Hub is coherent.
+Rollback / mixed still shows the old More list and tab bar (intentional).
 
----
-
-## Today Home Boundary
-
-| Law | Runtime evidence |
-|---|---|
-| Today Home wins when one action is enough | `TodayHomeShell` + NRT (`passesTodayHomeLaw` / `resolve-today-nrt`) when Today Home V1 ON |
-| Hub for Help / Understanding / Care / Presence | Rooms V1; Hub primarily **pull** (tab / deep link) |
-| Browsing is not a valid Hub trigger | No “what's new” mall at the door on living face |
-| Boundary helper | `resolveHomeHubBoundary` in philosophy — documented law |
-
-**Verdict:** Entry Law is **structurally obeyed** on the living production path.
+**Navigation score: 8.5 / 10**
 
 ---
 
-## Companionship
+## Legacy Escape Review
 
-| Surface | Companion? | Not chatbot / helpdesk / AI demo / SaaS? |
+Baseline: P1 leave-path containment at `1ec739ec`. Living ON:
+
+| Route / switch | Living production | Class |
 |---|---|---|
-| Ask Amy | **YES** | Soft-continue; help before monetization |
-| Emotional Support | **YES** | P0-7 MFHO |
-| Speech Coach | **YES** | Living sanctuary (mid-play P1) |
-| Amy Coach | **YES** | “Beside you” |
-| Talking Amy | **MOSTLY** | Mode residue |
-| Guidance | **YES** | Stream |
-| Routine Generation | **YES** | “I'm here with {child} for today” |
+| `/games` | More hidden; URL → `/dashboard` | ROLLBACK ONLY |
+| `/rewards` | URL → `/dashboard` | ROLLBACK ONLY |
+| `/insights` `/progress` | More hidden; URL → `/dashboard` | ROLLBACK ONLY |
+| `/worksheet` `/teacher-os` | URL → `/parenting-hub` | INTERNAL / ROLLBACK |
+| `/speech-coach/live-session` `/talk` | URL → `/speech-coach` | ROLLBACK ONLY |
+| `/kids-control-center` | More hidden; URL → `/dashboard` | ROLLBACK ONLY |
+| `?speechLegacy=1` / `speech-coach-legacy` / remote | **Ignored when living** | ROLLBACK ONLY |
+| `/study` `/phonics` | Grow leaves; living titles | SAFE leave (interior P2) |
+| `/welcome` | URL only | ACCEPTED P2 |
+| `/environment` | URL only | ACCEPTED P2 |
 
-**Verdict:** Amy feels like a companion on the living path — not a SaaS assistant demo.
+A normal living user **cannot** accidentally enter Games, Rewards, Insights, Progress, Worksheet Studio, or neon Speech cards.
 
----
-
-## Routine Generation
-
-Core product — audited seriously. Engine **not** modified or re-scored as implementation.
-
-| Beat | Living ON evidence |
-|---|---|
-| Entry | Product “Today's plan”; companionship open (`living-entry.ts`) |
-| Context | Verified chips only |
-| Ready | Ready moment copy (why / next / doNext) |
-| Build today's plan | `livingRoutineBuildCta()` → **“Build today's plan”** |
-| Generation stages | `ROUTINE_HANDOFF_STAGES` — gathering / placing / fitting / checking |
-| Truthfulness | Stages thematically map pipeline; UI advances on a **~2.8s timer**, not live engine events — calm, not CoT theatre; **P2 honesty debt** |
-| Here it is | Result reveal |
-| WHAT / WHY / WHEN / HOW | `routine-living-result.tsx` + `buildLivingWhyProof` / day arc / Start here |
-| Begin today | `livingResultBeginCta()` → **“Begin today”** |
-| Rebuild | Confirm-gated |
-| Execution | Presence language (not XP%) |
-| Completion / Exit | Continuity exits → Today Home / Hub / Coach / Audio |
-
-**Patent honesty:** Repo contains one Indian Provisional package with indicative claims. **Do not claim “15 patents.”** Living path avoids patent theatre.
-
-**Routine score:** **8.5 / 10**
+Direct leftover URLs do not silently create a second production universe for the P1 set.
 
 ---
 
-## Premium
-
-| Requirement | Result |
-|---|---|
-| Continuity / support / confidence / time / deeper help | **YES** — `PREMIUM_VOICE` |
-| Unlock / marketplace / FOMO / sales interruption | **Suppressed** on hard-day + living gates |
-| Meaningful help before monetization | **YES** — P0-7 Hard-Day Law |
-| P0-7 D1–D8 | **INTACT** |
-| Pricing / RevenueCat / entitlements | Untouched by FA-02 / craft remediations |
-
-**Premium score:** **8.5 / 10** — trustworthy.
-
----
-
-## Trust / Truth
-
-| Risk class | Living-path finding | Class |
-|---|---|---|
-| Unsupported medical / diagnosis claims | Disclaimers retained; no new diagnosis theatre found | **none new** |
-| Unsupported AI / fake reasoning | Living Routine avoids “AI is thinking”; timer stages | **P2** honesty |
-| Scientific overclaim | Birth Sky reflective / never fate on living face | **none** living deep |
-| Astrology certainty | Softeners on living Birth Sky | **none** living open/deep |
-| Fear/guilt monetization | P0-7 suppresses | **none** hard-day Help |
-| Patent exaggeration | Living hides; elsewhere may say patent pending | **P2** if overclaimed; **not** “15 patents” |
-| Fake loading claims | Timed handoff ≠ live pipeline events | **P2** / ACCEPTED DEBT |
-
-No invented concerns. Only evidence-backed residuals above.
-
----
-
-## Visual System
-
-Compared against Welcome `/begin` · Today Home · Parent Hub living materials.
+## FA-02 Review
 
 | Question | Answer |
 |---|---|
-| Variation due to room PURPOSE? | **YES** — Help vs Understand vs Care vs practice vs plan |
-| Variation due to DIFFERENT DESIGN SYSTEM? | **NO** under FA-02 living; **YES** only on `/welcome` marketing or intentional coherent legacy rollback (`master=0`) |
+| unset / living / 1 → living | **YES** |
+| 0 / legacy → coherent rollback | **YES** |
+| mixed → production rejected | **YES** |
+| Can production accidentally become mixed? | **NO** via env. Per-module `=0` ignored when master is living |
+| Can stale localStorage bypass FA-02? | **NO** for universe flags (compile-time). Speech legacy localStorage **cannot** mix neon into living |
+| Can per-module flags override living master? | **NO** |
+| Can deep links bypass FA-02 chrome? | They cannot mix universes. Contained leftover URLs redirect; Grow leaves keep living shells |
 
-Photography · typography · night/sand materials · quiet cards · cream CTAs · calm loading/completion recur across remade living surfaces. Nested density ≠ second OS.
+FA-02 remains authoritative.
 
 ---
 
-## Accessibility
+## Premium / Hard-Day Review
+
+Premium voice: continuity, support, confidence, time saved, deeper care (`PREMIUM_VOICE`).
+
+| Surface | Help before pay? | Not now? | Distress monetized first? |
+|---|---|---|---|
+| Ask Amy | Soft-continue at quota; no auto-paywall | **YES** | **NO** |
+| Emotional Support | Free floor 4 MFHO | **YES** | **NO** |
+| Speech | Living hub first; paywall after gated live/premium | Dismiss exists | **NO** on default hub |
+| Infant | AccessGate quiet | **YES** | **NO** |
+| Nutrition / Health / Grow / Birth Sky / Coach / Guidance / Routine / Moments / Talking Amy / Amy AI | Living open first; continuity invitation | **YES** | **NO** |
+
+P0-7 D1–D8 **INTACT** (`hard-day-monetization.ts`). RevenueCat / entitlements / quotas **untouched** by this audit.
+
+Paywall “Here's what unlocks next” (including Games) remains **accepted P2 theatre on an already-open paywall**, not on Today / Rooms first frames.
+
+**Premium score: 8.5 / 10**
+
+---
+
+## Routine Review
+
+Engine frozen. Experience-only judgment.
+
+| Beat | Living evidence |
+|---|---|
+| Dashboard | Today's plan companionship |
+| Context | Verified chips only |
+| Ready | Why / next |
+| Build | “Build today's plan” |
+| Loading | Calm stages; UI timer ~2.8s — **P2 honesty debt** (not live engine events) |
+| Result | WHAT / WHY / WHEN / HOW |
+| Begin | “Begin today” |
+| Rebuild | Confirm-gated |
+| Execution | Presence language, not XP% |
+| Completion | “Cared” — not 100% theatre |
+| Leave | Today Home / Parent Hub / Beside you / Quiet listen |
+
+Differentiated and premium as a **day plan**, not a generic generator. Timer stages are calm, not chain-of-thought theatre, and not a claim that the UI is streaming the engine.
+
+**Routine score: 8.5 / 10**
+
+---
+
+## Amy AI Review
+
+Ask Amy companion workspace (`/assistant`). Amy nav row is the living companion entry. Glowing FAB is not mounted in living.
+
+| Check | Result |
+|---|---|
+| Blank new chat | Companion workspace, not a SaaS picker (living) |
+| History | Side panel + leave continuity |
+| Mobile drawer / desktop sidebar | Living IA; Amy is primary |
+| Composer | Recent clip fix on `main` (`f496ac7a`); layout tests exist |
+| Long responses / markdown | Existing bubble renderer |
+| Loading | “Amy is thinking…” — approved truthful wait |
+| Slow / error | Soft-continue / retry paths; P0-7 |
+| Identity | Amy, not a generic assistant brand |
+| ChatGPT clone? | **NO** on the living path |
+| Still AmyNest? | **YES** |
+
+Not redesigned in this audit.
+
+**Amy AI score: 8.0 / 10**
+
+---
+
+## Visual Review
+
+Compared to Welcome `/begin` · Today Home · Parent Hub living materials.
+
+| Feel | On normal living journey? | If yes, where |
+|---|---|---|
+| Neon | **NO** default | Speech neon gated; Health HoldOrb gated |
+| SaaS dashboard | **NO** via More | `/environment` URL only |
+| Game HUD | **NO** | `/games` redirected |
+| Astrology app | **NO** on living Birth Sky open | Cosmic art is Birth Sky by design |
+| Edtech marketplace | **NO** first frame | Study body / phonics Practice library if opened (P2) |
+| AI demo | **NO** | Ask Amy companion |
+| Nutrition SaaS | **NO** opening | Deepen leftover panels P2 |
+| Product catalogue | **NO** | More quiet, not Games/Study mall |
+| Another company | **NO** | Worksheet LPS redirected |
+
+The Aug 7 visual regression “façade only / blind test NO” **does not describe current `main` after P1**. Openings and leave chrome were remade. Secondary deepen interiors still vary in density.
+
+---
+
+## Accessibility Review
 
 ### DEVICE CERTIFICATION (authoritative)
 
-From `AMYNEST_P0_9_ACCESSIBILITY_CERTIFICATION.md` + this VM (no iOS/Android a11y host):
+From `AMYNEST_P0_9_ACCESSIBILITY_CERTIFICATION.md` + this Linux VM (no iOS/Android a11y host):
 
 | Claim | Status |
 |---|---|
@@ -305,110 +343,147 @@ From `AMYNEST_P0_9_ACCESSIBILITY_CERTIFICATION.md` + this VM (no iOS/Android a11
 
 ### STATIC EVIDENCE (supporting only — not certification)
 
-- Leave continuity nav labels on remade paths  
-- Ask Amy soft-continue `role="status"` / `aria-live`  
-- Speech living mic live regions  
-- 48px / `min-h-11`+ targets on remade CTAs  
-- `prefers-reduced-motion` in Speech / Health / Grow / Birth deep CSS  
-- Hub room recommend / quiet buttons  
+- Living nav landmark; leave continuity `aria-label`
+- Ask Amy soft-continue `role="status"` / `aria-live`
+- Speech living mic live regions (prior evidence)
+- Remade CTAs `min-h-11` / 48–50px (FE primary 50px)
+- `prefers-reduced-motion` in Speech / Health / Grow / Birth deep CSS
+- Birth Sky accessibility unit tests exist (not device cert)
 
-**Do not mark VoiceOver / Dynamic Type / TalkBack / touch = PASS.**  
-**Do not hide this limitation.**
+**Do not mark VoiceOver / Dynamic Type / TalkBack / touch = PASS.**
 
----
-
-## Motion
-
-| Theatre class | Living ON |
-|---|---|
-| Neon / game motion (Health HoldOrb, starfield) | **Removed / gated OFF** |
-| Speech confetti / rewards bar | **Suppressed** when living |
-| Birth Sky CTA ripple / constellation completion | **Muted / gated** |
-| Constant floating / AI sparkle | Not default on living opens |
-| Routine loading | Calm stage list — not patent brain theatre |
-| Reduced motion | CSS + component gates present (device setting **not** certified) |
-
-Residual: Speech mid-play theme/coins (**P1**); Health finger CTA gradient peek (**P2**).
+**Accessibility score: 3.0 / 10** (honest: static only)
 
 ---
 
-## Navigation
-
-| Path | Verdict |
-|---|---|
-| Home / Today | Present |
-| Today's plan | Living continuity exits |
-| Beside you / Rooms | Hub Rooms V1 |
-| Back / nested | Module shells + FE backs |
-| Deep links | Enter remade leave titles under living ON |
-| Browser/mobile back | Present on FE / module shells |
-| Exit to life | `AmyNestLeaveContinuity` on Speech / Health / Grow / Birth Sky / Ask Amy / Routine; **gaps** on Infant / Nutrition / Coach / Audio / Talking Amy |
-
-**Dead ends:** No systemic dead end on remade paths. Leave-continuity gaps remain **P1**.
-
----
-
-## FA-02 Production Lock
-
-| Contract | Status at HEAD |
-|---|---|
-| unset / living / 1 / true → living (all 16 ON) | **YES** |
-| 0 / false / legacy → coherent legacy (all 16 OFF) | **YES** |
-| mixed → DEV/TEST only | **YES** |
-| production + mixed / allow_mixed → **REJECTED** | **YES** — Vite build assert + resolver throw (`26b2c05c`) |
-| Accidental mixed via per-module flags under living/legacy master | **IMPOSSIBLE** |
-| 16 surfaces covered | **YES** (`AMYNEST_LIVING_SURFACE_FLAGS.length === 16`) |
-
-**Production living universe locked:** **YES**
-
-Do not modify the lock in this audit.
-
----
-
-## Production Safety
-
-| Risk | Evidence | Class |
-|---|---|---|
-| Accidental mixed living/legacy face | **Closed** by FA-02 + hardening | Cleared |
-| Explicit production mixed | **Rejected** | Cleared |
-| Coherent emergency rollback | `master=0` + rebuild | Intentional / good |
-| `/welcome` neon still reachable | LandingPage; FE “Not now” can escape here | **P1** ops if used as review |
-| Auth → `/begin` | Correct | Good |
-| RevenueCat / billing / Firebase / auth linking / guest | Prior readiness gaps for **mass scale**; remediations experience-only | **Ops / controlled-release debt** |
-| AI abuse / consent / tenancy | Prior readiness concerns remain; not craft blockers | Report |
-| DB / API / Auth / Analytics contracts | Untouched by FA-02 | Safe from this change set |
-| Deep links | Enter living helpers under master living | Good |
-
-**Craft remediations + FA-02 did not change DB/API/RC/Firebase engines.**  
-Mass-scale production readiness remains **conditional / no for millions**.
-
----
-
-## Business Readiness
+## Trust Review
 
 | Question | Answer |
 |---|---|
-| Does the product demonstrate value? | **YES** — `/begin` → Today Home → Routine / Ask Amy / Care |
-| Value proposition clear? | **YES** |
-| Premium feel justified? | **MOSTLY→YES** as continuity (P0-7) |
-| Meaningful value before monetization? | **YES** on hard-day Help / Emotional / living Routine |
-| Encourage repeat use? | **MOSTLY→YES** |
-| Would a parent recommend it? | **MOSTLY→YES** under living face |
-| Conversion statistics? | **Not invented** |
-| Apple approval assumed? | **NO** |
+| Would a parent trust this with their family? | **YES** on the living path — help before pay, formed-from-what-you-share, hard-day unblocked |
+| Misleading experience? | **NO** if reviewed from `/begin`. **YES** if `/welcome` is used as the door (ops condition) |
+| Privacy / consent | Birth Sky consent / disclaimers retained; no new diagnosis theatre found |
+| AI transparency | “Amy is thinking…” truthful wait; Routine stages are calm, not fake live CoT |
+| Child/family context | Discovery + named child in rooms |
+| Error / loading | System 404 generic; remade waits living |
+
+No invented policy violations. Patent: one Indian provisional package — **do not claim “15 patents.”**
+
+**Trust score: 8.0 / 10**
 
 ---
 
-## Emotional Moat
+## Production Safety Review
 
-| Moat | Verified evidence | Overclaim avoided |
+| Area | Result |
+|---|---|
+| Route integrity | `/begin` door; leftover P1 URLs redirect when living; rollback routes remain registered |
+| Feature flags | FA-02 lock + mixed production rejection |
+| Rollback | `0` / `legacy` coherent |
+| Auth | Unsigned → `/begin`; engines/Firebase not modified by containment |
+| API / DB / RevenueCat / Firebase / analytics | Untouched by P1 containment / this audit |
+| Deep links | Contained leftover set; Grow leaves intentional |
+| Error boundaries | Present; crash overlay off on production hosts |
+| Environment | `.env.production.example` documents living / forbids mixed |
+
+Mass-scale ops (auth linking, RevenueCat sandbox, tenancy, AI abuse at millions) remain **ops debt**, not a craft P0 for controlled review.
+
+**Production Safety score: 8.5 / 10**
+
+---
+
+## Business Maturity
+
+| Question | Answer |
+|---|---|
+| Daily use | **YES** — Today Home + Routine + Rooms |
+| Subscription justified as continuity | **YES** (P0-7); paywall theatre leftover P2 |
+| Repeat use | **YES** |
+| Multiple children | **YES** (child identity + lists) |
+| Long-term family relationship | **MOSTLY YES** — companionship + leave home |
+| Recommend to another parent | **MOSTLY YES** under living face |
+| Revenue estimate | **Not invented** |
+
+Not a toy. Not mass-ops certified.
+
+**Business Maturity score: 8.0 / 10**
+
+---
+
+## Apple Simulation
+
+Simulated reviewer: install → `/begin` → signup/Keep → child context → Home → Rooms (Help / Care / Understand / Moments) → Amy → Routine → Premium after value → back → More quiet → loading/empty/error.
+
+| Would they… | Answer |
+|---|---|
+| Understand the product? | **YES** — next right thing for this child today |
+| Be confused? | **LOW** if they stay on living IA. More Quick help is a leftover tutor. `/welcome` confuses only if they bookmark it |
+| See unfinished work? | Secondary deepen (study body, phonics details) can look denser / older |
+| See something misleading? | **NO** on `/begin` + living. Do not claim a11y certification |
+| See a different app? | **NO** on the normal path. Grow Quiet study / expanded Practice library can feel mixed |
+
+Authenticated Hub visual recapture in this VM: **NOT TESTED**. Code + P1/P2 evidence used.
+
+---
+
+## P0 Findings
+
+**None.**
+
+Nothing at HEAD breaks FA-02, auth door, Hard-Day Law, or the manufactured living openings.
+
+---
+
+## P1 Findings
+
+**None remaining as accidental production identity / trust blockers.**
+
+Cleared since the Aug 8 Apple audit:
+
+| Prior ID | Prior P1 | Now |
 |---|---|---|
-| Routine Generation | Living WHAT/WHY/WHEN/HOW + Begin today + continuity | Not free-form AI magic |
-| Companionship | Ask Amy + hard-day non-interrupt + Coach beside you | Not every nested chrome |
-| Parent-child continuity | Soft-continue · leave exits · name-first `/begin` | Leave gaps remain |
-| Personalization | Context chips / WHY from real fields | Not invented Discovery |
-| Experience | FE photography sanctuary + one-house living lock | `/welcome` second OS excluded |
-| Technical / patent-supported | **One provisional package with indicative claims** | **Not “15 patents”**; grant unverified |
+| FA-03 `/welcome` as review door | P1 | **P2 / ops condition** — not in nav; `/begin` is the door |
+| FA-04 Speech mid-play coins | P1 | **Cleared on living** — coins/stars gated `living ? null` |
+| FA-05 Leave continuity gaps | P1 | **Cleared** — continuity on Infant / Nutrition / Coach / Audio / Talking Amy / Speech / Health / Birth Sky / Ask Amy |
+| FA-06 `/begin` taupe CTA | P1 | **Cleared as stated** — cream ceramic button, dark text `#1a120c` |
+| Tab bar + FAB / More catalogues / leftover URLs | (later residue audit P1) | **Contained** `1ec739ec` |
+
+Do not reopen these as P1 without new evidence.
+
+---
+
+## P2 / P3
+
+Accepted (see `AMYNEST_P2_LEGACY_TRIAGE.md`):
+
+- `/study` interior still study-zone under a living title
+- Phonics Practice library academy widgets behind `<details>`
+- `/welcome` marketing bookmark
+- `/environment` URL dashboard
+- Nutrition deepen / More care leftover panels
+- Health Lab shop HUD rollback-only; grown-up dashboard third click
+- Paywall next-unlocks theatre (includes Games)
+- Debug panel only if `?debug=` / stale `__amynest_debug`
+- More Quick help / Patterns / Recipes
+- Dead `DrawerNavItem` / unused astro files
+- Generic 404 voice
+- Routine timed loading stages (honesty)
+- Infant nested density; Speech/Coach/Audio desk residue
+
+**P3:** dead nav components, unused assets — no user impact.
+
+---
+
+## Certification Debt
+
+| Item | Status |
+|---|---|
+| VoiceOver | **NOT CERTIFIED** |
+| Dynamic Type | **NOT CERTIFIED** |
+| TalkBack | **NOT TESTED** |
+| Real-device reduced motion / touch | **NOT CERTIFIED** |
+| Signed-in device walkthrough this run | **NOT TESTED** |
+| Mass-scale ops (RC sandbox, auth linking, tenancy) | **NOT THIS AUDIT** |
 
 ---
 
@@ -416,71 +491,45 @@ Mass-scale production readiness remains **conditional / no for millions**.
 
 | Dimension | Score | Evidence |
 |---|---|---|
-| First Impression | **8.5** | `/begin` calm photography door; CTA contrast risk |
-| Visual Identity | **8.5** | Living house materials under FA-02; `/welcome` excluded |
-| Product Identity | **8.5** | Parenting app under living `/begin` |
-| House Consistency | **8.5** | Rooms differ by purpose; universe locked coherent |
-| Deep Interior Consistency | **8.0** | Named blockers cleared; Speech/nested residuals |
-| Navigation | **7.5** | Life exits on remade paths; leave gaps elsewhere |
-| Companionship | **8.5** | Ask Amy / Coach / Routine / Speech living |
-| Routine Generation | **8.5** | Living crown path; timed stages honesty deduct |
-| Premium Experience | **8.5** | P0-7 D1–D8 + PREMIUM_VOICE |
-| Trust | **8.0** | Living clean; timer/patent residuals P2 |
-| Accessibility | **3.0** | Device cert **NOT COMPLETE**; static only |
-| Motion | **8.0** | Theatre suppressed living; Speech mid-play P1 |
-| Parent Clarity | **8.5** | What/why/next clear on Home/rooms/Routine |
-| Business Readiness | **8.0** | Value path clear; no fake metrics |
-| Production Safety | **8.0** | FA-02 hardened; `/welcome` + mass-scale ops residual |
-| **Apple Readiness** | **8.0** | Craft coherent; capped by a11y certification debt |
+| Front Door | **8.5** | `/begin` calm; cream Continue; `/welcome` excluded |
+| Product Identity | **8.5** | Parenting home, not a feature launcher |
+| Visual Identity | **8.0** | Living house; secondary deepen density remains |
+| One-Home Consistency | **8.5** | Normal journey one house; FA-02 locked |
+| Deep Interior Consistency | **8.0** | Named interiors remade; study/phonics details P2 |
+| Leave Continuity | **8.5** | Living IA exits on portfolio leaves |
+| Navigation | **8.5** | Drawer authority; no living tab bar/FAB |
+| Premium Experience | **8.5** | P0-7 intact; paywall theatre P2 |
+| Trust | **8.0** | Help-first; timer/patent residuals P2 |
+| Accessibility | **3.0** | Device cert **NOT COMPLETE** |
+| Motion | **8.0** | Theatre gated living |
+| Routine Experience | **8.5** | Crown path; timed stages P2 |
+| Amy AI Experience | **8.0** | Companion, not clone |
+| Production Safety | **8.5** | FA-02 + P1 URL containment |
+| Business Maturity | **8.0** | Daily-use product; not millions-ops certified |
+| Apple Review Readiness | **8.0** | Coherent product; capped by certification debt |
 
 **Portfolio craft mean (ex-a11y):** ~8.3  
-**With honest a11y:** readiness capped by certification debt — not by product federation.
+**Overall Apple Readiness:** **8.0** — certification debt, not identity federation, is the cap.
+
+Do not inflate. This is not 9+. This is not a fail.
 
 ---
 
-## Top 10 Remaining Issues
+## Previous vs Current
 
-| ID | Surface | Severity | Evidence | Apple impact | Required action |
-|---|---|---|---|---|---|
-| FA-01 | Portfolio a11y | **ACCEPTED CERT DEBT** / NOT TESTABLE here | P0-9: VoiceOver/Dynamic Type/TalkBack **not tested** | Guideline risk **if claimed** | Real-device certification before any a11y claim |
-| FA-02 | ~~Dual-universe accidental mix~~ | **CLEARED** | FA-02 lock + P1 hardening (`26b2c05c`) | Was review inconsistency risk | Keep master living for review builds |
-| FA-03 | `/welcome` neon Landing | **P1** (P0 only if used as review) | `LandingPage` purple/pink OS | Reviewer confusion if wrong door | Keep review on `/begin`; quarantine marketing path |
-| FA-04 | Speech mid-play coins/themes | **P1** | `speech-game-flow.tsx` ungated play chrome | Craft inconsistency mid-session | Living suppress mid-play (future Founder order) |
-| FA-05 | Leave continuity gaps | **P1** | Infant / Nutrition / Coach / Audio / Talking Amy lack `AmyNestLeaveContinuity` | Nested trap feel | Extend leave continuity |
-| FA-06 | `/begin` CTA contrast | **P1** | Taupe Continue on charcoal | HIG contrast risk | Contrast tune (later) |
-| FA-07 | Production scale (auth linking / RC ops / tenancy) | **Ops debt** (not craft P0 for controlled review) | Prior production readiness | Support risk at millions | Ops certification separate from craft |
-| FA-08 | Nested Grow / Birth Sky / Health panel density | **P2** | Lesson desks · astronomy panels · motifs | Mild | Optional quieting |
-| FA-09 | Infant activation prediction/unlock i18n | **P1** | Activation copy keys | Trust residue | Copy pass (later) |
-| FA-10 | Patent microcopy outside living Routine | **P2** | pricing/profile/legacy | Trust/legal tone if overclaimed | Provisional-honesty wording only |
-
----
-
-## P0 / P1 / P2 Matrix
-
-| Severity | Items |
-|---|---|
-| **P0 product blockers** | **None** under living `/begin` + FA-02 hardened |
-| **ACCEPTED CERTIFICATION DEBT** | FA-01 device a11y cert OPEN (VoiceOver / Dynamic Type / TalkBack / real-device settings) |
-| **P1** | FA-03 `/welcome` if in path · FA-04 Speech mid-play · FA-05 leave gaps · FA-06 `/begin` contrast · FA-09 Infant activation copy |
-| **P2** | FA-08 panel density · FA-10 patent microcopy · Health craft peeks · Routine timer stages |
-| **Ops debt (controlled ≠ millions)** | FA-07 auth linking / RC sandbox / tenancy / AI abuse scale |
-| **CLEARED since prior Final Apple** | Accidental / explicit production mixed universe (FA-02 + hardening) |
-| **NOT TESTABLE** | Full authenticated Hub/Today visual pass · physical a11y devices in this VM |
-
----
-
-## Accepted Debt
-
-| Debt | Class |
-|---|---|
-| **P0-9 device accessibility certification incomplete** | **ACCEPTED CERTIFICATION DEBT** — operational limitation of this environment; must not be claimed as PASS |
-| Health Lab finger CTA gradient / reactor mid-HUD peek | **ACCEPTED DEBT** / P2 |
-| Grow nested lesson chrome | **ACCEPTED DEBT** / P2 |
-| Birth Sky Sky/Patterns data density | **ACCEPTED DEBT** / P2 |
-| Speech P1 mid-play (acceptable; do not reopen without order) | **P1** accepted for controlled release |
-| Routine timed (not instrumented) handoff stages | **ACCEPTED DEBT** / P2 honesty |
-| Coherent legacy rollback via master=`0` | **Intentional** emergency face (rebuild required) |
-| Authenticated Hub/Today screenshot pack incomplete in VM | **NOT TESTABLE** fully this run |
+| Item | Aug 8 audit (`72f14013`) | This audit (`13d7de55` `main`) |
+|---|---|---|
+| Review door | `/begin` | `/begin` |
+| FA-02 | Hardened | **Still hardened** |
+| One home after leave | P1 gaps | **YES** on normal path |
+| Tab bar / FAB | Live leftover (later residue audit) | **Not mounted living** |
+| More catalogues | Present | **Contained** |
+| Legacy URLs | Escapes | **Redirect living** |
+| Speech legacy switch | Independent of FA-02 | **Ignored living** |
+| P1 count | Several | **Zero remaining identity P1** |
+| P2 | Craft | **Triaged accepted debt** |
+| A11y | NOT CERTIFIED | **Still NOT CERTIFIED** |
+| Verdict | **C CONDITIONAL — P1 REQUIRED** | **B APPLE READY WITH CERTIFICATION DEBT** |
 
 ---
 
@@ -488,100 +537,77 @@ Mass-scale production readiness remains **conditional / no for millions**.
 
 | # | Question | Answer |
 |---|---|---|
-| 1 | Is AmyNest one coherent product? | **YES** (living production path); portfolio craft **MOSTLY→YES** |
-| 2 | Do deep interiors remain coherent? | **MOSTLY→YES** |
-| 3 | Is Parent Hub coherent? | **YES** |
-| 4 | Is Premium trustworthy? | **YES** |
-| 5 | Is Routine Generation Apple-quality? | **MOSTLY→YES** |
-| 6 | Is the production living universe locked? | **YES** |
-| 7 | Is accessibility fully device-certified? | **NO** |
-| 8 | Are there P0 blockers? | **NO** (product); certification debt named separately |
-| 9 | Are there P1 blockers? | **YES** |
-| 10 | Is AmyNest ready for controlled release? | **CONDITIONAL** |
-| 11 | Would you recommend Apple submission TODAY? | **CONDITIONAL** |
-
-### Conditions for CONDITIONAL submission / controlled release
-
-1. Review / production face uses FA-02 **living** (unset / `living` / `1`) — never `mixed`  
-2. Apple reviewers enter **`/begin`**, never `/welcome`  
-3. Do **not** claim VoiceOver / Dynamic Type / TalkBack / real-device a11y certification  
-4. Do **not** claim “15 patents” — provisional package honesty only if mentioned  
-5. Treat as **soft / controlled** release — not “millions” certification  
-6. Founder accepts Speech P1 + leave-gap P1 + `/begin` contrast P1 as known debt  
-
-### What this audit is not
-
-- Not a guarantee Apple will approve  
-- Not a mass-scale production certification  
-- Not an accessibility device certification  
-- Not an implementation order  
+| 1 | One coherent product? | **YES** (normal living journey) / portfolio **MOSTLY YES** |
+| 2 | One home at the door? | **YES** |
+| 3 | One home after leave? | **YES** on the normal living path |
+| 4 | Can a normal user enter a legacy visual universe? | **NO** |
+| 5 | Any P0 blockers? | **NO** |
+| 6 | Any P1 blockers? | **NO** |
+| 7 | Remaining P2/P3 acceptable? | **YES** |
+| 8 | Premium trustworthy? | **YES** |
+| 9 | Hard-Day Law intact? | **YES** |
+| 10 | Routine Apple-quality? | **YES** (P2 timer honesty) |
+| 11 | Amy AI Apple-quality? | **YES** as companion |
+| 12 | Navigation Apple-quality? | **YES** |
+| 13 | Living universe production-locked? | **YES** |
+| 14 | Rollback coherent? | **YES** |
+| 15 | Accessibility device-certified? | **NO** |
+| 16 | Ready for controlled App Store submission? | **YES, with certification debt** |
 
 ---
 
 ## Final Verdict
 
-# APPLE READY WITH ACCEPTED CERTIFICATION DEBT
+# B. APPLE READY WITH CERTIFICATION DEBT
 
-### Certification limitations (must remain visible)
+### Exact reasons (do not soften)
 
-1. **P0-9 real-device accessibility certification is NOT COMPLETE**  
-   - VoiceOver: **NOT CERTIFIED**  
-   - Dynamic Type: **NOT CERTIFIED**  
-   - TalkBack: **NOT TESTED**  
-   - Real-device touch targets / reduced motion: **NOT CERTIFIED**  
-2. Static / browser / unit evidence is **supporting only** and must not be substituted for device certification.  
-3. Mass-scale billing / auth-linking / tenancy ops remain **outside** this craft readiness verdict.
+1. **Device accessibility is not certified.** VoiceOver, Dynamic Type, and TalkBack were **not** tested on a real device. Claiming they pass would be misleading.
+2. **This run did not recapture a signed-in Apple reviewer walkthrough on a physical device.** Scoring of authenticated interiors relies on HEAD code + frozen living reviews + P1/P2 documents.
+3. **Submission must use the living production universe** (unset / `living` / `1`) and **must be reviewed from `/begin`**, not `/welcome`.
+4. **Accepted P2 remains:** Grow Quiet study interior, phonics Practice library widgets, More Quick help, paywall next-unlocks, `/welcome` bookmark. These are not P1 accidental universes.
+5. **This is not a mass-scale operational certification** (RevenueCat sandbox, auth linking, tenancy).
 
-### Genuine product blockers preventing APPLE READY?
+This is **not** A (unqualified Apple Ready).  
+This is **not** C (P1 remediation required) — P1 accidental escapes are contained.  
+This is **not** D (not ready).
 
-**None** under the production living universe + `/begin` review path after FA-02 hardening.
+---
 
-### Cleared since prior Final Apple Audit
+## Submission Conditions
 
-| Prior issue | Now |
+If the Founder submits this candidate:
+
+1. Ship a **living** production web/native build. Do not ship `mixed`.
+2. App Review notes: first screen is **`/begin`**. Do not send `/welcome` as the product door.
+3. **Do not claim** VoiceOver, Dynamic Type, or TalkBack certification.
+4. Treat remaining P2 as known debt, not a secret.
+5. Rollback remains `VITE_FF_AMYNEST_LIVING_UNIVERSE=0` / `legacy` + rebuild.
+
+---
+
+## This-run verification
+
+| Gate | Result |
 |---|---|
-| FA-02 dual-universe ops as P0 (accidental / explicit production mixed) | **CLEARED** — master lock + production mixed rejected |
-| Named deep-interior federation (Health / Grow / Birth Sky) | **Remain cleared** (re-verified) |
+| TypeScript `pnpm --filter @workspace/kidschedule run typecheck` | **PASS** |
+| Targeted living / FA-02 / P0-7 / nav / leave / speech-legacy / routine / module living-room / Amy AI tests | **32 files / 178 tests PASS** |
+| Production `pnpm --filter @workspace/kidschedule run build` | **PASS** (`✓ built in 23.95s`) |
+| Known skip | `parent-hub-i18n` (pre-existing; not reopened) |
+| FA-02 mixed production | Still forbidden by resolver + documented Vite throw (unit-tested) |
+| Visual device recapture | **NOT TESTED** this run |
+| VoiceOver / Dynamic Type / TalkBack | **NOT CERTIFIED** |
 
 ---
 
-## Founder Recommendation
+## Founder Decision
 
-**Authorize controlled Apple review preparation under the conditions above**, while treating P0-9 as explicit accepted certification debt — **or** pause for a real-device accessibility certification sprint first if the submission narrative requires a11y claims.
+This audit answers:
 
-| Option | Meaning |
-|---|---|
-| **A** | Device a11y certification sprint (P0-9) before submission |
-| **B** | Controlled submission now: living face locked · `/begin` only · no a11y overclaim · accepted cert debt |
-| **C** | Narrow P1 craft (Speech mid-play · leave continuity · `/begin` contrast) before submission |
+> If we submitted the current production candidate to Apple, what would an honest senior Apple reviewer conclude?
 
-Craft trajectory:
+They would understand a **calm parenting home**. They would not stumble into Games, Rewards, Worksheet Studio, or neon Speech by normal use. They would not be told the app is accessibility-certified. They would see craft leftovers only if they open Grow Quiet study, expand Phonics Practice library, or More → Quick help.
 
-| Was (prior Final Apple @ pre-FA-02) | Now (re-run @ HEAD `72f14013`) |
-|---|---|
-| Apple Readiness ~7.0 · CONDITIONAL | **Apple Readiness ~8.0 · READY WITH ACCEPTED CERT DEBT** |
-| Dual-universe production risk P0 | **Locked + mixed production rejected** |
-| Deep interiors MOSTLY | **MOSTLY→YES** (named blockers remain cleared) |
-| P0 product + ops face-lock | **No product P0**; cert debt named |
+**Wait for Founder approval.** No implementation. No follow-up remediation from this order.
 
----
-
-## Screenshots / visual notes
-
-Prior captures remain useful contrast references where present under `/opt/cursor/artifacts/` (`final-apple-begin-primary.webp`, `final-apple-welcome-contrast.webp`). This re-run did not require new product implementation or UI changes; authenticated Hub/Today full re-capture remains **NOT TESTABLE** in this VM.
-
----
-
-## Commit SHA
-
-**Verified application HEAD:** `72f140134b973a1f5c7bd3e27538313ff55e1e22`  
-**FA-02 hardening implementation:** `26b2c05ce8fe8d9cc10fad1dd2e7a95ac90e2bab`  
-**Audit document commit:** `a124753e911d6e08817cd6dd9cd885a01cfb8d44`
-
----
-
-## STOP
-
-No implementation. No findings executed.
-
-**Audit → document → commit → push → STOP for Founder review.**
+STOP.
