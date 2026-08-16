@@ -85,4 +85,19 @@ describe("routine living dashboard copy", () => {
     const premiumBlock = hubCss.slice(premiumStart, hubCss.indexOf("}", premiumStart) + 1);
     expect(premiumBlock).toMatch(/168,\s*85,\s*247/);
   });
+
+  it("living /routines keeps the mobile tab bar and floating Amy AI button", () => {
+    const layout = readFileSync(
+      resolve(import.meta.dirname, "../../components/layout.tsx"),
+      "utf8",
+    );
+    const tabBar = readFileSync(
+      resolve(import.meta.dirname, "../../components/mobile-tab-bar.tsx"),
+      "utf8",
+    );
+    expect(layout).toContain("<MobileTabBar");
+    expect(layout).toContain("livingRoutinesRoom || shouldShowLegacyMobileTabBar");
+    expect(tabBar).toContain("<AmyFab");
+    expect(tabBar).toContain('data-testid="mobile-tab-bar"');
+  });
 });
