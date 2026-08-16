@@ -1,0 +1,302 @@
+/**
+ * AmyNest home navigation — quieter than the rooms, same evening sanctuary.
+ * Presentation only. No new design tokens.
+ */
+.amynest-home-nav {
+  --ahn-ink: rgba(243, 232, 216, 0.96);
+  --ahn-muted: rgba(184, 169, 154, 0.88);
+  --ahn-line: rgba(232, 212, 184, 0.16);
+  color: var(--ahn-ink);
+  background:
+    radial-gradient(ellipse 90% 46% at 50% -8%, rgba(232, 212, 184, 0.1) 0%, transparent 58%),
+    linear-gradient(180deg, #141018 0%, #1a1520 46%, #121018 100%);
+  overflow-x: hidden;
+}
+
+.amynest-home-nav-header {
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--ahn-line);
+}
+
+.amynest-home-nav-brand {
+  min-width: 0;
+  flex: 1;
+}
+
+.amynest-home-nav-brand .ahn-brand-name {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.amynest-home-nav-brand .ahn-brand-line {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ahn-muted);
+}
+
+.amynest-home-nav-close {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  color: var(--ahn-muted);
+}
+
+.amynest-home-nav-family {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0.75rem;
+  min-height: 52px;
+  margin: 0.75rem 0.75rem 0.25rem;
+  padding: 0.45rem 0.55rem 0.45rem 0.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--ahn-line);
+  background: rgba(255, 252, 248, 0.04);
+  text-decoration: none;
+  color: inherit;
+}
+
+.amynest-home-nav-family:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.72);
+  outline-offset: 2px;
+}
+
+.amynest-home-nav-family .ahn-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.amynest-home-nav-family .ahn-copy p {
+  margin: 0;
+}
+
+.amynest-home-nav-family .ahn-copy p:first-child {
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amynest-home-nav-family .ahn-copy p:last-child {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--ahn-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amynest-home-nav-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0.75rem 0.75rem;
+}
+
+.amynest-home-nav-section {
+  margin-top: 1.1rem;
+}
+
+.amynest-home-nav-section:first-child {
+  margin-top: 0.55rem;
+}
+
+.amynest-home-nav-heading {
+  margin: 0 0 0.4rem 0.35rem;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: rgba(184, 169, 154, 0.78);
+  text-decoration: none;
+}
+
+.amynest-home-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: background-color 160ms ease;
+}
+
+.amynest-home-nav-row--primary {
+  min-height: 52px;
+}
+
+.amynest-home-nav-row--quiet {
+  min-height: 40px;
+  opacity: 0.86;
+}
+
+.amynest-home-nav-row--active {
+  background: rgba(255, 252, 248, 0.06);
+}
+
+.amynest-home-nav-row:hover,
+.amynest-home-nav-row:focus-visible {
+  background: rgba(255, 252, 248, 0.07);
+}
+
+.amynest-home-nav-row:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.72);
+  outline-offset: 2px;
+}
+
+.amynest-home-nav-row .ahn-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  color: var(--ahn-ink);
+}
+
+.amynest-home-nav-row .ahn-copy {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.amynest-home-nav-row .ahn-label {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amynest-home-nav-row--quiet .ahn-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.amynest-home-nav-row .ahn-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: 0.08rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--ahn-muted);
+  overflow: hidden;
+}
+
+.amynest-home-nav-more {
+  margin: 0;
+}
+
+.amynest-home-nav-more-summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.amynest-home-nav-more-summary::-webkit-details-marker,
+.amynest-home-nav-more-summary::marker {
+  display: none;
+  content: "";
+}
+
+.amynest-home-nav-more-summary:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.72);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.amynest-home-nav-footer {
+  flex-shrink: 0;
+  padding: 0.45rem 1rem max(0.85rem, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ahn-line);
+}
+
+.amynest-home-nav-signout {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.25rem 0.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--ahn-muted);
+  font-size: 0.88rem;
+}
+
+.amynest-home-nav-signout:hover,
+.amynest-home-nav-signout:focus-visible {
+  color: var(--ahn-ink);
+}
+
+.amynest-home-nav-signout:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.72);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amynest-home-nav-row,
+  .amynest-home-nav-family {
+    transition: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .amynest-home-nav-header {
+    padding: 0.7rem 0.75rem 0.6rem;
+  }
+
+  .amynest-home-nav-family {
+    margin-inline: 0.5rem;
+  }
+
+  .amynest-home-nav-scroll {
+    padding-inline: 0.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .amynest-home-nav-header {
+    padding: 1.1rem 1.25rem 0.95rem;
+  }
+
+  .amynest-home-nav-family {
+    margin: 0.9rem 1rem 0.35rem;
+    min-height: 56px;
+  }
+
+  .amynest-home-nav-scroll {
+    padding: 0.45rem 1rem 1rem;
+  }
+
+  .amynest-home-nav-row--primary {
+    min-height: 56px;
+  }
+
+  .amynest-home-nav-footer {
+    padding: 0.55rem 1.25rem 1rem;
+  }
+}

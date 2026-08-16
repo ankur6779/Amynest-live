@@ -30,6 +30,7 @@ type AppLinkProps = {
   onFocus?: FocusEventHandler<HTMLAnchorElement>;
   "data-testid"?: string;
   "data-tour"?: string;
+  "aria-current"?: "page" | undefined;
 };
 
 export function AppLink({

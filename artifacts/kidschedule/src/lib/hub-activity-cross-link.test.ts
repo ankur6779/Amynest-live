@@ -36,4 +36,14 @@ describe("parseParentingHubDeepLink", () => {
   it("returns null for unknown hash", () => {
     expect(parseParentingHubDeepLink("unknown")).toBeNull();
   });
+
+  it("opens Rooms V1 doors from home-nav hashes without new routes", () => {
+    expect(parseParentingHubDeepLink("help")).toEqual({ group: "help", tileId: "" });
+    expect(parseParentingHubDeepLink("understand")).toEqual({
+      group: "understand",
+      tileId: "",
+    });
+    expect(parseParentingHubDeepLink("care")).toEqual({ group: "care", tileId: "" });
+    expect(parseParentingHubDeepLink("moments")).toEqual({ group: "moments", tileId: "" });
+  });
 });

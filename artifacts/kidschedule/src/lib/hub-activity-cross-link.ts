@@ -1,7 +1,17 @@
+import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/rooms";
+
 /** Deep links from routines → Parent Hub activity tiles. */
 
 export type HubDeepLinkTarget = {
-  group: "creativity" | "learning" | "stories" | "health" | "support" | "today" | "parent";
+  group:
+    | "creativity"
+    | "learning"
+    | "stories"
+    | "health"
+    | "support"
+    | "today"
+    | "parent"
+    | ParentHubRoomId;
   tileId: string;
   /** Infant Hub subsection id (e.g. infant-cry) when deep-linking into a module. */
   sectionId?: string;
@@ -118,6 +128,9 @@ export function parseParentingHubDeepLink(rawHash?: string): HubDeepLinkTarget |
   }
 
   const [tilePart] = raw.split("#");
+  if ((PARENT_HUB_ROOM_IDS as readonly string[]).includes(tilePart)) {
+    return { group: tilePart as ParentHubRoomId, tileId: "" };
+  }
   const m = tilePart.match(/^tile-([a-z0-9-]+)$/);
   if (!m) return null;
   const tileId = m[1]!;
