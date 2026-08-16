@@ -72,9 +72,16 @@ export function Layout({
   const livingRoutinesRoom = isRoutinesDashboard && isRoutineLivingV1Enabled();
   const showDashboardChrome =
     location === "/dashboard" || livingRoutinesRoom;
-  const showLegacyTabBar =
-    livingRoutinesRoom || shouldShowLegacyMobileTabBar(showDashboardChrome);
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
+  const onPrimaryMobileTabs =
+    !isImmersiveRoute &&
+    !isAssistantRoute &&
+    (isDashboard ||
+      safePathStartsWithSegment(location, "/routines") ||
+      isAmyCoachRoute ||
+      isParentHubRoute);
+  const showLegacyTabBar =
+    onPrimaryMobileTabs || shouldShowLegacyMobileTabBar(showDashboardChrome);
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);

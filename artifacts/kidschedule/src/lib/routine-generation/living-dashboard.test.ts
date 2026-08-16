@@ -86,7 +86,7 @@ describe("routine living dashboard copy", () => {
     expect(premiumBlock).toMatch(/168,\s*85,\s*247/);
   });
 
-  it("living /routines keeps the mobile tab bar and floating Amy AI button", () => {
+  it("living mobile rooms keep the tab bar and floating Amy AI button", () => {
     const layout = readFileSync(
       resolve(import.meta.dirname, "../../components/layout.tsx"),
       "utf8",
@@ -96,7 +96,9 @@ describe("routine living dashboard copy", () => {
       "utf8",
     );
     expect(layout).toContain("<MobileTabBar");
-    expect(layout).toContain("livingRoutinesRoom || shouldShowLegacyMobileTabBar");
+    expect(layout).toContain("onPrimaryMobileTabs");
+    expect(layout).toContain("onPrimaryMobileTabs || shouldShowLegacyMobileTabBar");
+    expect(layout).toContain('safePathStartsWithSegment(location, "/routines")');
     expect(tabBar).toContain("<AmyFab");
     expect(tabBar).toContain('data-testid="mobile-tab-bar"');
   });
