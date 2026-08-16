@@ -3,10 +3,16 @@ import { render, screen } from "@testing-library/react";
 import { AmyNestLeaveContinuity } from "./amy-nest-leave-continuity";
 
 describe("AmyNestLeaveContinuity", () => {
-  it("always offers Today Home and Parent Hub", () => {
+  it("always offers Home, Today's plan, Amy, and Rooms", () => {
     render(<AmyNestLeaveContinuity />);
-    expect(screen.getByTestId("leave-exit-today-home")).toHaveTextContent("Today Home");
-    expect(screen.getByTestId("leave-exit-parent-hub")).toHaveTextContent("Parent Hub");
+    expect(screen.getByTestId("leave-exit-today-home")).toHaveTextContent("Home");
+    expect(screen.getByTestId("leave-exit-today-home")).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByTestId("leave-exit-todays-plan")).toHaveTextContent("Today's plan");
+    expect(screen.getByTestId("leave-exit-todays-plan")).toHaveAttribute("href", "/routines");
+    expect(screen.getByTestId("leave-exit-beside-you")).toHaveTextContent("Amy");
+    expect(screen.getByTestId("leave-exit-beside-you")).toHaveAttribute("href", "/assistant");
+    expect(screen.getByTestId("leave-exit-parent-hub")).toHaveTextContent("Rooms");
+    expect(screen.getByTestId("leave-exit-parent-hub")).toHaveAttribute("href", "/parenting-hub");
     expect(screen.queryByTestId("leave-exit-continue")).toBeNull();
   });
 

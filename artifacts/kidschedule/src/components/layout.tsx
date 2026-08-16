@@ -29,6 +29,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
 import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
+import { shouldShowLegacyMobileTabBar } from "@/lib/living-leave-containment";
 
 export function Layout({
   children
@@ -71,6 +72,7 @@ export function Layout({
   const showDashboardChrome =
     location === "/dashboard" ||
     (isRoutinesDashboard && isRoutineLivingV1Enabled());
+  const showLegacyTabBar = shouldShowLegacyMobileTabBar(showDashboardChrome);
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
@@ -81,12 +83,12 @@ export function Layout({
   }, [location]);
 
   useEffect(() => {
-    document.body.classList.toggle("has-tabbar", showDashboardChrome);
-    document.body.classList.toggle("no-tabbar", !showDashboardChrome);
+    document.body.classList.toggle("has-tabbar", showLegacyTabBar);
+    document.body.classList.toggle("no-tabbar", !showLegacyTabBar);
     return () => {
       document.body.classList.remove("has-tabbar", "no-tabbar");
     };
-  }, [showDashboardChrome]);
+  }, [showLegacyTabBar]);
 
   const handleSignOut = () => {
     try {
@@ -174,7 +176,7 @@ export function Layout({
         </div>
       </main>
 
-      <MobileTabBar visible={showDashboardChrome} />
+      <MobileTabBar visible={showLegacyTabBar} />
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (

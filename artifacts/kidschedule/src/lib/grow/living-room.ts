@@ -249,6 +249,14 @@ export function livingGrowEmptyPhonics(): string {
   return "Sounds & letters supports ages 1–6. Select or add a child in that range.";
 }
 
+export function livingGrowWorkbookTitle(): string {
+  return "Printable practice";
+}
+
+export function livingGrowWorkbookPurpose(): string {
+  return "A quiet worksheet when you want paper beside the sounds.";
+}
+
 export function livingGrowPremiumGateTitle(): string {
   return "Continue learning with AmyNest";
 }

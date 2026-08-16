@@ -9,7 +9,7 @@ import "../index.css";
 import "../i18n";
 import { NAV_ITEMS } from "@/lib/mobile-menu-config";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
-import { GraduationCap } from "lucide-react";
+import { LIVING_NAV_CONTAINED_HREFS } from "@/lib/living-leave-containment";
 import type { MobileNavItem } from "@/lib/mobile-menu-config";
 import {
   HomeNavFamilyRow,
@@ -18,17 +18,31 @@ import {
   HomeNavSignOut,
   homeNavShellClass,
 } from "@/components/nav/amynest-home-nav";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 
 const params = new URLSearchParams(window.location.search);
 const panel = params.get("panel") ?? "drawer";
 const moreOpen = params.get("more") === "open";
-const fixtureItems: MobileNavItem[] = NAV_ITEMS.some((item) => item.href === "/study")
-  ? NAV_ITEMS
-  : [...NAV_ITEMS, { href: "/study", labelKey: "nav.learning_zone", icon: GraduationCap }];
+const fixtureItems: MobileNavItem[] = NAV_ITEMS.filter(
+  (item) => !(LIVING_NAV_CONTAINED_HREFS as readonly string[]).includes(item.href),
+);
 const sections = buildLivingNavSections(fixtureItems);
 
 function Fixture() {
   const desktop = panel === "desktop";
+  if (panel === "leave") {
+    return (
+      <Router hook={() => ["/phonics", () => {}]}>
+        <div
+          className="min-h-screen bg-background p-4"
+          data-testid="amynest-leave-continuity-fixture"
+          data-panel="leave"
+        >
+          <AmyNestLeaveContinuity continueHref="/parenting-hub" continueLabel="Back to rooms" />
+        </div>
+      </Router>
+    );
+  }
   return (
     <Router hook={() => ["/dashboard", () => {}]}>
       <div

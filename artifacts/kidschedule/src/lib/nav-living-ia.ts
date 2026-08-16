@@ -32,6 +32,7 @@ import {
 import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/rooms";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import type { MobileNavItem } from "@/lib/mobile-menu-config";
+import { filterLivingNavCatalogueItems } from "@/lib/living-leave-containment";
 
 export type LivingNavGroupId = "home" | "care" | "beside_you" | "rooms" | "more";
 
@@ -229,7 +230,9 @@ export function buildLivingNavSections(items: MobileNavItem[]): LivingNavSection
     items: PARENT_HUB_ROOM_IDS.map((room) => roomRow(room)),
   });
 
-  const leftover = [...byHref.values()].map((item) => rowFromItem(item));
+  const leftover = filterLivingNavCatalogueItems([...byHref.values()]).map((item) =>
+    rowFromItem(item),
+  );
   leftover.sort((a, b) => {
     const order = [
       "/birth-sky",
@@ -257,7 +260,10 @@ export function buildLivingNavSections(items: MobileNavItem[]): LivingNavSection
   return sections.filter((section) => section.items.length > 0);
 }
 
-/** Every source href must remain reachable after living grouping. */
+/**
+ * Hrefs presented in living nav after grouping.
+ * Living universe may omit catalogue leave-paths (routes still exist for rollback).
+ */
 export function preservedLivingNavHrefs(items: MobileNavItem[]): string[] {
   const sections = buildLivingNavSections(items);
   const hrefs = new Set<string>();

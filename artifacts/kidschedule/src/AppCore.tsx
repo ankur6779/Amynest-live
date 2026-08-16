@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { Layout } from "@/components/layout";
+import { LivingLeaveRedirect } from "@/components/living-leave-redirect";
 
 // Eager imports — landing + sign-in flow are the most common first views,
 // and NotFound is tiny + needed as a fallback. Everything else is lazy
@@ -742,6 +743,10 @@ function DevRouteRedirect() {
   return <Redirect to="/dashboard" replace />;
 }
 
+function SpeechCoachLiveLegacyRedirect() {
+  return <Redirect to="/speech-coach/live-session" replace />;
+}
+
 function FirebaseAuthBootstrap() {
   const { getToken, isSignedIn } = useAuth();
 
@@ -1060,7 +1065,9 @@ function AppRoutes() {
           <Route path="/learn-with-amy">
             <Redirect to="/parenting-hub" replace />
           </Route>
-          <Route path="/progress" component={ProgressRoute} />
+          <Route path="/progress">
+            <LivingLeaveRedirect path="/progress" Legacy={ProgressRoute} />
+          </Route>
           <Route path="/parenting-hub" component={ParentingHubRoute} />
           <Route path="/parent-growth" component={ParentGrowthRoute} />
           {import.meta.env.PROD ? (
@@ -1081,16 +1088,29 @@ function AppRoutes() {
           <Route path="/phonics" component={PhonicsRoute} />
           <Route path="/life-skills" component={LifeSkillsRoute} />
           <Route path="/speech-coach/live">
-            <Redirect to="/speech-coach/live-session" replace />
+            <LivingLeaveRedirect
+              path="/speech-coach/live"
+              Legacy={SpeechCoachLiveLegacyRedirect}
+            />
           </Route>
-          <Route path="/speech-coach/live-session" component={SpeechCoachLiveSessionRoute} />
-          <Route path="/speech-coach/talk" component={SpeechCoachTalkRoute} />
+          <Route path="/speech-coach/live-session">
+            <LivingLeaveRedirect
+              path="/speech-coach/live-session"
+              Legacy={SpeechCoachLiveSessionRoute}
+            />
+          </Route>
+          <Route path="/speech-coach/talk">
+            <LivingLeaveRedirect path="/speech-coach/talk" Legacy={SpeechCoachTalkRoute} />
+          </Route>
           <Route path="/speech-coach-v2/session" component={SpeechCoachV2SessionRoute} />
           <Route path="/speech-coach-v2" component={SpeechCoachV2HubRoute} />
           <Route path="/talking-amy" component={TalkingAmyRoute} />
           <Route path="/speech-coach" component={SpeechCoachRoute} />
           <Route path="/parenting-hub/speech-coach/live">
-            <Redirect to="/speech-coach/live-session" replace />
+            <LivingLeaveRedirect
+              path="/parenting-hub/speech-coach/live"
+              Legacy={SpeechCoachLiveLegacyRedirect}
+            />
           </Route>
           <Route path="/parenting-hub/speech-coach">
             <Redirect to="/speech-coach" replace />
@@ -1098,7 +1118,12 @@ function AppRoutes() {
           <Route path="/parenting-hub/talking-amy">
             <Redirect to="/talking-amy" replace />
           </Route>
-          <Route path="/kids-control-center" component={KidsControlCenterRoute} />
+          <Route path="/kids-control-center">
+            <LivingLeaveRedirect
+              path="/kids-control-center"
+              Legacy={KidsControlCenterRoute}
+            />
+          </Route>
           <Route path="/study" component={StudyRoute} />
           <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
           {/* Legacy deep link — keep old URLs working without a hard break. */}
@@ -1122,8 +1147,12 @@ function AppRoutes() {
           <Route path="/spelling" component={SpellingRoute} />
           <Route path="/olympiad" component={OlympiadRoute} />
           <Route path="/event-prep" component={EventPrepRoute} />
-          <Route path="/teacher-os" component={TeacherOsRoute} />
-          <Route path="/worksheet" component={WorksheetRoute} />
+          <Route path="/teacher-os">
+            <LivingLeaveRedirect path="/teacher-os" Legacy={TeacherOsRoute} />
+          </Route>
+          <Route path="/worksheet">
+            <LivingLeaveRedirect path="/worksheet" Legacy={WorksheetRoute} />
+          </Route>
           <Route path="/school-morning-flow" component={SchoolMorningFlowRoute} />
           <Route path="/amy-coach" component={AmyCoachRoute} />
           <Route path="/amy-coach/progress" component={AmyCoachProgressRoute} />
@@ -1132,7 +1161,9 @@ function AppRoutes() {
           <Route path="/nutrition" component={NutritionHubRoute} />
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/rhymes" component={RhymesRoute} />
-          <Route path="/games" component={GamesRoute} />
+          <Route path="/games">
+            <LivingLeaveRedirect path="/games" Legacy={GamesRoute} />
+          </Route>
           <Route path="/animal-world" component={AnimalWorldRoute} />
           <Route path="/discovery-worlds" component={DiscoveryWorldsHubRoute} />
           <Route path="/answer-to-kids-how" component={AnswerToKidsHowRoute} />
@@ -1144,8 +1175,12 @@ function AppRoutes() {
           <Route path="/pricing" component={PricingRoute} />
           <Route path="/referral/:code" component={ReferralDeepLinkRoute} />
           <Route path="/referrals" component={ReferralsRoute} />
-          <Route path="/insights" component={InsightsRoute} />
-          <Route path="/rewards" component={RewardsRoute} />
+          <Route path="/insights">
+            <LivingLeaveRedirect path="/insights" Legacy={InsightsRoute} />
+          </Route>
+          <Route path="/rewards">
+            <LivingLeaveRedirect path="/rewards" Legacy={RewardsRoute} />
+          </Route>
           {import.meta.env.PROD ? (
             <>
               <Route path="/debug-parity" component={DevRouteRedirect} />

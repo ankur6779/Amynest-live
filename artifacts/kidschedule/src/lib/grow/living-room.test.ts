@@ -14,6 +14,8 @@ import {
   livingGrowPageTitleForFeature,
   livingGrowPremiumGateTitle,
   livingGrowPrimaryCta,
+  livingGrowWorkbookPurpose,
+  livingGrowWorkbookTitle,
   recommendGrowAction,
 } from "./living-room";
 
@@ -85,5 +87,10 @@ describe("grow living-room", () => {
       .join(" ")
       .toLowerCase();
     expect(joined).not.toMatch(/pro zone|reading academy|unlock all|olympiad zone|mastery/);
+  });
+
+  it("phonics workbook leave copy is not unlock theatre", () => {
+    expect(livingGrowWorkbookTitle().toLowerCase()).not.toMatch(/unlock|premium|workbook sets/);
+    expect(livingGrowWorkbookPurpose().toLowerCase()).not.toMatch(/unlock|paid premium|15 complete/);
   });
 });

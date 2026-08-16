@@ -9,6 +9,7 @@ import {
 import { useMobileMenuData } from "@/hooks/use-mobile-menu-data";
 import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
+import { isAmynestLivingUniverseEnabled } from "@/lib/amynest-living-universe";
 import {
   HomeNavFamilyRow,
   HomeNavHeader,
@@ -54,9 +55,10 @@ export function PremiumDesktopSidebar({
 
   const safeChildList = (safeChildren ?? []) as Array<{ name?: string | null }>;
   const resolvedMenu = resolveSafeMenu(safeMenu ?? DEFAULT_MOBILE_MENU);
-  let drawerItems = resolvedMenu.some((item) => item.href === "/study")
-    ? resolvedMenu
-    : [...resolvedMenu, LEARNING_ZONE_ITEM];
+  let drawerItems =
+    isAmynestLivingUniverseEnabled() || resolvedMenu.some((item) => item.href === "/study")
+      ? resolvedMenu
+      : [...resolvedMenu, LEARNING_ZONE_ITEM];
   const amyAstroEnabled = isBirthSkyEnabled(email);
   if (amyAstroEnabled && !drawerItems.some((item) => item.href === "/birth-sky")) {
     const dashIdx = drawerItems.findIndex((item) => item.href === "/dashboard");

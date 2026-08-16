@@ -53,6 +53,12 @@ import { warmPhonicsSessionTiles } from "@/lib/phonics-v2/audio-prefetch";
 import { usePhonicsCurriculum } from "@/hooks/use-phonics-curriculum";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowWorkbookPurpose,
+  livingGrowWorkbookTitle,
+} from "@/lib/grow/living-room";
 import { recordPhonicsHabitActivity } from "@/lib/phonics-journey-habit";
 import { sanitizeDisplayPhonicsItems } from "@/lib/phonics-item-guards";
 import {
@@ -1605,6 +1611,63 @@ function PhonicsDownloadCard({
     { title: "Sample 2", body: "Blend practice with read-aloud prompts" },
     { title: "Sample 3", body: "Digraph sorting and sentence completion" },
   ];
+
+  const living = isGrowLivingV1Enabled();
+  const downloadLabel = downloading
+    ? t("components.phonics_learning.preparing_download")
+    : canDownloadWorkbook
+      ? t("components.phonics_learning.download_pdf")
+      : living
+        ? PREMIUM_VOICE.continueCta
+        : "Unlock Phonics Workbooks";
+
+  if (living) {
+    return (
+      <Card
+        data-testid="phonics-download-card"
+        data-gw-workbook="living"
+        className="rounded-3xl border border-border/70 bg-card/80"
+      >
+        <CardContent className="p-5 space-y-3">
+          <div>
+            <h3 className="font-quicksand text-base font-bold text-foreground">
+              {livingGrowWorkbookTitle()}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {livingGrowWorkbookPurpose()}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadClick}
+            disabled={downloading}
+            data-testid="phonics-download-button"
+            className="w-full rounded-xl border border-border bg-background py-3 text-sm font-semibold text-foreground disabled:opacity-70"
+          >
+            {downloading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {downloadLabel}
+              </span>
+            ) : (
+              downloadLabel
+            )}
+          </button>
+          {!canDownloadWorkbook ? (
+            <p className="text-xs text-muted-foreground text-center">
+              {PREMIUM_VOICE.invitation}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="text-xs text-primary mt-2 flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {error}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return <Card data-testid="phonics-download-card" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <span className="absolute top-3 right-3 z-10 text-xs bg-yellow-500 text-black px-2 py-1 rounded-md font-semibold">

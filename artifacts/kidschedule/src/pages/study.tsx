@@ -74,6 +74,12 @@ import {
   EngagementStrip, XpPopup, ConfettiBurst, useStudyFx,
 } from "@/components/study-engagement";
 import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
+import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import {
+  isGrowLivingV1Enabled,
+  livingGrowLeaveEyebrow,
+  livingGrowPageTitle,
+} from "@/lib/grow/living-room";
 import { cn } from "@/lib/utils";
 import {
   STUDY_ACCENT,
@@ -159,6 +165,7 @@ export default function StudyPage() {
   const child = "childId" in view ? list.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
   const gateChildName = child?.name ?? list[0]?.name ?? "your child";
+  const living = isGrowLivingV1Enabled();
 
   useEffect(() => {
     if (view.kind !== "play-home") return;
@@ -252,8 +259,13 @@ export default function StudyPage() {
             <GraduationCap className="h-5 w-5" />
           </div>
           <div className="min-w-0">
+            {living ? (
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {livingGrowLeaveEyebrow()}
+              </p>
+            ) : null}
             <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">
-              {t("screens.study.header_title")}
+              {living ? livingGrowPageTitle("study") : t("screens.study.header_title")}
             </h1>
             <p className="truncate text-xs text-muted-foreground">
               {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : t("screens.study.pick_child")}
@@ -452,6 +464,13 @@ export default function StudyPage() {
         />
       )}
       </HubModuleGateWrap>
+      {living ? (
+        <AmyNestLeaveContinuity
+          className="mt-4"
+          continueHref="/parenting-hub"
+          continueLabel="Back to rooms"
+        />
+      ) : null}
       </main>
     </div>
   );
