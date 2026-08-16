@@ -1,5 +1,6 @@
+import { AmyMarkdown } from "@/lib/ask-amy/amy-markdown";
+import { AmyAIIcon } from "@/components/ask-amy/amy-ai-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { AmyIcon } from "@/components/amy-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CHAT_PROMPT_ATTR } from "@/lib/chat-platform";
@@ -10,9 +11,9 @@ import type { ThreadTheme } from "../types";
 const ONBOARDING_GLASS_BG = "rgba(255,255,255,0.10)";
 const ONBOARDING_GLASS_BORDER = "1px solid rgba(168,85,247,0.30)";
 
-function AmyAvatar({ theme, size = 32 }: { theme: ThreadTheme; size?: number }) {
+function AmyAvatar({ theme, size = 28 }: { theme: ThreadTheme; size?: number }) {
   if (theme === "onboarding") return <AmyMascotLogo size={size} />;
-  return <AmyIcon size={size} ring />;
+  return <AmyAIIcon size={size} />;
 }
 
 export function AmyMessageBubble({
@@ -25,6 +26,7 @@ export function AmyMessageBubble({
   onListen,
   onPrimeListen,
   highlight,
+  markdown = false,
 }: {
   text: string;
   theme?: ThreadTheme;
@@ -35,6 +37,7 @@ export function AmyMessageBubble({
   onListen?: () => void;
   onPrimeListen?: () => void;
   highlight?: boolean;
+  markdown?: boolean;
 }) {
   const promptProps =
     promptId != null && promptId !== "" ? { [CHAT_PROMPT_ATTR]: promptId } : undefined;
@@ -90,12 +93,12 @@ export function AmyMessageBubble({
             highlight && "ring-2 ring-primary/20",
           )}
         >
-          {badge ? (
-            <Badge variant="secondary" className="mb-2 text-[10px] uppercase tracking-wide">
-              {badge}
-            </Badge>
-          ) : null}
-          <p className="whitespace-pre-wrap text-foreground">{text}</p>
+            {badge ? (
+              <Badge variant="secondary" className="mb-2 text-[10px] uppercase tracking-wide">
+                {badge}
+              </Badge>
+            ) : null}
+            {markdown ? <AmyMarkdown text={text} /> : <p className="whitespace-pre-wrap text-foreground">{text}</p>}
           {onListen ? (
             <Button
               type="button"

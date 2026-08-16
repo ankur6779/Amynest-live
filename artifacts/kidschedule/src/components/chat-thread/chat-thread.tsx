@@ -33,6 +33,10 @@ export function ChatThread({
   composerVariant = theme === "onboarding" ? "onboarding" : "default",
   layout = surface === "onboarding" ? "fullscreen" : "embedded",
   testId,
+  showDraft = true,
+  typingStatusLabel,
+  jumpToLatestClassName,
+  enterToSend = true,
 }: ChatThreadProps) {
   const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -74,10 +78,12 @@ export function ChatThread({
     hasConversation && (showScrollLatestProp ?? showScrollLatestInternal);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      onSend();
-    }
+    if (event.key !== "Enter" || event.shiftKey) return;
+    const coarse =
+      typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+    if (!enterToSend || coarse) return;
+    event.preventDefault();
+    onSend();
   };
 
   return (
@@ -114,7 +120,9 @@ export function ChatThread({
           messages={messages}
           theme={theme}
           draft={draft}
+          showDraft={showDraft}
           loading={loading}
+          typingStatusLabel={typingStatusLabel}
           activePromptId={activePromptId}
           onInteraction={onInteraction}
         />
@@ -128,7 +136,10 @@ export function ChatThread({
             onScrollLatest?.();
             scrollApiRef.current?.scrollToEnd("smooth");
           }}
-          className="absolute bottom-28 right-4 z-40 rounded-full px-4 shadow-lg md:bottom-24"
+          className={
+            jumpToLatestClassName ??
+            "absolute bottom-28 right-4 z-40 rounded-full px-4 shadow-lg md:bottom-24"
+          }
         >
           {scrollToLatestLabel}
         </Button>

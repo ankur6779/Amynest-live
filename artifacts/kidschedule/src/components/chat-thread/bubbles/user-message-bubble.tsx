@@ -1,4 +1,3 @@
-import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ThreadTheme } from "../types";
 
@@ -45,12 +44,7 @@ export function UserMessageBubble({
       role="article"
       aria-label={pending ? `Draft: ${text}` : `You: ${text}`}
     >
-      {!pending ? (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary-foreground">
-          <User className="h-3.5 w-3.5" />
-        </div>
-      ) : null}
-      <div className="flex max-w-[85%] flex-col items-end gap-1">
+      <div className="flex max-w-[min(85%,40rem)] flex-col items-end gap-1">
         <div
           className={cn(
             "rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-sm leading-relaxed text-primary-foreground shadow-sm",

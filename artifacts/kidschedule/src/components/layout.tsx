@@ -54,14 +54,16 @@ export function Layout({
   const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
+  const isAssistantConversationRoute = safePathStartsWithSegment(location, "/assistant");
   const isImmersiveRoute =
     isLearningZoneRoute(location) ||
     safePathStartsWith(location, "/speech-coach") ||
     safePathStartsWith(location, "/speech-coach-v2") ||
     safePathStartsWith(location, "/talking-amy") ||
-    safePathStartsWith(location, "/audio-lessons");
+    safePathStartsWith(location, "/audio-lessons") ||
+    isAssistantConversationRoute;
   const isAssistantRoute =
-    safePathStartsWithSegment(location, "/assistant") ||
+    isAssistantConversationRoute ||
     safePathStartsWithSegment(location, "/amy-ai-tutor");
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
   const isDashboard = location === "/" || location === "/dashboard";

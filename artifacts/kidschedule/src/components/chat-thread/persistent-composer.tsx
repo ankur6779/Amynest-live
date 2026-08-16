@@ -68,6 +68,7 @@ export function PersistentComposer({
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
+          aria-label={placeholder}
           className={
             variant === "onboarding"
               ? "max-h-[120px] min-h-[52px] flex-1 resize-none overflow-y-auto border-none bg-transparent p-0 text-lg font-medium text-card-foreground shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
@@ -80,7 +81,8 @@ export function PersistentComposer({
           onClick={onSend}
           disabled={sendDisabled || !draft.trim() || disabled}
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-xl"
+          aria-label="Send"
+          className="h-10 w-10 shrink-0 rounded-xl"
           data-testid="chat-thread-send"
         >
           {disabled && sendDisabled ? (

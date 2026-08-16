@@ -11,6 +11,7 @@ export function MessageTimeline({
   draft,
   showDraft = true,
   loading = false,
+  typingStatusLabel,
   activePromptId,
   onInteraction,
 }: {
@@ -19,6 +20,7 @@ export function MessageTimeline({
   draft?: string;
   showDraft?: boolean;
   loading?: boolean;
+  typingStatusLabel?: string;
   activePromptId?: string | null;
   onInteraction?: (event: InteractionEvent) => void;
 }) {
@@ -45,6 +47,7 @@ export function MessageTimeline({
               key={message.id}
               text={message.text}
               theme={theme}
+              markdown={message.markdown}
               disclaimer={message.disclaimer}
               badge={message.badge}
               promptId={message.id === resolvedPromptId ? message.id : undefined}
@@ -118,7 +121,7 @@ export function MessageTimeline({
       {showDraft && draft && draft.trim().length > 0 ? (
         <UserMessageBubble text={draft} theme={theme} pending />
       ) : null}
-      {loading ? <AmyTypingBubble theme={theme} /> : null}
+      {loading ? <AmyTypingBubble theme={theme} statusLabel={typingStatusLabel} /> : null}
     </>
   );
 }

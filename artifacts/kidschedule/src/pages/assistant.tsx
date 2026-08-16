@@ -32,6 +32,7 @@ import {
 } from "@/lib/hard-day-monetization";
 import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import { AmyAiConversationWorkspace } from "@/components/ask-amy/amy-ai-conversation-workspace";
 import "@/components/ask-amy/ask-amy-living-room.css";
 
 function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
@@ -96,6 +97,10 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
+    if (companionMode) {
+      setHistoryLoaded(true);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -115,7 +120,7 @@ export default function AssistantPage() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [companionMode]);
 
   const { data: childrenData } = useQuery<
     Array<{ id?: number; name?: string; age?: number | null; ageMonths?: number | null }>
@@ -162,6 +167,7 @@ export default function AssistantPage() {
       return parseApiJson<DailyBriefing>(r);
     },
     staleTime: 300_000,
+    enabled: !companionMode,
   });
 
   const sendMessage = useCallback(async (question?: string) => {
@@ -423,6 +429,18 @@ export default function AssistantPage() {
     tabTopics,
     t,
   ]);
+
+  if (companionMode) {
+    return (
+      <AmyAiConversationWorkspace
+        primaryChild={primaryChild}
+        primaryChildTotalMonths={primaryChildTotalMonths}
+        isInfantAmyContext={isInfantAmyContext}
+        limitReached={limitReached}
+        refreshSubscription={refreshSubscription}
+      />
+    );
+  }
 
   return (
     <div

@@ -102,7 +102,7 @@ export type InteractionState =
   | { status: "resolved"; selectedIds?: string[]; pickedIndex?: number; value?: string };
 
 export type ThreadMessage =
-  | { kind: "amy"; id: string; text: string; disclaimer?: string; badge?: string }
+  | { kind: "amy"; id: string; text: string; disclaimer?: string; badge?: string; markdown?: boolean }
   | { kind: "user"; id: string; text: string; askAgain?: { label: string; onAskAgain: () => void } }
   | {
       kind: "interactive";
@@ -172,6 +172,10 @@ export interface ChatThreadProps {
   composerVariant?: "default" | "onboarding";
   layout?: "fullscreen" | "embedded";
   testId?: string;
+  showDraft?: boolean;
+  typingStatusLabel?: string;
+  jumpToLatestClassName?: string;
+  enterToSend?: boolean;
 }
 
 export function createThreadMessageId(prefix = "msg"): string {
