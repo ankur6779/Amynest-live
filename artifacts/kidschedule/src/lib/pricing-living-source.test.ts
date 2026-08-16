@@ -40,5 +40,8 @@ describe("Plans living remanufacture — source contracts", () => {
     expect(pricingPage).toContain("preferBilledPrimary");
     expect(pricingPage).toContain("Keep Amy beside you.");
     expect(pricingPage).toContain("PREMIUM_VOICE");
+    expect(livingCss).toContain("pricing-living-stage");
+    expect(livingCss).toContain("is-recommended");
+    expect(livingCss).not.toMatch(/LIMITED TIME|countdown|scarcity/i);
   });
 });

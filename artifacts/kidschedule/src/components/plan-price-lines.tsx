@@ -42,7 +42,7 @@ export function PlanPriceLines({
   if (preferBilledPrimary) {
     const living = pricingLivingPriceDisplay(presentation);
     return (
-      <div className="mb-1 space-y-0.5">
+      <div className="pricing-living-price-block">
         <div className={priceClassName}>{living.amountLine}</div>
         <p className="pricing-living-period">{living.periodLine}</p>
         {living.equivalentLine && (

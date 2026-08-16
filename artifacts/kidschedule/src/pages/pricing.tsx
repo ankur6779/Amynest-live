@@ -471,6 +471,7 @@ export default function PricingPage() {
       className={["pricing-living", showStickyCta ? "pb-28" : ""].join(" ")}
       data-on-dark
     >
+      <div className="pricing-living-stage">
       <header className="pricing-living-hero">
         <p className="pricing-living-eyebrow">
           {t("pricing.living_eyebrow", { defaultValue: "AmyNest membership" })}
@@ -593,12 +594,14 @@ export default function PricingPage() {
                     <span className="pricing-living-badge">{badgeText}</span>
                   )}
 
-                  <p className="pricing-living-plan-name">{p.title}</p>
-                  <p className="pricing-living-audience">
-                    {t(`pricing.living_audience.${p.id}`, {
-                      defaultValue: PLAN_LIVING_AUDIENCE[p.id],
-                    })}
-                  </p>
+                  <div className="pricing-living-identity">
+                    <p className="pricing-living-plan-name">{p.title}</p>
+                    <p className="pricing-living-audience">
+                      {t(`pricing.living_audience.${p.id}`, {
+                        defaultValue: PLAN_LIVING_AUDIENCE[p.id],
+                      })}
+                    </p>
+                  </div>
 
                   <PlanPriceLines
                     presentation={presentation}
@@ -961,6 +964,7 @@ export default function PricingPage() {
             {t("pages.landing.support")}
           </a>
         </div>
+      </div>
       </div>
 
       {isProcessing && (

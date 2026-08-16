@@ -107,10 +107,16 @@ export function pricingLivingPriceDisplay(presentation: PlanPricePresentation): 
 }
 
 export function pricingPlanCardClasses(
-  _planId: Exclude<Plan, "free">,
+  planId: Exclude<Plan, "free">,
   isSelected: boolean,
 ): string {
-  return ["pricing-living-card", isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
+  return [
+    "pricing-living-card",
+    planId === "yearly" ? "is-recommended" : "",
+    isSelected ? "is-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function pricingPlanPriceClasses(_planId: Exclude<Plan, "free">): string {
