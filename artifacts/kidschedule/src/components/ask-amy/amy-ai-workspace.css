@@ -147,23 +147,62 @@
 .amy-ai-workspace [data-testid="chat-thread-composer"] {
   padding-left: 0;
   padding-right: 0;
+  box-sizing: border-box;
 }
 
-.amy-ai-workspace [data-testid="chat-thread-composer"] > div {
+/*
+ * Clipping root cause (Amy AI only — do not fork PersistentComposer):
+ * 1. The inner shell uses rounded-2xl, which resolves to --radius-2xl (24px)
+ *    and reads as a pill on a ~60px bar.
+ * 2. The textarea is p-0 + rounded-md + overflow-y-auto, so the caret and
+ *    first/last glyphs clip into the field's own curve.
+ * 3. w-full without min-width:0 lets the field take the row width and collide
+ *    with the 44px send control.
+ */
+.amy-ai-workspace [data-testid="chat-thread-composer"] [data-chat-answer="true"] {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  box-sizing: border-box;
+  overflow: visible;
+  border-radius: 18px;
+  padding: 10px 12px 10px 16px;
   background: rgba(255, 252, 248, 0.05);
   border-color: rgba(232, 212, 184, 0.2);
   box-shadow: none;
 }
 
-.amy-ai-workspace [data-testid="chat-thread-composer"] > div:focus-within {
+.amy-ai-workspace [data-testid="chat-thread-composer"] [data-chat-answer="true"]:focus-within {
   border-color: rgba(232, 212, 184, 0.42);
 }
 
+.amy-ai-workspace [data-testid="chat-thread-input"] {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 0;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  padding: 8px 10px 8px 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.amy-ai-workspace [data-testid="chat-thread-input"]:focus-visible {
+  outline: none;
+}
+
 .amy-ai-workspace [data-testid="chat-thread-send"] {
+  flex: 0 0 44px;
+  flex-shrink: 0;
   min-width: 44px;
   min-height: 44px;
   height: 44px;
   width: 44px;
+  margin: 0;
   border-radius: 999px;
   background: rgba(232, 212, 184, 0.22);
   color: var(--amy-ai-ink);
