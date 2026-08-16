@@ -29,7 +29,6 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
 import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
-import { shouldShowLegacyMobileTabBar } from "@/lib/living-leave-containment";
 
 export function Layout({
   children
@@ -67,21 +66,15 @@ export function Layout({
     isAssistantConversationRoute ||
     safePathStartsWithSegment(location, "/amy-ai-tutor");
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
-  const isDashboard = location === "/" || location === "/dashboard";
   const isRoutinesDashboard = location === "/routines";
   const livingRoutinesRoom = isRoutinesDashboard && isRoutineLivingV1Enabled();
   const showDashboardChrome =
     location === "/dashboard" || livingRoutinesRoom;
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
-  const onPrimaryMobileTabs =
-    !isImmersiveRoute &&
-    !isAssistantRoute &&
-    (isDashboard ||
-      safePathStartsWithSegment(location, "/routines") ||
-      isAmyCoachRoute ||
-      isParentHubRoute);
-  const showLegacyTabBar =
-    onPrimaryMobileTabs || shouldShowLegacyMobileTabBar(showDashboardChrome);
+  const isAuthRoute = ["/sign-in", "/sign-up", "/onboarding", "/notify-prompt"].some((p) =>
+    safePathStartsWith(location, p),
+  );
+  const showMobileTabBar = !isImmersiveRoute && !isAssistantRoute && !isAuthRoute;
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);
@@ -91,12 +84,12 @@ export function Layout({
   }, [location]);
 
   useEffect(() => {
-    document.body.classList.toggle("has-tabbar", showLegacyTabBar);
-    document.body.classList.toggle("no-tabbar", !showLegacyTabBar);
+    document.body.classList.toggle("has-tabbar", showMobileTabBar);
+    document.body.classList.toggle("no-tabbar", !showMobileTabBar);
     return () => {
       document.body.classList.remove("has-tabbar", "no-tabbar");
     };
-  }, [showLegacyTabBar]);
+  }, [showMobileTabBar]);
 
   const handleSignOut = () => {
     try {
@@ -186,7 +179,7 @@ export function Layout({
         </div>
       </main>
 
-      <MobileTabBar visible={showLegacyTabBar} />
+      <MobileTabBar visible={showMobileTabBar} />
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (
