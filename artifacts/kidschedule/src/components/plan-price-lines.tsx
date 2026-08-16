@@ -1,10 +1,13 @@
 import type { PlanPricePresentation } from "@/lib/plan-price";
+import { pricingLivingPriceDisplay } from "@/lib/pricing-plan-card-ui";
 
 type Props = {
   presentation: PlanPricePresentation;
   savings?: string | null;
   priceClassName: string;
   compact?: boolean;
+  /** Pricing page: billed amount is the large line; equivalent stays secondary. */
+  preferBilledPrimary?: boolean;
 };
 
 function supportingClass(compact: boolean): string {
@@ -27,13 +30,29 @@ function hintClass(compact: boolean): string {
 
 /**
  * Primary monthly-equivalent → billed amount (compliance) → savings → tier hint.
+ * When preferBilledPrimary, billed amount is visually primary (display only).
  */
 export function PlanPriceLines({
   presentation,
   savings,
   priceClassName,
   compact = false,
+  preferBilledPrimary = false,
 }: Props) {
+  if (preferBilledPrimary) {
+    const living = pricingLivingPriceDisplay(presentation);
+    return (
+      <div className="mb-1 space-y-0.5">
+        <div className={priceClassName}>{living.amountLine}</div>
+        <p className="pricing-living-period">{living.periodLine}</p>
+        {living.equivalentLine && (
+          <p className="pricing-living-equivalent">{living.equivalentLine}</p>
+        )}
+        {savings && <p className="pricing-living-savings">{savings}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className="mb-1 space-y-0.5">
       <div className={priceClassName}>{presentation.primaryLine}</div>

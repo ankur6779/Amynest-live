@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Check, X, Smartphone, Clock,
-  Sparkles, Crown, Zap, Shield, Loader2,
+  Check, Smartphone, Clock,
+  Shield, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
@@ -21,9 +21,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useHubJourney } from "@/hooks/use-hub-journey";
 import { SubscriptionWinBackBanner } from "@/components/subscription-win-back-banner";
-import { SubscriptionEcosystemSection } from "@/components/subscription-ecosystem-section";
 import { SubscriptionTrustSection } from "@/components/subscription-trust-section";
-import { SubscriptionAnnualUpsell } from "@/components/subscription-annual-upsell";
 import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
 import { AmyCancelAgent } from "@/components/amy-cancel-agent";
 import {
@@ -46,12 +44,12 @@ import {
   FF_PRICING_STICKY_CTA,
 } from "@/lib/subscription-feature-flags";
 import {
+  PLAN_LIVING_AUDIENCE,
   planBadgeLabel,
   planCardPricePresentation,
   planStorePriceOptions,
   pricingPlanCardClasses,
   pricingPlanPriceClasses,
-  shouldHideValueAnchor,
 } from "@/lib/pricing-plan-card-ui";
 import { PlanPriceLines } from "@/components/plan-price-lines";
 import { SubscriptionPricingStickyCta } from "@/components/subscription-pricing-sticky-cta";
@@ -61,11 +59,9 @@ import { monthlyEquivalentForPlan } from "@/lib/plan-price";
 import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
 import { shouldSuppressPremiumMonetization } from "@/lib/premium-entitlement-guard";
-import {
-  SUBSCRIPTION_HERO,
-  PURCHASE_SCREEN,
-  planCta,
-} from "@workspace/subscription-marketing";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
+import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
+import "./pricing-living.css";
 
 const HUB_ACTIVE_CHILD_KEY = "amynest:hub:activeChildId";
 
@@ -74,12 +70,6 @@ const SENTINEL_YEAR = 2099;
 function isSentinelDate(iso: string) {
   return new Date(iso).getFullYear() >= SENTINEL_YEAR;
 }
-
-const PLAN_ICONS: Record<string, React.ReactNode> = {
-  monthly: <Zap className="h-4 w-4" />,
-  six_month: <Sparkles className="h-4 w-4" />,
-  yearly: <Crown className="h-4 w-4" />,
-};
 
 // i18n-ignore-start — GooglePayLogo: "Google Pay" and "Pay" are brand proper nouns, must not be translated
 // audit-block-ignore-start — Google Pay official brand colors (Google design guidelines require exact hex)
@@ -478,50 +468,34 @@ export default function PricingPage() {
 
   return (
     <div
-      className={[
-        "min-h-screen bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A]",
-        showStickyCta ? "pb-28" : "",
-      ].join(" ")}
+      className={["pricing-living", showStickyCta ? "pb-28" : ""].join(" ")}
+      data-on-dark
     >
-
-      {/* ── Hero banner ── */}
-      <div // audit-ok: intentional dark brand gradient header
-        className="relative overflow-hidden px-4 pb-4 pt-7 text-center sm:pb-5 sm:pt-8"
-        data-on-dark
-      >
-        {/* Glow blobs */}
-        <div
-          className="pointer-events-none absolute -top-12 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-          // audit-ok: brand violet glow decoration
-          style={{ background: "radial-gradient(circle, #7b3ff2 0%, transparent 70%)" }}
-        />
-        <div
-          className="pointer-events-none absolute -right-8 top-6 h-32 w-32 rounded-full opacity-15 blur-2xl"
-          // audit-ok: brand pink glow decoration
-          style={{ background: "radial-gradient(circle, #ff4ecd 0%, transparent 70%)" }}
-        />
-
-        {/* Crown icon */}
-        <div
-          className="relative z-10 mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl shadow-[0_6px_24px_rgba(255,78,205,0.45)] sm:mb-3 sm:h-12 sm:w-12 sm:rounded-2xl"
-          // audit-ok: brand violet→pink gradient on icon badge
-          style={{ background: "linear-gradient(135deg,#7b3ff2,#ff4ecd)" }}
-        >
-          <Crown className="h-5 w-5 text-white sm:h-6 sm:w-6" />
-        </div>
-
-        <h1 className="relative z-10 mb-1 text-xl font-black tracking-tight text-white sm:text-2xl">
-          {/* audit-ok: white text on dark brand gradient */}
+      <header className="pricing-living-hero">
+        <p className="pricing-living-eyebrow">
+          {t("pricing.living_eyebrow", { defaultValue: "AmyNest membership" })}
+        </p>
+        <h1 className="pricing-living-title">
           {isHubJourneyReason && canPurchasePlan
             ? t(journeyPricingHeader, { name: journeyChildName })
-            : t("pricing.title", { defaultValue: SUBSCRIPTION_HERO.headline })}
+            : t("pricing.living_title", { defaultValue: "Keep Amy beside you." })}
         </h1>
-        <p className="relative z-10 mx-auto max-w-md text-xs leading-snug text-white/65 sm:text-sm sm:leading-relaxed">
-          {/* audit-ok: muted white on dark gradient */}
+        <p className="pricing-living-lede">
           {isHubJourneyReason && canPurchasePlan
             ? t(journeyPricingSubtitle, { name: journeyChildName })
-            : t("pricing.subtitle", { defaultValue: SUBSCRIPTION_HERO.subheadline })}
+            : t("pricing.living_subtitle", {
+                defaultValue:
+                  "Continue the routines, guidance, conversations, learning and care that are shaped around your child.",
+              })}
         </p>
+        {canPurchasePlan && (
+          <p className="pricing-living-membership">
+            {t("pricing.living_membership", {
+              defaultValue:
+                "Membership continues Amy beside your family. Choose the commitment that fits how you want to keep going.",
+            })}
+          </p>
+        )}
 
         {isHubJourneyReason && canPurchasePlan && journeyProgress && (
           <div
@@ -546,67 +520,47 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Patent-pending trust badge */}
-        <div className="relative z-10 mt-1.5 flex items-center justify-center gap-1.5 sm:mt-2">
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white/90 ring-1 ring-white/15"
-            // audit-ok: semi-transparent dark pill on dark gradient
-            style={{ background: "rgba(123,63,242,0.22)" }}
-          >
-            <Sparkles className="h-3 w-3 text-primary" />
-            {t("patent_pending.ai_badge")}
-          </span>
-        </div>
-
-        {/* Premium status pill — paid subscribers only (not internal trial) */}
         {isPremiumSubscriber && (
-          <div className="relative z-10 mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-white/90 ring-1 ring-white/20">
-            <Check className="h-4 w-4 text-green-400" />
+          <div className="pricing-living-status">
+            <Check className="h-4 w-4" aria-hidden />
             {t("pricing.on_plan", { plan: entitlements?.plan })}
             {cancelAtPeriodEnd && periodEnd && (
-              <span className="font-normal text-white/60">
+              <span className="font-normal text-[rgba(244,238,230,0.62)]">
                 · {t("pages.pricing.cancels")} {periodEnd}
               </span>
             )}
           </div>
         )}
         {isInternalTrial && (
-          <div className="relative z-10 mt-4 flex flex-col items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-4 py-1.5 text-sm font-bold text-amber-200 ring-1 ring-amber-500/30">
-              <Clock className="h-4 w-4 text-amber-400" />
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <div className="pricing-living-status">
+              <Clock className="h-4 w-4" aria-hidden />
               {t("subscription.trial.days_remaining", {
                 defaultValue: "You have {{count}} days remaining.",
                 count: entitlements?.trialDaysRemaining ?? 0,
               })}
             </div>
-            <p className="text-xs font-semibold text-amber-100/80">
+            <p className="pricing-living-trial-note">
               {t("subscription.trial.upgrade_while_trialing", {
-                defaultValue: "Subscribe Now — keep Premium after your trial ends",
+                defaultValue: "Continue with Amy after your trial if this still helps.",
               })}
             </p>
           </div>
         )}
-      </div>
+      </header>
 
       <SubscriptionWinBackBanner entitlements={entitlements} />
 
-      <SubscriptionAnnualUpsell
-        entitlements={entitlements}
-        selected={selected}
-        onSelectAnnual={() => setSelected("yearly")}
-      />
-
-      {/* ── Plan cards ── */}
-      <div className="px-4 pb-2">
+      <div className="pricing-living-plans">
         {loading ? (
-          <p className="py-8 text-center text-sm text-white/50">{t("pricing.loading_plans")}</p>
+          <p className="py-8 text-center text-sm text-[rgba(244,238,230,0.55)]">{t("pricing.loading_plans")}</p>
         ) : (
           <>
-          <div className="mb-2">
+          <div className="mb-3">
             <SubscriptionTrialOffer source="pricing_page" />
           </div>
 
-          <div className="grid gap-2 grid-cols-1 sm:grid-cols-3 sm:items-end sm:gap-3">
+          <div className="pricing-living-grid">
             {sortedPlans.map((p) => {
               const isSel = p.id === selected;
               const storeOpts = planStorePriceOptions(
@@ -621,8 +575,7 @@ export default function PricingPage() {
                 planBillingLabels,
               );
               const badgeText = planBadgeLabel(p.id, p.badge);
-              const featureLimit =
-                p.id === "yearly" ? 2 : p.id === "six_month" ? 2 : 1;
+              const features = p.features.slice(0, 3);
               return (
                 <button
                   key={p.id}
@@ -631,64 +584,33 @@ export default function PricingPage() {
                     setSelected(p.id);
                     trackPlanSelected(p.id, "pricing_page");
                   }}
+                  aria-pressed={isSel}
                   data-testid={`plan-card-${p.id}`}
                   data-on-dark
                   className={pricingPlanCardClasses(p.id, isSel)}
                 >
                   {badgeText && (
-                    <span
-                      className="absolute -top-2 right-3 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white sm:text-[10px]"
-                      style={{ background: "linear-gradient(90deg,#7b3ff2,#ff4ecd)" }}
-                    >
-                      {badgeText}
-                    </span>
+                    <span className="pricing-living-badge">{badgeText}</span>
                   )}
 
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className={isSel ? "text-primary" : "text-white/50"}>
-                      {PLAN_ICONS[p.id] ?? <Sparkles className="h-4 w-4" />}
-                    </span>
-                    <span
-                      className={[
-                        "font-bold text-white",
-                        p.id === "yearly" ? "text-sm sm:text-base" : "text-sm",
-                        p.id === "monthly" ? "font-semibold" : "",
-                      ].join(" ")}
-                    >
-                      {p.title}
-                    </span>
-                  </div>
-                  {p.tagline && p.id !== "monthly" && (
-                    <p className="mb-1 text-[10px] leading-snug text-white/55 sm:text-[11px]">
-                      {p.tagline}
-                    </p>
-                  )}
-                  {"valueAnchor" in p && p.valueAnchor && !shouldHideValueAnchor(p.id) && (
-                    <p className="mb-1 text-[10px] font-semibold text-primary/90">{p.valueAnchor}</p>
-                  )}
+                  <p className="pricing-living-plan-name">{p.title}</p>
+                  <p className="pricing-living-audience">
+                    {t(`pricing.living_audience.${p.id}`, {
+                      defaultValue: PLAN_LIVING_AUDIENCE[p.id],
+                    })}
+                  </p>
 
                   <PlanPriceLines
                     presentation={presentation}
                     savings={savings}
                     priceClassName={pricingPlanPriceClasses(p.id)}
+                    preferBilledPrimary
                   />
 
-                  <ul className="mt-2 space-y-1 sm:mt-3 sm:space-y-1.5">
-                    {p.features.map((f, i) => (
-                      <li
-                        key={i}
-                        className={[
-                          "flex items-start gap-1.5 text-xs text-white/80",
-                          i >= featureLimit ? "hidden sm:flex" : "",
-                        ].join(" ")}
-                      >
-                        {/* audit-ok: check icon on dark surface */}
-                        <Check
-                          className={[
-                            "mt-0.5 h-3 w-3 shrink-0",
-                            isSel ? "text-primary" : "text-white/40",
-                          ].join(" ")}
-                        />
+                  <ul className="pricing-living-benefits">
+                    {features.map((f, i) => (
+                      <li key={i}>
+                        <Check className="pricing-living-check" aria-hidden />
                         {f}
                       </li>
                     ))}
@@ -701,24 +623,19 @@ export default function PricingPage() {
         )}
       </div>
 
-      {canPurchasePlan && <SubscriptionEcosystemSection />}
-
-      {/* ── Notice ── */}
       {paymentSuccess && (
-        <div className="mx-4 mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm font-semibold text-green-300">
-          <Check className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+        <div className="pricing-living-notice pricing-living-notice-ok">
+          <Check className="inline h-4 w-4 mr-1.5 -mt-0.5" aria-hidden />
           {t("pricing.payment_success_title", { defaultValue: PURCHASE_SCREEN.successTitle })}
         </div>
       )}
       {notice && (
-        <div className="mx-4 mb-4 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-sm text-white/80">
-          {/* audit-ok: white text on dark semi-transparent surface */}
+        <div className="pricing-living-notice" role="status">
           {notice}
         </div>
       )}
 
-      {/* ── CTAs ── */}
-      <div className="mx-auto max-w-md space-y-3 px-4 pb-10">
+      <div className="pricing-living-actions">
 
         {isHubJourneyReason && canPurchasePlan && (
           <p className="text-center text-sm font-bold text-white/85">{journeyCta}</p>
@@ -744,33 +661,30 @@ export default function PricingPage() {
                 disabled={isProcessing || !nativeBilling.available || plans.length === 0}
                 data-testid="button-upgrade-app-store"
                 data-on-dark
-                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary to-primary shadow-[0_10px_24px_rgba(255,78,205,0.5)] transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="pricing-living-cta"
               >
                 {nativeBilling.purchasing ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    <span className="text-sm font-bold text-white">{t("pricing.app_store_processing")}</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="ml-2">{t("pricing.app_store_processing")}</span>
                   </>
                 ) : (
-                  <>
-                    <Zap className="h-5 w-5 text-white" />
-                    <span className="text-sm font-bold text-white">
-                      {t("pricing.subscribe_app_store", { defaultValue: planCta(selected) })}
-                    </span>
-                  </>
+                  <span>
+                    {t("pricing.subscribe_app_store", { defaultValue: PREMIUM_VOICE.continueCta })}
+                  </span>
                 )}
               </button>
             )}
-            <p className="text-center text-[10px] text-white/30">
-              {t("pricing.app_store_subtitle")}
-            </p>
             <button
               type="button"
               onClick={() => void onRestorePurchases()}
-              className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
+              className="pricing-living-restore"
             >
               {t("pricing.restore_purchases")}
             </button>
+            <p className="pricing-living-store-note">
+              {t("pricing.app_store_subtitle")}
+            </p>
           </div>
         )}
 
@@ -811,7 +725,7 @@ export default function PricingPage() {
                       <path d="M24 10L14.5 14L24 18L26 14L24 10Z" fill="#00AEFF" stroke="#00AEFF" strokeWidth="0.5"/>
                     </svg>
                     <span className="text-sm font-bold" style={{ color: "#202124" }}>
-                      {t("pricing.subscribe_google_play", { defaultValue: planCta(selected) })}
+                      {t("pricing.subscribe_google_play", { defaultValue: PREMIUM_VOICE.continueCta })}
                     </span>
                   </>
                 )}
@@ -820,11 +734,11 @@ export default function PricingPage() {
             <button
               type="button"
               onClick={() => void onRestorePurchases()}
-              className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
+              className="pricing-living-restore"
             >
               {t("pricing.restore_purchases")}
             </button>
-            <p className="text-center text-[10px] text-white/30">
+            <p className="pricing-living-store-note">
               {t("pricing.google_play_subtitle")}
             </p>
           </div>
@@ -885,10 +799,9 @@ export default function PricingPage() {
         {isPremiumSubscriber && (
           <div
             data-on-dark
-            // audit-ok: green-500/green-400 — semantic success colour for premium confirmation
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 text-sm font-bold text-green-400"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[rgba(232,212,184,0.22)] bg-[rgba(232,212,184,0.08)] text-sm font-semibold text-[var(--atmosphere-night-ink)]"
           >
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4" aria-hidden />
             {t("pricing.already_premium")}
           </div>
         )}
@@ -1015,84 +928,62 @@ export default function PricingPage() {
 
         {canPurchasePlan && <SubscriptionTrustSection />}
 
-        <div className="flex items-center justify-center gap-4 pt-2">
-          <span className="flex items-center gap-1 text-xs text-white/35">
-            <Shield className="h-3 w-3" />
-            {t("pricing.cancel_anytime")}
-          </span>
-        </div>
+        <p className="pricing-living-reassure">
+          <Shield className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden />
+          {t("pricing.cancel_anytime")}
+        </p>
 
-        <div className="flex items-center justify-center gap-3 pt-3 text-xs">
+        <div className="pricing-living-links">
           <a
             href="https://amynest.in/privacy"
             target="_blank"
             rel="noopener noreferrer"
             data-testid="pricing-link-privacy"
-            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
           >
             {t("pages.landing.privacy_policy")}
           </a>
-          <span className="text-white/25">·</span>
+          <span aria-hidden>·</span>
           <a
             href="https://amynest.in/terms"
             target="_blank"
             rel="noopener noreferrer"
             data-testid="pricing-link-terms"
-            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
           >
             {t("pages.landing.terms_of_service")}
           </a>
-          <span className="text-white/25">·</span>
+          <span aria-hidden>·</span>
           <a
             href="https://amynest.in/support"
             target="_blank"
             rel="noopener noreferrer"
             data-testid="pricing-link-support"
-            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
           >
             {t("pages.landing.support")}
           </a>
         </div>
       </div>
 
-      {/* ── Payment-processing overlay ── */}
       {isProcessing && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div
-            data-on-dark
-            className="flex w-72 flex-col items-center gap-4 rounded-3xl px-8 py-8 text-center shadow-2xl"
-            // audit-ok: dark translucent payment-processing card
-            style={{ background: "rgba(20,10,40,0.92)", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
+        <div className="pricing-living-overlay" role="status" aria-live="polite">
+          <div data-on-dark className="pricing-living-overlay-card">
+            <div className="pricing-living-overlay-spin">
+              <Loader2 className="h-7 w-7 animate-spin" />
+            </div>
             {verifying ? (
               <>
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-full"
-                  // audit-ok: brand gradient spinner ring on dark overlay
-                  style={{ background: "linear-gradient(135deg,#7b3ff2,#ff4ecd)" }}
-                >
-                  <Loader2 className="h-7 w-7 animate-spin text-white" /> {/* audit-ok: white spinner on gradient */}
-                </div>
-                <p className="text-base font-black text-white">
+                <p className="text-base font-semibold">
                   {t("pricing.verifying_payment", { defaultValue: PURCHASE_SCREEN.verifyTitle })}
                 </p>
-                <p className="text-xs text-white/55">
+                <p className="mt-2 text-xs text-[rgba(244,238,230,0.55)]">
                   {t("pricing.verifying_subtitle", { defaultValue: PURCHASE_SCREEN.verifySubtitle })}
                 </p>
               </>
             ) : (
               <>
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-full"
-                  // audit-ok: brand gradient spinner ring on dark overlay
-                  style={{ background: "linear-gradient(135deg,#7b3ff2,#ff4ecd)" }}
-                >
-                  <Loader2 className="h-7 w-7 animate-spin text-white" /> {/* audit-ok: white spinner on gradient */}
-                </div>
-                <p className="text-base font-black text-white">
+                <p className="text-base font-semibold">
                   {t("pricing.processing_payment", { defaultValue: PURCHASE_SCREEN.processingTitle })}
                 </p>
-                <p className="text-xs text-white/55">
+                <p className="mt-2 text-xs text-[rgba(244,238,230,0.55)]">
                   {t("pricing.processing_subtitle", { defaultValue: PURCHASE_SCREEN.processingSubtitle })}
                 </p>
               </>

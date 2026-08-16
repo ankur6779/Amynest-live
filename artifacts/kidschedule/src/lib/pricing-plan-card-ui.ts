@@ -1,6 +1,6 @@
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
 import { planPricePresentation, planSavingsLabel } from "@/lib/subscription-plans";
-import type { PlanBillingLabels } from "@/lib/plan-price";
+import type { PlanBillingLabels, PlanPricePresentation } from "@/lib/plan-price";
 import type { StorePlanPrice } from "@/lib/plan-price";
 
 export function planStorePriceOptions(
@@ -14,11 +14,9 @@ export function planStorePriceOptions(
   };
 }
 
-/** Visual badge prefix only — does not change marketing copy strings. */
-export function planBadgeLabel(planId: Exclude<Plan, "free">, badge: string | null): string | null {
+/** Existing merchandising badge, without promotional icon theatre. */
+export function planBadgeLabel(_planId: Exclude<Plan, "free">, badge: string | null): string | null {
   if (!badge) return null;
-  if (planId === "yearly") return `⭐ ${badge}`;
-  if (planId === "six_month") return `✓ ${badge}`;
   return badge;
 }
 
@@ -39,46 +37,84 @@ export function shouldHideValueAnchor(planId: Exclude<Plan, "free">): boolean {
   return planId === "yearly" || planId === "six_month";
 }
 
-export function pricingPlanCardClasses(
-  planId: Exclude<Plan, "free">,
-  isSelected: boolean,
-): string {
-  const base =
-    "relative w-full rounded-2xl border-2 text-left transition-all";
+/** Calm audience line derived from existing plan meaning. Presentation only. */
+export const PLAN_LIVING_AUDIENCE: Record<Exclude<Plan, "free">, string> = {
+  yearly: "Best for families who want uninterrupted support.",
+  six_month: "For families who prefer a shorter commitment.",
+  monthly: "For families who want maximum flexibility.",
+};
 
-  if (planId === "yearly") {
-    return [
-      base,
-      "order-first sm:order-none p-3.5 sm:p-4",
-      isSelected
-        ? "border-primary bg-primary/15 ring-2 ring-primary/45 shadow-[0_12px_36px_rgba(255,78,205,0.5)] scale-[1.02] sm:scale-[1.04] z-10"
-        : "border-primary/55 bg-primary/10 shadow-[0_8px_28px_rgba(255,78,205,0.3)] scale-[1.01] sm:scale-[1.03] z-10",
-    ].join(" ");
+const PERIOD_SUFFIXES = ["/year", " / 6 months", "/month"] as const;
+
+function stripKnownPeriodSuffix(line: string): string {
+  for (const suffix of PERIOD_SUFFIXES) {
+    if (line.endsWith(suffix)) return line.slice(0, -suffix.length).trim();
   }
-
-  if (planId === "six_month") {
-    return [
-      base,
-      "p-3 sm:p-4",
-      isSelected
-        ? "border-primary/70 bg-primary/8 shadow-[0_6px_20px_rgba(255,78,205,0.22)]"
-        : "border-white/15 bg-white/6 hover:border-white/25",
-    ].join(" ");
-  }
-
-  return [
-    base,
-    "p-3 sm:p-3.5 opacity-[0.82]",
-    isSelected
-      ? "border-white/20 bg-white/8 shadow-sm"
-      : "border-white/8 bg-white/[0.03] hover:border-white/15",
-  ].join(" ");
+  return line;
 }
 
-export function pricingPlanPriceClasses(planId: Exclude<Plan, "free">): string {
-  if (planId === "yearly") return "text-2xl sm:text-3xl font-black text-white leading-tight";
-  if (planId === "six_month") return "text-xl sm:text-2xl font-black text-white leading-tight";
-  return "text-lg sm:text-xl font-bold text-white/90 leading-tight";
+function amountAfterAt(line: string): string | null {
+  const idx = line.toLowerCase().lastIndexOf(" at ");
+  if (idx === -1) return null;
+  const amount = line.slice(idx + 4).trim();
+  return amount || null;
+}
+
+/**
+ * Rearranges existing presentation strings so the billed amount is the large
+ * price. Does not recalculate, convert, or replace product amounts.
+ */
+export function pricingLivingPriceDisplay(presentation: PlanPricePresentation): {
+  amountLine: string;
+  periodLine: string;
+  equivalentLine: string | null;
+} {
+  const periodLine = presentation.billingCadenceLine;
+
+  if (presentation.hierarchy === "billed_primary") {
+    return {
+      amountLine: stripKnownPeriodSuffix(presentation.primaryLine),
+      periodLine,
+      equivalentLine: presentation.monthlyEquivalentLine,
+    };
+  }
+
+  const isMonthlyPlan = presentation.monthlyEquivalentLine == null;
+  if (isMonthlyPlan) {
+    return {
+      amountLine: stripKnownPeriodSuffix(presentation.primaryLine),
+      periodLine: presentation.secondaryBillingLine || periodLine,
+      equivalentLine: null,
+    };
+  }
+
+  const amountFromSecondary = amountAfterAt(presentation.secondaryBillingLine);
+  const amountLine = amountFromSecondary ?? presentation.secondaryBillingLine;
+  const periodFromBilledLine =
+    amountFromSecondary && presentation.secondaryBillingLine.includes(amountFromSecondary)
+      ? presentation.secondaryBillingLine
+          .slice(0, presentation.secondaryBillingLine.lastIndexOf(amountFromSecondary))
+          .replace(/\s+at\s*$/i, "")
+          .trim()
+      : presentation.billingCadenceLine;
+  return {
+    amountLine,
+    periodLine: periodFromBilledLine || periodLine,
+    equivalentLine: presentation.primaryLine.startsWith("≈")
+      ? presentation.primaryLine
+      : `≈ ${presentation.primaryLine}`,
+  };
+}
+
+export function pricingPlanCardClasses(
+  _planId: Exclude<Plan, "free">,
+  isSelected: boolean,
+): string {
+  return ["pricing-living-card", isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
+}
+
+export function pricingPlanPriceClasses(_planId: Exclude<Plan, "free">): string {
+  return "pricing-living-amount";
 }
 
 export function formatStickyPriceSummary(
@@ -88,9 +124,10 @@ export function formatStickyPriceSummary(
   labels?: PlanBillingLabels,
 ): { title: string; priceLine: string; billingLine: string } {
   const presentation = planPricePresentation(plan, { storePriceLabel, store, labels });
+  const living = pricingLivingPriceDisplay(presentation);
   return {
     title: plan.title,
-    priceLine: presentation.primaryLine,
-    billingLine: presentation.secondaryBillingLine,
+    priceLine: living.amountLine,
+    billingLine: [living.periodLine, living.equivalentLine].filter(Boolean).join(" · "),
   };
 }

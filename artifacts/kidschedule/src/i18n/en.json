@@ -550,7 +550,16 @@
     "restore_purchases": "Restore Purchases",
     "payment_success_title": "AmyNest Premium is active",
     "payment_success_body": "Amy AI, Coach, Speech Coach, learning, routines, and Hub—active for your child. Start with today's routine or ask Amy anything.",
-    "payment_pending": "Payment received—we're activating your plan. Wait a few seconds or tap Restore Purchases."
+    "payment_pending": "Payment received—we're activating your plan. Wait a few seconds or tap Restore Purchases.",
+    "living_eyebrow": "AmyNest membership",
+    "living_title": "Keep Amy beside you.",
+    "living_subtitle": "Continue the routines, guidance, conversations, learning and care that are shaped around your child.",
+    "living_membership": "Membership continues Amy beside your family. Choose the commitment that fits how you want to keep going.",
+    "living_audience": {
+      "yearly": "Best for families who want uninterrupted support.",
+      "six_month": "For families who prefer a shorter commitment.",
+      "monthly": "For families who want maximum flexibility."
+    }
   },
   "profile": {
     "title": "Parent Profile",

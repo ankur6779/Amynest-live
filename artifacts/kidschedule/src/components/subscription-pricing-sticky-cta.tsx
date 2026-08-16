@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { planCta } from "@workspace/subscription-marketing";
+import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
 import { formatStickyPriceSummary } from "@/lib/pricing-plan-card-ui";
 import type { PlanBillingLabels, StorePlanPrice } from "@/lib/plan-price";
@@ -35,23 +35,22 @@ export function SubscriptionPricingStickyCta({
     store,
     billingLabels,
   );
-  const cta = planCta(selected);
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0B0B1A]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.45)]"
+      className="pricing-living-sticky fixed inset-x-0 bottom-0 z-40 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md"
       data-testid="pricing-sticky-cta"
     >
       <div className="mx-auto flex max-w-md items-center gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold text-white">{title}</p>
-          <p className="text-lg font-black text-white leading-tight">{priceLine}</p>
-          <p className="text-[10px] text-white/55 leading-snug">{billingLine}</p>
+          <p className="truncate text-sm font-semibold text-[var(--atmosphere-night-ink)]">{title}</p>
+          <p className="text-lg font-bold leading-tight text-[var(--atmosphere-night-ink)]">{priceLine}</p>
+          <p className="text-[10px] leading-snug text-[rgba(244,238,230,0.55)]">{billingLine}</p>
         </div>
         <Button
           type="button"
           disabled={disabled || busy}
-          className="h-11 shrink-0 rounded-xl px-5 text-sm font-extrabold bg-gradient-to-r from-primary to-primary shadow-[0_6px_20px_rgba(255,78,205,0.45)]"
+          className="pricing-living-cta h-11 shrink-0 rounded-xl px-5 text-sm"
           onClick={() => {
             trackSubscriptionEvent({
               event: "checkout_started",
@@ -61,11 +60,7 @@ export function SubscriptionPricingStickyCta({
             onCheckout();
           }}
         >
-          {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            cta
-          )}
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : PREMIUM_VOICE.continueCta}
         </Button>
       </div>
     </div>
