@@ -2749,12 +2749,10 @@ html.amynest-native-shell .drawer-overlay {
   pointer-events: auto;
 }
 
-/* Ask Amy FAB avatar — responsive visible size (46px mobile → 50px tablet →
-   54px desktop) with a soft resting shadow for prominence. Uses a square-cropped
-   mascot asset so the character fills the box on every device without JS sizing.
-   Touch target (≥56px) comes from the Link min-h/min-w utilities. */
+/* Ask Amy FAB avatar — slightly larger so the mascot reads at a glance.
+   Touch target comes from the Link min-h/min-w utilities. */
 .amy-fab-avatar {
-  --amy-fab-size: clamp(46px, 40px + 1.3vw, 54px);
+  --amy-fab-size: clamp(58px, 52px + 1.6vw, 70px);
   width: var(--amy-fab-size);
   height: var(--amy-fab-size);
   flex-shrink: 0;

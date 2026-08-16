@@ -125,7 +125,7 @@ export function Layout({
                 </button>
               ) : null}
               <BrandLogo size="sm" showTagline={false} />
-              <AmyMascotLogo size={26} />
+              <AmyMascotLogo size={34} />
             </div>
             <div className="flex shrink-0 items-center">
               <SubscriptionTrialChip />

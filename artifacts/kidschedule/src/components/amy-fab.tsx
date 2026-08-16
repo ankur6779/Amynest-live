@@ -59,10 +59,10 @@ export function AmyFab({ embedded = false }: AmyFabProps) {
         <Link
           href="/assistant"
           aria-label={t("components.amy_fab.ask_amy_ai")}
-          className="group relative flex min-h-14 min-w-14 items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+          className="group relative flex min-h-16 min-w-16 items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none"
         >
           <AmyFabAvatar />
-          <span className="absolute -top-2 -right-1 bg-white text-[9px] font-black text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full shadow border border-border dark:border-border pointer-events-none">
+          <span className="absolute -top-2 -right-1 bg-white text-[10px] font-black text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full shadow border border-border dark:border-border pointer-events-none">
             {t("components.amy_fab.amy_ai")}
           </span>
         </Link>
