@@ -70,7 +70,8 @@ export function RoutineLivingDashboard({
       className="routine-living-page routine-living-shell"
       data-testid="routine-living-dashboard"
     >
-      <div className="rg-living-surface rg-dash-surface">
+      <div className="rg-living-column">
+        <div className="rg-living-surface rg-dash-surface">
         <header className="rg-today-hero" data-testid="routine-living-dashboard-hero">
           <div
             className="fe-memory-mount rg-today-memory"
@@ -113,7 +114,7 @@ export function RoutineLivingDashboard({
 
         <div className="rg-dash-body">
           {childrenList.length > 1 ? (
-            <div className="ph-quiet-child-identity" data-testid="routine-living-child-context">
+            <div className="ph-quiet-child-identity rg-dash-family" data-testid="routine-living-child-context">
               <p className="rg-context-label">
                 {t("routines.living.family_hint", {
                   defaultValue: livingDashboardFamilyHint(),
@@ -263,6 +264,7 @@ export function RoutineLivingDashboard({
           <div className="rg-dash-more-body">{supporting}</div>
         </details>
       ) : null}
+      </div>
     </div>
   );
 }

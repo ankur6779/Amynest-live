@@ -69,9 +69,9 @@ export function Layout({
   const isAmyCoachRoute = safePathStartsWithSegment(location, "/amy-coach");
   const isDashboard = location === "/" || location === "/dashboard";
   const isRoutinesDashboard = location === "/routines";
+  const livingRoutinesRoom = isRoutinesDashboard && isRoutineLivingV1Enabled();
   const showDashboardChrome =
-    location === "/dashboard" ||
-    (isRoutinesDashboard && isRoutineLivingV1Enabled());
+    location === "/dashboard" || livingRoutinesRoom;
   const showLegacyTabBar = shouldShowLegacyMobileTabBar(showDashboardChrome);
   const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
   const canShowBack = !showDashboardChrome && location !== "/";
@@ -156,6 +156,8 @@ export function Layout({
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 lg:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : isAmyCoachRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:p-8"
+                : livingRoutinesRoom
+                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0"
                 : showDashboardChrome || isParentHubRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 lg:max-w-5xl lg:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 lg:p-8"
