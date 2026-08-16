@@ -23,6 +23,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   seedFromServerHistory,
@@ -95,10 +96,20 @@ export function AmyAiConversationWorkspace({
   }, []);
 
   useEffect(() => {
+    sendAbortRef.current?.abort();
+    setLoading(false);
+    setSlowWait(false);
+    setPendingRetry(null);
+    setInput("");
+    setHistoryOpen(false);
+
+    const { store: loaded, current: freshChat } = prepareAmyAiSessionForUser(userId);
+    storeRef.current = loaded;
+    setStore(loaded);
+    setCurrent(freshChat);
+
     let cancelled = false;
     (async () => {
-      const loaded = loadSessionStore(userId);
-      storeRef.current = loaded;
       try {
         const r = await authFetch("/api/ai/messages");
         if (r.ok) {
@@ -120,12 +131,9 @@ export function AmyAiConversationWorkspace({
       } catch {
         /* non-fatal */
       }
-      if (!cancelled) {
-        setStore(loaded);
-        if (initialConversationId) {
-          const found = loaded.conversations.find((c) => c.id === initialConversationId);
-          if (found) setCurrent(found);
-        }
+      if (!cancelled && initialConversationId) {
+        const found = loaded.conversations.find((c) => c.id === initialConversationId);
+        if (found) setCurrent(found);
       }
     })();
     return () => {
