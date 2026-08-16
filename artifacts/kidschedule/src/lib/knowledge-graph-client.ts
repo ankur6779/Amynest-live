@@ -156,6 +156,31 @@ export function recordSpeechCoachLearning(
   },
 ): void {
   ensureLearningEventIntegration();
+  const word = input.promptText
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, "")
+    .split(/\s+/)[0];
+  const hintPhonemes = (input.soundHints ?? [])
+    .map((h) =>
+      String(h)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, "")[0],
+    )
+    .filter(Boolean) as string[];
+  // Seed word/phoneme nodes before the bus event so recordObservations
+  // does not silently drop speech practice (and never touch entity: seeds).
+  if (word || hintPhonemes.length) {
+    ensureReadingLearningNodes(childId, {
+      focusWord: word && word.length >= 2 ? word : undefined,
+      words: word && word.length >= 2 ? [word] : undefined,
+      phonemes: [
+        ...(word?.[0] ? [word[0]] : []),
+        ...hintPhonemes,
+      ],
+    });
+  }
   publishSpeechPracticeCompleted({
     childId: Number(childId),
     promptText: input.promptText,

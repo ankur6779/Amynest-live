@@ -95,4 +95,27 @@ describe("learning-events-bridge", () => {
     // applied-id guard prevents double KG write on replay
     expect(writes).toBe(1);
   });
+
+  it("does not permanently drop KG writes when the sink throws", () => {
+    installLearningEventBus();
+    let writes = 0;
+    let shouldThrow = true;
+    registerKnowledgeGraphEventSink(() => {
+      writes += 1;
+      if (shouldThrow) throw new Error("transient kg failure");
+    });
+
+    publishItemLearning({
+      childId: 88,
+      module: "reading",
+      entityId: "dog",
+      modality: "spoken",
+    });
+    expect(writes).toBe(1);
+
+    shouldThrow = false;
+    const n = getLearningEventBus().replay({ childId: "88", markReplay: true });
+    expect(n).toBeGreaterThan(0);
+    expect(writes).toBe(2);
+  });
 });
