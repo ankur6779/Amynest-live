@@ -15,4 +15,11 @@ describe("AmyAIIcon", () => {
     expect(svg?.innerHTML.toLowerCase()).not.toContain("feGaussianBlur".toLowerCase());
     expect(svg?.innerHTML).not.toMatch(/#a855f7|#c084fc|neon/i);
   });
+
+  it("keeps a readable face at 16px", () => {
+    const { container } = render(<AmyAIIcon size={16} />);
+    const svg = container.querySelector("svg");
+    expect(svg).toHaveAttribute("width", "16");
+    expect(svg?.innerHTML).toContain("r=\"1.35\"");
+  });
 });

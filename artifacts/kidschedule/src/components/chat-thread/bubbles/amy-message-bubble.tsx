@@ -11,9 +11,10 @@ import type { ThreadTheme } from "../types";
 const ONBOARDING_GLASS_BG = "rgba(255,255,255,0.10)";
 const ONBOARDING_GLASS_BORDER = "1px solid rgba(168,85,247,0.30)";
 
-function AmyAvatar({ theme, size = 28 }: { theme: ThreadTheme; size?: number }) {
-  if (theme === "onboarding") return <AmyMascotLogo size={size} />;
-  return <AmyAIIcon size={size} />;
+function AmyAvatar({ theme, size }: { theme: ThreadTheme; size?: number }) {
+  const resolved = size ?? (theme === "onboarding" ? 28 : 22);
+  if (theme === "onboarding") return <AmyMascotLogo size={resolved} />;
+  return <AmyAIIcon size={resolved} />;
 }
 
 export function AmyMessageBubble({
@@ -169,11 +170,12 @@ export function AmyTypingBubble({
         <div className="flex items-center gap-1">{dots}</div>
       </div>
     ) : (
-      <div className="chat-typing-bubble flex max-w-[85%] flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
+      <div className="chat-typing-bubble flex max-w-[85%] flex-col gap-1.5 px-1 py-1">
         {statusLabel ? (
           <p className="text-sm leading-relaxed text-muted-foreground">{statusLabel}</p>
-        ) : null}
-        <div className="flex items-center gap-1.5">{dots}</div>
+        ) : (
+          <div className="flex items-center gap-1.5">{dots}</div>
+        )}
       </div>
     );
 
@@ -182,7 +184,7 @@ export function AmyTypingBubble({
       className="flex items-end gap-2"
       role="status"
       aria-live="polite"
-      aria-label={statusLabel || "Amy is typing"}
+      aria-label={statusLabel || "Amy is thinking"}
     >
       <AmyAvatar theme={theme} />
       {bubble}

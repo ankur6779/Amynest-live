@@ -28,4 +28,12 @@ describe("AmyMarkdown", () => {
       "https://example.com/calm",
     );
   });
+
+  it("autolinks bare https URLs", () => {
+    render(<AmyMarkdown text="See https://example.com/sleep for more." />);
+    expect(screen.getByRole("link", { name: "https://example.com/sleep" })).toHaveAttribute(
+      "href",
+      "https://example.com/sleep",
+    );
+  });
 });

@@ -135,7 +135,7 @@ export function AmyAiHistoryPanel({
                       <div
                         className={cn(
                           "group flex items-center gap-1 rounded-xl px-1",
-                          activeId === c.id && "bg-muted/70",
+                          activeId === c.id && "bg-[rgba(232,212,184,0.12)]",
                         )}
                       >
                         <button
@@ -143,6 +143,7 @@ export function AmyAiHistoryPanel({
                           className="min-h-11 min-w-0 flex-1 truncate px-2 py-2 text-left text-sm"
                           onClick={() => onSelect(c.id)}
                           data-testid={`amy-ai-history-item-${c.id}`}
+                          aria-current={activeId === c.id ? "true" : undefined}
                         >
                           {c.title}
                         </button>
@@ -150,7 +151,7 @@ export function AmyAiHistoryPanel({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 opacity-70 group-hover:opacity-100"
+                          className="h-10 w-10 opacity-80 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                           aria-label="Rename conversation"
                           onClick={() => {
                             setRenameId(c.id);
@@ -163,7 +164,7 @@ export function AmyAiHistoryPanel({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 opacity-70 group-hover:opacity-100"
+                          className="h-10 w-10 opacity-80 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                           aria-label="Delete conversation"
                           onClick={() => setConfirmId(c.id)}
                         >

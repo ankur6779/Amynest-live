@@ -6,6 +6,37 @@ import type { ReactNode } from "react";
 
 const URL_RE = /^https?:\/\/[^\s)]+/i;
 
+function linkify(text: string, keyBase: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const re = /(https?:\/\/[^\s)]+)/gi;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let i = 0;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    const href = match[1] ?? "";
+    if (URL_RE.test(href)) {
+      nodes.push(
+        <a
+          key={`${keyBase}-u-${i}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 break-all"
+        >
+          {href}
+        </a>,
+      );
+    } else {
+      nodes.push(href);
+    }
+    last = match.index + match[0].length;
+    i += 1;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
 function inline(text: string, keyBase: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const re =
@@ -15,7 +46,7 @@ function inline(text: string, keyBase: string): ReactNode[] {
   let i = 0;
   while ((match = re.exec(text)) !== null) {
     if (match.index > last) {
-      nodes.push(text.slice(last, match.index));
+      nodes.push(...linkify(text.slice(last, match.index), `${keyBase}-pre-${i}`));
     }
     if (match[2]) {
       nodes.push(<strong key={`${keyBase}-b-${i}`}>{match[2]}</strong>);
@@ -26,7 +57,7 @@ function inline(text: string, keyBase: string): ReactNode[] {
           href={match[5]}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline underline-offset-2"
+          className="underline underline-offset-2 break-all"
         >
           {match[4]}
         </a>,
@@ -43,7 +74,7 @@ function inline(text: string, keyBase: string): ReactNode[] {
     last = match.index + match[0].length;
     i += 1;
   }
-  if (last < text.length) nodes.push(text.slice(last));
+  if (last < text.length) nodes.push(...linkify(text.slice(last), `${keyBase}-tail`));
   return nodes;
 }
 

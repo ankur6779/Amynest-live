@@ -1,6 +1,6 @@
 /**
  * Visual fixture for the Amy AI conversation workspace.
- * Open: /playwright-amy-ai-workspace.html?panel=empty|thread|history
+ * Open: /playwright-amy-ai-workspace.html?panel=empty|thread|history|slow
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -43,6 +43,23 @@ const stubAuth: AuthContextValue = {
 const params = new URLSearchParams(window.location.search);
 const panel = params.get("panel") ?? "empty";
 
+const LONG_REPLY = `John can use a quieter last hour.
+
+## Evening
+
+Start before the struggle, not after it.
+
+1. **Start with a Wind Down**
+Lights down, voices slower, same chair.
+2. **Create a Specific Routine**
+Bath, book, bed — same order, same words.
+3. **Set a Consistent Time**
+Pick a window and keep it even when the day ran long.
+
+> The goal is a predictable landing, not a perfect night.
+
+If you want one line to try: "We're slowing down now." See https://example.com/sleep`;
+
 const snacks = appendMessage(
   appendMessage(emptyConversation("snacks"), {
     role: "user",
@@ -61,8 +78,7 @@ const bedtime = appendMessage(
   }),
   {
     role: "assistant",
-    content:
-      "John can use a quieter last hour.\n\n1. **Start with a Wind Down**\n2. **Create a Specific Routine**\n3. **Set a Consistent Time**",
+    content: LONG_REPLY,
   },
 );
 
@@ -76,13 +92,11 @@ window.fetch = async (input: RequestInfo | URL) => {
     });
   }
   if (url.includes("/api/ai/assistant-ai")) {
-    return new Response(
-      JSON.stringify({
-        answer:
-          "Try a calmer last hour.\n\n1. **Start with a Wind Down**\n2. **Create a Specific Routine**",
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
+    const delay = panel === "slow" ? 5500 : 350;
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
+    return new Response(JSON.stringify({ answer: LONG_REPLY }), {
+      headers: { "Content-Type": "application/json" },
+    });
   }
   return new Response(JSON.stringify({}), {
     headers: { "Content-Type": "application/json" },
@@ -92,14 +106,14 @@ window.fetch = async (input: RequestInfo | URL) => {
 function Fixture() {
   return (
     <Router hook={() => ["/assistant", () => {}]}>
-      <div className="flex h-screen flex-col bg-[#08060c]" data-testid="amy-ai-fixture">
+      <div className="flex h-screen flex-col bg-[#141018]" data-testid="amy-ai-fixture">
         <AmyAiConversationWorkspace
           primaryChild={{ id: 1, name: "John", age: 5, ageMonths: 0 }}
           primaryChildTotalMonths={60}
           isInfantAmyContext={false}
           limitReached={false}
           refreshSubscription={() => undefined}
-          initialConversationId={panel === "empty" ? null : bedtime.id}
+          initialConversationId={panel === "empty" || panel === "slow" ? null : bedtime.id}
         />
       </div>
     </Router>

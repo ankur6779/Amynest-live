@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Menu, Plus } from "lucide-react";
 import { ChatThread, type ThreadMessage } from "@/components/chat-thread";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { AmyAIIcon } from "@/components/ask-amy/amy-ai-icon";
 import { AmyAiHistoryPanel } from "@/components/ask-amy/amy-ai-history-panel";
 import { useAppNavigate } from "@/components/app-link";
@@ -306,12 +306,9 @@ export function AmyAiConversationWorkspace({
         id: "empty",
         content: (
           <div className="amy-ai-empty" data-testid="amy-ai-empty">
-            <AmyAIIcon size={56} decorative={false} />
+            <AmyAIIcon size={40} decorative={false} />
             <h2>Hi, I&apos;m Amy.</h2>
-            <p className="text-base text-foreground">How can I be beside you today?</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ask about your child, your routine, parenting, or whatever is on your mind.
-            </p>
+            <p>What&apos;s on your mind?</p>
             {!limitReached ? (
               <div className="amy-ai-suggest">
                 {SUGGESTIONS.map((s) => (
@@ -356,7 +353,7 @@ export function AmyAiConversationWorkspace({
                       }));
                     }}
                   >
-                    Back to conversation
+                    Back
                   </Button>
                 </div>
               ) : null}
@@ -405,7 +402,7 @@ export function AmyAiConversationWorkspace({
         </Button>
       ) : null}
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <AmyAIIcon size={26} />
+        <AmyAIIcon size={22} />
         <div className="min-w-0">
           <p className="amy-ai-title truncate">
             {isBlank ? "Amy" : current.title === NEW_CHAT_TITLE ? "Amy" : current.title}
@@ -480,7 +477,7 @@ export function AmyAiConversationWorkspace({
       header={header}
       className="min-h-0 flex-1 bg-transparent"
       messagesClassName="max-w-3xl space-y-4 px-2"
-      footerClassName="border-t border-white/5 bg-transparent px-0 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      footerClassName="bg-transparent px-3 py-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] sm:px-4"
     />
   );
 
@@ -500,7 +497,12 @@ export function AmyAiConversationWorkspace({
             side="left"
             className="w-[86vw] max-w-sm p-0 [&>button]:hidden"
             aria-label="Conversation history"
+            aria-describedby={undefined}
           >
+            <SheetTitle className="sr-only">Conversation history</SheetTitle>
+            <SheetDescription className="sr-only">
+              Search, open, rename, or delete previous chats.
+            </SheetDescription>
             {historyPanel}
           </SheetContent>
         </Sheet>
