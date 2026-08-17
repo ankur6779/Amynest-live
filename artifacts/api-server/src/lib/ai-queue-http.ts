@@ -14,6 +14,7 @@ import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
 import { resolveSyncApiBody } from "./ai-job-finalize.js";
 import { sendStaticAudioAlert } from "../services/staticAudioAlerts.js";
+import { isRedisClosedError } from "../queue/redis.js";
 
 export { isTerminalStatus as isTerminal };
 
@@ -119,9 +120,23 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     }
   }
 
-  const enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload, {
-    deterministicJobId: opts.deterministicJobId,
-  });
+  let enqueued;
+  try {
+    enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload, {
+      deterministicJobId: opts.deterministicJobId,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { evt: "ai_job.enqueue_threw", type: opts.type, message: message.slice(0, 300) },
+      "AI enqueue threw",
+    );
+    if (isRedisClosedError(err) || /redis/i.test(message)) {
+      await respondQueueUnavailable(opts, "redis_unavailable");
+      return;
+    }
+    throw err;
+  }
   if (!enqueued.jobId) {
     const queueUnavailable = (enqueued.retryAfterMs ?? 0) === 0;
     if (queueUnavailable) {

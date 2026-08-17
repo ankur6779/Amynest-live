@@ -118,10 +118,27 @@ export async function createApp(): Promise<Express> {
     let queueStats: unknown = null;
 
     if (REDIS_HEALTH_ENABLED) {
-      const { getQueueHealthSnapshot } = await import("./queue/bootstrap.js");
-      const { getAiQueueHealth } = await import("./lib/ai-queue-http.js");
-      queueSnapshot = await getQueueHealthSnapshot();
-      queueStats = await getAiQueueHealth();
+      try {
+        const { getQueueHealthSnapshot } = await import("./queue/bootstrap.js");
+        queueSnapshot = await getQueueHealthSnapshot();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.warn({ evt: "health.queue_snapshot_failed", message }, "Queue health snapshot failed");
+        queueSnapshot = {
+          status: "degraded",
+          redis: false,
+          queueMode: "bullmq",
+          workerExpected: true,
+        };
+      }
+      try {
+        const { getAiQueueHealth } = await import("./lib/ai-queue-http.js");
+        queueStats = await getAiQueueHealth();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.warn({ evt: "health.queue_stats_failed", message }, "AI queue health failed");
+        queueStats = { error: message };
+      }
     }
 
     const status =

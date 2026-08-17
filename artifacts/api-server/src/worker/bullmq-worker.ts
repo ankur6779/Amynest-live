@@ -4,16 +4,40 @@ import {
   AI_JOBS_QUEUE_NAME,
   type AiJobQueuePayload,
 } from "../queue/index.js";
-import { getBullMqRedisConnection, isRedisQueueEnabled } from "../queue/redis.js";
+import { ensureRedisReady, getBullMqRedisConnection, isRedisClosedError, isRedisQueueEnabled, resetRedisConnection } from "../queue/redis.js";
 import { processAiJob } from "./ai-service.js";
 
 const CONCURRENCY = Number(process.env.AI_MAX_CONCURRENT_JOBS ?? "5");
+const WORKER_RESTART_COOLDOWN_MS = 15_000;
 
 let worker: Worker<AiJobQueuePayload> | undefined;
 let workerRunning = false;
+let workerRestarting = false;
+let lastWorkerRestartAt = 0;
 
 export function isBullMqWorkerRegistered(): boolean {
   return workerRunning && worker !== undefined;
+}
+
+async function restartBullMqWorker(reason: string): Promise<void> {
+  const now = Date.now();
+  if (workerRestarting || now - lastWorkerRestartAt < WORKER_RESTART_COOLDOWN_MS) return;
+  workerRestarting = true;
+  lastWorkerRestartAt = now;
+  logger.warn({ evt: "bullmq.worker_restart", reason }, "Restarting BullMQ worker after Redis closed");
+  try {
+    await stopBullMqWorker();
+    resetRedisConnection();
+    await ensureRedisReady("bullmq");
+    startBullMqWorker();
+  } catch (err) {
+    logger.error(
+      { evt: "bullmq.worker_restart_failed", message: err instanceof Error ? err.message : String(err) },
+      "BullMQ worker restart failed",
+    );
+  } finally {
+    workerRestarting = false;
+  }
 }
 
 export function startBullMqWorker(): Worker<AiJobQueuePayload> {
@@ -75,6 +99,9 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
 
   worker.on("error", (err) => {
     logger.error({ evt: "bullmq.worker_error", err }, "BullMQ worker error");
+    if (isRedisClosedError(err)) {
+      void restartBullMqWorker("redis_closed");
+    }
   });
 
   console.log("BullMQ worker started");

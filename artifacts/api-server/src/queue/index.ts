@@ -7,7 +7,13 @@ import { randomUUID } from "node:crypto";
 import { logger } from "../lib/logger.js";
 import type { AiJobType, EnqueueResult } from "./types.js";
 import { isBullMqActive } from "./mode.js";
-import { getBullMqRedisConnection } from "./redis.js";
+import {
+  ensureRedisReady,
+  getBullMqRedisConnection,
+  getRedisConnectionEpoch,
+  isRedisClosedError,
+  resetRedisConnection,
+} from "./redis.js";
 import {
   getJobRecord,
   saveJobRecord,
@@ -27,21 +33,32 @@ export type AiJobQueuePayload = {
 };
 
 let bullQueue: Queue<AiJobQueuePayload> | undefined;
+let bullQueueEpoch = -1;
+
+function createAiJobsQueue(): Queue<AiJobQueuePayload> {
+  return new Queue<AiJobQueuePayload>(AI_JOBS_QUEUE_NAME, {
+    connection: getBullMqRedisConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 2000 },
+      removeOnComplete: { count: 200 },
+      removeOnFail: { count: 100 },
+    },
+  });
+}
 
 export function getAiJobsQueue(): Queue<AiJobQueuePayload> {
   if (!isBullMqActive()) {
     throw new Error("BullMQ queue is not active — set REDIS_URL");
   }
-  if (!bullQueue) {
-    bullQueue = new Queue<AiJobQueuePayload>(AI_JOBS_QUEUE_NAME, {
-      connection: getBullMqRedisConnection(),
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: { count: 200 },
-        removeOnFail: { count: 100 },
-      },
-    });
+  const epoch = getRedisConnectionEpoch();
+  if (bullQueue && bullQueueEpoch === epoch) return bullQueue;
+
+  const previous = bullQueue;
+  bullQueue = createAiJobsQueue();
+  bullQueueEpoch = getRedisConnectionEpoch();
+  if (previous) {
+    void previous.close().catch(() => undefined);
   }
   return bullQueue;
 }
@@ -111,19 +128,16 @@ export async function enqueueBullMqJob(
     throw err;
   }
 
+  const jobOpts = {
+    jobId,
+    // Do not retain speech audio blobs in the completed BullMQ set.
+    ...(type === "speech.transcribe"
+      ? { removeOnComplete: true, removeOnFail: { count: 20 } }
+      : {}),
+  };
+
   try {
-    const queue = getAiJobsQueue();
-    await queue.add(
-      "process",
-      { jobId, type, userId: uid, payload },
-      {
-        jobId,
-        // Do not retain speech audio blobs in the completed BullMQ set.
-        ...(type === "speech.transcribe"
-          ? { removeOnComplete: true, removeOnFail: { count: 20 } }
-          : {}),
-      },
-    );
+    await addBullMqJob({ jobId, type, userId: uid, payload }, jobOpts);
     const traceId =
       type === "ai-coach.initial_wins"
         ? (await import("../lib/coach-generate-trace.js")).extractCoachTraceIdFromPayload(payload)
@@ -143,11 +157,46 @@ export async function enqueueBullMqJob(
     );
     return { jobId, status: "queued", deferred: false };
   } catch (err) {
+    if (isRedisClosedError(err)) {
+      logger.warn(
+        { evt: "ai_job.enqueue_redis_retry", jobId, type },
+        "BullMQ enqueue hit a closed Redis connection — recreating queue",
+      );
+      resetRedisConnection();
+      try {
+        await ensureRedisReady("bullmq");
+        await addBullMqJob({ jobId, type, userId: uid, payload }, jobOpts);
+        logger.info(
+          { evt: "ai_job.bullmq_enqueued", jobId, type, userId: uid, recovered: true },
+          "AI job enqueued (BullMQ) after Redis reconnect",
+        );
+        return { jobId, status: "queued", deferred: false };
+      } catch (retryErr) {
+        await releaseUserSlot(uid);
+        const message = retryErr instanceof Error ? retryErr.message : String(retryErr);
+        logger.error({ evt: "ai_job.enqueue_failed", message }, "BullMQ enqueue failed");
+        return {
+          jobId: "",
+          status: "failed",
+          deferred: true,
+          retryAfterMs: 0,
+          error: "redis_unavailable",
+        };
+      }
+    }
     await releaseUserSlot(uid);
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ evt: "ai_job.enqueue_failed", message }, "BullMQ enqueue failed");
     throw err;
   }
+}
+
+async function addBullMqJob(
+  data: AiJobQueuePayload,
+  opts: { jobId: string; removeOnComplete?: boolean | { count: number }; removeOnFail?: { count: number } },
+): Promise<void> {
+  const queue = getAiJobsQueue();
+  await queue.add("process", data, opts);
 }
 
 export async function getBullMqQueueStats(): Promise<Record<string, number>> {

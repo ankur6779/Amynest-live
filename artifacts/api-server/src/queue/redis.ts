@@ -20,10 +20,41 @@ function redisCommandTimeoutMs(url: string): number | undefined {
   // Render external Key Value (rediss://) from off-platform workers can be slow to handshake.
   return isExternalTlsRedis(url) ? EXTERNAL_REDIS_DEFAULT_MS : 5000;
 }
+
+/**
+ * After this many reconnects, keep retrying at the max delay.
+ * Returning `null` from ioredis retryStrategy permanently ends the client —
+ * Amy AI then fails until the process restarts.
+ */
 const REDIS_MAX_RECONNECT = Number(process.env.REDIS_MAX_RECONNECT_ATTEMPTS ?? "30");
 
 let shared: Redis | undefined;
 let bullMqShared: Redis | undefined;
+let connectionEpoch = 0;
+
+export function getRedisConnectionEpoch(): number {
+  return connectionEpoch;
+}
+
+/** ioredis status after retryStrategy gave up — the client cannot be reused. */
+export function isRedisConnectionEnded(status: string | undefined): boolean {
+  return status === "end";
+}
+
+export function isRedisClosedError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    /connection is closed/i.test(message) ||
+    /stream isn't writeable/i.test(message) ||
+    /enableofflinequeue is false/i.test(message)
+  );
+}
+
+/** Always reconnect. Never return null — that permanently kills the singleton. */
+export function redisReconnectDelayMs(times: number): number {
+  const attempt = Number.isFinite(times) && times > 0 ? times : 1;
+  return Math.min(attempt * 250, 5000);
+}
 
 function waitForRedisReady(conn: Redis, timeoutMs: number): Promise<void> {
   if (conn.status === "ready") {
@@ -60,7 +91,7 @@ function waitForRedisReady(conn: Redis, timeoutMs: number): Promise<void> {
   });
 }
 
-function resetRedisConnection(): void {
+export function resetRedisConnection(): void {
   for (const conn of [shared, bullMqShared]) {
     if (!conn) continue;
     try {
@@ -71,6 +102,7 @@ function resetRedisConnection(): void {
   }
   shared = undefined;
   bullMqShared = undefined;
+  connectionEpoch += 1;
 }
 
 export function getRedisUrl(): string | undefined {
@@ -112,6 +144,36 @@ export async function verifyRedisConnection(): Promise<boolean> {
   return false;
 }
 
+/** Wait until the shared Redis client is ready, recreating it if it already ended. */
+export async function ensureRedisReady(kind: "commands" | "bullmq" = "commands"): Promise<Redis> {
+  const conn = kind === "bullmq" ? getBullMqRedisConnection() : getRedisConnection();
+  const url = getRedisUrl() ?? "";
+  await waitForRedisReady(conn, redisConnectTimeoutMs(url));
+  return conn;
+}
+
+/**
+ * Run a Redis command, recreating the client once if the previous connection
+ * already ended ("Connection is closed").
+ */
+export async function withRedisRetry<T>(op: (conn: Redis) => Promise<T>): Promise<T> {
+  try {
+    return await op(getRedisConnection());
+  } catch (err) {
+    if (!isRedisClosedError(err)) throw err;
+    logger.warn(
+      {
+        evt: "redis.command_retry",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "Redis command failed on a closed connection — recreating",
+    );
+    resetRedisConnection();
+    const conn = await ensureRedisReady("commands");
+    return op(conn);
+  }
+}
+
 function createRedisConnection(label: "commands" | "bullmq"): Redis {
   const url = getRedisUrl();
   if (!url) {
@@ -126,8 +188,15 @@ function createRedisConnection(label: "commands" | "bullmq"): Redis {
     enableReadyCheck: true,
     lazyConnect: false,
     connectTimeout: connectMs,
-    retryStrategy: (times) =>
-      times > REDIS_MAX_RECONNECT ? null : Math.min(times * 250, 5000),
+    retryStrategy: (times) => {
+      if (times === REDIS_MAX_RECONNECT + 1) {
+        logger.warn(
+          { evt: "redis.reconnect_persist", times, label },
+          "Redis still down — continuing reconnects instead of giving up",
+        );
+      }
+      return redisReconnectDelayMs(times);
+    },
     enableOfflineQueue: false,
   };
 
@@ -145,11 +214,24 @@ function createRedisConnection(label: "commands" | "bullmq"): Redis {
   conn.on("error", (err) => {
     logger.error({ evt: "redis.error", label, message: err.message }, "Redis connection error");
   });
+  conn.on("end", () => {
+    logger.warn({ evt: "redis.end", label }, "Redis connection ended — next command will recreate it");
+  });
   return conn;
+}
+
+function recreateEndedClient(conn: Redis | undefined, label: "commands" | "bullmq"): void {
+  if (!conn || !isRedisConnectionEnded(conn.status)) return;
+  logger.warn(
+    { evt: "redis.recreate", label, status: conn.status, epoch: connectionEpoch },
+    "Redis client ended — recreating",
+  );
+  resetRedisConnection();
 }
 
 /** Shared ioredis connection for short API/result-store commands. */
 export function getRedisConnection(): Redis {
+  recreateEndedClient(shared, "commands");
   if (!shared) {
     shared = createRedisConnection("commands");
   }
@@ -158,6 +240,7 @@ export function getRedisConnection(): Redis {
 
 /** Dedicated BullMQ connection without commandTimeout for blocking queue ops. */
 export function getBullMqRedisConnection(): Redis {
+  recreateEndedClient(bullMqShared, "bullmq");
   if (!bullMqShared) {
     bullMqShared = createRedisConnection("bullmq");
   }
@@ -166,11 +249,28 @@ export function getBullMqRedisConnection(): Redis {
 
 export async function closeRedisConnection(): Promise<void> {
   if (shared) {
-    await shared.quit();
+    try {
+      await shared.quit();
+    } catch {
+      try {
+        shared.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }
     shared = undefined;
   }
   if (bullMqShared) {
-    await bullMqShared.quit();
+    try {
+      await bullMqShared.quit();
+    } catch {
+      try {
+        bullMqShared.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }
     bullMqShared = undefined;
   }
+  connectionEpoch += 1;
 }

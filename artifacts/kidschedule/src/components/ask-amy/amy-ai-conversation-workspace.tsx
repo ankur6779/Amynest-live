@@ -9,7 +9,13 @@ import { useAppNavigate } from "@/components/app-link";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { parseApiJson } from "@/lib/safe-json-response";
-import { hasAsyncJobId, parseResponseJson, resolveAiApiData } from "@/lib/poll-result";
+import {
+  hasAsyncJobId,
+  parseResponseJson,
+  readAssistantAnswer,
+  resolveAiApiData,
+} from "@/lib/poll-result";
+import { logClientError } from "@/lib/log-client-error";
 import { ASK_AMY_SOFT_CONTINUE, askAmySoftContinueMessage } from "@/lib/hard-day-monetization";
 import {
   AMY_AI_SLOW_MS,
@@ -239,11 +245,11 @@ export function AmyAiConversationWorkspace({
         const raw = await parseResponseJson(res);
         const asyncJob = hasAsyncJobId(raw);
         if (asyncJob) markAmyAiLatency(trace, "pollStart");
-        const data = await resolveAiApiData<{ answer?: string }>(raw, authFetch, {
+        const data = await resolveAiApiData<unknown>(raw, authFetch, {
           poll: { ...ASSISTANT_POLL_OPTIONS, signal: controller.signal },
         });
         markAmyAiLatency(trace, "responseComplete");
-        const answer = data?.answer?.trim();
+        const answer = readAssistantAnswer(data);
         if (!answer) throw new Error("empty_answer");
         const withAmy = appendMessage(userTurn, { role: "assistant", content: answer });
         setCurrent(withAmy);
@@ -256,6 +262,13 @@ export function AmyAiConversationWorkspace({
         if (controller.signal.aborted) return;
         markAmyAiLatency(trace, "responseComplete");
         finishAmyAiLatency(trace, { ok: false });
+        const message = err instanceof Error ? err.message : String(err);
+        void logClientError({
+          message,
+          stack: err instanceof Error ? err.stack : undefined,
+          label: "amy_ai",
+          meta: { source: "assistant-ai" },
+        });
         const failed = appendMessage(userTurn, {
           role: "system",
           content: "Something interrupted Amy's reply.",

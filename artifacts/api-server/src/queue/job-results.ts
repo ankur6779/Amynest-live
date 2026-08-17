@@ -1,5 +1,9 @@
 import type { AiJobRecord, AiJobStatus } from "./types.js";
-import { getRedisConnection, isRedisQueueEnabled } from "./redis.js";
+import {
+  isRedisClosedError,
+  isRedisQueueEnabled,
+  withRedisRetry,
+} from "./redis.js";
 import { isCacheDisabled } from "../services/admin-ops-store.js";
 
 const JOB_KEY_PREFIX = "job:";
@@ -55,14 +59,24 @@ export async function saveJobRecord(record: AiJobRecord): Promise<void> {
       "Job record persistence is disabled (cacheDisabled admin flag)",
     );
   }
-  const redis = getRedisConnection();
-  await redis.set(jobKey(record.id), JSON.stringify(record), "EX", jobResultTtlSec(record.type));
+  try {
+    await withRedisRetry((redis) =>
+      redis.set(jobKey(record.id), JSON.stringify(record), "EX", jobResultTtlSec(record.type)),
+    );
+  } catch (err) {
+    if (isRedisClosedError(err)) {
+      throw new JobRecordPersistenceError(
+        "redis_unavailable",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+    throw err;
+  }
 }
 
 export async function getJobRecord(jobId: string): Promise<AiJobRecord | undefined> {
   if (!isRedisQueueEnabled()) return undefined;
-  const redis = getRedisConnection();
-  const raw = await redis.get(jobKey(jobId));
+  const raw = await withRedisRetry((redis) => redis.get(jobKey(jobId)));
   if (!raw) return undefined;
   try {
     return JSON.parse(raw) as AiJobRecord;
@@ -110,8 +124,9 @@ async function writeJobRecord(record: AiJobRecord): Promise<void> {
 /** Single-flight lock so concurrent poll GETs do not double-apply side effects. */
 export async function tryAcquirePollFinalizeLock(jobId: string): Promise<boolean> {
   if (!isRedisQueueEnabled()) return true;
-  const redis = getRedisConnection();
-  const ok = await redis.set(`${FINALIZE_LOCK_PREFIX}${jobId}`, "1", "EX", 120, "NX");
+  const ok = await withRedisRetry((redis) =>
+    redis.set(`${FINALIZE_LOCK_PREFIX}${jobId}`, "1", "EX", 120, "NX"),
+  );
   return ok === "OK";
 }
 
@@ -176,21 +191,23 @@ export async function patchJobRecord(
 /** Per-user cap on concurrently active jobs (queued + processing). */
 export async function tryAcquireUserSlot(userId: string): Promise<boolean> {
   if (!isRedisQueueEnabled()) return true;
-  const redis = getRedisConnection();
   const key = userActiveKey(userId);
-  const n = await redis.incr(key);
-  await redis.expire(key, TTL_SEC_LONG);
-  if (n <= MAX_USER_ACTIVE_JOBS) return true;
-  await redis.decr(key);
-  return false;
+  return withRedisRetry(async (redis) => {
+    const n = await redis.incr(key);
+    await redis.expire(key, TTL_SEC_LONG);
+    if (n <= MAX_USER_ACTIVE_JOBS) return true;
+    await redis.decr(key);
+    return false;
+  });
 }
 
 export async function releaseUserSlot(userId: string): Promise<void> {
   if (!isRedisQueueEnabled()) return;
-  const redis = getRedisConnection();
   const key = userActiveKey(userId);
-  const n = await redis.decr(key);
-  if (n <= 0) await redis.del(key);
+  await withRedisRetry(async (redis) => {
+    const n = await redis.decr(key);
+    if (n <= 0) await redis.del(key);
+  });
 }
 
 export async function waitForJobResult(

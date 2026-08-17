@@ -126,6 +126,15 @@ export async function parseResponseJson(res: Response): Promise<unknown> {
   return parsed.ok ? parsed.data : null;
 }
 
+/** Amy AI poll/sync payload — `answer` after finalize, `content` from the raw worker. */
+export function readAssistantAnswer(data: unknown): string {
+  if (!data || typeof data !== "object") return "";
+  const rec = data as { answer?: unknown; content?: unknown };
+  const answer = typeof rec.answer === "string" ? rec.answer.trim() : "";
+  if (answer) return answer;
+  return typeof rec.content === "string" ? rec.content.trim() : "";
+}
+
 /** Parse a successful response body and unwrap async jobs when present. */
 export async function readResolvedApiJson<T>(
   res: Response,

@@ -67,8 +67,13 @@ export async function enqueueAiJob(
 
 export async function getQueueStats(): Promise<Record<string, unknown>> {
   if (isBullMqActive()) {
-    const bull = await getBullMqQueueStats();
-    return { mode: "bullmq", ...bull };
+    try {
+      const bull = await getBullMqQueueStats();
+      return { mode: "bullmq", ...bull };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { mode: "bullmq", error: message };
+    }
   }
   return getMemoryQueueStats();
 }

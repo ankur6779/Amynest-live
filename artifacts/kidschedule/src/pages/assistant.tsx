@@ -23,7 +23,7 @@ import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
-import { readResolvedApiJson } from "@/lib/poll-result";
+import { readAssistantAnswer, readResolvedApiJson } from "@/lib/poll-result";
 import { TAB_TOPICS, type AssistantTabId } from "@/lib/assistant-tab-topics";
 import { FF_INFANT_PREMIUM } from "@/lib/infant-feature-flags";
 import {
@@ -225,10 +225,10 @@ export default function AssistantPage() {
         return;
       }
       if (!res.ok) throw new Error(`api_error_${res.status}`);
-      const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch, {
+      const data = await readResolvedApiJson<unknown>(res, authFetch, {
         poll: { ...ASSISTANT_POLL_OPTIONS, signal: controller.signal },
       });
-      const answer = data?.answer?.trim();
+      const answer = readAssistantAnswer(data);
       if (!answer) throw new Error("empty_answer");
       setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
