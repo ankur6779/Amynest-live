@@ -8,11 +8,21 @@ import {
   healStaleSubscriptionRecord,
   isPremiumNow,
 } from "./subscriptionService.js";
+import {
+  SPEECH_COACH_V2_FIRST_USE_SECONDS,
+  firstUseRemainingSeconds,
+  peekSpeechCoachV2FirstUseUsed,
+} from "./speechCoachV2FirstUse.js";
 
 export interface SpeechCoachV2UsagePolicy {
   isTrial: boolean;
   isPaid: boolean;
+  /** Paid/trial daily cap, or remaining lifetime first-use seconds for free. */
   dailyLimitSeconds: number;
+  isFirstUseFree: boolean;
+  firstUseUsedSeconds: number;
+  firstUseRemainingSeconds: number;
+  firstUseLifetimeLimitSeconds: number;
 }
 
 export function isTrialingSubscription(sub: Subscription, now = Date.now()): boolean {
@@ -43,7 +53,15 @@ export function resolveSpeechCoachV2UsagePolicyFromSubscription(
     dailyLimitSeconds = SPEECH_COACH_V2_TRIAL_DAILY_LIMIT_SECONDS;
   }
 
-  return { isTrial, isPaid, dailyLimitSeconds };
+  return {
+    isTrial,
+    isPaid,
+    dailyLimitSeconds,
+    isFirstUseFree: false,
+    firstUseUsedSeconds: 0,
+    firstUseRemainingSeconds: 0,
+    firstUseLifetimeLimitSeconds: SPEECH_COACH_V2_FIRST_USE_SECONDS,
+  };
 }
 
 export async function resolveSpeechCoachV2UsagePolicy(
@@ -51,7 +69,18 @@ export async function resolveSpeechCoachV2UsagePolicy(
 ): Promise<SpeechCoachV2UsagePolicy> {
   let sub = await getOrCreateSubscription(userId);
   sub = await healStaleSubscriptionRecord(sub);
-  return resolveSpeechCoachV2UsagePolicyFromSubscription(sub);
+  const base = resolveSpeechCoachV2UsagePolicyFromSubscription(sub);
+  if (base.isPaid || base.isTrial) return base;
+
+  const used = await peekSpeechCoachV2FirstUseUsed(userId);
+  const remaining = firstUseRemainingSeconds(used);
+  return {
+    ...base,
+    isFirstUseFree: true,
+    dailyLimitSeconds: remaining,
+    firstUseUsedSeconds: used,
+    firstUseRemainingSeconds: remaining,
+  };
 }
 
 export async function getDailySpeechCoachLimit(userId: string): Promise<number> {

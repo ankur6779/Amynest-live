@@ -12,6 +12,7 @@ import {
   isDailyLimitReached,
   isMonthlyLimitReached,
   remainingSpeechCoachSeconds,
+  remainingMonthlySeconds,
   SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
   toFullSessionState,
   utcDateKey,
@@ -22,6 +23,10 @@ import { asyncRoute } from "../middlewares/async-route.js";
 import { getFeatureUsage, nextResetAtFor } from "../services/subscriptionService.js";
 import { getSpeechCoachV2RemoteConfig } from "../services/speechCoachV2RemoteConfig.js";
 import { resolveSpeechCoachV2UsagePolicy } from "../services/speechCoachV2UsagePolicy.js";
+import {
+  SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE,
+  SPEECH_COACH_V2_FIRST_USE_SECONDS,
+} from "../services/speechCoachV2FirstUse.js";
 import {
   assertActiveSessionForToken,
   generateTabLockToken,
@@ -99,11 +104,31 @@ function handleSessionError(err: unknown, res: import("express").Response): bool
 
 async function buildUsageResponse(
   userId: string,
-  childId: number,
+  _childId: number,
   secondsUsed: number,
   monthUsed: number,
 ) {
   const policy = await resolveSpeechCoachV2UsagePolicy(userId);
+  const monthlyRemaining = remainingMonthlySeconds(
+    monthUsed,
+    SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+  );
+  if (policy.isFirstUseFree) {
+    const remainingSeconds = Math.min(policy.firstUseRemainingSeconds, monthlyRemaining);
+    return {
+      speechSecondsUsed: policy.firstUseUsedSeconds,
+      speechMinutesToday: Math.floor(policy.firstUseUsedSeconds / 60),
+      dailyLimitSeconds: SPEECH_COACH_V2_FIRST_USE_SECONDS,
+      monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+      monthSecondsUsed: monthUsed,
+      remainingSeconds,
+      limitReached: remainingSeconds <= 0,
+      isTrial: false,
+      isPaid: false,
+      isFirstUseFree: true,
+      dateKey: utcDateKey(),
+    };
+  }
   return {
     speechSecondsUsed: secondsUsed,
     speechMinutesToday: Math.floor(secondsUsed / 60),
@@ -121,8 +146,38 @@ async function buildUsageResponse(
       || isMonthlyLimitReached(monthUsed, SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS),
     isTrial: policy.isTrial,
     isPaid: policy.isPaid,
+    isFirstUseFree: false,
     dateKey: utcDateKey(),
   };
+}
+
+function canStartFromPolicy(
+  policy: Awaited<ReturnType<typeof resolveSpeechCoachV2UsagePolicy>>,
+  dailySecondsUsed: number,
+): boolean {
+  if (policy.isFirstUseFree) {
+    return canStartSession(policy.firstUseUsedSeconds, SPEECH_COACH_V2_FIRST_USE_SECONDS);
+  }
+  return canStartSession(dailySecondsUsed, policy.dailyLimitSeconds);
+}
+
+function remainingFromPolicy(
+  policy: Awaited<ReturnType<typeof resolveSpeechCoachV2UsagePolicy>>,
+  dailySecondsUsed: number,
+  monthUsed: number,
+): number {
+  if (policy.isFirstUseFree) {
+    return Math.min(
+      policy.firstUseRemainingSeconds,
+      remainingMonthlySeconds(monthUsed, SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS),
+    );
+  }
+  return remainingSpeechCoachSeconds({
+    dailyUsedSeconds: dailySecondsUsed,
+    dailyLimitSeconds: policy.dailyLimitSeconds,
+    monthlyUsedSeconds: monthUsed,
+    monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
+  });
 }
 
 router.get(
@@ -208,7 +263,20 @@ router.post(
       getMonthlyUsageSeconds(userId, body.childId),
     ]);
     const policy = await resolveSpeechCoachV2UsagePolicy(userId);
-    if (!canStartSession(secondsUsed, policy.dailyLimitSeconds)) {
+    if (!canStartFromPolicy(policy, secondsUsed)) {
+      if (policy.isFirstUseFree) {
+        res.status(429).json({
+          error: "first_use_limit_reached",
+          message: SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE,
+          speechSecondsUsed: policy.firstUseUsedSeconds,
+          dailyLimitSeconds: SPEECH_COACH_V2_FIRST_USE_SECONDS,
+          remainingSeconds: 0,
+          isTrial: false,
+          isPaid: false,
+          isFirstUseFree: true,
+        });
+        return;
+      }
       res.status(429).json({
         error: "daily_limit_reached",
         message: DAILY_LIMIT_MESSAGE,
@@ -273,15 +341,13 @@ router.post(
       phase: state.phase,
       exercises: state.exercises,
       sessionState: state,
-      remainingSeconds: remainingSpeechCoachSeconds({
-        dailyUsedSeconds: secondsUsed,
-        dailyLimitSeconds: policy.dailyLimitSeconds,
-        monthlyUsedSeconds: monthUsed,
-        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
-      }),
-      dailyLimitSeconds: policy.dailyLimitSeconds,
+      remainingSeconds: remainingFromPolicy(policy, secondsUsed, monthUsed),
+      dailyLimitSeconds: policy.isFirstUseFree
+        ? SPEECH_COACH_V2_FIRST_USE_SECONDS
+        : policy.dailyLimitSeconds,
       isTrial: policy.isTrial,
       isPaid: policy.isPaid,
+      isFirstUseFree: policy.isFirstUseFree,
       instructions: buildAmyRealtimeInstructions(state),
     });
   }),
@@ -358,7 +424,20 @@ router.post(
       getMonthlyUsageSeconds(userId, body.childId),
     ]);
     const policy = await resolveSpeechCoachV2UsagePolicy(userId);
-    if (!canStartSession(secondsUsed, policy.dailyLimitSeconds)) {
+    if (!canStartFromPolicy(policy, secondsUsed)) {
+      if (policy.isFirstUseFree) {
+        res.status(429).json({
+          error: "first_use_limit_reached",
+          message: SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE,
+          speechSecondsUsed: policy.firstUseUsedSeconds,
+          dailyLimitSeconds: SPEECH_COACH_V2_FIRST_USE_SECONDS,
+          remainingSeconds: 0,
+          isTrial: false,
+          isPaid: false,
+          isFirstUseFree: true,
+        });
+        return;
+      }
       res.status(429).json({
         error: "daily_limit_reached",
         message: DAILY_LIMIT_MESSAGE,
@@ -393,13 +472,10 @@ router.post(
       callsUrl: minted.callsUrl,
       sessionId: minted.sessionId,
       mintResponse: minted.mintResponse,
-      remainingSeconds: remainingSpeechCoachSeconds({
-        dailyUsedSeconds: secondsUsed,
-        dailyLimitSeconds: policy.dailyLimitSeconds,
-        monthlyUsedSeconds: monthUsed,
-        monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
-      }),
-      dailyLimitSeconds: policy.dailyLimitSeconds,
+      remainingSeconds: remainingFromPolicy(policy, secondsUsed, monthUsed),
+      dailyLimitSeconds: policy.isFirstUseFree
+        ? SPEECH_COACH_V2_FIRST_USE_SECONDS
+        : policy.dailyLimitSeconds,
       isTrial: policy.isTrial,
     });
   }),

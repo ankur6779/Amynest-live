@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { fetchSpeechCoachV2Usage } from "../lib/api";
-import { formatSpeechCoachDailyAllowanceLabel } from "../lib/usage-display";
+import {
+  formatSpeechCoachDailyAllowanceLabel,
+  formatSpeechCoachFirstUseAllowanceLabel,
+} from "../lib/usage-display";
 
 export function useSpeechCoachV2DailyAllowance(
   authFetch: AuthFetchFn,
@@ -19,6 +22,10 @@ export function useSpeechCoachV2DailyAllowance(
     void fetchSpeechCoachV2Usage(authFetch, childId)
       .then((usage) => {
         if (cancelled) return;
+        if (usage.isFirstUseFree) {
+          setLabel(formatSpeechCoachFirstUseAllowanceLabel(usage));
+          return;
+        }
         setLabel(formatSpeechCoachDailyAllowanceLabel(usage.dailyLimitSeconds, usage.isTrial));
       })
       .catch(() => {

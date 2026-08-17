@@ -23,6 +23,7 @@ export function SpeechCoachV2SessionUi(props: {
   starsEarned: number;
   pointsEarned: number;
   remainingSeconds: number;
+  isFirstUseFree?: boolean;
   lastTranscript: string;
   onStart: () => void;
   onEnd: () => void;
@@ -40,6 +41,7 @@ export function SpeechCoachV2SessionUi(props: {
     starsEarned,
     pointsEarned,
     remainingSeconds,
+    isFirstUseFree = false,
     lastTranscript,
     onStart,
     onEnd,
@@ -127,7 +129,7 @@ export function SpeechCoachV2SessionUi(props: {
 
       <div className="px-6 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)]">
         <p className="mb-4 text-center text-xs text-white/50">
-          {formatSpeechCoachRemainingLabel(remainingSeconds)}
+          {formatSpeechCoachRemainingLabel(remainingSeconds, isFirstUseFree)}
         </p>
 
         {!live ? (
