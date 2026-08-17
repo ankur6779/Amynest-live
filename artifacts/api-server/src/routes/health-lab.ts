@@ -20,6 +20,10 @@ import {
   verifyChildOwner,
 } from "../lib/healthLabProgressService.js";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
+import {
+  assertHealthLabPremium,
+  HealthLabPremiumRequiredError,
+} from "../services/healthLabPremiumGate.js";
 
 const router: IRouter = Router();
 
@@ -62,12 +66,35 @@ async function authChild(req: { params?: { childId?: string }; body?: { childId?
   return { userId, childId };
 }
 
+function sendHealthLabCaught(res: Response, err: unknown): boolean {
+  if (err instanceof HealthLabPremiumRequiredError) {
+    res.status(err.status).json({ error: err.code, message: err.message });
+    return true;
+  }
+  return false;
+}
+
+/** Child ownership first, then the same isPremiumNow used by canAccessHealthLab. */
+async function requireHealthLabPremium(
+  auth: { userId: string; childId: number },
+  res: Response,
+): Promise<boolean> {
+  try {
+    await assertHealthLabPremium(auth.userId);
+    return true;
+  } catch (err) {
+    if (sendHealthLabCaught(res, err)) return false;
+    throw err;
+  }
+}
+
 router.get("/health-lab/profile/:childId", async (req, res): Promise<void> => {
   const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : auth.error === "not_found" ? 404 : 400).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const data = await getHealthLabProfile(auth.childId, auth.userId);
     if (!data) {
@@ -87,6 +114,7 @@ router.get("/health-lab/dashboard/:childId", async (req, res): Promise<void> => 
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const data = await getHealthLabProfile(auth.childId, auth.userId);
     const dashboard = data ? buildDashboardFromProfile(data.profile) : null;
@@ -103,6 +131,7 @@ router.get("/health-lab/history/:childId", async (req, res): Promise<void> => {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const data = await getHealthLabProfile(auth.childId, auth.userId);
     const history = data ? (data.profile.gameHistory as unknown[]) ?? [] : [];
@@ -133,6 +162,7 @@ router.post("/health-lab/sync", healthLabMutationRateLimit, infantExploreMutatio
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const row = await syncHealthLabProfile(
       auth.childId,
@@ -160,6 +190,7 @@ router.post("/health-lab/session", healthLabMutationRateLimit, infantExploreMuta
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const row = await appendHealthLabSession(
       auth.childId,
@@ -185,6 +216,7 @@ router.post("/health-lab/quest", healthLabMutationRateLimit, infantExploreMutati
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const existing = await getHealthLabProfile(auth.childId, auth.userId);
     const profile = (existing?.profile ?? { version: 2, childId: auth.childId }) as Record<string, unknown>;
@@ -210,6 +242,7 @@ router.post("/health-lab/badge", healthLabMutationRateLimit, infantExploreMutati
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const existing = await getHealthLabProfile(auth.childId, auth.userId);
     const profile = (existing?.profile ?? { version: 2, childId: auth.childId, badges: [] }) as Record<string, unknown>;
@@ -235,6 +268,7 @@ router.post("/health-lab/streak", healthLabMutationRateLimit, infantExploreMutat
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const existing = await getHealthLabProfile(auth.childId, auth.userId);
     const profile = (existing?.profile ?? { version: 2, childId: auth.childId }) as Record<string, unknown>;
@@ -258,6 +292,7 @@ router.post("/health-lab/shop", healthLabMutationRateLimit, infantExploreMutatio
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
   }
+  if (!(await requireHealthLabPremium(auth, res))) return;
   try {
     const existing = await getHealthLabProfile(auth.childId, auth.userId);
     const profile = (existing?.profile ?? { version: 2, childId: auth.childId }) as Record<string, unknown>;

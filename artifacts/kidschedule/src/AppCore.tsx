@@ -84,6 +84,7 @@ import { AnalyticsScreenTracker } from "@/lib/analytics/screen-tracker";
 import { AnalyticsBootstrap } from "@/lib/analytics/analytics-bootstrap";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
+import { HealthLabStaticFreePreview } from "@/components/health-lab/health-lab-static-free-preview";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. Suspense fallbacks use the premium splash.
@@ -648,7 +649,11 @@ function ProtectedRoute({
       return (
         <AppErrorBoundary label="Layout">
           <Layout>
-            <PremiumRoutePreview meta={premiumRoute} />
+            {premiumRoute.accessKey === "canAccessHealthLab" ? (
+              <HealthLabStaticFreePreview />
+            ) : (
+              <PremiumRoutePreview meta={premiumRoute} />
+            )}
           </Layout>
         </AppErrorBoundary>
       );
