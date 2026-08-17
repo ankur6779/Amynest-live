@@ -14,7 +14,7 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 type Props = {
   source: string;
   variant?: "primary" | "secondary";
-  /** Override primary CTA label (default: Try N days free). */
+  /** Override primary CTA label. */
   ctaLabel?: string;
   onActivated?: () => void;
   className?: string;
@@ -45,8 +45,7 @@ export function SubscriptionTrialOffer({
   });
   if (!showFreeTrial && !canStartTrial) return null;
 
-  const days = entitlements?.limits.trialDays ?? 3;
-  const primaryLabel = ctaLabel ?? `Explore AmyNest Free for ${days} Days`;
+  const primaryLabel = ctaLabel ?? "Continue with AmyNest";
 
   const onClick = async () => {
     if (submitting || nativeBilling.purchasing) return;
@@ -133,7 +132,7 @@ export function SubscriptionTrialOffer({
     >
       <span className="inline-flex items-center justify-center gap-2">
         <Sparkles className="h-4 w-4" />
-        Explore before you subscribe — {days} free days
+        Explore AmyNest — Premium is optional
       </span>
     </button>
   );

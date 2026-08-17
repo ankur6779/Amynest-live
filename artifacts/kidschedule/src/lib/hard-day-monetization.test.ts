@@ -23,9 +23,9 @@ describe("P0-7 hard-day monetization", () => {
   it("D3 soft-continue messages never sell help itself", () => {
     const adult = askAmySoftContinueMessage(false);
     const infant = askAmySoftContinueMessage(true);
-    for (const text of [adult, infant, ASK_AMY_SOFT_CONTINUE.inputPlaceholder]) {
+    for (const text of [adult, infant, ASK_AMY_SOFT_CONTINUE.inputPlaceholder, ASK_AMY_SOFT_CONTINUE.resetHint]) {
       expect(text.toLowerCase()).not.toMatch(/upgrade|unlock|zap|fomo|don't miss|limited access/);
-      expect(text.toLowerCase()).toMatch(/ready|support|continue|amy/);
+      expect(text.toLowerCase()).toMatch(/ready|support|continue|amy|tomorrow/);
     }
   });
 

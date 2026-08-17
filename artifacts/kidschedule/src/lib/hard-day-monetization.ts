@@ -38,6 +38,7 @@ export const ASK_AMY_SOFT_CONTINUE = {
     "We've shared several baby questions today. Amy can keep supporting you whenever you're ready.",
   inputPlaceholder: "Amy is here whenever you're ready to continue",
   notNowLabel: "Not now",
+  resetHint: "Amy's extra help returns tomorrow.",
 } as const;
 
 export function askAmySoftContinueMessage(isInfantContext: boolean): string {

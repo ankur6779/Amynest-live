@@ -47,6 +47,7 @@ import {
 import { FF_POST_ONBOARDING_TRIAL } from "@/lib/subscription-feature-flags";
 import { wasOnboardingTrialSeen } from "@/lib/subscription-funnel-storage";
 import { shouldRouteToPostOnboardingFreeTrial } from "@/lib/trial-paywall-variant";
+import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import {
   forceSyncAuthFromCurrentUser,
@@ -299,6 +300,7 @@ export default function ChildDiscoveryFilm() {
         alreadySeen: wasOnboardingTrialSeen(),
         isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
         deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
+        hasFirstRoutine: hasFirstRoutineActivationProgress(),
       });
       const path = offerFreeTrial ? "/subscription-trial" : POST_ONBOARDING_ACTIVATION_PATH;
       navigateAfterOnboardingComplete(path);

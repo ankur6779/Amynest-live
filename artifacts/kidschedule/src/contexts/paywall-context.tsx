@@ -16,6 +16,8 @@ import {
   releaseMonetizationSurface,
   tryClaimMonetizationSurface,
 } from "@/lib/monetization-coordinator";
+import { useSubscription } from "@/hooks/use-subscription";
+import { resolvePaywallUsageProgress } from "@/lib/paywall-usage";
 
 export type PaywallReason =
   | "ai_quota"
@@ -64,6 +66,7 @@ const PaywallContext = createContext<PaywallContextValue | null>(null);
 
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState>({ open: false, reason: "feature" });
+  const { entitlements } = useSubscription();
 
   const openPaywall = useCallback((reason: PaywallReason = "feature", meta?: OpenPaywallMeta) => {
     ensureFirstOpenTimestamp();
@@ -98,10 +101,18 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
     incrementPaywallVisitCount();
     if (isMonetizationSurfaceBlocked("paywall")) return;
     if (!tryClaimMonetizationSurface("paywall")) return;
+    const usage = resolvePaywallUsageProgress(reason, entitlements);
     trackSubscriptionEvent({
       event: "paywall_opened",
       reason,
       source: meta?.source ?? "open_paywall",
+      extra: {
+        feature: reason,
+        ...(usage
+          ? { used: usage.used, limit: usage.limit, usage_label: usage.label }
+          : {}),
+        ...(meta?.module ? { module: meta.module } : {}),
+      },
     });
     track("premium_paywall_viewed", { source: reason });
     logSubscriptionDebug({
@@ -112,7 +123,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
     });
     const { routineCount: _routineCount, ...rest } = meta ?? {};
     setState({ open: true, reason, ...rest });
-  }, []);
+  }, [entitlements]);
   const closePaywall = useCallback(() => {
     releaseMonetizationSurface("paywall");
     setState((s) => ({ ...s, open: false }));

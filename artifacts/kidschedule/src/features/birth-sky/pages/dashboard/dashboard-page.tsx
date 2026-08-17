@@ -846,6 +846,16 @@ export function BirthSkyDashboardPage({
         moonPhaseLabel={snapshot.astronomy.moonPhaseLabel}
         continuityHint={continuityLine}
         profileId={profile.profileId}
+        showContinuationCta={
+          Boolean(
+            ai.entitlement &&
+              !ai.entitlement.isPremium &&
+              (ai.entitlement.freeInsightRemaining ?? 1) <= 0,
+          )
+        }
+        onContinuePremium={() =>
+          openPaywall("premium_insight", { module: "birth_sky", source: "first_insight_continuation" })
+        }
         onComposerChange={ai.setComposer}
         onSend={() => {
           void ai.send();

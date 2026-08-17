@@ -142,12 +142,15 @@ export function shouldRouteToPostOnboardingFreeTrial(input: {
   isPremiumSubscriber: boolean;
   /** When first-experience memory is still waiting to be felt on home. */
   deferForFirstExperience?: boolean;
+  /** Founder D5 — wait until the first routine (or equivalent activation). */
+  hasFirstRoutine?: boolean;
 }): boolean {
   if (!input.featureEnabled) return false;
   if (input.alreadySeen) return false;
   if (input.isPremiumSubscriber) return false;
   // Premium is relief after repeated trust — never an interruption of the first story.
   if (input.deferForFirstExperience) return false;
+  if (input.hasFirstRoutine === false) return false;
   return true;
 }
 

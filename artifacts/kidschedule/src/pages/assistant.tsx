@@ -33,6 +33,7 @@ import {
 import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { AmyAiConversationWorkspace } from "@/components/ask-amy/amy-ai-conversation-workspace";
+import { AmyAiQuotaHint } from "@/components/ask-amy/amy-ai-quota-hint";
 import "@/components/ask-amy/ask-amy-living-room.css";
 
 function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
@@ -309,6 +310,9 @@ export default function AssistantPage() {
                   defaultValue: "You can leave whenever you need — no pressure.",
                 })}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {ASK_AMY_SOFT_CONTINUE.resetHint}
+              </p>
             </div>
           </div>
         ),
@@ -437,6 +441,9 @@ export default function AssistantPage() {
         primaryChildTotalMonths={primaryChildTotalMonths}
         isInfantAmyContext={isInfantAmyContext}
         limitReached={limitReached}
+        remaining={Number.isFinite(remaining) ? remaining : dailyLimit}
+        dailyLimit={dailyLimit}
+        isPremium={isPremium}
         refreshSubscription={refreshSubscription}
       />
     );
@@ -528,6 +535,15 @@ export default function AssistantPage() {
                 })}
               </p>
             )}
+            {!isPremium ? (
+              <div className="mt-2">
+                <AmyAiQuotaHint
+                  remaining={Number.isFinite(remaining) ? remaining : dailyLimit}
+                  limit={dailyLimit}
+                  isPremium={isPremium}
+                />
+              </div>
+            ) : null}
           </header>
         )}
       />

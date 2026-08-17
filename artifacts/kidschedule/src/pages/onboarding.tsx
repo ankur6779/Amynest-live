@@ -74,6 +74,7 @@ import {
   peekFirstExperienceOnboardingSeed,
   shouldDeferMonetizationForFirstExperience,
 } from "@/lib/first-experience/continuity";
+import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import {
   claimOnboardingEventOnce,
   getOrCreateOnboardingAnalyticsRunKey,
@@ -1496,6 +1497,7 @@ function LegacyOnboardingChatPage() {
         alreadySeen: wasOnboardingTrialSeen(),
         isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
         deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
+        hasFirstRoutine: hasFirstRoutineActivationProgress(),
       });
       const trialPath = offerFreeTrial
         ? "/subscription-trial"
@@ -1555,6 +1557,7 @@ function LegacyOnboardingChatPage() {
       alreadySeen: wasOnboardingTrialSeen(),
       isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
       deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
+      hasFirstRoutine: hasFirstRoutineActivationProgress(),
     });
     const trialPath = offerFreeTrial
       ? "/subscription-trial"

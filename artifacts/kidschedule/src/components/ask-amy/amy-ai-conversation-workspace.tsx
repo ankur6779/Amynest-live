@@ -17,6 +17,7 @@ import {
 } from "@/lib/poll-result";
 import { logClientError } from "@/lib/log-client-error";
 import { ASK_AMY_SOFT_CONTINUE, askAmySoftContinueMessage } from "@/lib/hard-day-monetization";
+import { AmyAiQuotaHint } from "@/components/ask-amy/amy-ai-quota-hint";
 import {
   AMY_AI_SLOW_MS,
   finishAmyAiLatency,
@@ -62,6 +63,9 @@ type Props = {
   primaryChildTotalMonths: number | null;
   isInfantAmyContext: boolean;
   limitReached: boolean;
+  remaining?: number;
+  dailyLimit?: number;
+  isPremium?: boolean;
   refreshSubscription: () => void;
   /** Open an existing local session instead of a blank new chat. */
   initialConversationId?: string | null;
@@ -72,6 +76,9 @@ export function AmyAiConversationWorkspace({
   primaryChildTotalMonths,
   isInfantAmyContext,
   limitReached,
+  remaining = 10,
+  dailyLimit = 10,
+  isPremium = false,
   refreshSubscription,
   initialConversationId = null,
 }: Props) {
@@ -307,9 +314,10 @@ export function AmyAiConversationWorkspace({
         kind: "system",
         id: "limit",
         content: (
-          <p className="mx-auto max-w-md text-center text-sm text-muted-foreground">
-            {askAmySoftContinueMessage(isInfantAmyContext)}
-          </p>
+          <div className="mx-auto max-w-md space-y-2 text-center text-sm text-muted-foreground">
+            <p>{askAmySoftContinueMessage(isInfantAmyContext)}</p>
+            <p className="text-xs">{ASK_AMY_SOFT_CONTINUE.resetHint}</p>
+          </div>
         ),
       });
     }
@@ -390,7 +398,8 @@ export function AmyAiConversationWorkspace({
   }, [current.messages, isBlank, isInfantAmyContext, limitReached, pendingRetry, sendMessage]);
 
   const header = (
-    <header className="amy-ai-header flex items-center gap-1">
+    <header className="amy-ai-header flex flex-col gap-1">
+      <div className="flex items-center gap-1">
       <Button
         type="button"
         variant="ghost"
@@ -433,6 +442,8 @@ export function AmyAiConversationWorkspace({
       >
         <Plus className="h-5 w-5" />
       </Button>
+      </div>
+      <AmyAiQuotaHint remaining={remaining} limit={dailyLimit} isPremium={isPremium} />
     </header>
   );
 

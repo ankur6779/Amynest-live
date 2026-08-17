@@ -157,6 +157,22 @@ describe("trial paywall state machine", () => {
         deferForFirstExperience: true,
       }),
     ).toBe(false);
+    expect(
+      shouldRouteToPostOnboardingFreeTrial({
+        featureEnabled: true,
+        alreadySeen: false,
+        isPremiumSubscriber: false,
+        hasFirstRoutine: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldRouteToPostOnboardingFreeTrial({
+        featureEnabled: true,
+        alreadySeen: false,
+        isPremiumSubscriber: false,
+        hasFirstRoutine: true,
+      }),
+    ).toBe(true);
   });
 
   it("DEV assert violation when Trial Ended UI attempted without evidence", () => {

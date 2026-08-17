@@ -55,6 +55,9 @@ type Props = {
   /** Continuity line from local cosmic memory. */
   continuityHint?: string | null;
   profileId?: string;
+  /** After the first free insight — continuation, not a forced paywall. */
+  showContinuationCta?: boolean;
+  onContinuePremium?: () => void;
 };
 
 const SUGGESTION_POOL = [
@@ -93,6 +96,8 @@ export function BirthSkyConversationSheet({
   moonPhaseLabel,
   continuityHint,
   profileId,
+  showContinuationCta = false,
+  onContinuePremium,
 }: Props) {
   const living = isBirthSkyLivingV1Enabled();
   const titleId = useId();
@@ -486,6 +491,25 @@ export function BirthSkyConversationSheet({
             >
               You’re offline. Past messages stay readable; new chat needs a connection.
             </p>
+          ) : null}
+
+          {showContinuationCta && onContinuePremium ? (
+            <div
+              className="rounded-2xl border border-[hsl(42_50%_60%/0.22)] bg-white/[0.04] px-4 py-3 text-center"
+              data-testid="birth-sky-continuation-cta"
+            >
+              <p className="text-sm text-[hsl(40_20%_96%/0.85)]">
+                Your child&apos;s story has only begun. Continue with AI insights that grow with them.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-2 min-h-10 rounded-xl"
+                onClick={onContinuePremium}
+              >
+                Continue Exploring Birth Sky
+              </Button>
+            </div>
           ) : null}
         </div>
 

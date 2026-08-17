@@ -521,7 +521,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       setPhase("ended");
       setStatus(
         reason === "trial"
-          ? "Your free trial has ended. Upgrade to keep talking with Amy!"
+          ? "Your 3 days of Talk with Amy have ended. Premium continues with 10 minutes of live talk every day."
           : reason === "budget"
             ? "That's all our talking time for today. Great job!"
             : reason === "completed"
@@ -1030,7 +1030,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
                   {trialExpired
                     ? living
                       ? "We've shared today's free talk"
-                      : "Your free trial has ended"
+                      : "Talk with Amy's free days have ended"
                     : welcomeBack
                       ? `Welcome back, ${child.name}!`
                       : `Hi ${child.name}!`}
@@ -1039,7 +1039,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
                   {trialExpired
                     ? living
                       ? PREMIUM_VOICE.invitation
-                      : "Upgrade to Premium to keep talking with Amy — 10 minutes of live practice every day."
+                      : "Continue with Premium for 10 minutes of live talk every day."
                     : welcomeBack && displayMem.lastNextFocus
                       ? `Last time we said we'd work on ${displayMem.lastNextFocus}. Ready for a ${minutesLabel}-minute chat?`
                       : living

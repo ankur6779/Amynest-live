@@ -605,7 +605,7 @@ function FreemiumCatalogBanner() {
       <p className="font-semibold text-white">{t("pages.ai_coach.catalog_banner_title", { defaultValue: "Browse the full catalog" })}</p>
       <p className="text-xs mt-1 text-white/80">
         {t("pages.ai_coach.catalog_banner_body", {
-          defaultValue: "Every topic is visible. The first goal in each category is free — upgrade for unlimited personalized plans.",
+          defaultValue: "Every topic is visible. The first goal in each category is free — continue with the complete Coach experience whenever you're ready.",
         })}
       </p>
     </div>;

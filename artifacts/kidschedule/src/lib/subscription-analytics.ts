@@ -73,6 +73,7 @@ export type SubscriptionAnalyticsEvent =
   | "routine_limit_reached"
   | "first_routine_completed"
   | "progress_card_viewed"
+  | "quota_warning"
   | "exit_intercept_shown"
   | "exit_intercept_continue"
   | "exit_intercept_dismiss"

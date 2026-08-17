@@ -8,6 +8,11 @@ import { logger } from "../lib/logger.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import {
+  conversationTrialWindow,
+  ensureConversationFirstUseUnix,
+  FREE_CONVERSATION_TRIAL_DAYS,
+} from "../services/speechConversationFirstUse.js";
+import {
   getFeatureUsage,
   getOrCreateSubscription,
   incrementFeatureUsage,
@@ -49,6 +54,9 @@ import { asyncRoute } from "../middlewares/async-route.js";
  * spent since the previous turn (`elapsedSeconds`); we accumulate it in the
  * `speech_conversation_seconds` daily usage bucket and refuse new turns once
  * the budget is exhausted (resets at UTC midnight).
+ *
+ * Free calendar access starts at first actual converse (including kickoff),
+ * not subscription.createdAt. Premium users have no calendar expiry.
  */
 
 const router: IRouter = Router();
@@ -61,19 +69,16 @@ export const LIVE_CONVERSATION_DAILY_SECONDS = 300;
 /** Premium per-day live conversation cap (seconds). 10 minutes. */
 export const PREMIUM_CONVERSATION_DAILY_SECONDS = 600;
 
-/** Free users may use Talk with Amy for this many days, then must upgrade. */
-const FREE_TRIAL_DAYS = 3;
-
 /** Max seconds a single turn may charge — defends against inflated client deltas. */
 const MAX_TURN_SECONDS = 90;
 
 /**
  * Resolve a user's live-talk budget:
- *   - Premium → 10 min/day.
- *   - Free → 5 min/day, but only during the first {FREE_TRIAL_DAYS} days; after
- *     that the trial is expired and they must upgrade.
+ *   - Premium → 10 min/day, no calendar expiry.
+ *   - Free → 5 min/day for {FREE_CONVERSATION_TRIAL_DAYS} from first actual
+ *     converse (including kickoff). Unused accounts are not expired.
  */
-async function resolveConversationBudget(userId: string): Promise<{
+export async function resolveConversationBudget(userId: string): Promise<{
   dailyBudget: number;
   isPremium: boolean;
   trialExpired: boolean;
@@ -88,13 +93,13 @@ async function resolveConversationBudget(userId: string): Promise<{
       trialDaysLeft: 0,
     };
   }
-  const createdMs = sub.createdAt?.getTime() ?? Date.now();
-  const daysUsed = (Date.now() - createdMs) / 86_400_000;
+  const firstUseUnix = await ensureConversationFirstUseUnix(userId);
+  const window = conversationTrialWindow(firstUseUnix * 1000, Date.now(), FREE_CONVERSATION_TRIAL_DAYS);
   return {
     dailyBudget: LIVE_CONVERSATION_DAILY_SECONDS,
     isPremium: false,
-    trialExpired: daysUsed > FREE_TRIAL_DAYS,
-    trialDaysLeft: Math.max(0, Math.ceil(FREE_TRIAL_DAYS - daysUsed)),
+    trialExpired: window.trialExpired,
+    trialDaysLeft: window.trialDaysLeft,
   };
 }
 
@@ -356,7 +361,7 @@ router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
       error: "trial_expired",
       feature: "speech_conversation_seconds",
       message:
-        "Your 3-day free trial of Talk with Amy has ended. Upgrade to Premium for 10 minutes of live talk every day!",
+        "Your 3 days of Talk with Amy have ended. Premium continues with 10 minutes of live talk every day.",
       limitSeconds: dailyBudget,
       usedSeconds: 0,
       remainingSeconds: 0,

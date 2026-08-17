@@ -88,17 +88,17 @@ export default function SubscriptionTrialPage() {
           <Sparkles className="h-8 w-8 text-white" />
         </div>
         <h1 className="text-2xl font-extrabold text-white">
-          Explore AmyNest Free for {days} Days
+          You can use AmyNest for free
         </h1>
         <p className="text-sm text-white/70 leading-relaxed">
-          Discover how AmyNest helps your family. Experience guided routines,
-          parenting tools, and personalized AI with free daily limits — cancel anytime.
+          Some experiences have limits. Premium unlocks the complete experience
+          whenever you are ready — cancel anytime.
         </p>
         <ul className="text-left text-sm text-white/80 space-y-2">
           {[
             "Explore parenting tools free",
-            "Guided routines & daily AI within free limits",
-            "No charge today · Cancel anytime",
+            "Guided routines and daily AI within free limits",
+            "Premium is optional · Cancel anytime",
             playSecure ? "Secure payment via Google Play" : "Secure checkout",
           ].map((line) => (
             <li key={line} className="flex items-start gap-2">
@@ -110,7 +110,7 @@ export default function SubscriptionTrialPage() {
         <SubscriptionTrialOffer
           source="post_onboarding"
           variant="primary"
-          ctaLabel="Explore AmyNest Free for 3 Days"
+          ctaLabel="Continue with AmyNest"
           onActivated={goActivate}
         />
         <Button

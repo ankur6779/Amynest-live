@@ -226,7 +226,7 @@ export const PAYWALL_SOCIAL_PROOF = [
 export const PAYWALL_AI = {
   title: "Amy can keep supporting you",
   subtitle:
-    "Continue with more personalized guidance for meltdowns, homework, bedtime, and the moments in between—whenever you're ready.",
+    "Continue with unlimited Amy help every day—for meltdowns, homework, bedtime, and the moments in between.",
   cta: "Continue with Amy's guidance",
 } as const;
 
@@ -475,16 +475,16 @@ export const PAYWALL_REASON_COPY: Record<
     cta: "See deeper weekly reports",
   },
   child_limit: {
-    title: "Every child deserves their own growth plan",
+    title: "AmyNest can grow with your family",
     subtitle:
-      "Separate routines, progress, and coaching per child—one ecosystem, no profile left behind.",
-    cta: "Support Every Child",
+      "This keeps AmyNest available for your whole family—each child can have their own routines and progress.",
+    cta: "Continue for your family",
   },
   child_locked: {
-    title: "Every child deserves their own growth plan",
+    title: "AmyNest can grow with your family",
     subtitle:
-      "Separate routines, progress, and coaching per child—one ecosystem, no profile left behind.",
-    cta: "Support Every Child",
+      "This keeps AmyNest available for your whole family—each child can have their own routines and progress.",
+    cta: "Continue for your family",
   },
   audio_lessons: {
     title: "Wind-down that still teaches",

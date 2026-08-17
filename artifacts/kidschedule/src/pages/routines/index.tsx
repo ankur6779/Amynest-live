@@ -90,15 +90,13 @@ interface WeekCalendarProps {
   routinesMax: number;
   activeChildId?: number | null;
   onGatedNavigate: (path: string) => void;
-  onLockedRoutineTap: () => void;
 }
 function WeekCalendar({
   routines,
-  isPremium,
-  routinesMax,
+  isPremium: _isPremium,
+  routinesMax: _routinesMax,
   activeChildId,
   onGatedNavigate,
-  onLockedRoutineTap
 }: WeekCalendarProps) {
   const {
     t
@@ -106,8 +104,6 @@ function WeekCalendar({
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()));
   const [, setLocation] = useLocation();
   const todayStr = formatDate(new Date());
-  const lockedRoutineIds = new Set<number>(isPremium ? [] : routines.slice(routinesMax).map(r => r.id));
-  const isRoutineLocked = (id: number) => !isPremium && lockedRoutineIds.has(id);
   const routinesByDate = new Map<string, Routine[]>();
   routines.forEach(r => {
     const key = r.date.slice(0, 10);
@@ -165,23 +161,14 @@ function WeekCalendar({
         const dayPct = dayTotal > 0 ? Math.round(dayDone / dayTotal * 100) : 0;
         return <button key={dateStr} onClick={() => {
           if (dayRoutines.length === 1) {
-            if (isRoutineLocked(dayRoutines[0].id)) {
-              onLockedRoutineTap();
-            } else {
-              setLocation(`/routines/${dayRoutines[0].id}`);
-            }
+            setLocation(`/routines/${dayRoutines[0].id}`);
           } else if (dayRoutines.length > 1) {
             const preferred =
               (activeChildId != null
                 ? dayRoutines.find((r) => r.childId === activeChildId)
                 : undefined) ??
-              dayRoutines.find((r) => !isRoutineLocked(r.id)) ??
               dayRoutines[0];
-            if (isRoutineLocked(preferred.id)) {
-              onLockedRoutineTap();
-            } else {
-              setLocation(`/routines/${preferred.id}`);
-            }
+            setLocation(`/routines/${preferred.id}`);
           } else {
             const query =
               activeChildId != null ? `?date=${dateStr}&childId=${activeChildId}` : `?date=${dateStr}`;
@@ -271,16 +258,10 @@ export default function RoutinesList() {
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
 
   const todayStr = formatRoutineDateKey(new Date());
-  const lockedRoutineIds = new Set<number>(
-    isPremium ? [] : allRoutines.slice(routinesMax).map((r) => r.id),
-  );
-  const isRoutineLocked = (id: number) => !isPremium && lockedRoutineIds.has(id);
-
   const todayRoutines = allRoutines.filter((r) => r.date.slice(0, 10) === todayStr);
   const childIdsWithTodayRoutine = new Set(todayRoutines.map((r) => r.childId));
 
   const defaultChildId =
-    todayRoutines.find((r) => !isRoutineLocked(r.id))?.childId ??
     todayRoutines[0]?.childId ??
     childrenList[0]?.id ??
     null;
@@ -296,10 +277,6 @@ export default function RoutinesList() {
   const activeChildHasRoutine = activeTodayRoutine != null;
 
   function openRoutineById(id: number) {
-    if (isRoutineLocked(id)) {
-      openPaywall("routines_limit");
-      return;
-    }
     setLocation(`/routines/${id}`);
   }
 
@@ -366,7 +343,6 @@ export default function RoutinesList() {
           routinesMax={routinesMax}
           activeChildId={activeChildId}
           onGatedNavigate={handleGatedNavigate}
-          onLockedRoutineTap={() => openPaywall("routines_limit")}
         />
       )}
       <CollapsibleRoutinesSection
@@ -615,7 +591,6 @@ export default function RoutinesList() {
                     routinesMax={routinesMax}
                     activeChildId={activeChildId}
                     onGatedNavigate={handleGatedNavigate}
-                    onLockedRoutineTap={() => openPaywall("routines_limit")}
                   />
                 </div>
               </div>

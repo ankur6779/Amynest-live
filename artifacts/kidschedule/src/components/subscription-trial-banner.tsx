@@ -34,11 +34,11 @@ export function SubscriptionTrialBanner() {
   const message =
     trialDaysRemaining <= 1
       ? t("subscription.trial.last_day_countdown", {
-          defaultValue: "You have {{count}} day remaining in Premium.",
+          defaultValue: "You have {{count}} day remaining in your AmyNest preview.",
           count: Math.max(trialDaysRemaining, 0),
         })
       : t("subscription.trial.days_remaining", {
-          defaultValue: "You have {{count}} days remaining.",
+          defaultValue: "You have {{count}} days remaining in your AmyNest preview.",
           count: trialDaysRemaining,
         });
 

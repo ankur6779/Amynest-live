@@ -48,9 +48,12 @@ export function SubscriptionFunnelOrchestrator() {
     if (convertedRef.current) return;
     if (!isPremium || isTrialing) return;
     if (!getTrialStartedLocally()) return;
+    const provider = entitlements?.provider ?? "none";
+    // Internal/manual preview is not a store trial — do not call it a conversion.
+    if (provider === "none" || provider === "manual") return;
     convertedRef.current = true;
     trackSubscriptionEvent({ event: "trial_converted", source: "entitlement_sync" });
-  }, [isPremium, isTrialing]);
+  }, [isPremium, isTrialing, entitlements?.provider]);
 
   useEffect(() => {
     if (redirectedRef.current) return;

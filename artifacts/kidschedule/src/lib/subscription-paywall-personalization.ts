@@ -18,13 +18,13 @@ const PERSONALIZED_TEMPLATES: Partial<
   ai_quota: (name) => ({
     title: `Amy is already helping you with ${name}`,
     subtitle:
-      "Continue with unlimited personalized guidance every day—for meltdowns, homework, and bedtime.",
+      "Continue with unlimited Amy help every day—for meltdowns, homework, and bedtime.",
     cta: "Continue with Amy's guidance",
   }),
   infant_ai_quota: (name) => ({
     title: `Amy is already helping you with ${name}`,
     subtitle:
-      "Continue with unlimited Baby Expert answers about sleep, feeding, and development.",
+      "Continue with unlimited Amy help about sleep, feeding, and development.",
     cta: "Continue with Amy's guidance",
   }),
   learning_locked: (name) => ({
@@ -89,6 +89,12 @@ const PERSONALIZED_TEMPLATES: Partial<
     subtitle:
       "Printable phonics workbooks for ages 3–7—practice together with structured worksheets.",
     cta: "Continue with phonics workbooks",
+  }),
+  child_limit: (name) => ({
+    title: `AmyNest can grow with ${name}'s family`,
+    subtitle:
+      "This keeps AmyNest available for your whole family—each child can have their own routines and progress.",
+    cta: "Continue for your family",
   }),
 };
 

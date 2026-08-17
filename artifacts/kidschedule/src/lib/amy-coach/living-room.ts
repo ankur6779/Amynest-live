@@ -95,7 +95,7 @@ export function livingAmyCoachTagline(): string {
 }
 
 export function livingGoalLockedCta(): string {
-  return "Continue with AmyNest whenever you're ready";
+  return "Continue with the complete Coach experience";
 }
 
 export function livingGoalOpenCta(): string {
