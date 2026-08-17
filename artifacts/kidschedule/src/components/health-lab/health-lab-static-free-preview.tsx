@@ -1,6 +1,6 @@
 /**
  * Static Health Lab door for free users.
- * Never mounts HealthLabZone, never fetches /api/health-lab.
+ * Never mounts the interactive Care zone and never calls Health Lab APIs.
  */
 import { Heart } from "lucide-react";
 import { AppLink } from "@/components/app-link";

@@ -157,7 +157,7 @@ router.post("/health-lab/sync", healthLabMutationRateLimit, infantExploreMutatio
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
@@ -185,7 +185,7 @@ router.post("/health-lab/session", healthLabMutationRateLimit, infantExploreMuta
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
@@ -211,7 +211,7 @@ router.post("/health-lab/quest", healthLabMutationRateLimit, infantExploreMutati
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
@@ -237,7 +237,7 @@ router.post("/health-lab/badge", healthLabMutationRateLimit, infantExploreMutati
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
@@ -263,7 +263,7 @@ router.post("/health-lab/streak", healthLabMutationRateLimit, infantExploreMutat
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;
@@ -287,7 +287,7 @@ router.post("/health-lab/shop", healthLabMutationRateLimit, infantExploreMutatio
     res.status(400).json({ error: "invalid_body" });
     return;
   }
-  const auth = await authChild({ body: { childId: parsed.data.childId } });
+  const auth = await authChild(req);
   if ("error" in auth) {
     res.status(auth.error === "unauthorized" ? 401 : 404).json({ error: auth.error });
     return;

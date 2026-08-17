@@ -24,7 +24,7 @@ export function formatSpeechCoachDailyAllowanceLabel(
   return `${minutes} min/day included`;
 }
 
-/** One-time first-use copy — never a daily quota or Premium trial. */
+/** One-time first-use copy — never a daily quota or store trial. */
 export function formatSpeechCoachFirstUseAllowanceLabel(input: {
   speechSecondsUsed: number;
   remainingSeconds: number;

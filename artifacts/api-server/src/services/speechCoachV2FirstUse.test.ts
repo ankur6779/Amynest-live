@@ -57,11 +57,12 @@ describe("speechCoachV2 first-use freeze", () => {
   });
 
   it("Talk-with-Amy lifetime clock stays independent", () => {
+    assert.equal(SPEECH_COACH_V2_FIRST_USE_FEATURE, "speech_coach_v2_first_use_seconds");
     const talk = read("speechConversationFirstUse.ts");
-    const v2 = read("speechCoachV2FirstUse.ts");
+    const windowSrc = read("speechCoachV2FirstUseWindow.ts");
     assert.match(talk, /speech_conversation_first_use/);
-    assert.match(v2, /speech_coach_v2_first_use_seconds/);
-    assert.doesNotMatch(v2, /speech_conversation_first_use/);
+    assert.match(windowSrc, /speech_coach_v2_first_use_seconds/);
+    assert.doesNotMatch(windowSrc, /speech_conversation_first_use/);
     assert.doesNotMatch(talk, /speech_coach_v2_first_use_seconds/);
   });
 

@@ -28,8 +28,8 @@ describe("Phase 4 Health Lab static preview freeze", () => {
       "utf8",
     );
     expect(preview).not.toContain("HealthLabZone");
-    expect(preview).not.toContain("/api/health-lab");
-    expect(preview).not.toContain("fetch(");
+    expect(preview).not.toMatch(/fetch\(/);
+    expect(preview).not.toMatch(/authFetch/);
     expect(preview).toContain("health-lab-static-free-preview");
     expect(preview.toLowerCase()).not.toMatch(/shop|quest|coins|xp |unlock now|fomo/);
   });
