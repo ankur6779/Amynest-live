@@ -50,3 +50,15 @@ describe("conversationTrialWindow", () => {
     assert.equal(w.trialDaysLeft, 2);
   });
 });
+
+describe("Talk-with-Amy clock is stamped only on converse", () => {
+  it("POST converse stamps; GET memory only peeks", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../routes/speech-converse.ts", import.meta.url), "utf8");
+    assert.match(src, /resolveConversationBudget\(userId, \{ stampFirstUse: true \}\)/);
+    assert.match(src, /await resolveConversationBudget\(userId\);/);
+    assert.equal((src.match(/stampFirstUse: true/g) ?? []).length, 1);
+    assert.match(src, /peekConversationFirstUseMs/);
+    assert.match(src, /Memory\/status reads must peek/);
+  });
+});

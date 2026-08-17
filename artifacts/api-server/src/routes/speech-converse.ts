@@ -11,6 +11,7 @@ import {
   conversationTrialWindow,
   ensureConversationFirstUseUnix,
   FREE_CONVERSATION_TRIAL_DAYS,
+  peekConversationFirstUseMs,
 } from "../services/speechConversationFirstUse.js";
 import {
   getFeatureUsage,
@@ -77,8 +78,14 @@ const MAX_TURN_SECONDS = 90;
  *   - Premium → 10 min/day, no calendar expiry.
  *   - Free → 5 min/day for {FREE_CONVERSATION_TRIAL_DAYS} from first actual
  *     converse (including kickoff). Unused accounts are not expired.
+ *
+ * `stampFirstUse` must be true only on POST /speech/converse (including kickoff).
+ * Memory/status reads must peek — opening the screen must not start the clock.
  */
-export async function resolveConversationBudget(userId: string): Promise<{
+export async function resolveConversationBudget(
+  userId: string,
+  opts?: { stampFirstUse?: boolean },
+): Promise<{
   dailyBudget: number;
   isPremium: boolean;
   trialExpired: boolean;
@@ -93,8 +100,10 @@ export async function resolveConversationBudget(userId: string): Promise<{
       trialDaysLeft: 0,
     };
   }
-  const firstUseUnix = await ensureConversationFirstUseUnix(userId);
-  const window = conversationTrialWindow(firstUseUnix * 1000, Date.now(), FREE_CONVERSATION_TRIAL_DAYS);
+  const firstUseMs = opts?.stampFirstUse
+    ? (await ensureConversationFirstUseUnix(userId)) * 1000
+    : await peekConversationFirstUseMs(userId);
+  const window = conversationTrialWindow(firstUseMs, Date.now(), FREE_CONVERSATION_TRIAL_DAYS);
   return {
     dailyBudget: LIVE_CONVERSATION_DAILY_SECONDS,
     isPremium: false,
@@ -334,7 +343,7 @@ router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
     hasChildId
       ? loadConversationMemory(userId, body.childId!).catch(() => null)
       : Promise.resolve(null),
-    resolveConversationBudget(userId),
+    resolveConversationBudget(userId, { stampFirstUse: true }),
     getFeatureUsage(userId, "speech_conversation_seconds"),
   ]);
 

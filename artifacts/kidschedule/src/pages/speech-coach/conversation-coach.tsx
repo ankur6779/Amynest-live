@@ -1053,7 +1053,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
                 ) : null}
                 {!trialExpired && !isPremium && !living ? (
                   <p className="text-xs font-black uppercase tracking-wider text-cyan-200/70">
-                    Free trial · {minutesLabel} minutes a day
+                    Talk with Amy · {minutesLabel} minutes a day
                   </p>
                 ) : null}
                 {!trialExpired && living ? (
@@ -1092,7 +1092,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
                   {living
                     ? livingSpeechTalkEndedTitle(endedReason ?? "user")
                     : endedReason === "trial"
-                      ? "Free trial ended"
+                      ? "Talk with Amy's free days have ended"
                       : endedReason === "budget"
                         ? "Time's up for today!"
                         : "Great session!"}
