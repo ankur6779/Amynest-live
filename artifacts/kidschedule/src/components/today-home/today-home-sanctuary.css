@@ -1,6 +1,7 @@
 /**
  * Today Home sanctuary + Apple craft deltas.
  * FE CSS remains frozen; this file only scopes Home seating & subordination.
+ * Living ON only — do not delete global .parent-hub-premium (living OFF rollback).
  */
 
 .th-shell {
@@ -57,6 +58,248 @@
 .th-shell .th-memory-mount .fe-memory img {
   object-fit: cover;
   object-position: center 38%;
+}
+
+/* Living dashboard floor — sanctuary night/sand, never purple hub wash. */
+.dashboard-page.th-living-page {
+  --th-sanctuary-floor:
+    radial-gradient(ellipse 80% 55% at 50% 8%, rgba(232, 212, 184, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%);
+  background: var(--th-sanctuary-floor);
+  color: rgba(244, 238, 230, 0.94);
+  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+  overflow-x: clip;
+}
+
+.th-living-floor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0.15rem 0 0.25rem;
+  background: transparent;
+}
+
+/* Quiet family context — who today is for, not a filter toolbar */
+.th-family {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.th-family-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.55);
+}
+
+.th-family-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.th-family-row::-webkit-scrollbar {
+  display: none;
+}
+
+.th-family-chip {
+  flex-shrink: 0;
+  min-height: 2.35rem;
+  max-width: 100%;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 212, 184, 0.2);
+  background: rgba(255, 252, 248, 0.04);
+  color: rgba(232, 212, 184, 0.84);
+  font-size: 0.78rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.th-family-chip[data-active="true"] {
+  border-color: rgba(232, 212, 184, 0.42);
+  background: rgba(251, 246, 238, 0.16);
+  color: #fbf6ee;
+}
+
+.th-family-add,
+.th-family-manage {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.th-family-add {
+  border-radius: 999px;
+  border: 1px dashed rgba(232, 212, 184, 0.28);
+  padding: 0.4rem 0.85rem;
+  background: transparent;
+}
+
+.th-family-manage {
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.th-family-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgba(232, 212, 184, 0.45);
+}
+
+/* Hero — ceramic sanctuary card, not hub glass */
+.th-hero-card {
+  width: 100%;
+  min-width: 0;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(232, 212, 184, 0.16);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232, 212, 184, 0.1) 0%, transparent 55%),
+    rgba(16, 13, 22, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.th-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.15rem 1.1rem 1.2rem;
+}
+
+.th-hero-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 184, 0.62);
+}
+
+.th-hero-child {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(244, 238, 230, 0.55);
+}
+
+.th-hero-title {
+  margin: 0.45rem 0 0;
+  font-family: Quicksand, ui-rounded, system-ui, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fbf6ee;
+  text-wrap: balance;
+}
+
+@media (min-width: 640px) {
+  .th-hero-title {
+    font-size: 1.75rem;
+  }
+}
+
+.th-hero-why {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgba(244, 238, 230, 0.78);
+}
+
+.th-hero-why-label {
+  font-weight: 650;
+  color: rgba(232, 212, 184, 0.82);
+}
+
+.th-hero-detail {
+  margin: 0.45rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(244, 238, 230, 0.58);
+}
+
+/* Same ceramic language as living Routine .rg-dash-cta */
+.th-hero-cta {
+  width: 100%;
+  max-width: 100%;
+  min-height: 3.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.85rem 1.1rem;
+  border-radius: 1rem;
+  border: 0;
+  background: linear-gradient(180deg, #fbf6ee 0%, #f3eadc 48%, #e6d8c4 100%);
+  color: #1a120c;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 2px rgba(120, 90, 60, 0.14),
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    0 0 22px rgba(232, 212, 184, 0.16);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.th-hero-cta:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.55);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .th-hero-cta:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 2px rgba(120, 90, 60, 0.12),
+      0 18px 36px rgba(0, 0, 0, 0.3),
+      0 0 28px rgba(232, 212, 184, 0.22);
+  }
+}
+
+.th-hero-cta:active:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 3px 8px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+.th-hero-cta--rest {
+  background: rgba(255, 252, 248, 0.08);
+  color: rgba(244, 238, 230, 0.9);
+  border: 1px solid rgba(232, 212, 184, 0.18);
+  box-shadow: none;
+}
+
+.th-hero-insight {
+  margin: 0;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.28);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(244, 238, 230, 0.72);
 }
 
 /* Quiet progress — secondary to NRT hero */
@@ -133,25 +376,34 @@
 }
 
 .th-timeline-card {
+  width: 100%;
+  min-width: 0;
+  border-radius: 1rem;
+  border: 1px solid rgba(232, 212, 184, 0.12);
+  background: rgba(8, 6, 12, 0.28);
   box-shadow: none !important;
+  overflow: hidden;
 }
 
-/* Hero micro-craft */
-.th-hero-card [data-testid="today-home-begin"] {
-  min-height: 48px;
-  transition:
-    background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.2s ease;
+.th-timeline-empty {
+  padding: 1rem 1.05rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.th-hero-card [data-testid="today-home-begin"]:focus-visible {
-  outline: 2px solid rgba(251, 191, 36, 0.85);
-  outline-offset: 3px;
+.th-timeline-empty-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fbf6ee;
 }
 
-.th-hero-card [data-testid="today-home-title"] {
-  text-wrap: balance;
+.th-timeline-empty-body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(244, 238, 230, 0.62);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -172,11 +424,21 @@
     opacity: 0.92;
   }
 
-  .th-hero-card [data-testid="today-home-begin"] {
+  .th-hero-cta {
     transition: none;
   }
 
-  .th-hero-card [data-testid="today-home-begin"]:active {
+  .th-hero-cta:active:not(:disabled) {
     transform: none !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .th-hero-title {
+    font-size: 1.28rem;
+  }
+
+  .th-hero-body {
+    padding: 1rem 0.9rem 1.05rem;
   }
 }

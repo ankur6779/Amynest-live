@@ -37,7 +37,7 @@ import {
   type DashboardSummary as CachedDashboardSummary,
 } from "@/lib/dashboard-data-cache";
 import { useDashboardShellReady } from "@/hooks/use-dashboard-shell-ready";
-import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { Suspense, useEffect, useRef, useState, useMemo, useCallback, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { lazyPage } from "@/lib/safe-import";
 import { isAndroidLiteClient } from "@/lib/device-lite";
@@ -101,6 +101,11 @@ import { TodayHomeShell } from "@/components/today-home/today-home-shell";
 import { TodayProgressStrip } from "@/components/today-home/today-progress-strip";
 import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
 import { resolveTodayNrt } from "@/lib/today-home/resolve-today-nrt";
+import {
+  livingDashboardEmptyBody,
+  livingDashboardEmptyTitle,
+  livingDashboardFamilyHint,
+} from "@/lib/routine-generation/living-dashboard";
 import {
   buildWeatherInsightLine,
   resolveSupportingInsight,
@@ -627,10 +632,12 @@ function ChildrenChipBar({
   children,
   selectedChildId,
   onSelectChild,
+  living = false,
 }: {
   children: ChildRow[];
   selectedChildId: number | null;
   onSelectChild: (id: number | null) => void;
+  living?: boolean;
 }) {
   const { t } = useTranslation();
   if (!children || children.length === 0) return null;
@@ -640,13 +647,21 @@ function ChildrenChipBar({
     ?? (children.length === 1 ? children[0] : null);
 
   return (
-    <div className="flex flex-col gap-1.5">
-    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+    <div className={living ? "th-family" : "flex flex-col gap-1.5"} data-testid={living ? "today-home-family" : undefined}>
+    {living ? (
+      <p className="th-family-label">{livingDashboardFamilyHint()}</p>
+    ) : null}
+    <div className={living ? "th-family-row" : "flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none"}>
       {showAll ? (
         <button
           type="button"
           onClick={() => onSelectChild(null)}
-          className={`shrink-0 ${selectedChildId == null ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`}
+          data-active={selectedChildId == null ? "true" : "false"}
+          className={
+            living
+              ? "th-family-chip"
+              : `shrink-0 ${selectedChildId == null ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`
+          }
         >
           {t("dashboard.all_children")}
         </button>
@@ -659,7 +674,12 @@ function ChildrenChipBar({
             key={c.id}
             type="button"
             onClick={() => onSelectChild(selected && showAll ? null : c.id)}
-            className={`shrink-0 ${selected ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`}
+            data-active={selected ? "true" : "false"}
+            className={
+              living
+                ? "th-family-chip"
+                : `shrink-0 ${selected ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`
+            }
           >
             {c.name}
             <span className="font-normal opacity-75 ml-1">{formatAge(c.age, ageMonths)}</span>
@@ -668,7 +688,11 @@ function ChildrenChipBar({
       })}
       <AddChildLink
         source={children.length === 1 ? "dashboard-add-second-child" : "dashboard-add-child"}
-        className="shrink-0 rounded-full border border-dashed border-white/20 px-3 py-1.5 text-xs font-bold text-white/60 hover:border-violet-400/40 hover:text-white/80 transition-colors"
+        className={
+          living
+            ? "th-family-add"
+            : "shrink-0 rounded-full border border-dashed border-white/20 px-3 py-1.5 text-xs font-bold text-white/60 hover:border-violet-400/40 hover:text-white/80 transition-colors"
+        }
         onClick={() => {
           if (children.length === 1) {
             trackAddSecondChildIntent("dashboard-child-chips", 1);
@@ -677,12 +701,20 @@ function ChildrenChipBar({
       >
         + {children.length === 1 ? t("dashboard.add_second_child") : t("dashboard.add_child")}
       </AddChildLink>
-      <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-violet-300 hover:underline ml-auto">
+      <AppLink
+        href="/children"
+        source="dashboard-manage-children"
+        className={
+          living
+            ? "th-family-manage"
+            : "shrink-0 text-[11px] font-bold text-violet-300 hover:underline ml-auto"
+        }
+      >
         {t("dashboard.manage")}
       </AppLink>
     </div>
     {selectedChild?.dobIsEstimated ? (
-      <p className="text-[11px] font-medium text-white/45 px-0.5">
+      <p className={living ? "th-family-note" : "text-[11px] font-medium text-white/45 px-0.5"}>
         {t("dashboard.birthday_not_added")}
       </p>
     ) : null}
@@ -705,6 +737,25 @@ function TimelineProgressChip({ done, total }: { done: number; total: number }) 
   );
 }
 
+function TimelineFrame({
+  subordinate,
+  children,
+  className,
+}: {
+  subordinate: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (subordinate) {
+    return <div className={`th-timeline-card ${className ?? ""}`.trim()}>{children}</div>;
+  }
+  return (
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline} className={className}>
+      {children}
+    </DashboardGlassCard>
+  );
+}
+
 function NowNextTimeline({
   routines,
   selectedChildName,
@@ -723,6 +774,18 @@ function NowNextTimeline({
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
   if (todayRoutines.length === 0) {
+    if (subordinate) {
+      return (
+        <TimelineFrame subordinate>
+          <div className="th-timeline-empty" data-testid="today-home-plan-state">
+            <p className="th-timeline-empty-title">{livingDashboardEmptyTitle()}</p>
+            <p className="th-timeline-empty-body">
+              {livingDashboardEmptyBody(selectedChildName ?? "your child")}
+            </p>
+          </div>
+        </TimelineFrame>
+      );
+    }
     return (
       <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
         <div className="p-6 text-center space-y-3">
@@ -771,13 +834,13 @@ function NowNextTimeline({
   const displayItems = currentIdx >= 0 ? allItems.slice(currentIdx, currentIdx + 3) : allItems.filter(item => parseTimeToMinutes(item.time) > nowMinutes).slice(0, 3);
   if (displayItems.length === 0) {
     return (
-      <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
-        <div className="p-5 text-center space-y-1">
-          <div className="text-3xl">🌙</div>
-          <p className="font-bold text-white">{t("pages.dashboard.day_complete")}</p>
-          <p className="text-xs text-white/65">{t("pages.dashboard.time_to_relax_and_recharge")}</p>
+      <TimelineFrame subordinate={subordinate}>
+        <div className={subordinate ? "th-timeline-empty" : "p-5 text-center space-y-1"}>
+          <div className={subordinate ? "hidden" : "text-3xl"}>🌙</div>
+          <p className={subordinate ? "th-timeline-empty-title" : "font-bold text-white"}>{t("pages.dashboard.day_complete")}</p>
+          <p className={subordinate ? "th-timeline-empty-body" : "text-xs text-white/65"}>{t("pages.dashboard.time_to_relax_and_recharge")}</p>
         </div>
-      </DashboardGlassCard>
+      </TimelineFrame>
     );
   }
   const allTodayItems = todayRoutines.flatMap((r) => routineItems<RoutineItem>(r));
@@ -790,10 +853,7 @@ function NowNextTimeline({
   });
 
   return (
-    <DashboardGlassCard
-      tintRgb={DASHBOARD_TINTS.timeline}
-      className={subordinate ? "th-timeline-card border-white/[0.06] bg-white/[0.03]" : undefined}
-    >
+    <TimelineFrame subordinate={subordinate}>
       <div
         className={`flex items-center justify-between gap-3 px-4 py-3 border-b ${
           subordinate ? "border-white/[0.05]" : "border-white/[0.08]"
@@ -866,7 +926,7 @@ function NowNextTimeline({
             </AppLink>;
       })}
       </div>
-    </DashboardGlassCard>
+    </TimelineFrame>
   );
 }
 
@@ -1483,8 +1543,15 @@ export default function Dashboard() {
     return <OnboardingScreen displayName={displayName} />;
   }
   return (
-    <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
-      <div className="flex flex-col gap-4 pb-6 md:pb-8">
+    <div
+      data-on-dark
+      className={
+        TODAY_HOME_V1
+          ? "dashboard-page th-living-page w-full min-w-0 max-w-full"
+          : "dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]"
+      }
+    >
+      <div className={TODAY_HOME_V1 ? "flex flex-col gap-4" : "flex flex-col gap-4 pb-6 md:pb-8"}>
           {showAvailabilityBanner && (
             <DashboardAvailabilityBanner
               visible
@@ -1498,6 +1565,12 @@ export default function Dashboard() {
           <ContentReveal.Hero>
             {TODAY_HOME_V1 && todayNrtDecision ? (
               <TodayHomeShell>
+                <ChildrenChipBar
+                  living
+                  children={childrenSafe as ChildRow[]}
+                  selectedChildId={selectedChildId}
+                  onSelectChild={setSelectedChildId}
+                />
                 <TodayHomeHero
                   decision={todayNrtDecision}
                   insight={todaySupportingInsight}
@@ -1525,10 +1598,10 @@ export default function Dashboard() {
           </ContentReveal.Hero>
 
           <div
-            className={DASHBOARD_CONTENT_AREA}
-            style={{ background: DASHBOARD_CONTENT_GRADIENT }}
+            className={TODAY_HOME_V1 ? "th-living-floor" : DASHBOARD_CONTENT_AREA}
+            style={TODAY_HOME_V1 ? undefined : { background: DASHBOARD_CONTENT_GRADIENT }}
           >
-            <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
+            {TODAY_HOME_V1 ? null : <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />}
             <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
             <ContentReveal.Item>
               {showFirstValueHero ? (
@@ -1570,6 +1643,7 @@ export default function Dashboard() {
               </ContentReveal.Item>
             ) : null}
 
+            {!TODAY_HOME_V1 ? (
             <ContentReveal.Item>
               <ChildrenChipBar
                 children={childrenSafe as ChildRow[]}
@@ -1577,12 +1651,19 @@ export default function Dashboard() {
                 onSelectChild={setSelectedChildId}
               />
             </ContentReveal.Item>
+            ) : null}
 
             <ContentReveal.Item className={TODAY_HOME_V1 ? "th-timeline-slot" : timelineOrderClass}>
               <NowNextTimeline
                 routines={filteredRoutines}
                 selectedChildName={selectedChild?.name ?? null}
-                onGenerate={showTimelineGenerate ? () => handleGenerateRoutine("timeline_empty") : undefined}
+                onGenerate={
+                  TODAY_HOME_V1
+                    ? undefined
+                    : showTimelineGenerate
+                      ? () => handleGenerateRoutine("timeline_empty")
+                      : undefined
+                }
                 journeyHandlesGenerate={journeyHandlesGenerate}
                 subordinate={TODAY_HOME_V1}
               />

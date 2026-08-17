@@ -9,6 +9,10 @@ import type {
   FirstExperienceTodayContext,
 } from "@/lib/first-experience/types";
 import { passesTodayHomeLaw } from "@/lib/amynest-philosophy";
+import {
+  livingDashboardBuildCta,
+  livingDashboardContinueCta,
+} from "@/lib/routine-generation/living-dashboard";
 
 export type TodayNrtSource =
   | "routine_next"
@@ -137,7 +141,7 @@ export function resolveTodayNrt(input: ResolveTodayNrtInput): TodayNrtDecision {
       childId,
       cta: {
         kind: "begin_routine",
-        label: "Begin",
+        label: livingDashboardContinueCta(),
         routineId: nextItem.routineId,
       },
       basedOn,
@@ -165,7 +169,7 @@ export function resolveTodayNrt(input: ResolveTodayNrtInput): TodayNrtDecision {
       source: "continuity",
       emotional: input.continuity?.emotionalContext,
       ctaKind: "generate",
-      ctaLabel: "Begin",
+      ctaLabel: livingDashboardBuildCta(),
     });
   }
 
@@ -186,7 +190,7 @@ export function resolveTodayNrt(input: ResolveTodayNrtInput): TodayNrtDecision {
         source: "decide_next",
         emotional: input.continuity?.emotionalContext,
         ctaKind: "generate",
-        ctaLabel: "Begin",
+        ctaLabel: livingDashboardBuildCta(),
       });
     }
   }
@@ -200,7 +204,7 @@ export function resolveTodayNrt(input: ResolveTodayNrtInput): TodayNrtDecision {
     source: "decide_next",
     childName,
     childId,
-    cta: { kind: "generate", label: "Begin" },
+    cta: { kind: "generate", label: livingDashboardBuildCta() },
     basedOn: ["A clear day comes first."],
     lawPassed: false,
   };

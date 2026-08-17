@@ -47,7 +47,7 @@ describe("resolveTodayNrt", () => {
     expect(decision.source).toBe("routine_next");
     expect(decision.title).toBe("Outdoor sensory play");
     expect(decision.cta.kind).toBe("begin_routine");
-    expect(decision.cta.label).toBe("Begin");
+    expect(decision.cta.label).toBe("Begin today");
     expect(decision.cta.routineId).toBe(9);
     expect(decision.lawPassed).toBe(true);
   });
@@ -62,6 +62,7 @@ describe("resolveTodayNrt", () => {
     expect(decision.title).toContain("Aria");
     expect(decision.why).toMatch(/unhurried|Monday|2-4/i);
     expect(decision.cta.kind).toBe("generate");
+    expect(decision.cta.label).toBe("Build today's plan");
     expect(decision.lawPassed).toBe(true);
   });
 
@@ -80,6 +81,7 @@ describe("resolveTodayNrt", () => {
     });
     expect(decision.source).toBe("day_complete");
     expect(decision.cta.kind).toBe("rest");
+    expect(decision.cta.label).toBe("Rest for now");
     expect(decision.lawPassed).toBe(true);
   });
 
@@ -92,7 +94,7 @@ describe("resolveTodayNrt", () => {
     });
     expect(decision.source).toBe("decide_next");
     expect(decision.title.length).toBeGreaterThan(3);
-    expect(decision.cta.label).toBe("Begin");
+    expect(decision.cta.label).toBe("Build today's plan");
     expect(decision.lawPassed).toBe(true);
   });
 });

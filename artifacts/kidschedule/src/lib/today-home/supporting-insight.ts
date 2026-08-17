@@ -1,6 +1,7 @@
 /**
  * One supporting insight for Today Home.
  * Weather appears ONLY when it changes today’s recommendation — otherwise silent.
+ * This compact line is the living Home weather contract (not a lost weather widget).
  */
 
 export type WeatherInsightSignal = {
