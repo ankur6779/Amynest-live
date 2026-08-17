@@ -14,6 +14,10 @@ import {
   type PersistedSessionState,
 } from "@workspace/speech-coach-v2";
 import { resolveSpeechCoachV2UsagePolicy } from "./speechCoachV2UsagePolicy.js";
+import {
+  SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE,
+  chargeSpeechCoachV2FirstUseSeconds,
+} from "./speechCoachV2FirstUse.js";
 
 const ACTIVE_STALE_MS = 45_000;
 const HEARTBEAT_TICK_SECONDS = 15;
@@ -206,8 +210,10 @@ export async function registerActiveSession(input: {
   const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
   if (policy.dailyLimitSeconds <= 0) {
     throw new SpeechCoachV2SessionError(
-      "Speech Coach V2 is not available on your plan.",
-      "daily_limit_reached",
+      policy.isFirstUseFree
+        ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
+        : "Speech Coach V2 is not available on your plan.",
+      policy.isFirstUseFree ? "first_use_limit_reached" : "daily_limit_reached",
       429,
     );
   }
@@ -247,8 +253,10 @@ export async function registerActiveSession(input: {
       }
     }
 
-    const dailyUsed = await getDailyUsageLocked(tx, input.userId, input.childId);
-    if (dailyUsed >= policy.dailyLimitSeconds) {
+    const dailyUsed = policy.isFirstUseFree
+      ? 0
+      : await getDailyUsageLocked(tx, input.userId, input.childId);
+    if (!policy.isFirstUseFree && dailyUsed >= policy.dailyLimitSeconds) {
       throw new SpeechCoachV2SessionError(
         "Daily speech limit reached.",
         "daily_limit_reached",
@@ -350,8 +358,10 @@ export async function validateAndTouchSession(input: {
   const policy = await resolveSpeechCoachV2UsagePolicy(input.userId);
   if (policy.dailyLimitSeconds <= 0) {
     throw new SpeechCoachV2SessionError(
-      "Speech Coach V2 is not available on your plan.",
-      "daily_limit_reached",
+      policy.isFirstUseFree
+        ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
+        : "Speech Coach V2 is not available on your plan.",
+      policy.isFirstUseFree ? "first_use_limit_reached" : "daily_limit_reached",
       429,
     );
   }
@@ -391,6 +401,46 @@ export async function validateAndTouchSession(input: {
       HEARTBEAT_TICK_SECONDS,
       Math.max(elapsedSinceLastSeen, 1),
     );
+
+    if (policy.isFirstUseFree) {
+      const firstUse = await chargeSpeechCoachV2FirstUseSeconds(
+        tx,
+        input.userId,
+        tickSeconds,
+      );
+      const nextConsumed = row.secondsConsumed + firstUse.chargedSeconds;
+      const firstUseExhausted = firstUse.remainingAfter <= 0;
+      const sessionCapReached = nextConsumed >= SPEECH_COACH_V2_SESSION_SECONDS;
+      const limitReached = firstUseExhausted || sessionCapReached;
+      const status = limitReached ? "terminated" : "active";
+
+      await tx
+        .update(speechCoachV2ActiveSessionsTable)
+        .set({
+          lastSeenAt: new Date(now),
+          secondsConsumed: nextConsumed,
+          status,
+          updatedAt: new Date(),
+        })
+        .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
+
+      if (limitReached) {
+        throw new SpeechCoachV2SessionError(
+          firstUseExhausted
+            ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
+            : "Session time limit reached.",
+          firstUseExhausted ? "first_use_limit_reached" : "session_limit_reached",
+          429,
+        );
+      }
+
+      return {
+        sessionState: row.sessionStateJson as unknown as PersistedSessionState,
+        secondsConsumed: nextConsumed,
+        limitReached: false,
+        remainingSeconds: firstUse.remainingAfter,
+      };
+    }
 
     const usage = await addUsageLocked(
       tx,
@@ -507,14 +557,23 @@ export async function terminateActiveSession(input: {
     let chargedFinalTick = 0;
 
     if (finalTick > 0 && policy.dailyLimitSeconds > 0) {
-      const usage = await addUsageLocked(
-        tx,
-        input.userId,
-        input.childId,
-        finalTick,
-        policy.dailyLimitSeconds,
-      );
-      chargedFinalTick = usage.chargedSeconds;
+      if (policy.isFirstUseFree) {
+        const firstUse = await chargeSpeechCoachV2FirstUseSeconds(
+          tx,
+          input.userId,
+          finalTick,
+        );
+        chargedFinalTick = firstUse.chargedSeconds;
+      } else {
+        const usage = await addUsageLocked(
+          tx,
+          input.userId,
+          input.childId,
+          finalTick,
+          policy.dailyLimitSeconds,
+        );
+        chargedFinalTick = usage.chargedSeconds;
+      }
     }
     const nextConsumed = row.secondsConsumed + chargedFinalTick;
 

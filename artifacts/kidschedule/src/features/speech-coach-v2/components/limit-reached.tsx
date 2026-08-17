@@ -5,36 +5,51 @@ import { DAILY_LIMIT_MESSAGE } from "@workspace/speech-coach-v2";
 import { isSpeechCoachLivingV1Enabled, livingSpeechLimitTitle } from "@/lib/speech-coach/living-room";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
+import { SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE } from "../lib/usage-display";
 
 export function SpeechCoachV2LimitReached(props: {
   message?: string;
   isTrial?: boolean;
+  isFirstUseFree?: boolean;
   onUpgrade?: () => void;
   onDismiss?: () => void;
 }) {
-  const { message = DAILY_LIMIT_MESSAGE, isTrial, onUpgrade, onDismiss } = props;
+  const {
+    message,
+    isTrial,
+    isFirstUseFree,
+    onUpgrade,
+    onDismiss,
+  } = props;
   const living = isSpeechCoachLivingV1Enabled();
+  const showContinue = Boolean((isTrial || isFirstUseFree) && onUpgrade);
+  const resolvedMessage = message
+    ?? (isFirstUseFree ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE : DAILY_LIMIT_MESSAGE);
+  const title = isFirstUseFree
+    ? (living ? "You already practiced with Amy" : "You already tried speaking with Amy")
+    : (living ? livingSpeechLimitTitle() : "Amazing work today! 🌟");
 
   return (
     <div
       className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center"
       data-testid="speech-coach-v2-limit-reached"
+      data-first-use-free={isFirstUseFree ? "true" : "false"}
     >
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-950">
         <Clock className="h-8 w-8 text-sky-600 dark:text-sky-300" />
       </div>
-      <h2 className="text-xl font-bold">
-        {living ? livingSpeechLimitTitle() : "Amazing work today! 🌟"}
-      </h2>
-      <p className="mt-2 max-w-sm text-muted-foreground">{message}</p>
-      {isTrial && onUpgrade ? (
+      <h2 className="text-xl font-bold">{title}</h2>
+      <p className="mt-2 max-w-sm text-muted-foreground">{resolvedMessage}</p>
+      {showContinue ? (
         <div className="mt-6 max-w-sm space-y-3">
           <p className="text-sm font-medium text-foreground">
-            {living
-              ? "Amy can keep supporting speech practice whenever you're ready."
-              : "Your child loved practicing with Amy!"}
+            {isFirstUseFree
+              ? "Premium continues speaking practice with Amy — 10 minutes every day."
+              : living
+                ? "Amy can keep supporting speech practice whenever you're ready."
+                : "Your child loved practicing with Amy!"}
           </p>
-          {!living ? (
+          {!living && !isFirstUseFree ? (
             <p className="text-sm text-muted-foreground">
               Unlock 10 minutes of live speech coaching every day with AmyNest Premium.
             </p>
@@ -42,10 +57,10 @@ export function SpeechCoachV2LimitReached(props: {
             <p className="text-sm text-muted-foreground">{PREMIUM_VOICE.invitation}</p>
           )}
           <Button className="w-full min-h-12" onClick={onUpgrade}>
-            {living ? PREMIUM_VOICE.continueCta : "Upgrade Now"}
+            {living || isFirstUseFree ? PREMIUM_VOICE.continueCta : "Upgrade Now"}
           </Button>
           <Button variant="ghost" className="w-full min-h-12" onClick={onDismiss}>
-            {living ? "Not now" : "Maybe Later"}
+            {living || isFirstUseFree ? "Not now" : "Maybe Later"}
           </Button>
           {living ? (
             <AmyNestLeaveContinuity

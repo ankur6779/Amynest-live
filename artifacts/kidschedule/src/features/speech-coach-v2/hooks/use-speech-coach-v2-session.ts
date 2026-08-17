@@ -21,6 +21,7 @@ import {
   SpeechCoachV2ApiError,
   startSpeechCoachV2Session,
 } from "../lib/api";
+import { SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE } from "../lib/usage-display";
 import {
   clearLocalSnapshot,
   loadLocalSnapshot,
@@ -50,6 +51,7 @@ function isSpeechCoachLimitError(err: unknown): boolean {
       err.code === "daily_limit_reached"
       || err.code === "monthly_limit_reached"
       || err.code === "session_limit_reached"
+      || err.code === "first_use_limit_reached"
     )
   );
 }
@@ -73,6 +75,7 @@ export function useSpeechCoachV2Session(input: {
   const [dailyLimitSeconds, setDailyLimitSeconds] = useState(0);
   const [isTrial, setIsTrial] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [isFirstUseFree, setIsFirstUseFree] = useState(false);
   const [lastUserTranscript, setLastUserTranscript] = useState("");
   const [pendingResume, setPendingResume] = useState<{
     sessionId: string;
@@ -125,6 +128,7 @@ export function useSpeechCoachV2Session(input: {
     setDailyLimitSeconds(usage.dailyLimitSeconds);
     setIsTrial(usage.isTrial);
     setIsPaid(usage.isPaid);
+    setIsFirstUseFree(Boolean(usage.isFirstUseFree));
     setRemainingSeconds(usage.remainingSeconds);
   }, []);
 
@@ -132,6 +136,7 @@ export function useSpeechCoachV2Session(input: {
     const started = await startSpeechCoachV2Session(authFetch, { childId });
     applySession(started.sessionState, started.tabLockToken, started.instructions);
     setRemainingSeconds(started.remainingSeconds);
+    setIsFirstUseFree(Boolean(started.isFirstUseFree));
     if (started.isTrial) {
       trackSpeechCoachTrialStarted({ childId });
     } else if (started.isPaid) {
@@ -211,6 +216,7 @@ export function useSpeechCoachV2Session(input: {
       });
       applySession(started.sessionState, started.tabLockToken, started.instructions);
       setRemainingSeconds(started.remainingSeconds);
+      setIsFirstUseFree(Boolean(started.isFirstUseFree));
       if (started.isTrial) {
         trackSpeechCoachTrialStarted({ childId });
       } else if (started.isPaid) {
@@ -386,11 +392,14 @@ export function useSpeechCoachV2Session(input: {
     dailyLimitSeconds,
     isTrial,
     isPaid,
+    isFirstUseFree,
     lastUserTranscript,
     celebration,
     pendingResume,
     phaseLabel: sessionState ? phaseLabel(sessionState.phase) : "",
-    dailyLimitMessage: DAILY_LIMIT_MESSAGE,
+    dailyLimitMessage: isFirstUseFree
+      ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
+      : DAILY_LIMIT_MESSAGE,
     bootstrap,
     resumeSession,
     discardAndStartNew,

@@ -40,6 +40,7 @@ export interface SpeechCoachV2Usage {
   limitReached: boolean;
   isTrial: boolean;
   isPaid: boolean;
+  isFirstUseFree?: boolean;
   dateKey: string;
 }
 
@@ -54,6 +55,7 @@ export interface SpeechCoachV2StartResponse {
   dailyLimitSeconds: number;
   isTrial: boolean;
   isPaid: boolean;
+  isFirstUseFree?: boolean;
   instructions: string;
 }
 

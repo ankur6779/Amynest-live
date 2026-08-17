@@ -175,6 +175,7 @@ export default function SpeechCoachV2SessionPage() {
       <SpeechCoachV2LimitReached
         message={session.dailyLimitMessage}
         isTrial={session.isTrial}
+        isFirstUseFree={session.isFirstUseFree}
         onUpgrade={() => {
           trackSpeechCoachUpgradeClicked({
             childId: child.id,
@@ -267,6 +268,7 @@ export default function SpeechCoachV2SessionPage() {
         starsEarned={session.sessionState?.starsEarned ?? 0}
         pointsEarned={session.sessionState?.pointsEarned ?? 0}
         remainingSeconds={session.remainingSeconds}
+        isFirstUseFree={session.isFirstUseFree}
         lastTranscript={session.lastUserTranscript}
         onStart={handleStart}
         onEnd={() => void handleEnd()}

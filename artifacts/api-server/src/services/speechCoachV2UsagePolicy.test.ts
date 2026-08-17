@@ -37,6 +37,7 @@ describe("speechCoachV2UsagePolicy", () => {
     );
     assert.equal(policy.isTrial, true);
     assert.equal(policy.isPaid, false);
+    assert.equal(policy.isFirstUseFree, false);
     assert.equal(policy.dailyLimitSeconds, SPEECH_COACH_V2_TRIAL_DAILY_LIMIT_SECONDS);
   });
 
@@ -44,12 +45,16 @@ describe("speechCoachV2UsagePolicy", () => {
     const policy = resolveSpeechCoachV2UsagePolicyFromSubscription(
       sub({
         status: "active",
+        subscriptionState: "ACTIVE",
+        plan: "yearly",
+        provider: "revenuecat",
         currentPeriodEnd: new Date(now + 86_400_000),
       }),
       now,
     );
     assert.equal(policy.isTrial, false);
     assert.equal(policy.isPaid, true);
+    assert.equal(policy.isFirstUseFree, false);
     assert.equal(policy.dailyLimitSeconds, SPEECH_COACH_V2_PAID_DAILY_LIMIT_SECONDS);
   });
 
@@ -62,11 +67,14 @@ describe("speechCoachV2UsagePolicy", () => {
       now,
     );
     assert.equal(policy.dailyLimitSeconds, 0);
+    assert.equal(policy.isFirstUseFree, false);
   });
 
-  it("free user gets 0 seconds", () => {
+  it("free user FromSubscription is not first-use until async peek", () => {
     const policy = resolveSpeechCoachV2UsagePolicyFromSubscription(sub({ status: "free" }), now);
     assert.equal(policy.dailyLimitSeconds, 0);
+    assert.equal(policy.isFirstUseFree, false);
+    assert.equal(policy.firstUseRemainingSeconds, 0);
   });
 
   it("trial user session terminates at 120 seconds", () => {
