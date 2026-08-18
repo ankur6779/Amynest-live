@@ -9,13 +9,16 @@ interface AmyIconProps {
   ring?: boolean;
   /** When true, the baked face plays the subtle talking-mouth cycle. */
   speaking?: boolean;
+  /** Optional override for the inner face (e.g. the production GLB Amy headshot). */
+  src?: string;
 }
 export function AmyIcon({
   size = 36,
   className = "",
   bounce = false,
   ring = false,
-  speaking = false
+  speaking = false,
+  src,
 }: AmyIconProps) {
   const {
     t
@@ -59,7 +62,14 @@ export function AmyIcon({
       timers.clear();
     };
   }, []);
-  const face = baked ? <AmyBlinkFace size={iconHeight} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={iconHeight} height={iconHeight} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
+  const face = src ? <img src={src} alt="" draggable={false} decoding="async" width={iconHeight} height={iconHeight} style={{
+    display: "block",
+    width: iconHeight,
+    height: iconHeight,
+    objectFit: "cover",
+    objectPosition: "center",
+    borderRadius: "9999px"
+  }} /> : baked ? <AmyBlinkFace size={iconHeight} speaking={speaking} /> : <svg viewBox="0 0 64 64" width={iconHeight} height={iconHeight} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={t("components.amy_icon.amy")} style={{
     display: "block"
   }}>
       <defs>
