@@ -172,3 +172,119 @@ describe("grandfathering logic", () => {
     // Service allows existing device path before this check — verified via source wiring test.
   });
 });
+
+type Occupancy = {
+  userId: string;
+  deviceId: string;
+  isActive: boolean;
+  lastSeen: number;
+};
+
+function simulateRegister(
+  rows: Occupancy[],
+  userId: string,
+  deviceId: string,
+  limit: number,
+  now = Date.now(),
+): { ok: boolean; rows: Occupancy[] } {
+  const next = rows.map((row) => ({ ...row }));
+  const mine = next.find((row) => row.userId === userId && row.deviceId === deviceId);
+  const action = decideDeviceRegistration({
+    thisUserHasActiveRow: mine?.isActive === true,
+    thisUserHasInactiveRow: Boolean(mine) && mine?.isActive !== true,
+    activeCountForUser: next.filter((row) => row.userId === userId && row.isActive).length,
+    limit,
+  });
+  if (action === "block") return { ok: false, rows: next };
+
+  for (const row of next) {
+    if (row.deviceId === deviceId && row.userId !== userId && row.isActive) {
+      row.isActive = false;
+      row.lastSeen = now;
+    }
+  }
+
+  if (action === "replace_oldest") {
+    const victim = next
+      .filter((row) => row.userId === userId && row.isActive && row.deviceId !== deviceId)
+      .sort((a, b) => a.lastSeen - b.lastSeen)[0];
+    if (victim) {
+      victim.isActive = false;
+      victim.lastSeen = now;
+    }
+  }
+
+  if (mine) {
+    mine.isActive = true;
+    mine.lastSeen = now;
+  } else {
+    next.push({ userId, deviceId, isActive: true, lastSeen: now });
+  }
+  return { ok: true, rows: next };
+}
+
+function simulateRelease(rows: Occupancy[], userId: string, deviceId: string): Occupancy[] {
+  return rows.map((row) =>
+    row.userId === userId && row.deviceId === deviceId && row.isActive
+      ? { ...row, isActive: false }
+      : row,
+  );
+}
+
+describe("active occupancy scenarios (A–F)", () => {
+  it("Test A: reinstall then Email B succeeds (new installation id)", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "A", "device-old", 1).rows;
+    // Uninstall mints a new id; Email B has no active devices.
+    const b = simulateRegister(rows, "B", "device-new", 1);
+    assert.equal(b.ok, true);
+    assert.equal(b.rows.filter((r) => r.userId === "B" && r.isActive).length, 1);
+  });
+
+  it("Test B: sign out then Email B succeeds on the same installation", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "A", "device-x", 1).rows;
+    rows = simulateRelease(rows, "A", "device-x");
+    const b = simulateRegister(rows, "B", "device-x", 1);
+    assert.equal(b.ok, true);
+    assert.equal(b.rows.find((r) => r.userId === "A" && r.deviceId === "device-x")?.isActive, false);
+    assert.equal(b.rows.find((r) => r.userId === "B" && r.deviceId === "device-x")?.isActive, true);
+  });
+
+  it("Test C: original account can sign back in after sign out", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "A", "device-x", 1).rows;
+    rows = simulateRelease(rows, "A", "device-x");
+    const again = simulateRegister(rows, "A", "device-x", 1);
+    assert.equal(again.ok, true);
+    assert.equal(again.rows.find((r) => r.userId === "A")?.isActive, true);
+  });
+
+  it("Test D: premium account at 3 active devices is still blocked", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "P", "d1", 3).rows;
+    rows = simulateRegister(rows, "P", "d2", 3).rows;
+    rows = simulateRegister(rows, "P", "d3", 3).rows;
+    const blocked = simulateRegister(rows, "P", "d4", 3);
+    assert.equal(blocked.ok, false);
+    assert.equal(blocked.rows.filter((r) => r.userId === "P" && r.isActive).length, 3);
+  });
+
+  it("Test D: free plan replace_oldest after reinstall, still one active session", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "A", "device-old", 1).rows;
+    const reinstall = simulateRegister(rows, "A", "device-new", 1);
+    assert.equal(reinstall.ok, true);
+    assert.equal(reinstall.rows.find((r) => r.deviceId === "device-old")?.isActive, false);
+    assert.equal(reinstall.rows.find((r) => r.deviceId === "device-new")?.isActive, true);
+  });
+
+  it("Test E: stale Email A occupancy does not block Email B on the same device", () => {
+    let rows: Occupancy[] = [];
+    rows = simulateRegister(rows, "A", "device-x", 1).rows;
+    const b = simulateRegister(rows, "B", "device-x", 1);
+    assert.equal(b.ok, true);
+    assert.equal(b.rows.find((r) => r.userId === "A")?.isActive, false);
+    assert.equal(b.rows.find((r) => r.userId === "B")?.isActive, true);
+  });
+});
