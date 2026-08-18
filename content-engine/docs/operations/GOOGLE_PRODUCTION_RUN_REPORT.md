@@ -1,9 +1,9 @@
 # GOOGLE_PRODUCTION_RUN_REPORT
 
 **Status:** FAILED
-**Generated:** 2026-08-06T15:47:35.414Z
-**Golden Script ID:** `golden-006` — Hear It. Say It. Get Gentle Feedback.
-**Provider policy:** Google AI Studio ONLY (no KIE / you.bot / Runware / Sharpii / OpenAI Images)
+**Generated:** 2026-08-18T18:54:28.971Z
+**Golden Script ID:** `golden-009` — A Parent View Built for Caregivers — Not Just Kids
+**Provider policy:** Video = KIE.ai primary (Google Veo fallback). TTS/music = Gemini. No you.bot / Runware / Sharpii.
 
 ## FAILED — production stopped (no upload)
 
@@ -17,14 +17,14 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 | Field | Value |
 |---|---|
-| Google video model | veo-3.1-fast-generate-preview |
-| Google voice model | gemini-3.1-flash-tts-preview |
+| Google video model | kie/veo3_fast@720p |
+| Google voice model | google/gemini-3-1-flash-tts |
 | Google image model (if needed) | imagen-4.0-fast-generate-001 |
 | Video generation duration | 0 ms |
 | Video generation cost (AI Studio) | not available from API |
 | Images generated | 0 |
-| Voice generated | no / reused |
-| Total production time | 34110 ms |
+| Voice generated | yes |
+| Total production time | 278101 ms |
 | Remaining Google quota | Check Google AI Studio usage dashboard — API does not return remaining quota in this path. |
 
 ## Validation evidence
@@ -43,8 +43,8 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 ## Audio evidence
 
-- Narration asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-006/audio/narration.wav`
-- Music asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-006/audio/music.wav`
+- Narration asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/narration.wav`
+- Music asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/music.wav`
 - _not measured_
 
 ## Subtitle evidence
@@ -64,18 +64,11 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 | Step | ms | Result | Detail |
 |---|---:|---|---|
-| golden-script | 82 | PASS | golden-006 — Hear It. Say It. Get Gentle Feedback. |
-| narration-tts | 0 | PASS | reused /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-006/audio/narration.wav |
-| music-lyria | 1 | PASS | reused /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-006/audio/music.wav |
-| content-diversity | 5 | PASS | score=92.8 similarity=13.1% locs=mirror-practice-nook/child-bedroom/living-room/playroom |
-| creative-composition | 0 | FAIL | Gemini/Veo rate limited during startGeneration: {
-  "error": {
-    "code": 429,
-    "message": "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ",
-    "status": "RESOURCE_EXHAUSTED"
-  }
-}
- |
+| golden-script | 36 | PASS | golden-009 — A Parent View Built for Caregivers — Not Just Kids |
+| narration-tts | 76564 | PASS | /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/narration.wav (45.3s; coverage=88%; google/gemini-3-1-flash-tts) |
+| music-lyria | 69540 | PASS | /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/music.wav (kie-suno/V4) |
+| content-diversity | 5 | PASS | score=92.0 similarity=14.5% locs=balcony/cafe/apartment-hallway/car-ride |
+| creative-composition | 0 | FAIL | The Google model was unable to generate audio for this request. Please try a different prompt. |
 
 ## Remaining quality issues
 
@@ -83,12 +76,8 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 ## Warnings / errors
 
-- Diversity: Speech · parent-child · mirror-practice-nook, child-bedroom, living-room, playroom, cta-stage
-- Gemini/Veo rate limited during startGeneration: {
-  "error": {
-    "code": 429,
-    "message": "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ",
-    "status": "RESOURCE_EXHAUSTED"
-  }
-}
-
+- KIE credits before: 6826.51
+- Audio provider: kie
+- Bakeoff: YouTube upload skipped (AMYNEST_SKIP_UPLOAD=1)
+- Diversity: Speech · question · balcony, cafe, apartment-hallway, car-ride, cta-stage
+- The Google model was unable to generate audio for this request. Please try a different prompt.

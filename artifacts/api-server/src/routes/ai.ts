@@ -10,6 +10,7 @@ import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
+import { resolveOpenAiChatModel } from "../services/openai-model-catalog.js";
 import { asyncRoute } from "../middlewares/async-route.js";
 
 const router: IRouter = Router();
@@ -218,6 +219,7 @@ LENGTH
 
   const payload: OpenAiChatPayload = {
     namespace: "amy-assistant",
+    model: resolveOpenAiChatModel("fast"),
     messages: [
       { role: "system", content: systemPrompt },
       ...history,

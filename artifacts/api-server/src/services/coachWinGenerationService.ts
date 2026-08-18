@@ -18,6 +18,7 @@ import {
 import { buildGoalSpecificInitialFallback, buildGoalSpecificFallbackWin } from "./coachGoalFallbackLibrary.js";
 import { recordCoachObservabilityEvent } from "./coachObservabilityService.js";
 import { COACH_OPENAI_TIMEOUT_MS } from "@workspace/coach-journey";
+import { resolveOpenAiChatModel } from "./openai-model-catalog.js";
 
 export const COACH_TOTAL_WINS = 12;
 export const COACH_INITIAL_WINS = 2;
@@ -375,7 +376,7 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
   const { chatCompletionWithTimeout } = await import("./openai-chat.js");
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("fast"),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -521,7 +522,7 @@ ${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
     const { chatCompletionWithTimeout } = await import("./openai-chat.js");
     const outcome = await chatCompletionWithTimeout(
       {
-        model: "gpt-4o-mini",
+        model: resolveOpenAiChatModel("fast"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -649,7 +650,7 @@ ${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
     const { chatCompletionWithTimeout } = await import("./openai-chat.js");
     const outcome = await chatCompletionWithTimeout(
       {
-        model: "gpt-4o-mini",
+        model: resolveOpenAiChatModel("fast"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },

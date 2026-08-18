@@ -303,13 +303,19 @@ print("ok", ${JSON.stringify(options.path)})
   return options.path;
 }
 
-/** Animate CTA plate: 3.5–4s slow push-in + soft glow pulse. Bottom CTA copy stays in frame. */
+/**
+ * Animate CTA plate (Production Lock V4):
+ * slow push-in → hold endcard (logo / Download / badges / website) → fade to black.
+ * Never crop bottom badges. Never hard-cut the endcard.
+ */
 export function animatePremiumCta(options: {
   platePath: string;
   outputPath: string;
   seconds?: number;
 }): string {
-  const s = options.seconds ?? 3.8;
+  const s = Math.max(3.5, options.seconds ?? 4.2);
+  // Last ~0.9s fades to black so the Short never ends mid-CTA.
+  const fadeStart = Math.max(0, s - 0.9);
   mkdirSync(dirname(options.outputPath), { recursive: true });
   ffmpeg([
     "-loop",
@@ -320,7 +326,8 @@ export function animatePremiumCta(options: {
     options.platePath,
     "-filter_complex",
     // Gentle push-in on X only — y stays 0 so store badges are never cropped off the bottom.
-    `[0:v]scale=1120:1991:force_original_aspect_ratio=increase,crop=1080:1920:x='min(40,8*t)':y=0,eq=brightness='0.01*sin(2*PI*t/2.4)':saturation=1.03,fps=30,format=yuv420p[v]`,
+    // Fade to black at the end for cinematic close.
+    `[0:v]scale=1120:1991:force_original_aspect_ratio=increase,crop=1080:1920:x='min(40,8*t)':y=0,eq=brightness='0.01*sin(2*PI*t/2.4)':saturation=1.03,fps=30,format=yuv420p,fade=t=out:st=${fadeStart}:d=0.9:color=black[v]`,
     "-map",
     "[v]",
     "-an",

@@ -10,6 +10,7 @@ import {
 } from "../lib/infant-explore-guard.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
+import { resolveOpenAiChatModel } from "../services/openai-model-catalog.js";
 import {
   generateAmyActionsLocal,
   generateAmyQuestionsLocal,
@@ -20,7 +21,6 @@ import {
 import { getPtmPrepSync, putPtmPrepSync } from "../services/ptmPrepService.js";
 
 const router: IRouter = Router();
-const MODEL = "gpt-4o-mini";
 const NAMESPACE = "ptm_prep_v1";
 
 const SessionSchema = z.object({
@@ -182,7 +182,7 @@ router.post(
 
     const openAiPayload: OpenAiChatPayload = {
       namespace: `${NAMESPACE}:${kind}`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 500,
       temperature: 0.7,

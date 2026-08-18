@@ -3,6 +3,7 @@
  */
 
 import { getOpenAiClient } from "../ai-runtime.js";
+import { openAiChatTemperatureField } from "../openai-model-catalog.js";
 import { BIRTH_SKY_AI_STREAM_TIMEOUT_MS } from "./ai-constants.js";
 import { resolveBirthSkyModelCatalog } from "./ai-model-router.js";
 import type { ChatMessage } from "../openai-chat.js";
@@ -77,7 +78,7 @@ export async function streamBirthSkyChat(params: {
         model: modelVersion,
         messages: params.messages,
         max_completion_tokens: 500,
-        temperature: 0.7,
+        ...openAiChatTemperatureField(modelVersion, 0.7),
         stream: true,
         stream_options: { include_usage: true },
       },

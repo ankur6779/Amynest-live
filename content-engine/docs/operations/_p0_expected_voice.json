@@ -1,0 +1,82 @@
+{
+  "hashes": {
+    "amy-ai": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI/content-engine/brand/assets/amy-ai-bible.jpeg",
+      "sha256": "6f65f19d2ac5b6b48056370c943cb4c6f0665c3e9c65ad8f4d171acb73f543fb"
+    },
+    "amy-girl": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI/content-engine/brand/assets/amy-girl-bible.jpeg",
+      "sha256": "dc09bf858293f02de97d51e0cee1344257304d301916c7bc4f33490482f09f2f"
+    },
+    "amy-boy": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI/content-engine/brand/assets/amy-boy-bible.jpeg",
+      "sha256": "1cc38ca7b1f5acc171a4a75d1d667e938c97216d9fad1529d11739d59abbb8ee"
+    }
+  },
+  "rows": [
+    {
+      "id": "golden-009",
+      "topic": "Speech parent view, guidance cards, and progress notes",
+      "featureName": "Speech Parent Guidance",
+      "category": "Speech",
+      "voiceScript": "It’s 8:47 PM. Doubt sits with you at the table. The kids’ activity ends. You’re left holding the phone… with no idea what to reinforce at dinner. Apps entertain kids — then leave parents without a takeaway. Only now does Amy appear — as a warm guide, not a pitch. Speech Coach includes a parent view with guidance cards and progress notes — switch from child play to caregiver clarity. One clear caregiver tip can turn a session into a real home habit. Download AmyNest AI on Google Play and the App Store.",
+      "captionTexts": [
+        "It’s 8:47 PM. Doubt sits with you at the table.",
+        "The kids’ activity ends. You’re left holding the phon...",
+        "Apps entertain kids — then leave parents without a ta...",
+        "Only now does Amy appear — as a warm guide, not a pit...",
+        "One clear caregiver tip can turn a session into a rea...",
+        "Download AmyNest AI on Google Play and the App Store."
+      ],
+      "wordCount": 93
+    },
+    {
+      "id": "golden-010",
+      "topic": "Speech Coach V2 live coaching and parent dashboard",
+      "featureName": "Speech Coach V2",
+      "category": "Speech",
+      "voiceScript": "It’s 8:47 PM. Pride — waiting sits with you at the table. You’ve been practicing for weeks. Progress feels invisible. Motivation is the first thing getting tired. Parents practice for weeks — and still can't tell if anything improved. Only now does Amy appear — as a warm guide, not a pitch. Speech Coach V2 offers live realtime coaching for pronunciation and fluency, with a parent dashboard for minutes, words, confidence, and streak. When you can see the streak rising, hope gets something to hold. Download AmyNest AI on Google Play and the App Store.",
+      "captionTexts": [
+        "It’s 8:47 PM. Pride — waiting sits with you at the ta...",
+        "You’ve been practicing for weeks. Progress feels invi...",
+        "Parents practice for weeks — and still can't tell if ...",
+        "Only now does Amy appear — as a warm guide, not a pit...",
+        "When you can see the streak rising, hope gets somethi...",
+        "Download AmyNest AI on Google Play and the App Store."
+      ],
+      "wordCount": 95
+    },
+    {
+      "id": "golden-011",
+      "topic": "Amy Health Lab motion wellness world",
+      "featureName": "Amy Health Lab™",
+      "category": "Health",
+      "voiceScript": "It’s 8:47 PM. Curiosity sits with you at the table. You say “go play outside / go exercise.” They hear a chore. The body stays still; the negotiation begins. “Go exercise” rarely works — kids want adventure, not instructions. Only now does Amy appear — as a warm guide, not a pitch. Amy Health Lab™ is a motion-based wellness zone — a secret science lab in the sky where kids become Amy’s Field Partner. When the body becomes an adventure, wellness stops needing a lecture. Download AmyNest AI on Google Play and the App Store.",
+      "captionTexts": [
+        "It’s 8:47 PM. Curiosity sits with you at the table.",
+        "You say “go play outside / go exercise.” They hear a ...",
+        "“Go exercise” rarely works — kids want adventure, not...",
+        "Only now does Amy appear — as a warm guide, not a pit...",
+        "When the body becomes an adventure, wellness stops ne...",
+        "Download AmyNest AI on Google Play and the App Store."
+      ],
+      "wordCount": 95
+    },
+    {
+      "id": "golden-012",
+      "topic": "Flamingo balance and freeze-statue challenges",
+      "featureName": "Health Lab Balance & Freeze Games",
+      "category": "Health",
+      "voiceScript": "It’s 8:47 PM. Pride — waiting sits with you at the table. They’re bouncing off the walls — not “naughty,” just full of weather they can’t land. Restlessness gets labeled as “bad behavior” when kids actually need body practice. Only now does Amy appear — as a warm guide, not a pitch. Health Lab includes flamingo balance, freeze-statue, and steadiness challenges powered by motion play. A held balance can feel like a superpower they chose. Download AmyNest AI on Google Play and the App Store.",
+      "captionTexts": [
+        "It’s 8:47 PM. Pride — waiting sits with you at the ta...",
+        "They’re bouncing off the walls — not “naughty,” just ...",
+        "Restlessness gets labeled as “bad behavior” when kids...",
+        "Only now does Amy appear — as a warm guide, not a pit...",
+        "A held balance can feel like a superpower they chose.",
+        "Download AmyNest AI on Google Play and the App Store."
+      ],
+      "wordCount": 85
+    }
+  ]
+}

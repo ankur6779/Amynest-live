@@ -1,8 +1,11 @@
 /**
- * Google AI Studio production run — next unpublished Golden Script (default golden-006).
- * Isolated output dir. Does not modify second-production assets or validators.
+ * Production Short run — Golden Script via env (default golden-006).
+ * Video: KIE Veo (`kie`) | KIE Kling bakeoff (`kie-kling`) | Google fallback.
+ * TTS/music via Gemini. Isolated output dir.
  *
- * Run: pnpm exec node --import tsx/esm ./operations/google-production-run.ts
+ * Examples:
+ *   AMYNEST_GOLDEN_NUM=7 AMYNEST_KIE_VEO_RESOLUTION=720p pnpm exec node --import tsx/esm ./operations/google-production-run.ts
+ *   AMYNEST_GOLDEN_NUM=8 AMYNEST_VIDEO_PROVIDER=kie-kling AMYNEST_KIE_KLING_MODE=std pnpm exec node --import tsx/esm ./operations/google-production-run.ts
  */
 
 import { execFileSync } from "node:child_process";
@@ -19,6 +22,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GeminiMusicProvider } from "../asset-engine/providers/gemini-music/index.js";
 import { GeminiTtsProvider } from "../asset-engine/providers/gemini-tts/index.js";
+import {
+  kieGenerateMusic,
+  kieGenerateTts,
+} from "../asset-engine/providers/kie-audio/index.js";
+import { kieCredits } from "../asset-engine/providers/kie-video/client.js";
 import { ContentIntelligence } from "../content-intelligence/index.js";
 import {
   persistDiversityFingerprint,
@@ -39,6 +47,10 @@ import {
 import { allGoldenSeeds } from "../golden-scripts/seeds.js";
 import { buildGoldenScript } from "../golden-scripts/build.js";
 import type { GoldenScript } from "../golden-scripts/types.js";
+import {
+  assertNarrationAudioComplete,
+  buildGoldenVoiceAndCaptions,
+} from "./golden-voice.js";
 import { validateLaunch } from "../launch-validator/validate.js";
 import { writeLaunchValidationReport } from "../launch-validator/report.js";
 import {
@@ -111,10 +123,21 @@ export const GOOGLE_PRODUCTION_RUN_PATH = join(
   "GOOGLE_PRODUCTION_RUN_REPORT.md",
 );
 
-const GOLDEN_ID = "golden-006";
+function resolveGoldenNum(): number {
+  const raw = process.env.AMYNEST_GOLDEN_NUM?.trim() || process.env.AMYNEST_GOLDEN_ID?.trim();
+  if (!raw) return 6;
+  const fromId = raw.match(/(\d{1,3})$/);
+  const n = Number(fromId?.[1] ?? raw);
+  if (!Number.isFinite(n) || n < 1) return 6;
+  return Math.floor(n);
+}
+
+const GOLDEN_NUM = resolveGoldenNum();
+const GOLDEN_ID = `golden-${String(GOLDEN_NUM).padStart(3, "0")}`;
 const TARGET_DURATION = 21;
-const MIN_LAUNCH_SCORE = 95;
+const MIN_LAUNCH_SCORE = Number(process.env.AMYNEST_MIN_LAUNCH_SCORE || 95);
 const RUN_STARTED_MS = Date.now();
+const CREDIT_USD = 0.005;
 
 interface RunState {
   status: "SUCCESS" | "FAILED";
@@ -208,12 +231,24 @@ function mapGoldenCategory(category: GoldenScript["category"]): TopicCategory {
 }
 
 function loadGoldenScript(): GoldenScript {
-  // Seed index 5 = sixth golden; build number 6 → id golden-006.
-  const script = buildGoldenScript(allGoldenSeeds()[5]!, 6);
+  const seeds = allGoldenSeeds();
+  const seed = seeds[GOLDEN_NUM - 1];
+  if (!seed) {
+    throw new Error(`No golden seed for ${GOLDEN_ID} (num=${GOLDEN_NUM})`);
+  }
+  const script = buildGoldenScript(seed, GOLDEN_NUM);
   if (script.id !== GOLDEN_ID) {
     throw new Error(`Expected ${GOLDEN_ID}, got ${script.id}`);
   }
   return script;
+}
+
+function voiceAndCaptionsForGolden(script: GoldenScript): {
+  voiceScript: string;
+  captions: ContentPackage["captions"];
+} {
+  // P0: Golden Script is the immutable source — never overwrite with Speech Practice.
+  return buildGoldenVoiceAndCaptions(script, TARGET_DURATION);
 }
 
 function goldenToContentPackage(script: GoldenScript): ContentPackage {
@@ -234,60 +269,13 @@ function goldenToContentPackage(script: GoldenScript): ContentPackage {
       videoStyle: "short" as const,
     } satisfies Topic);
 
-  // Tight ~20s VO — golden-006 Speech Practice (hear → say → gentle feedback).
-  // Hook/caption tokens must satisfy story_quality OCR "beginning" beat
-  // (parent|today|child|lesson|habit|struggle|amy within first ~3.5s).
+  const { voiceScript, captions } = voiceAndCaptionsForGolden(script);
   const hook = script.selectedHook.text;
-  const voiceScript = [
-    "Parents feel the speech struggle today — the child tries a sound, then shame flickers.",
-    "Correcting every word can shut a child down. Silence does not help either.",
-    "AmyNest Speech Practice — hear the prompt, speak into the mic, get gentle feedback.",
-    "Hope rises when safe practice leaves a child braver, not smaller.",
-    "Download AmyNest AI on Google Play and the App Store.",
-  ].join(" ");
-
-  const captions = [
-    {
-      start: 0,
-      end: 2.4,
-      text: "Parents feel the speech struggle today",
-      style: "emphasis" as const,
-      position: "bottom" as const,
-    },
-    {
-      start: 2.4,
-      end: 6.8,
-      text: "A sound tumbles — and shame flickers",
-      style: "default" as const,
-      position: "bottom" as const,
-    },
-    {
-      start: 6.8,
-      end: 12.5,
-      text: "Speech Practice — hear, say, feedback",
-      style: "default" as const,
-      position: "bottom" as const,
-    },
-    {
-      start: 12.5,
-      end: 17.8,
-      text: "Hope rises — braver, not smaller",
-      style: "default" as const,
-      position: "bottom" as const,
-    },
-    {
-      start: 17.8,
-      end: TARGET_DURATION,
-      text: "Download AmyNest AI",
-      style: "cta" as const,
-      position: "bottom" as const,
-    },
-  ];
 
   return {
     topic: {
       ...base,
-      id: `prod6-${script.id}`,
+      id: `prod${GOLDEN_NUM}-${script.id}`,
       title: script.topic,
       category,
       keywords: [...base.keywords, script.featureName.toLowerCase(), "amynest"],
@@ -299,11 +287,11 @@ function goldenToContentPackage(script: GoldenScript): ContentPackage {
     alternateTitles: [
       script.title,
       hook.slice(0, 70),
-      "Gentle speech practice with AmyNest",
+      `${script.featureName} with AmyNest`,
       "Download AmyNest AI today",
     ],
     hook,
-    openingQuestion: `What if speech practice felt safe tonight?`,
+    openingQuestion: script.firstThreeSeconds || hook,
     story: [
       script.parentingSituation,
       script.problem,
@@ -350,6 +338,198 @@ function goldenToContentPackage(script: GoldenScript): ContentPackage {
   };
 }
 
+/** Probe media duration in seconds (ffprobe). */
+function probeDurationSeconds(path: string): number {
+  try {
+    const out = execFileSync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        path,
+      ],
+      { encoding: "utf8" },
+    ).trim();
+    const n = Number(out);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Best-effort local Whisper transcript for TTS completeness evidence. */
+function tryWhisperTranscript(audioPath: string, workDir: string): string | null {
+  try {
+    const outDir = join(workDir, "tts-integrity");
+    mkdirSync(outDir, { recursive: true });
+    execFileSync(
+      "whisper",
+      [
+        audioPath,
+        "--model",
+        "tiny",
+        "--language",
+        "en",
+        "--output_format",
+        "txt",
+        "--output_dir",
+        outDir,
+        "--fp16",
+        "False",
+      ],
+      { stdio: "ignore", timeout: 180_000 },
+    );
+    const base = audioPath.split("/").pop()?.replace(/\.[^.]+$/, "") ?? "narration";
+    const txtPath = join(outDir, `${base}.txt`);
+    if (!existsSync(txtPath)) return null;
+    return readFileSync(txtPath, "utf8").trim();
+  } catch {
+    return null;
+  }
+}
+
+function tokenizeWordsSafe(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z0-9']+/g) ?? []).filter(Boolean);
+}
+
+const TTS_MAX_ATTEMPTS = Math.max(
+  1,
+  Number(process.env.AMYNEST_TTS_MAX_ATTEMPTS || 3) || 3,
+);
+
+async function generateNarrationWithCompletenessGate(options: {
+  voiceScript: string;
+  narrationPath: string;
+  workDir: string;
+  audioProvider: "kie" | "gemini";
+  kieKey: string;
+  geminiKey: string;
+  media: ReturnType<typeof resolveGeminiMediaSettings>;
+  assetId: string;
+}): Promise<{
+  audioPath: string;
+  model: string;
+  durationSeconds: number;
+  coveragePct: number | null;
+}> {
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= TTS_MAX_ATTEMPTS; attempt++) {
+    try {
+      if (existsSync(options.narrationPath)) {
+        rmSync(options.narrationPath, { force: true });
+      }
+      const rawDownload = options.narrationPath.replace(/\.wav$/i, ".raw-download");
+      if (existsSync(rawDownload)) rmSync(rawDownload, { force: true });
+
+      let model = "unknown";
+      if (options.audioProvider === "kie") {
+        const narr = await kieGenerateTts({
+          apiKey: options.kieKey,
+          script: options.voiceScript,
+          outputPath: options.narrationPath,
+        });
+        if (!existsSync(narr.audioPath)) {
+          throw new Error("KIE TTS reported success but narration file missing");
+        }
+        model = narr.model;
+      } else {
+        const tts = new GeminiTtsProvider({
+          apiKey: options.geminiKey,
+          model: options.media.voice.model,
+          fallbackModel: options.media.voice.fallbackModel,
+          outputDirectory: dirname(options.narrationPath),
+          enabled: true,
+        });
+        const narr = await tts.generateNarration({
+          script: options.voiceScript,
+          assetId: options.assetId,
+          outputPath: options.narrationPath,
+        });
+        if (!existsSync(narr.audioPath)) {
+          throw new Error("TTS reported success but narration file missing");
+        }
+        model = narr.metadata?.model || options.media.voice.model;
+      }
+
+      const transcript =
+        process.env.AMYNEST_TTS_SKIP_WHISPER === "1"
+          ? null
+          : tryWhisperTranscript(options.narrationPath, options.workDir);
+
+      if (transcript == null && process.env.AMYNEST_TTS_REQUIRE_TRANSCRIPT === "1") {
+        throw new Error("TTS transcript required but Whisper returned no text");
+      }
+
+      const check = assertNarrationAudioComplete({
+        voiceScript: options.voiceScript,
+        audioPath: options.narrationPath,
+        probeDurationSeconds,
+        transcriptText: transcript,
+      });
+
+      if (check.transcriptCoveragePct == null) {
+        const naiveFull = tokenizeWordsSafe(options.voiceScript).length / 2.5;
+        if (check.durationSeconds < naiveFull * 0.85) {
+          throw new Error(
+            `TTS incompleteness FAIL (no transcript): ${check.durationSeconds.toFixed(2)}s < 85% of expected ${naiveFull.toFixed(2)}s`,
+          );
+        }
+      }
+
+      console.log(
+        `[tts-integrity] attempt=${attempt} duration=${check.durationSeconds.toFixed(2)}s floor=${check.floorSeconds.toFixed(2)}s coverage=${
+          check.transcriptCoveragePct == null
+            ? "n/a"
+            : `${check.transcriptCoveragePct.toFixed(1)}%`
+        } words=${tokenizeWordsSafe(options.voiceScript).length}`,
+      );
+
+      return {
+        audioPath: options.narrationPath,
+        model,
+        durationSeconds: check.durationSeconds,
+        coveragePct: check.transcriptCoveragePct,
+      };
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      console.warn(
+        `[tts-integrity] attempt ${attempt}/${TTS_MAX_ATTEMPTS} failed: ${lastError.message}`,
+      );
+    }
+  }
+  throw lastError ?? new Error("TTS completeness gate failed");
+}
+
+/**
+ * Production Lock V4 audio timing:
+ * Master length follows narration (+ breathing room), never force-cuts narration into a short video.
+ */
+function resolveMasterTargetSeconds(options: {
+  clips: string[];
+  narrationPath: string;
+  plannedSeconds: number;
+}): { targetSeconds: number; narrationSeconds: number; videoSeconds: number } {
+  const narrationSeconds = probeDurationSeconds(options.narrationPath);
+  const videoSeconds = options.clips.reduce(
+    (sum, c) => sum + probeDurationSeconds(c),
+    0,
+  );
+  const breath = 2.5; // 2–3s breathing room after narration
+  const fromNarration =
+    narrationSeconds > 0 ? Math.ceil(narrationSeconds + breath) : 0;
+  const fromVideo = videoSeconds > 0 ? Math.ceil(videoSeconds) : 0;
+  const targetSeconds = Math.max(
+    options.plannedSeconds,
+    fromNarration,
+    fromVideo,
+  );
+  return { targetSeconds, narrationSeconds, videoSeconds };
+}
+
 function assembleMaster(options: {
   clips: string[];
   narrationPath: string;
@@ -362,6 +542,16 @@ function assembleMaster(options: {
     listPath,
     options.clips.map((c) => `file '${c.replace(/'/g, "'\\''")}'`).join("\n") + "\n",
   );
+  const videoLen = options.clips.reduce(
+    (sum, c) => sum + probeDurationSeconds(c),
+    0,
+  );
+  const pad = Math.max(0, options.targetSeconds - videoLen + 0.05);
+  // Freeze last frame if master must outlast concatenated clips (narration breathing room).
+  const vFilter =
+    pad > 0.05
+      ? `[0:v]tpad=stop_mode=clone:stop_duration=${pad.toFixed(3)},fps=30,format=yuv420p[vout]`
+      : `[0:v]fps=30,format=yuv420p[vout]`;
   ffmpeg([
     "-f",
     "concat",
@@ -374,9 +564,9 @@ function assembleMaster(options: {
     "-i",
     options.musicPath,
     "-filter_complex",
-    `[1:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},volume=1.15[narr];[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},volume=0.22[music];[narr][music]amix=inputs=2:duration=first:dropout_transition=0,alimiter=limit=0.95[aout]`,
+    `${vFilter};[1:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},volume=1.15[narr];[2:a]aresample=48000,apad=whole_dur=${options.targetSeconds},atrim=0:${options.targetSeconds},volume=0.22[music];[narr][music]amix=inputs=2:duration=first:dropout_transition=0,alimiter=limit=0.95[aout]`,
     "-map",
-    "0:v",
+    "[vout]",
     "-map",
     "[aout]",
     "-t",
@@ -457,7 +647,7 @@ function writeReport(state: RunState): string {
     `**Status:** ${state.status}`,
     `**Generated:** ${state.generatedAt}`,
     `**Golden Script ID:** \`${state.goldenScriptId}\` — ${state.goldenTitle}`,
-    `**Provider policy:** Google AI Studio ONLY (no KIE / you.bot / Runware / Sharpii / OpenAI Images)`,
+    `**Provider policy:** Video = KIE.ai primary (Google Veo fallback). TTS/music = Gemini. No you.bot / Runware / Sharpii.`,
     "",
     state.status === "SUCCESS"
       ? "## SUCCESS — marketing Short uploaded UNLISTED"
@@ -574,9 +764,17 @@ export async function runGoogleProduction(): Promise<RunState> {
 
   loadAmyNestEnvFiles(REPO_ROOT);
   loadAmyNestEnvFiles(process.cwd());
-  // Google AI Studio ONLY — strip third-party keys for this process.
+  // Primary video: KIE Veo (default) | kie-kling bakeoff | google fallback.
+  process.env.AMYNEST_VIDEO_PROVIDER = process.env.AMYNEST_VIDEO_PROVIDER || "kie";
+  process.env.AMYNEST_KIE_ENABLED = process.env.AMYNEST_KIE_ENABLED || "true";
+  process.env.AMYNEST_KIE_VEO_MODEL =
+    process.env.AMYNEST_KIE_VEO_MODEL || "veo3_fast";
+  process.env.AMYNEST_KIE_VEO_RESOLUTION =
+    process.env.AMYNEST_KIE_VEO_RESOLUTION || "1080p";
+  process.env.AMYNEST_KIE_KLING_MODE =
+    process.env.AMYNEST_KIE_KLING_MODE || "std";
+  // Strip unused third-party media keys (keep KIE_API_KEY).
   for (const k of [
-    "KIE_API_KEY",
     "RUNWARE_API_KEY",
     "YOUBOT_API_KEY",
     "SHARPII_API_KEY",
@@ -596,7 +794,7 @@ export async function runGoogleProduction(): Promise<RunState> {
     process.env.AMYNEST_VEO_RESOLUTION || "1080p";
   process.env.AMYNEST_GEMINI_IMAGE_MODEL =
     process.env.AMYNEST_GEMINI_IMAGE_MODEL || "imagen-4.0-fast-generate-001";
-  // Fresh Veo performances for this production Short.
+  // Fresh KIE performances for this Short (do not reuse prior Google raws).
   process.env.AMYNEST_REUSE_VEO = process.env.AMYNEST_REUSE_VEO ?? "0";
   // Music is mandatory for this run — enable Lyria for the process.
   process.env.AMYNEST_GEMINI_MUSIC_ENABLED = "true";
@@ -604,34 +802,103 @@ export async function runGoogleProduction(): Promise<RunState> {
   // Golden script only — no paid script LLM.
   process.env.AMYNEST_SCRIPT_PROVIDER = "mock";
 
-  const outRoot = join(REPO_ROOT, ".amynest-assets", "google-production-golden-006");
+  const videoProviderRaw = (process.env.AMYNEST_VIDEO_PROVIDER || "kie")
+    .trim()
+    .toLowerCase();
+  const videoProvider =
+    videoProviderRaw === "kie-kling" ||
+    videoProviderRaw === "kling" ||
+    videoProviderRaw === "kling-3.0"
+      ? "kie-kling"
+      : videoProviderRaw === "google" ||
+          videoProviderRaw === "google-veo" ||
+          videoProviderRaw === "veo"
+        ? "google"
+        : "kie";
+  const outDirName =
+    process.env.AMYNEST_OUT_DIR_NAME?.trim() ||
+    (videoProvider === "kie-kling"
+      ? `kie-kling-720p-${GOLDEN_ID}`
+      : videoProvider === "kie"
+        ? `kie-veo-720p-${GOLDEN_ID}`
+        : `google-production-${GOLDEN_ID}`);
+  const outRoot = join(REPO_ROOT, ".amynest-assets", outDirName);
   mkdirSync(outRoot, { recursive: true });
   const work = join(outRoot, "work");
   mkdirSync(work, { recursive: true });
 
   const media = resolveGeminiMediaSettings(loadDefaultConfig(), process.env);
   const geminiKey = readGeminiApiKey(media, process.env);
-  state.googleVideoModel = resolveVideoModelId(media.video);
+  const kieKey = process.env.KIE_API_KEY?.trim() || "";
+  const kieResolution =
+    process.env.AMYNEST_KIE_VEO_RESOLUTION === "1080p" ? "1080p" : "720p";
+  state.googleVideoModel =
+    videoProvider === "kie"
+      ? `kie/${process.env.AMYNEST_KIE_VEO_MODEL || "veo3_fast"}@${kieResolution}`
+      : videoProvider === "kie-kling"
+        ? `kie-kling/kling-3.0@${process.env.AMYNEST_KIE_KLING_MODE || "std"}`
+        : resolveVideoModelId(media.video);
   state.googleVoiceModel = media.voice.model;
   state.googleImageModel = media.image.model;
-  if (!geminiKey || process.env.AMYNEST_GEMINI_ENABLED !== "true") {
+  if ((videoProvider === "kie" || videoProvider === "kie-kling") && !kieKey) {
+    return fail(
+      state,
+      "preflight",
+      "KIE_API_KEY missing",
+      "KIE video requires KIE_API_KEY (top up kie.ai credits).",
+    );
+  }
+  let creditsBeforeRun: number | null = null;
+  if (kieKey && (videoProvider === "kie" || videoProvider === "kie-kling")) {
+    try {
+      creditsBeforeRun = await kieCredits(kieKey);
+      state.warnings.push(`KIE credits before: ${creditsBeforeRun}`);
+    } catch {
+      /* non-fatal */
+    }
+  }
+  // Audio: prefer KIE (Gemini TTS + Suno on KIE credits) when requested or Gemini prepaid is dead.
+  const audioProviderRaw = (process.env.AMYNEST_AUDIO_PROVIDER || "kie")
+    .trim()
+    .toLowerCase();
+  const audioProvider =
+    audioProviderRaw === "gemini" || audioProviderRaw === "google"
+      ? "gemini"
+      : "kie";
+  if (audioProvider === "kie" && !kieKey) {
+    return fail(
+      state,
+      "preflight",
+      "KIE_API_KEY missing for audio",
+      "AMYNEST_AUDIO_PROVIDER=kie requires KIE_API_KEY (TTS + Suno music).",
+    );
+  }
+  if (
+    audioProvider === "gemini" &&
+    (!geminiKey || process.env.AMYNEST_GEMINI_ENABLED !== "true")
+  ) {
     return fail(
       state,
       "preflight",
       "GEMINI_API_KEY / AMYNEST_GEMINI_ENABLED missing",
-      "Cannot generate real narration/music without Gemini credentials.",
+      "Cannot generate Gemini narration/music without credentials.",
     );
   }
+  state.warnings.push(`Audio provider: ${audioProvider}`);
 
-  try {
-    await resolveYouTubeAccessToken({ env: process.env, persistToEnv: true });
-  } catch (e) {
-    return fail(
-      state,
-      "preflight",
-      e instanceof Error ? e.message : String(e),
-      "YouTube OAuth failed — cannot upload even if render passes.",
-    );
+  if (process.env.AMYNEST_SKIP_UPLOAD === "1") {
+    state.warnings.push("Bakeoff: YouTube upload skipped (AMYNEST_SKIP_UPLOAD=1)");
+  } else {
+    try {
+      await resolveYouTubeAccessToken({ env: process.env, persistToEnv: true });
+    } catch (e) {
+      return fail(
+        state,
+        "preflight",
+        e instanceof Error ? e.message : String(e),
+        "YouTube OAuth failed — cannot upload even if render passes.",
+      );
+    }
   }
 
   let golden: GoldenScript;
@@ -658,36 +925,67 @@ export async function runGoogleProduction(): Promise<RunState> {
     );
   }
 
-  // --- Real TTS (reuse only if prior real asset exists; never synthesize silence) ---
+  // --- Real TTS (KIE Gemini TTS preferred; Gemini direct optional) ---
+  // P0: never silently accept truncated narration — retry then FAIL.
   const narrationPath = join(outRoot, "audio", "narration.wav");
   try {
     const t0 = Date.now();
     mkdirSync(dirname(narrationPath), { recursive: true });
     if (existsSync(narrationPath) && process.env.AMYNEST_REUSE_AUDIO === "1") {
+      const transcript =
+        process.env.AMYNEST_TTS_SKIP_WHISPER === "1"
+          ? null
+          : tryWhisperTranscript(narrationPath, outRoot);
+      const check = assertNarrationAudioComplete({
+        voiceScript: content.voiceScript,
+        audioPath: narrationPath,
+        probeDurationSeconds,
+        transcriptText: transcript,
+      });
+      if (check.transcriptCoveragePct == null) {
+        const naiveFull = tokenizeWordsSafe(content.voiceScript).length / 2.5;
+        if (check.durationSeconds < naiveFull * 0.85) {
+          throw new Error(
+            `Reused narration incomplete: ${check.durationSeconds.toFixed(2)}s < 85% of ${naiveFull.toFixed(2)}s`,
+          );
+        }
+      }
       state.narrationPath = narrationPath;
       state.voiceGenerated = false;
-      step(state, "narration-tts", t0, true, `reused ${narrationPath}`);
+      step(
+        state,
+        "narration-tts",
+        t0,
+        true,
+        `reused ${narrationPath} (${check.durationSeconds.toFixed(1)}s; coverage=${
+          check.transcriptCoveragePct == null
+            ? "n/a"
+            : `${check.transcriptCoveragePct.toFixed(0)}%`
+        })`,
+      );
     } else {
-      const tts = new GeminiTtsProvider({
-        apiKey: geminiKey,
-        model: media.voice.model,
-        fallbackModel: media.voice.fallbackModel,
-        outputDirectory: join(outRoot, "audio"),
-        enabled: true,
+      const narr = await generateNarrationWithCompletenessGate({
+        voiceScript: content.voiceScript,
+        narrationPath,
+        workDir: outRoot,
+        audioProvider,
+        kieKey,
+        geminiKey: geminiKey || "",
+        media,
+        assetId: `g${String(GOLDEN_NUM).padStart(3, "0")}-prod-narration`,
       });
-      const narr = await tts.generateNarration({
-        script: content.voiceScript,
-        assetId: "g006-prod-narration",
-        outputPath: narrationPath,
-      });
-      if (!existsSync(narr.audioPath)) {
-        throw new Error("TTS reported success but narration file missing");
-      }
       state.narrationPath = narr.audioPath;
       state.voiceGenerated = true;
-      state.googleVoiceModel =
-        narr.metadata?.model || media.voice.model;
-      step(state, "narration-tts", t0, true, narr.audioPath);
+      state.googleVoiceModel = narr.model;
+      step(
+        state,
+        "narration-tts",
+        t0,
+        true,
+        `${narr.audioPath} (${narr.durationSeconds.toFixed(1)}s; coverage=${
+          narr.coveragePct == null ? "n/a" : `${narr.coveragePct.toFixed(0)}%`
+        }; ${narr.model})`,
+      );
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -696,13 +994,27 @@ export async function runGoogleProduction(): Promise<RunState> {
     return state;
   }
 
-  // --- Real music (Lyria) ---
+  // --- Real music (KIE Suno preferred; Gemini Lyria optional) ---
   const musicPath = join(outRoot, "audio", "music.wav");
   try {
     const t0 = Date.now();
     if (existsSync(musicPath) && process.env.AMYNEST_REUSE_AUDIO === "1") {
       state.musicPath = musicPath;
       step(state, "music-lyria", t0, true, `reused ${musicPath}`);
+    } else if (audioProvider === "kie") {
+      const music = await kieGenerateMusic({
+        apiKey: kieKey,
+        prompt:
+          golden.suggestedMusic ||
+          "Warm soft acoustic piano parenting underscore, hopeful, gentle, instrumental only",
+        title: `AmyNest ${GOLDEN_ID}`,
+        outputPath: musicPath,
+      });
+      if (!existsSync(music.audioPath)) {
+        throw new Error("KIE Suno reported success but file missing");
+      }
+      state.musicPath = music.audioPath;
+      step(state, "music-lyria", t0, true, `${music.audioPath} (${music.model})`);
     } else {
       const musicProvider = new GeminiMusicProvider({
         apiKey: geminiKey,
@@ -714,7 +1026,7 @@ export async function runGoogleProduction(): Promise<RunState> {
         prompt:
           golden.suggestedMusic ||
           "Warm soft acoustic piano parenting underscore, hopeful, gentle, instrumental only",
-        assetId: "g006-prod-music",
+        assetId: `g${String(GOLDEN_NUM).padStart(3, "0")}-prod-music`,
         outputPath: musicPath,
       });
       if (!existsSync(music.audioPath)) {
@@ -755,15 +1067,21 @@ export async function runGoogleProduction(): Promise<RunState> {
       `score=${diversity.diversityScore.toFixed(1)} similarity=${(diversity.similarityToRecent * 100).toFixed(1)}% locs=${diversity.extras.locations.filter((l) => l !== "cta-stage").join("/")}`,
     );
     if (!diversity.ok) {
-      writeReport(
-        fail(
-          state,
-          "content-diversity",
-          diversity.reasons.join(" | "),
-          "Content Diversity Score / similarity gate failed — STOP before generation.",
-        ),
-      );
-      return state;
+      if (process.env.AMYNEST_FORCE_DIVERSITY === "1") {
+        state.warnings.push(
+          `FORCE DIVERSITY: continuing despite gate fail — ${diversity.reasons.join(" | ")}`,
+        );
+      } else {
+        writeReport(
+          fail(
+            state,
+            "content-diversity",
+            diversity.reasons.join(" | "),
+            "Content Diversity Score / similarity gate failed — STOP before generation.",
+          ),
+        );
+        return state;
+      }
     }
     state.warnings.push(
       `Diversity: ${diversity.metadata.playlistName} · ${diversity.metadata.thumbnailHero} · ${diversity.extras.locations.join(", ")}`,
@@ -799,16 +1117,37 @@ export async function runGoogleProduction(): Promise<RunState> {
     const veoModel =
       process.env.AMYNEST_VEO_MODEL?.trim() ||
       resolveVideoModelId(media.video);
-    state.googleVideoModel = veoModel;
-    // Veo 3.1 Fast rejects 1080p for 4s clips — generate at 720p;
-    // composeCinematicVisuals already scales each performance to 1080×1920.
+    const kieModel =
+      process.env.AMYNEST_KIE_VEO_MODEL === "veo3" ? "veo3" : "veo3_fast";
+    const composeResolution =
+      videoProvider === "kie" || videoProvider === "kie-kling"
+        ? kieResolution
+        : "720p";
+    state.googleVideoModel =
+      videoProvider === "kie"
+        ? `kie/${kieModel}@${composeResolution}`
+        : videoProvider === "kie-kling"
+          ? `kie-kling/kling-3.0@${process.env.AMYNEST_KIE_KLING_MODE || "std"}`
+          : veoModel;
+    // Disable Google fallback on Kling bakeoff so cost stays comparable.
+    if (videoProvider === "kie-kling") {
+      process.env.AMYNEST_VIDEO_FALLBACK_GOOGLE = "0";
+    }
     const composed = await composeCinematicVisuals({
       content,
       workDir: cinematicDir,
       outputDir: outRoot,
       geminiApiKey: geminiKey,
+      kieApiKey: kieKey,
+      videoProvider:
+        videoProvider === "kie"
+          ? "kie"
+          : videoProvider === "kie-kling"
+            ? "kie-kling"
+            : "google",
       veoModel,
-      resolution: "720p",
+      kieModel,
+      resolution: composeResolution,
       totalDurationSeconds: TARGET_DURATION,
       plan: diversityPlan,
     });
@@ -827,8 +1166,20 @@ export async function runGoogleProduction(): Promise<RunState> {
     state.imagesGenerated = composed.continuity.filter(
       (c) => c.imageToVideo,
     ).length;
-    // Cost not exposed by Generative Language API in this path.
-    state.videoCostUsd = null;
+    if (kieKey && creditsBeforeRun != null) {
+      try {
+        const creditsAfter = await kieCredits(kieKey);
+        const used = Math.max(0, creditsBeforeRun - creditsAfter);
+        state.videoCostUsd = Number((used * CREDIT_USD).toFixed(4));
+        state.warnings.push(
+          `KIE credits after compose: ${creditsAfter} (used ~${used} ≈ $${state.videoCostUsd})`,
+        );
+      } catch {
+        state.videoCostUsd = null;
+      }
+    } else {
+      state.videoCostUsd = null;
+    }
     step(state, "creative-composition", t0, true, composed.detail);
     state.warnings.push(
       `Composition rules: ${composed.plan.rulesApplied.join(", ")}`,
@@ -848,20 +1199,41 @@ export async function runGoogleProduction(): Promise<RunState> {
     return state;
   }
 
-  // --- Final mux ---
-  const finalPath = join(outRoot, "amynest-google-golden-006.mp4");
+  // --- Final mux (V4: duration from narration + breathing room, never cut VO) ---
+  const finalName =
+    process.env.AMYNEST_MASTER_NAME?.trim() ||
+    (videoProvider === "kie-kling"
+      ? `amynest-kling-720p-${GOLDEN_ID}.mp4`
+      : videoProvider === "kie"
+        ? `amynest-veo-720p-${GOLDEN_ID}.mp4`
+        : `amynest-google-${GOLDEN_ID}.mp4`);
+  const finalPath = join(outRoot, finalName);
   try {
     const t0 = Date.now();
+    const timing = resolveMasterTargetSeconds({
+      clips,
+      narrationPath: state.narrationPath,
+      plannedSeconds: TARGET_DURATION,
+    });
+    state.warnings.push(
+      `V4 audio timing: narration=${timing.narrationSeconds.toFixed(2)}s video=${timing.videoSeconds.toFixed(2)}s master=${timing.targetSeconds}s (breathing room after VO)`,
+    );
     assembleMaster({
       clips,
       narrationPath: state.narrationPath,
       musicPath: state.musicPath,
       outputPath: finalPath,
-      targetSeconds: TARGET_DURATION,
+      targetSeconds: timing.targetSeconds,
     });
     if (!existsSync(finalPath)) throw new Error("Final MP4 missing after mux");
     state.videoPath = finalPath;
-    step(state, "mux-master", t0, true, finalPath);
+    step(
+      state,
+      "mux-master",
+      t0,
+      true,
+      `${finalPath} (${timing.targetSeconds}s; narr ${timing.narrationSeconds.toFixed(1)}s)`,
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     step(state, "mux-master", Date.now(), false, msg);
@@ -946,15 +1318,29 @@ export async function runGoogleProduction(): Promise<RunState> {
           `Launch score ${launch.scores.overall} < ${MIN_LAUNCH_SCORE}`,
         );
       }
-      writeReport(
-        fail(
-          state,
-          "launch-validator",
-          launch.reasons.slice(0, 8).join(" | "),
-          "Artifact / Launch / Quality evidence did not PASS (≥95) — upload forbidden.",
-        ),
-      );
-      return state;
+      if (process.env.AMYNEST_FORCE_UPLOAD === "1") {
+        state.warnings.push(
+          `FORCE UPLOAD: launch cert=${launch.certification.certification} score=${launch.scores.overall} — uploading anyway (AMYNEST_FORCE_UPLOAD=1)`,
+        );
+        // PublishingOrchestrator also gates — disable for this forced path only.
+        process.env.AMYNEST_LAUNCH_VALIDATOR = "0";
+      } else if (process.env.AMYNEST_BAKEOFF_CONTINUE === "1") {
+        state.warnings.push(
+          `Bakeoff continue: launch score ${launch.scores.overall} (master kept for model compare; upload skipped unless forced)`,
+        );
+        process.env.AMYNEST_SKIP_UPLOAD =
+          process.env.AMYNEST_SKIP_UPLOAD || "1";
+      } else {
+        writeReport(
+          fail(
+            state,
+            "launch-validator",
+            launch.reasons.slice(0, 8).join(" | "),
+            "Artifact / Launch / Quality evidence did not PASS (≥95) — upload forbidden.",
+          ),
+        );
+        return state;
+      }
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -965,46 +1351,82 @@ export async function runGoogleProduction(): Promise<RunState> {
 
   // --- Thumbnail Engine 2.0 (A/B/C + live cover) — Google-only assets already locked ---
   let thumbnailPack: ThumbnailEnginePackage | null = null;
-  try {
-    const t0 = Date.now();
-    if (!isThumbnailEngineEnabled()) {
-      throw new Error("Thumbnail Engine disabled (AMYNEST_THUMBNAIL_ENGINE=0)");
-    }
-    const thumbDir = join(outRoot, "thumbnail");
-    mkdirSync(thumbDir, { recursive: true });
-    thumbnailPack = await runThumbnailEngine({
-      contentPackage: content,
-      outputDir: thumbDir,
-      videoPath: finalPath,
-      applyCover: true,
-      liveCover: true,
-      variants: true,
-      headlineOverride: diversityHeadline || undefined,
-    });
-    state.thumbnailPath = thumbnailPack.assets.jpgPath;
-    state.thumbnailScore = thumbnailPack.intelligence?.predictedCtr ?? null;
+  if (process.env.AMYNEST_SKIP_UPLOAD === "1") {
     step(
       state,
       "thumbnail-engine",
-      t0,
+      Date.now(),
       true,
-      `variant=${thumbnailPack.intelligence?.chosenVariant ?? "A"} predictedCtr=${state.thumbnailScore ?? "n/a"}`,
+      "skipped (bakeoff AMYNEST_SKIP_UPLOAD=1)",
     );
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    step(state, "thumbnail-engine", Date.now(), false, msg);
-    writeReport(
-      fail(
+  } else {
+    try {
+      const t0 = Date.now();
+      if (!isThumbnailEngineEnabled()) {
+        throw new Error("Thumbnail Engine disabled (AMYNEST_THUMBNAIL_ENGINE=0)");
+      }
+      const thumbDir = join(outRoot, "thumbnail");
+      mkdirSync(thumbDir, { recursive: true });
+      thumbnailPack = await runThumbnailEngine({
+        contentPackage: content,
+        outputDir: thumbDir,
+        videoPath: finalPath,
+        applyCover: true,
+        liveCover: true,
+        variants: true,
+        headlineOverride: diversityHeadline || undefined,
+      });
+      state.thumbnailPath = thumbnailPack.assets.jpgPath;
+      state.thumbnailScore = thumbnailPack.intelligence?.predictedCtr ?? null;
+      step(
         state,
         "thumbnail-engine",
-        msg,
-        "Thumbnail Engine failed — upload forbidden for this production run.",
+        t0,
+        true,
+        `variant=${thumbnailPack.intelligence?.chosenVariant ?? "A"} predictedCtr=${state.thumbnailScore ?? "n/a"}`,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      step(state, "thumbnail-engine", Date.now(), false, msg);
+      writeReport(
+        fail(
+          state,
+          "thumbnail-engine",
+          msg,
+          "Thumbnail Engine failed — upload forbidden for this production run.",
+        ),
+      );
+      return state;
+    }
+  }
+
+  // --- Upload UNLISTED only after PASS (skipped in bakeoff) ---
+  if (process.env.AMYNEST_SKIP_UPLOAD === "1") {
+    state.uploadStatus = "skipped — bakeoff local master only";
+    state.status = "SUCCESS";
+    state.totalProductionMs = Date.now() - RUN_STARTED_MS;
+    step(state, "youtube-upload", Date.now(), true, "skipped");
+    writeReport(state);
+    writeFileSync(
+      join(outRoot, "bakeoff-summary.json"),
+      JSON.stringify(
+        {
+          goldenScriptId: GOLDEN_ID,
+          videoProvider,
+          model: state.googleVideoModel,
+          videoPath: state.videoPath,
+          videoCostUsd: state.videoCostUsd,
+          videoGenerationMs: state.videoGenerationMs,
+          launchScore: state.launchScore,
+          warnings: state.warnings,
+        },
+        null,
+        2,
       ),
     );
     return state;
   }
 
-  // --- Upload UNLISTED only after PASS ---
   try {
     const t0 = Date.now();
     const publisher = new PublishingOrchestrator({ config });
@@ -1026,7 +1448,9 @@ export async function runGoogleProduction(): Promise<RunState> {
         videos: [result.video],
         contentByVideoId: { [result.video.videoId]: content },
         goldenScriptIdByVideoId: { [result.video.videoId]: GOLDEN_ID },
-        campaignByVideoId: { [result.video.videoId]: "google-golden-006" },
+        campaignByVideoId: {
+          [result.video.videoId]: `${videoProvider}-${GOLDEN_ID}`,
+        },
         metrics: [
           synthesizeMetricsFromViews({
             videoId: result.video.videoId,

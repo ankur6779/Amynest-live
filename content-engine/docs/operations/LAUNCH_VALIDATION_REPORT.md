@@ -1,19 +1,19 @@
 # AmyNest Production Launch Validation Report
 
-Generated: 2026-08-04T14:26:53.378Z
+Generated: 2026-08-18T18:54:13.372Z
 Validator: v2.0.0
 
 ## Result
 
-- **Pass/Fail:** PASS
-- **Evidence certification:** PASS
-- **Recommendation:** auto_approve
-- **Overall Launch Score:** 100
-- **Title:** AI Worksheets Matched to Class, Subject, and Difficulty | AmyNest AI
-- **Topic:** prod5-golden-005
-- **Render package:** rp_g005_prod_836a00714bdc5b8568be8730
-- **Final MP4:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/amynest-google-golden-005.mp4
-- **QUALITY_REPORT.json:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/QUALITY_REPORT.json
+- **Pass/Fail:** FAIL
+- **Evidence certification:** FAIL
+- **Recommendation:** reject
+- **Overall Launch Score:** 89
+- **Title:** Balance Games That Build Stillness Superpowers | AmyNest AI
+- **Topic:** prod12-golden-012
+- **Render package:** rp_g006_prod_183f0f73a524945a806dec64
+- **Final MP4:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-012/amynest-veo-720p-golden-012.mp4
+- **QUALITY_REPORT.json:** /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-012/QUALITY_REPORT.json
 
 ## Evidence rule
 
@@ -26,17 +26,17 @@ Validator: v2.0.0
 
 | Dimension | Score |
 |---|---:|
-| Story | 100 |
-| Visual | 100 |
+| Story | 67 |
+| Visual | 67 |
 | Audio | 100 |
 | Brand | 100 |
 | Feature Accuracy | 100 |
 | Accessibility | 100 |
-| Technical | 100 |
-| Campaign | 100 |
+| Technical | 84 |
+| Campaign | 79 |
 | Publishing Readiness | 100 |
 | Evidence | 100 |
-| **Overall Launch Score** | **100** |
+| **Overall Launch Score** | **89** |
 
 ## Launch Rules
 
@@ -47,34 +47,44 @@ Validator: v2.0.0
 
 ## Blocked reasons
 
-- All critical launch checks passed.
+- visual_quality:FAIL — Black frames 19.03s exceed limit
+- story_quality:FAIL — Missing story beats on video: beginning, conflict
+- metadata:FAIL — Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
+- VISUAL_QUALITY: Visual quality — FAIL: Black frames 19.03s exceed limit (visual/critical/FAIL)
+- STORY_QUALITY: Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict (story/critical/FAIL)
+- METADATA: Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth (business/critical/FAIL)
+- DURATION: Duration must match target (~21s); probed=47s (technical/critical/FAIL)
 
 ## Evidence gates
 
-- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=7648113, workDir=/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/google-production-golden-005/evidence/evidence)
-- [PASS] `audio` conf=0.85 (hasAudioStream=true, meanVolumeDb=-20, maxVolumeDb=-5.4, silenceRatio=0)
-- [PASS] `subtitles` conf=0.8 (subtitleCoverage=1, transcriptOverlap=0.3146067415730337, ocrCaptionChars=820)
-- [PASS] `end_card` conf=0.85 (appIconSimilarity=0.7968721302140511, endCardPurpleRatio=0.634765625, googlePlayTextDetected=true, appStoreTextDetected=true)
-- [PASS] `brand_detection` conf=0.8 (logoTextDetected=true, appIconSimilarity=0.7968721302140511, brandVisibleSeconds=2)
+- [PASS] `evidence_integrity` conf=1 (probeComplete=true, fileSizeBytes=10366425, workDir=/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-012/evidence/evidence)
+- [PASS] `audio` conf=0.85 (hasAudioStream=true, meanVolumeDb=-22.4, maxVolumeDb=-4.5, silenceRatio=0)
+- [PASS] `subtitles` conf=0.8 (subtitleCoverage=1, transcriptOverlap=0.5151515151515151, ocrCaptionChars=1090)
+- [PASS] `end_card` conf=0.85 (appIconSimilarity=0.7727735744767497, endCardPurpleRatio=0.633056640625, googlePlayTextDetected=true, appStoreTextDetected=true)
+- [PASS] `brand_detection` conf=0.8 (logoTextDetected=true, appIconSimilarity=0.7727735744767497, brandVisibleSeconds=2)
 - [PASS] `cta_detection` conf=0.85 (ctaTextDetected=true, ctaVisibleSeconds=2.5)
-- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.9381459617848674, bestCharacterId=amy-boy, samplesCompared=10, similarity.amy-ai=0.7376120792124491)
-- [PASS] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=0, meanLuma=123.15535481770833)
-- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=10, fps=30, freezeSeconds=0)
-- [PASS] `text_readability` conf=0.7 (ocrReadableChars=2467, ocrFrames=32)
-- [PASS] `story_quality` conf=0.7 (beginning=true, conflict=true, resolution=true, cta=true)
+- [PASS] `character_consistency` conf=0.75 (bestSimilarity=0.8876402093968528, bestCharacterId=amy-boy, samplesCompared=10, similarity.amy-ai=0.8063236546797541)
+- [FAIL] `visual_quality` conf=0.9 (width=1080, height=1920, blackSeconds=19.033333, meanLuma=104.73470052083333) — Black frames 19.03s exceed limit
+- [PASS] `motion_quality` conf=0.75 (sceneChangeCount=12, fps=30, freezeSeconds=0)
+- [PASS] `text_readability` conf=0.7 (ocrReadableChars=2976, ocrFrames=28)
+- [FAIL] `story_quality` conf=0.7 (beginning=false, conflict=false, resolution=true, cta=true) — Missing story beats on video: beginning, conflict
 - [PASS] `muted_story` conf=0.75 (captionsReadableMuted=true, visualProgression=true, ctaVisibleMuted=true, visualContinuity=true)
 - [PASS] `brand_mention` conf=0.8 (visualMention=true, narrationPresent=true, naturalInVoiceScript=true)
 - [PASS] `compliance` conf=0.9 (placeholderDetected=false, todoDetected=false, debugOverlayDetected=false, stockWatermarkDetected=false)
-- [PASS] `performance` conf=0.95 (fileSizeBytes=7648113, durationSec=21, hasAudioStream=true, corrupt=false)
-- [PASS] `metadata` conf=1 (titlePresent=true, descriptionPresent=true, mediaGatesBlocking=0, renderSubtitleModeClaim=burned-in)
+- [PASS] `performance` conf=0.95 (fileSizeBytes=10366425, durationSec=47, hasAudioStream=true, corrupt=false)
+- [FAIL] `metadata` conf=1 (titlePresent=true, descriptionPresent=true, mediaGatesBlocking=2, renderSubtitleModeClaim=burned-in) — Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
 
 ## Improvement Suggestions
 
-- None — ready for upload.
+- Fix the final MP4 (not metadata) and re-run evidence certification.
+- Trim or retime scenes to the planned Short length.
 
 ## Failed Checks
 
-_No failed checks._
+- **VISUAL_QUALITY** (visual/critical/FAIL): Visual quality — FAIL: Black frames 19.03s exceed limit
+- **STORY_QUALITY** (story/critical/FAIL): Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict
+- **METADATA** (business/critical/FAIL): Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
+- **DURATION** (technical/critical/FAIL): Duration must match target (~21s); probed=47s
 
 ## All Checks
 
@@ -85,17 +95,17 @@ _No failed checks._
 - [PASS] `evidence.brand_detection` GATE_BRAND_DETECTION: Brand / logo detection — evidence PASS
 - [PASS] `evidence.cta_detection` GATE_CTA_DETECTION: CTA detection (on video) — evidence PASS
 - [PASS] `evidence.character_consistency` GATE_CHARACTER_CONSISTENCY: Character consistency (bible match) — evidence PASS
-- [PASS] `evidence.visual_quality` GATE_VISUAL_QUALITY: Visual quality — evidence PASS
+- [FAIL] `evidence.visual_quality` VISUAL_QUALITY: Visual quality — FAIL: Black frames 19.03s exceed limit
 - [PASS] `evidence.motion_quality` GATE_MOTION_QUALITY: Motion quality — evidence PASS
 - [PASS] `evidence.text_readability` GATE_TEXT_READABILITY: Text readability (OCR) — evidence PASS
-- [PASS] `evidence.story_quality` GATE_STORY_QUALITY: Story quality (final MP4) — evidence PASS
+- [FAIL] `evidence.story_quality` STORY_QUALITY: Story quality (final MP4) — FAIL: Missing story beats on video: beginning, conflict
 - [PASS] `evidence.muted_story` GATE_MUTED_STORY: Muted story test — evidence PASS
 - [PASS] `evidence.brand_mention` GATE_BRAND_MENTION: AmyNest natural brand mention — evidence PASS
 - [PASS] `evidence.compliance` GATE_COMPLIANCE: Compliance (no placeholders/debug/stock) — evidence PASS
 - [PASS] `evidence.performance` GATE_PERFORMANCE: Performance / output integrity — evidence PASS
-- [PASS] `evidence.metadata` GATE_METADATA: Metadata (after media pass) — evidence PASS
+- [FAIL] `evidence.metadata` METADATA: Metadata (after media pass) — FAIL: Metadata cannot pass while media gates are FAIL/INCONCLUSIVE — final MP4 is source of truth
 - [PASS] `tech.resolution` RESOLUTION: Resolution must be 1080x1920 (probed 1080x1920)
-- [PASS] `tech.duration` DURATION: Duration must match target (~21s); probed=21s
+- [FAIL] `tech.duration` DURATION: Duration must match target (~21s); probed=47s
 - [PASS] `tech.fps` FPS: FPS should be 30 (probed 30)
 - [PASS] `tech.audio-stream` AUDIO_STREAM: Final MP4 must contain a non-silent audio stream
 - [PASS] `tech.bitrate` BITRATE: Export should meet target quality bitrate / file size
@@ -124,5 +134,5 @@ _No failed checks._
 
 ## Publishing Recommendation
 
-AUTO APPROVE — upload may proceed.
+REJECT — do not upload. Fix final MP4 evidence failures and re-validate.
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import type { OlympiadDifficulty } from "@workspace/olympiad";
 
 const HintResponseSchema = z.object({
@@ -23,7 +24,7 @@ Output JSON only: {"hint":"..."}`;
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.5,
       max_completion_tokens: 200,
       messages: [

@@ -1,6 +1,7 @@
 /**
  * Character-performance shot plan — continuous Veo episodes, not still montages.
- * Cinematic Realism Program: mentor Amy, lip ownership, child acting, filmed cameras.
+ * Production Lock V5: one continuous short film — Amy lead, interaction, story rhythm.
+ * V4 timing/holds/endcard remain active.
  */
 
 import { diversifyCompositionPlan } from "../content-diversity/diversify-plan.js";
@@ -28,103 +29,153 @@ export function planCinematicShort(
   const cta = content.captions[4]?.text ?? "Download AmyNest AI";
   const tutor = isTutorStory(content, hook, host, learn, celebrate);
 
+  // Story rhythm: Hook → Problem → Escalation → Amy → Discovery → Transformation → Resolution → CTA
   const shots: CompositionShotPlan[] = [
     {
       id: "shot-hook",
       role: "hook",
       durationSeconds: 4,
-      environment: "study-desk",
+      environment: "homework-corner",
       kind: "veo-performance",
       caption: hook,
-      camera: "close-up",
+      camera: "wide",
       character: "amy-girl",
       speechMode: "reacting",
       spokenLine: hook,
+      allowAppUi: false,
+      amyOnScreen: false,
+      storyBeat: "Hook + Problem",
+      continuityBridge:
+        "Cold open of ONE continuous short film — establish body position, eye-line, and lighting that the next cut will continue (not a new commercial)",
+      shotObjective: tutor
+        ? "Girl searching through homework struggle"
+        : "Girl reading alone with soft worry",
+      actionBeforeDialogue:
+        "Already drawing / turning pages / fidgeting with pencil — natural blocking through the room before any reaction peak",
+      cameraMotivation:
+        "Camera holds wide then settles closer because her searching hands invite us in — never random push-in",
+      emotionFrom: "neutral quiet",
+      emotionTo: "confused",
       emotionBeat:
-        "Quiet homework struggle — brow softens with worry, then a small hopeful glance",
+        "Confused / soft struggle — leave STILL confused-thinking; allow a silent look/sigh (not every second needs talk)",
       eyeLine:
-        "Down into the notebook, then briefly toward the empty chair / doorway where help might come",
+        "Into the story prop / notebook, then briefly toward where help might come",
       interaction:
-        "Alone at the desk for the cold open — the room feels like a real morning, waiting for a mentor",
+        "Cold-open isolation required by story — alone in a lived-in space, waiting for family/mentor (Amy enters next)",
       performance: tutor
-        ? "sits at homework desk mid-struggle, soft frustrated then thoughtful expression, natural blinks, tiny sigh, pencil pauses, glances toward the doorway hoping for help — living child, not a frozen cartoon"
-        : "looks at unfinished worksheets, soft bored then lonely expression, natural blinks, small sigh, pencil twirl, glances toward window light — living child energy",
+        ? "walks or sits into the homework struggle, fidgets with pencil, soft frustrated then thoughtful, natural blinks, tiny sigh, glances hoping for help — ends mid-thought for the next cut"
+        : "moves into the lonely beat with the story prop, natural blinks, small sigh, looks toward window light — ends still needing help for continuity",
       notes:
-        "Cold open: Amy Girl only. Emotion first 3 seconds. Listening/reacting mouth — not random lip flaps.",
+        "V5 Hook+Problem. Continuous film open. Silence OK. No Amy yet (story requires). No app.",
     },
     {
       id: "shot-amy-host",
       role: "amy-host",
       durationSeconds: 4,
-      environment: "study-desk",
+      environment: "living-room",
       kind: "veo-performance",
       caption: host,
       camera: "tracking",
       character: "amy-ai",
       speechMode: "speaking",
       spokenLine: host,
-      emotionBeat: "Warm mentor reassurance — calm smile, never lecture",
-      eyeLine:
-        "Toward the child study seat / off-screen Amy Girl eye-line, then soft glance to camera as invite",
+      allowAppUi: false,
+      amyOnScreen: true,
+      storyBeat: "Escalation + Amy appears",
+      continuityBridge:
+        "CONTINUOUS FILM: begin exactly where the girl's confused beat left off — same emotion, same eye-line energy, matching lighting; Amy walks/kneels into THAT moment (never teleport, never reset pose)",
+      shotObjective: "Amy appears and guides beside the child as family companion",
+      actionBeforeDialogue:
+        "Walks into frame / kneels beside the child, soft eye contact and a listen beat — THEN speaks",
+      cameraMotivation:
+        "Camera follows Amy entering / kneeling — continue previous camera energy, never teleport",
+      emotionFrom: "confused",
+      emotionTo: "thinking",
+      emotionBeat:
+        "Escalation softens as Amy appears — Amy listens first; child still thinking; allow a silent nod before words",
+      eyeLine: "Toward the child at child height — family companion, not presenter to lens",
       interaction: tutor
-        ? "Amy AI enters the study space at child height, kneels or leans beside the homework desk like a supportive tutor — lives in the story, not a voice-over from outside"
-        : "Amy AI enters the family learning space at child height, kneels or sits beside the desk, supportive mentor presence inside the room",
+        ? "Amy touches/comforts space beside the child, kneels at eye level, parent/child may look to Amy — she is part of the family, not a narrator"
+        : "Amy kneels/sits beside the child, open-palm reassure; child looks to Amy; interaction required",
       performance: tutor
-        ? "enters frame at child height, kneels beside the study desk, warm smile, mouths a gentle help offer, points softly to the open notebook then a tablet showing tutor modes, blinks, open-palm reassure gesture — mentor, not announcer"
-        : "enters frame at child height, kneels beside the desk, waves hello warmly, mouths a welcoming line, points toward a tablet on the table, soft smile, blinks — guide inside the story",
+        ? "exact same Amy walks into the ongoing scene, kneels, warm smile, listens, then mouths a gentle help offer, points to the story prop — actor in the family, never still presenter"
+        : "exact same Amy walks into frame, kneels, listens, mouths welcome, points to story prop — companion inside the continuous film",
       notes:
-        "Amy AI mentor entrance IN the study world. Speaking lips match host beat. No floating VO sticker.",
+        "V5 Amy lead (~70% presence starts). Interaction mandatory. Lip-safe coverage. Continuous from hook.",
     },
     {
       id: "shot-amy-girl-learn",
       role: "amy-girl-learn",
       durationSeconds: 6,
-      environment: "study-desk",
+      environment: "reading-corner",
       kind: "veo-performance",
       caption: learn,
       camera: "over-shoulder",
       character: "amy-girl",
       speechMode: "listening",
       spokenLine: learn,
+      allowAppUi: true,
+      amyOnScreen: true,
+      storyBeat: "Discovery + Transformation",
+      continuityBridge:
+        "CONTINUOUS FILM: pick up Amy still beside the child from previous beat — same Amy pose energy, same child seat/prop relationship, same lighting warmth; camera continues OTS/coverage energy (no teleport)",
+      shotObjective: "Girl discovering with Amy guiding beside her",
+      actionBeforeDialogue:
+        "Already touching the prop / looking around — then looks up to Amy; Amy may point or touch shoulder before any mouth reaction",
+      cameraMotivation:
+        "OTS / reaction / profile / hands / prop cutaways — never fake frontal lip sync; camera continues prior coverage",
+      emotionFrom: "thinking",
+      emotionTo: "interested",
       emotionBeat:
-        "Curiosity → understanding — eyes brighten, shoulders relax, small real smile",
-      eyeLine:
-        "Between the tablet screen and the mentor space beside her (Amy AI presence at child height)",
+        "Discovery → transformation begins — curiosity lands; silent smile / Amy nod OK without constant narration",
+      eyeLine: "Between story prop and Amy at child height — they share the beat",
       interaction: tutor
-        ? "Works with Amy AI as an in-room mentor: looks to Amy's eye-line, listens, then taps Doubt/Practice on the tablet; they share the learning moment"
-        : "Engages with the lesson on her tablet while glancing toward Amy AI's supportive presence beside the desk",
+        ? "Amy ON SCREEN beside her: kneels/sits, may touch shoulder or point to prop; child laughs/looks to Amy; parent may glance at Amy — never isolated learning"
+        : "Amy ON SCREEN guiding beside the child; shared looks, prop handoff, soft celebration micro-beat",
       performance: tutor
-        ? "over-shoulder into the tablet showing Amy AI Tutor chat, listens with attentive eyes, small nods, soft smile as understanding lands, taps Doubt then Practice, brief readable chat UI on device only — reacts like a real child learning with a mentor"
-        : "over-shoulder into the tablet Study Zone lesson card, listens and thinks, eyes light up, small smile, finger taps progress ring briefly visible on device — curious real-child focus",
+        ? "listens, small nods, soft smile as understanding lands, engages prop while Amy reacts beside her — continuous two-shot family energy; hesitate, think, light up"
+        : "listens and thinks with Amy beside her, eyes light up, small smile, engages prop — discovery with companion, never alone freeze",
       notes:
-        "Listening lips + mentor relationship. App only on device ≤2s. Over-shoulder cinematic.",
+        "V5 Discovery+Transformation. Amy on screen. Interaction. Lip-safe. App only if story needs.",
     },
     {
       id: "shot-amy-boy-celebrate",
       role: "amy-boy-celebrate",
-      durationSeconds: 4,
-      environment: "child-bedroom",
+      durationSeconds: 6,
+      environment: "garden",
       kind: "veo-performance",
       caption: celebrate,
       camera: "orbit-soft",
       character: "amy-boy",
-      speechMode: "speaking",
+      speechMode: "reacting",
       spokenLine: celebrate,
-      emotionBeat: "Joyful pride — celebrate with someone, not alone at camera",
-      eyeLine:
-        "Toward off-screen Amy Girl / Amy AI to share the win, then warm look to camera",
+      allowAppUi: false,
+      amyOnScreen: true,
+      storyBeat: "Transformation + Emotional resolution",
+      continuityBridge:
+        "CONTINUOUS FILM: joy continues from discovery — same family, same Amy presence, matching warm light; boy shares the win WITH Amy and sister energy (never a new disconnected celebrate clip)",
+      shotObjective: "Family + Amy celebrate — hopeful joy held",
+      actionBeforeDialogue:
+        "Already bouncing / running a tiny step / giggling with Amy nearby — THEN share look; prefer reaction/profile over fake talking head",
+      cameraMotivation:
+        "Camera follows celebration move closer as family+Amy react — continue prior push/orbit energy, never teleport",
+      emotionFrom: "interested",
+      emotionTo: "hopeful-happy",
+      emotionBeat:
+        "Transformation completes → hopeful → happy — HOLD ~2s on family+Amy warmth before epilogue CTA",
+      eyeLine: "Toward Amy / sister / parent to share the win — not hard sell to camera",
       interaction:
-        "Celebrates WITH the story family — looks to partners, smiles, invites them into the joy; discovery energy, not product posing",
+        "Amy ON SCREEN celebrating with both children — high-five / open arms / shared laugh; parent looks at Amy; never isolated solo celebrate",
       performance: tutor
-        ? "celebrates understanding after a doubt clears — small jump, fist pump, laughs with eyes, looks to off-screen sister/mentor to share the win, mouths a happy line, natural blinks and bounce"
-        : "celebrates finishing a lesson — small jump, fist pump, big genuine smile, looks to off-screen family to share joy, mouths a hopeful line, living playful child motion",
+        ? "celebrates WITH Amy beside him — small jump, fist pump, laughs, looks to Amy and sister, natural blinks; HOLD family+Amy warmth ~2s — lip-safe reaction energy over fake mouthing"
+        : "celebrates WITH Amy and family — jump, fist pump, genuine smile, shared look; HOLD ~2s before brand epilogue",
       notes:
-        "Amy Boy as real celebrating child. Speaking lips on hope beat. Shared joy eye-line.",
+        "V5 Resolution. Amy on screen interacting. HOLD before CTA. Prefer reacting over fake lip sync.",
     },
     {
       id: "shot-cta",
       role: "cta",
-      durationSeconds: 4,
+      durationSeconds: 6,
       environment: "cta-stage",
       kind: "cta-overlay",
       caption: cta,
@@ -132,14 +183,27 @@ export function planCinematicShort(
       character: "amy-ai",
       speechMode: "speaking",
       spokenLine: cta,
-      emotionBeat: "Warm invitation — hope already earned",
-      eyeLine: "Direct warm eye contact with the parent viewer",
+      allowAppUi: false,
+      amyOnScreen: true,
+      storyBeat: "CTA epilogue",
+      continuityBridge:
+        "EPILOGUE (not a new scene): continue from family smile energy — same Amy who just celebrated; never a disconnected ad cut",
+      shotObjective: "Epilogue endcard after story already resolved — never cut short",
+      actionBeforeDialogue:
+        "Family smile energy → Amy settles → soft wave — THEN invite line; after fade begins, NO more speaking energy",
+      cameraMotivation:
+        "Slow dolly from the held family warmth into the epilogue — never teleport into hard-sell",
+      emotionFrom: "hopeful-happy",
+      emotionTo: "warm invite",
+      emotionBeat:
+        "CTA is an EPILOGUE: family smiles → 2s HOLD → Amy waves → fade → logo → Download AmyNest AI → Play Store → App Store → amynest.in → 2s HOLD → fade to black. Never speak after fade begins.",
+      eyeLine: "Warm companion eye contact — part of the family, not a mascot presenter",
       interaction:
-        "Still the same mentor from the story — inviting parents to continue the journey, never hard-sell announcer",
+        "Same Amy from the family story — epilogue wave after the held smile; then complete brand endcard",
       performance:
-        "slow dolly invite: mouths Download AmyNest AI warmly, gentle wave, soft float, eye contact, mentor smile — same Amy who helped inside the story",
+        "exact same Amy from previous scenes: soft smile, gentle wave (not presenter pose), mouths Download AmyNest AI before fade; after fade begins — silent endcard only (logo, badges, website), HOLD, fade to black",
       notes:
-        "Veo Amy AI invite + premium CTA overlay. Speaking lips on CTA line.",
+        "V5 CTA=epilogue. Never speak after fade. Complete endcard. Amy lead.",
     },
   ];
 
@@ -166,9 +230,23 @@ export function planCinematicShort(
       "wardrobe-face-proportion-lock",
       "camera-and-character-motion",
       "720p-cost-neutral-direction",
+      "cinematic-realism-v2-one-objective",
+      "cinematic-realism-v2-action-before-dialogue",
+      "cinematic-realism-v2-motivated-camera",
+      "production-lock-v3-character-consistency",
+      "production-lock-v3-emotional-continuity",
+      "production-lock-v3-cinematic-ending-before-cta",
+      "production-lock-v3-app-max-2",
+      "production-lock-v4-permanent-amy",
+      "production-lock-v4-cinematic-holds",
+      "production-lock-v4-complete-cta-endcard",
+      "production-lock-v5-continuous-film",
+      "production-lock-v5-amy-screen-presence",
+      "production-lock-v5-interaction-blocking",
+      "production-lock-v5-story-rhythm",
+      "production-lock-v5-cta-epilogue",
     ],
   };
 
-  // Script-driven locations / cameras / poses — never default study-desk loop.
   return diversifyCompositionPlan(content, base).plan;
 }

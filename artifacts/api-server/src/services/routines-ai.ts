@@ -1,4 +1,5 @@
 import { getOpenAiClient } from "./ai-runtime.js";
+import { resolveOpenAiChatModel } from "./openai-model-catalog.js";
 
 export type OpenAiJsonClient = {
   chat: {
@@ -21,7 +22,7 @@ export async function runOpenAiJsonChat(
 ): Promise<string> {
   const openai = client ?? (await getOpenAiClient());
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: resolveOpenAiChatModel("legacy"),
     messages,
     response_format: { type: "json_object" },
     max_completion_tokens: maxCompletionTokens,

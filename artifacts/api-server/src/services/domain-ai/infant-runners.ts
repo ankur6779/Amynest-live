@@ -1,10 +1,9 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import {
   estimateTokensFromText,
   logInfantAiCost,
 } from "../infantAiCostMonitor.js";
-
-const MODEL = "gpt-4o-mini";
 
 export async function runInfantSleepWeeklySummary(input: {
   userId: string;
@@ -27,7 +26,7 @@ export async function runInfantSleepWeeklySummary(input: {
   const promptText = `${system}\n${user}`;
 
   const outcome = await chatCompletionWithTimeout({
-    model: MODEL,
+    model: resolveOpenAiChatModel("legacy"),
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
@@ -40,7 +39,7 @@ export async function runInfantSleepWeeklySummary(input: {
     job: "infant_sleep_weekly_report",
     userId: input.userId,
     childId: input.childId,
-    model: MODEL,
+    model: resolveOpenAiChatModel("legacy"),
     estimatedTokens:
       estimateTokensFromText(promptText) + estimateTokensFromText(outcome.content ?? ""),
     cached: false,

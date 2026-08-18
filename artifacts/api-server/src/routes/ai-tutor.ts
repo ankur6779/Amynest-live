@@ -17,6 +17,7 @@ import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import { incrementFeatureUsage } from "../services/subscriptionService.js";
 import { getLearningProgressStatus } from "../services/learningProgressService.js";
 import { applyAiGuardrails } from "@workspace/learning-progress-engine";
+import { resolveOpenAiChatModel } from "../services/openai-model-catalog.js";
 
 /**
  * Amy AI Tutor — /api/ai-tutor/chat
@@ -43,7 +44,6 @@ const router: IRouter = Router();
 // ─── Constants ────────────────────────────────────────────────────────────
 
 const NAMESPACE = "ai_tutor_v1";
-const MODEL = "gpt-4o-mini";
 
 const MODES = ["teach", "practice", "quiz", "doubt"] as const;
 type TutorMode = (typeof MODES)[number];
@@ -464,7 +464,7 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
 
   const openAiPayload: OpenAiChatPayload = {
     namespace: `ai-tutor:${key}`,
-    model: MODEL,
+    model: resolveOpenAiChatModel("fast"),
     messages: [
       {
         role: "system",

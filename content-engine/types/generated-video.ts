@@ -4,7 +4,7 @@
  */
 export interface GeneratedVideoAsset {
   videoPath: string;
-  provider: "google-veo";
+  provider: "google-veo" | "kie-veo" | "kie-kling";
   duration: number;
   resolution: string;
   fps: number;

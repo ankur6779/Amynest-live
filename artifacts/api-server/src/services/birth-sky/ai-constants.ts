@@ -13,7 +13,7 @@ export const BIRTH_SKY_SUPPORTED_CONTEXT_SCHEMAS = new Set<string>([
 
 /**
  * Legacy single-model fallback. Prefer routeBirthSkyModel() for new streams.
- * Resolved from OPENAI_CHAT_MODEL_FAST → OPENAI_CHAT_MODEL → gpt-5-mini.
+ * Resolved from OPENAI_CHAT_MODEL_FAST → gpt-5-mini (OPENAI_CHAT_MODEL does not apply).
  */
 export const BIRTH_SKY_AI_MODEL_VERSION = resolveBirthSkyModelCatalog().fast;
 

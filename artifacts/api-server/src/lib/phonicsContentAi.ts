@@ -4,6 +4,10 @@ import { getCurriculumLevelDef } from "@workspace/phonics-curriculum";
 import { CVC_WORDS } from "@workspace/phonics-sounds";
 import { withSafeDb } from "./db-safe.js";
 import { logger } from "./logger.js";
+import {
+  openAiChatTemperatureField,
+  resolveOpenAiChatModel,
+} from "../services/openai-model-catalog.js";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -38,6 +42,7 @@ async function callOpenAiWords(prompt: string): Promise<string[] | null> {
   if (!key) return null;
 
   try {
+    const model = resolveOpenAiChatModel("legacy");
     const res = await fetch(OPENAI_URL, {
       method: "POST",
       headers: {
@@ -45,8 +50,8 @@ async function callOpenAiWords(prompt: string): Promise<string[] | null> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env["OPENAI_CHAT_MODEL"]?.trim() || "gpt-4o-mini",
-        temperature: 0.4,
+        model,
+        ...openAiChatTemperatureField(model, 0.4),
         messages: [
           {
             role: "system",

@@ -1,4 +1,8 @@
 import { getOpenAiClient } from "./ai-runtime.js";
+import {
+  openAiChatTemperatureField,
+  resolveOpenAiChatModel,
+} from "./openai-model-catalog.js";
 
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -37,6 +41,8 @@ export interface ChatCompletionOutcome {
 
 /**
  * OpenAI chat with hard timeout. Never holds the HTTP connection — meant for workers.
+ * Default model is LEGACY (`gpt-4o-mini`) so omitted-model jobs cannot accidentally
+ * migrate high-volume structured workloads onto FAST.
  */
 export async function chatCompletionWithTimeout(
   params: ChatCompletionParams,
@@ -58,12 +64,13 @@ export async function chatCompletionWithTimeout(
 
   try {
     const openai = await getOpenAiClient();
+    const model = params.model ?? resolveOpenAiChatModel("legacy");
     const completion = await openai.chat.completions.create(
       {
-        model: params.model ?? "gpt-4o-mini",
+        model,
         messages: params.messages,
         max_completion_tokens: params.max_completion_tokens ?? 600,
-        ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+        ...openAiChatTemperatureField(model, params.temperature),
         ...(params.response_format ? { response_format: params.response_format } : {}),
       },
       { signal: controller.signal },

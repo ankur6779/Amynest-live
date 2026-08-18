@@ -16,6 +16,10 @@ import {
   isContentUnlocked,
   type CurriculumLevel,
 } from "@workspace/phonics-curriculum";
+import {
+  openAiChatTemperatureField,
+  resolveOpenAiChatModel,
+} from "../services/openai-model-catalog.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1319,10 +1323,11 @@ export async function buildAiInsight(
     `Weak sounds/words: ${weakList}. ` +
     `Per-type score: ${typeSummary}. ` +
     `Write a JSON message + actionable suggestion for the parent.`;
+  const model = resolveOpenAiChatModel("legacy");
   const resp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model,
     response_format: { type: "json_object" },
-    temperature: 0.4,
+    ...openAiChatTemperatureField(model, 0.4),
     max_tokens: 160,
     messages: [
       { role: "system", content: sys },

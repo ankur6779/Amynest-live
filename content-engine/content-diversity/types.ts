@@ -3,11 +3,12 @@
  * Additive. Does not modify AI Director, Performance Director, validators, or render.
  */
 
-export const CONTENT_DIVERSITY_VERSION = "1.0.0";
+export const CONTENT_DIVERSITY_VERSION = "1.1.0";
 
 export const DIVERSITY_TARGET_SCORE = 90;
 export const MAX_SIMILARITY_TO_RECENT = 0.4;
-export const RECENT_WINDOW = 10;
+/** Compare against last 20 productions for environment/camera/thumbnail sameness. */
+export const RECENT_WINDOW = 20;
 
 export type DiversityTopicBucket =
   | "learning"

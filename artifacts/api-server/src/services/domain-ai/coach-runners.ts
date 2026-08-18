@@ -1,5 +1,6 @@
 import { COACH_WORKER_TIMEOUT_MS } from "@workspace/coach-journey";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { fallbackExtensionWin } from "../coachExtensionFallback.js";
 import { validateWin, type CoachWin } from "../coachWinGenerationService.js";
 
@@ -15,7 +16,7 @@ export async function runCoachExtend(input: {
   try {
     const outcome = await chatCompletionWithTimeout(
       {
-        model: "gpt-4o-mini",
+        model: resolveOpenAiChatModel("fast"),
         messages: [
           { role: "system", content: input.systemPrompt },
           { role: "user", content: input.userPrompt },
@@ -56,7 +57,7 @@ export async function runCoachStreamPlan(input: {
 }): Promise<{ raw: string }> {
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("fast"),
       messages: [
         { role: "system", content: input.systemPrompt },
         { role: "user", content: input.userPrompt },

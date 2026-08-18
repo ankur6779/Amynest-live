@@ -1,0 +1,49 @@
+# CHARACTER_CONTINUITY_REPORT
+
+**Date:** 2026-08-07  
+**Golden script:** golden-006 — Hear It. Say It. Get Gentle Feedback.  
+**Status:** SUCCESS  
+**Video:** https://youtube.com/shorts/IRCBM2AOtKA  
+**Certification:** PASS  
+
+## Objective
+
+Render golden-006 (Speech Practice) as a continuous **character-performance episode** starring only Amy AI, Amy Girl, and Amy Boy — not an Imagen still montage.
+
+## Provider policy
+
+- Video engine: **google-veo** (unchanged)
+- Daily model: `veo-3.1-fast-generate-preview` (via media stack tier)
+- Identity lock: official character **base** assets → 9:16 keyframes → Veo **image-to-video**
+- Validators / publishing pipeline: unchanged
+
+## Shot-by-shot continuity
+
+| Shot | Character | Provider | Model | Image-to-video |
+|---|---|---|---|---|
+| shot-hook | amy-girl | kie-veo | `veo3_fast` | yes (identity keyframe) |
+| shot-amy-host | amy-ai | kie-veo | `veo3_fast` | yes (identity keyframe) |
+| shot-amy-girl-learn | amy-girl | kie-veo | `veo3_fast` | yes (identity keyframe) |
+| shot-amy-boy-celebrate | amy-boy | kie-veo | `veo3_fast` | yes (identity keyframe) |
+| shot-cta | amy-ai | kie-veo | `veo3_fast` | yes (identity keyframe) |
+
+## Character consistency observations
+
+1. **Cast lock** — Plan casts only Amy Girl (hook + learn), Amy AI (host + CTA), Amy Boy (celebrate). No random children were requested in prompts.
+2. **Identity seed** — Each shot starts from an official base keyframe staged into a matching environment wash (first frame for Veo, not a slideshow plate).
+3. **Performance language** — Prompts describe motion (wave, tap, celebrate, blink, camera push/pan) and instruct the model not to redesign face/hair/clothes.
+4. **App presentation** — Speech Practice mic/feedback UI is prompted as a brief in-device prop on the learn beat, never as a fullscreen screenshot scene.
+5. **CTA** — Final beat is a live Amy AI Veo wave with badge/logo overlay — Amy performs the invite.
+
+## Remaining quality limitations
+
+- Veo image-to-video identity lock is first-frame based; residual wardrobe/face drift can appear across shots — tighten with referenceImages when 9:16 support is confirmed.
+- App UI inside tablet is prompt-directed (not a live screen recording) — keep UI ≤2s and prefer real device captures later.
+- Veo may still invent environment detail or slight costume drift between independent clips; true multi-reference locking across 9:16 should be re-tested when API constraints allow.
+- Native Veo audio is stripped in mux in favor of Gemini TTS narration + Lyria music for brand voice control.
+
+## Evidence paths
+
+- Continuity JSON: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/kie-production-golden-006/work/cinematic/continuity.json`
+- Final MP4: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/kie-production-golden-006/amynest-google-golden-006.mp4`
+- Quality report: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/kie-production-golden-006/QUALITY_REPORT.json`

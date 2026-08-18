@@ -7,6 +7,7 @@ import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { wrapJobInput } from "../queue/ai-job-payload.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
+import { resolveOpenAiChatModel } from "../services/openai-model-catalog.js";
 import {
   buildFallbackDocument,
   parseCopilotCommand,
@@ -43,7 +44,6 @@ import type { WorksheetAiGenerateJobResult } from "../services/worksheet-ai-gene
 
 const router: IRouter = Router();
 
-const MODEL = "gpt-4o-mini";
 const NAMESPACE = "worksheet_studio_v1";
 
 const ReferenceSchema = z.object({
@@ -207,7 +207,7 @@ router.post(
 
     const openAiPayload: OpenAiChatPayload = {
       namespace: `${NAMESPACE}:enhance:${reqBody.classLevel}`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 1200,
       temperature: 0.55,
@@ -270,7 +270,7 @@ router.post(
     const fallback = parseCopilotCommand(parsed.data.message, doc);
     const openAiPayload: OpenAiChatPayload = {
       namespace: `worksheet_copilot_v1:${doc.id}`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 400,
       temperature: 0.4,
@@ -324,7 +324,7 @@ router.post(
 
     const openAiPayload: OpenAiChatPayload = {
       namespace: `${NAMESPACE}:vision`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 800,
       temperature: 0.35,
@@ -400,7 +400,7 @@ router.post(
 
     const openAiPayload: OpenAiChatPayload = {
       namespace: `${NAMESPACE}:reconstruct_analyze`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 1200,
       temperature: 0.3,
@@ -456,7 +456,7 @@ router.post(
 
     const openAiPayload: OpenAiChatPayload = {
       namespace: `${NAMESPACE}:reconstruct:${reqBody.style}`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       json: true,
       max_completion_tokens: 3000,
       temperature: 0.45,

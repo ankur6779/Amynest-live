@@ -48,10 +48,11 @@ export interface GenerateVideoOptions {
   imagePath?: string;
   /**
    * Optional reference stack (Character Bible + previous scene memory).
-   * Primary continuity still uses `imagePath` (existing Veo image-to-video).
-   * Extra paths are recorded in metadata for providers that accept multi-ref later.
+   * Must reach providers that accept multi-ref (KIE REFERENCE_2_VIDEO).
    */
   referenceImagePaths?: string[];
+  /** Official lead character for this shot — used to require canonical bible ref. */
+  character?: "amy-ai" | "amy-girl" | "amy-boy";
   signal?: AbortSignal;
 }
 

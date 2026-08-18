@@ -132,11 +132,26 @@ export function runContentDiversityGate(
 
   const storePath = input.storePath ?? DEFAULT_DIVERSITY_STORE_PATH;
   const recent = recentFingerprints(storePath);
+  const avoidLocations = [
+    ...new Set(recent.flatMap((r) => r.locations).filter((l) => l !== "cta-stage")),
+  ] as EnvironmentId[];
+  const avoidCameras = [
+    ...new Set(recent.slice(0, 5).flatMap((r) => r.cameras)),
+  ];
+  const recentOpenings = recent
+    .map((r) => r.locations.find((l) => l !== "cta-stage"))
+    .filter(Boolean) as string[];
 
   let plan = input.plan;
   let extras = extrasFromPlan(content, plan);
-  if (!plan.rulesApplied.some((r) => r.startsWith("content-diversity-"))) {
-    const d = diversifyCompositionPlan(content, plan);
+  // Always re-plan against last 20 so we never inherit a template study-desk loop.
+  {
+    const d = diversifyCompositionPlan(
+      content,
+      input.plan,
+      avoidLocations,
+      avoidCameras,
+    );
     plan = d.plan;
     extras = d.extras;
   }
@@ -150,13 +165,23 @@ export function runContentDiversityGate(
   });
   let sim = maxSimilarityToRecent(fingerprint, recent);
 
-  if (sim.similarity > MAX_SIMILARITY_TO_RECENT) {
+  const opening = extras.locations.find((l) => l !== "cta-stage");
+  const openingReuse =
+    Boolean(opening) && recentOpenings.slice(0, 10).includes(opening!);
+
+  if (sim.similarity > MAX_SIMILARITY_TO_RECENT || openingReuse) {
     const peerLocs = recent.find((r) => r.id === sim.peerId)?.locations ?? [];
     const avoid = [
-      ...recent.flatMap((r) => r.locations).slice(0, 12),
+      ...avoidLocations,
       ...peerLocs,
+      ...(opening ? [opening] : []),
     ] as EnvironmentId[];
-    const regenerated = diversifyCompositionPlan(content, input.plan, avoid);
+    const regenerated = diversifyCompositionPlan(
+      content,
+      input.plan,
+      avoid,
+      avoidCameras,
+    );
     plan = regenerated.plan;
     extras = regenerated.extras;
     // Nudge thumbnail hero uniqueness via alternateTitles salt
@@ -206,15 +231,30 @@ export function runContentDiversityGate(
       `Diversity score ${diversityScore.toFixed(1)} < ${DIVERSITY_TARGET_SCORE}`,
     );
   }
+  const finalOpening = extras.locations.find((l) => l !== "cta-stage");
+  const finalOpeningReuse =
+    Boolean(finalOpening) &&
+    recentOpenings.slice(0, 10).includes(finalOpening!);
+
   if (locationSet.size < 2) {
     reasons.push("Fewer than 2 unique living locations in the plan");
   }
   if (cameraSet.size < 3) {
     reasons.push("Fewer than 3 unique camera angles");
   }
-  if (!reasons.some((r) => r.includes("exceeds") || r.includes("<"))) {
+  if (finalOpeningReuse) {
+    reasons.push(
+      `Opening location "${finalOpening}" reused from recent productions — reject template cold open`,
+    );
+  }
+  // Within-short: living shots must not all share one room
+  const livingLocs = extras.locations.filter((l) => l !== "cta-stage");
+  if (livingLocs.length >= 3 && new Set(livingLocs).size < 2) {
+    reasons.push("Same room reused across living beats — template scene");
+  }
+  if (!reasons.some((r) => r.includes("exceeds") || r.includes("<") || r.includes("reused") || r.includes("Fewer") || r.includes("Same room"))) {
     reasons.unshift(
-      "Locations, cameras, poses, and metadata cleared similarity gate vs recent 10",
+      "Locations, cameras, poses, and metadata cleared similarity gate vs recent 20",
     );
   }
 
@@ -222,7 +262,8 @@ export function runContentDiversityGate(
     sim.similarity > MAX_SIMILARITY_TO_RECENT ||
     diversityScore < DIVERSITY_TARGET_SCORE ||
     locationSet.size < 2 ||
-    cameraSet.size < 3;
+    cameraSet.size < 3 ||
+    finalOpeningReuse;
   const ok = !hardFail;
 
   const diversifiedContent = applyDiversityMetadata(input.content, metadata);

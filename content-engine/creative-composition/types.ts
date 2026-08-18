@@ -3,7 +3,7 @@
  * Additive. Does not change WorkflowPhase architecture or validators.
  */
 
-export const CREATIVE_COMPOSITION_VERSION = "2.1.0";
+export const CREATIVE_COMPOSITION_VERSION = "2.5.0";
 
 export type EnvironmentId =
   | "kitchen-table"
@@ -49,7 +49,18 @@ export type EnvironmentId =
   | "fridge-magnet-wall"
   | "mirror-practice-nook"
   | "calendar-wall"
-  | "balcony-night";
+  | "balcony-night"
+  // Unique-short-film locations (script-matched)
+  | "balcony"
+  | "terrace"
+  | "cafe"
+  | "museum"
+  | "science-center"
+  | "playground"
+  | "apartment-hallway"
+  | "car-ride"
+  | "book-store"
+  | "festival-home";
 
 export type ShotRole =
   | "hook"
@@ -82,13 +93,17 @@ export type CompositionCamera =
   | "amy-pov"
   | "pull-out"
   | "low-angle"
+  | "high-angle"
+  | "handheld"
   | "eye-level"
-  | "walking-follow";
+  | "walking-follow"
+  | "two-shot"
+  | "profile";
 
 export interface CompositionShotPlan {
   id: string;
   role: ShotRole;
-  /** Veo-supported durations only. */
+  /** Veo-supported durations only (4 | 6). Rhythm varies across the Short. */
   durationSeconds: 4 | 6;
   environment: EnvironmentId;
   kind: "veo-performance" | "cta-overlay";
@@ -107,6 +122,24 @@ export interface CompositionShotPlan {
   interaction?: string;
   /** Primary eye-line instruction. */
   eyeLine?: string;
+  /** ONE visual objective for this shot — never combine multiple. */
+  shotObjective?: string;
+  /** Physical action that must happen before any dialogue/mouthing. */
+  actionBeforeDialogue?: string;
+  /** Why the camera moves — must be motivated by action. */
+  cameraMotivation?: string;
+  /** Emotional state entering this shot (continuity from previous). */
+  emotionFrom?: string;
+  /** Emotional state leaving this shot (feeds the next). */
+  emotionTo?: string;
+  /** Whether AmyNest device/UI may appear in this beat (max 2 per Short). */
+  allowAppUi?: boolean;
+  /** Story-rhythm beat label (hook → … → CTA). */
+  storyBeat?: string;
+  /** How this shot continues the previous shot's blocking / camera / emotion. */
+  continuityBridge?: string;
+  /** Amy should be visually present / interacting in this beat (~70% of film). */
+  amyOnScreen?: boolean;
 }
 
 export interface CreativeCompositionPlan {
@@ -120,7 +153,7 @@ export interface ComposedShotArtifact {
   plan: CompositionShotPlan;
   videoPath: string;
   keyframePath?: string;
-  provider: "google-veo" | "cta-overlay";
+  provider: "google-veo" | "kie-veo" | "kie-kling" | "cta-overlay";
   model?: string;
   detail: string;
   imageToVideo?: boolean;

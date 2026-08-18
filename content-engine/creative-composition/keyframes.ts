@@ -34,6 +34,16 @@ const ENV_RGB: Partial<Record<EnvironmentId, [number, number, number]>> = {
   "healthy-kitchen": [235, 240, 220],
   "fridge-magnet-wall": [240, 225, 210],
   "mirror-practice-nook": [230, 220, 235],
+  balcony: [200, 220, 235],
+  terrace: [210, 225, 240],
+  cafe: [230, 220, 210],
+  museum: [220, 225, 230],
+  "science-center": [215, 230, 240],
+  playground: [200, 230, 200],
+  "apartment-hallway": [225, 220, 215],
+  "car-ride": [230, 225, 220],
+  "book-store": [220, 210, 200],
+  "festival-home": [245, 220, 200],
 };
 
 function envRgb(env: EnvironmentId): [number, number, number] {

@@ -11,6 +11,8 @@ import {
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GeminiVideoProvider } from "../asset-engine/providers/gemini-video/index.js";
+import { KieKlingVideoProvider } from "../asset-engine/providers/kie-kling/index.js";
+import { KieVideoProvider } from "../asset-engine/providers/kie-video/index.js";
 import { resolveBrandAssetPath } from "../brand/assets-resolver.js";
 import { isCharacterMemoryEnabled } from "../character-memory-engine/engine.js";
 import {
@@ -19,6 +21,7 @@ import {
 } from "../character-memory-engine/runtime.js";
 import type { GenerationSeed } from "../character-memory-engine/seed.js";
 import type { SceneCharacterMemory } from "../character-memory-engine/types.js";
+import { wardrobeFor } from "../character-memory-engine/wardrobe.js";
 import type { SceneStoryMemory } from "../story-memory-engine/types.js";
 import type { ContentPackage } from "../types/content-package.js";
 import {
@@ -111,13 +114,17 @@ function burnCtaPerformance(options: {
   workDir: string;
   seconds: number;
 }): void {
-  // 1.5s live Amy AI wave + solid premium end card.
-  // Plate is self-contained (logo, Amy keyed, phone, badges) — never overlay
-  // caption pills or aggressive Y-crop (those caused Shorts chrome collisions).
+  // Production Lock V4 cinematic ending:
+  // live Amy wave HOLD → premium endcard (logo / Download / badges / website) → HOLD → fade black.
+  // Plate is self-contained — never overlay caption pills or aggressive Y-crop.
   const wave = join(options.workDir, "cta-wave.mp4");
   const card = join(options.workDir, "cta-card.mp4");
-  const waveSec = Math.min(1.5, Math.max(0.8, options.seconds - 2.5));
-  const cardSec = options.seconds - waveSec;
+  // Prefer ~2s Amy wave hold when CTA is 6s; keep ≥3.5s for complete endcard + fade.
+  const waveSec = Math.min(
+    2.2,
+    Math.max(1.2, options.seconds - 3.8),
+  );
+  const cardSec = Math.max(3.5, options.seconds - waveSec);
   ffmpeg([
     "-i",
     options.veoPath,
@@ -162,13 +169,33 @@ function burnCtaPerformance(options: {
   ]);
 }
 
+export type VideoGenerationProviderId = "kie" | "google" | "kie-kling";
+
+/** Permanent default: KIE Veo. Google = fallback. kie-kling = bakeoff only. */
+export function resolveVideoGenerationProvider(
+  env: NodeJS.ProcessEnv = process.env,
+): VideoGenerationProviderId {
+  const raw = (env.AMYNEST_VIDEO_PROVIDER || "kie").trim().toLowerCase();
+  if (raw === "google" || raw === "google-veo" || raw === "veo") return "google";
+  if (raw === "kie-kling" || raw === "kling" || raw === "kling-3.0") {
+    return "kie-kling";
+  }
+  return "kie";
+}
+
 export interface ComposeCinematicInput {
   content: ContentPackage;
   workDir: string;
   outputDir: string;
   geminiApiKey: string;
-  /** Veo model — keep google-veo provider; default daily Fast. */
+  /** Optional KIE key — defaults to process.env.KIE_API_KEY. */
+  kieApiKey?: string;
+  /** Primary video provider. Default from AMYNEST_VIDEO_PROVIDER (kie). */
+  videoProvider?: VideoGenerationProviderId;
+  /** Google Veo model when provider=google or fallback. */
   veoModel?: string;
+  /** KIE model when provider=kie. */
+  kieModel?: "veo3" | "veo3_fast";
   totalDurationSeconds?: number;
   resolution?: "720p" | "1080p";
   /** Optional pre-gated diversity plan (skips re-planning). */
@@ -217,17 +244,51 @@ export async function composeCinematicVisuals(
     input.plan ??
     planCinematicShort(input.content, input.totalDurationSeconds ?? 21);
 
+  const primaryProvider = input.videoProvider ?? resolveVideoGenerationProvider();
   const veoModel = input.veoModel ?? "veo-3.1-fast-generate-preview";
-  const veo = new GeminiVideoProvider({
+  const kieModel =
+    input.kieModel ??
+    (process.env.AMYNEST_KIE_VEO_MODEL === "veo3" ? "veo3" : "veo3_fast");
+  const kieKey = input.kieApiKey?.trim() || process.env.KIE_API_KEY?.trim() || "";
+  const resolution =
+    input.resolution ??
+    (primaryProvider === "kie"
+      ? "1080p"
+      : primaryProvider === "kie-kling"
+        ? "720p"
+        : "720p");
+
+  const kie =
+    kieKey.length > 0 && primaryProvider === "kie"
+      ? new KieVideoProvider({
+          apiKey: kieKey,
+          model: kieModel,
+          resolution,
+          enabled: true,
+        })
+      : null;
+  const kling =
+    kieKey.length > 0 && primaryProvider === "kie-kling"
+      ? new KieKlingVideoProvider({
+          apiKey: kieKey,
+          mode:
+            process.env.AMYNEST_KIE_KLING_MODE === "pro"
+              ? "pro"
+              : process.env.AMYNEST_KIE_KLING_MODE === "4K"
+                ? "4K"
+                : "std",
+          enabled: true,
+        })
+      : null;
+  const googleVeo = new GeminiVideoProvider({
     apiKey: input.geminiApiKey,
     settings: {
       enabled: true,
       model: veoModel,
       outputDirectory: veoDir,
       durationSeconds: 6,
-      resolution: input.resolution ?? "720p",
+      resolution,
       personGeneration: "allow_all",
-      // Flaky Google ops: allow longer poll window (env can override).
       timeoutMs: process.env.AMYNEST_VEO_TIMEOUT_MS
         ? Number(process.env.AMYNEST_VEO_TIMEOUT_MS)
         : 1_200_000,
@@ -236,6 +297,23 @@ export async function composeCinematicVisuals(
         : 300,
     },
   });
+
+  if (primaryProvider === "kie" && !kie) {
+    throw new Error(
+      "AMYNEST_VIDEO_PROVIDER=kie but KIE_API_KEY is missing — set KIE_API_KEY or switch to google",
+    );
+  }
+  if (primaryProvider === "kie-kling" && !kling) {
+    throw new Error(
+      "AMYNEST_VIDEO_PROVIDER=kie-kling but KIE_API_KEY is missing",
+    );
+  }
+  const activeLabel =
+    primaryProvider === "kie"
+      ? `kie/${kieModel}`
+      : primaryProvider === "kie-kling"
+        ? `kie-kling/${process.env.AMYNEST_KIE_KLING_MODE || "std"}`
+        : `google/${veoModel}`;
 
   const officialDir = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -288,10 +366,13 @@ export async function composeCinematicVisuals(
         })
       : {
           imagePath: keyframePath,
-          referenceImagePaths: [keyframePath],
+          referenceImagePaths: [
+            wardrobeFor(shot.character).bibleAsset,
+            keyframePath,
+          ].filter((p) => p && existsSync(p)),
           usedPreviousFrame: false,
-          bibleAssetPaths: [],
-          note: "Character Memory disabled",
+          bibleAssetPaths: [wardrobeFor(shot.character).bibleAsset],
+          note: "Character Memory disabled — bible still attached for KIE identity HTTP",
         };
 
     if (sceneMemory) {
@@ -307,32 +388,77 @@ export async function composeCinematicVisuals(
     const rawVeo = join(veoDir, `${shot.id}-raw.mp4`);
     const outClip = join(input.workDir, `${shot.id}.mp4`);
 
-    let modelUsed = veoModel;
+    let modelUsed =
+      primaryProvider === "kie"
+        ? kieModel
+        : primaryProvider === "kie-kling"
+          ? "kling-3.0/video"
+          : veoModel;
     let imageToVideo = true;
+    let shotProvider: "google-veo" | "kie-veo" | "kie-kling" =
+      primaryProvider === "kie"
+        ? "kie-veo"
+        : primaryProvider === "kie-kling"
+          ? "kie-kling"
+          : "google-veo";
     if (existsSync(rawVeo) && process.env.AMYNEST_REUSE_VEO !== "0") {
       console.log(
-        `[creative-composition] Reusing Veo clip ${shot.id} → ${rawVeo}`,
+        `[creative-composition] Reusing video clip ${shot.id} → ${rawVeo}`,
       );
     } else {
-      console.log(
-        `[creative-composition] Veo performance ${shot.id} (${shot.character}, ${shot.durationSeconds}s, ${veoModel})${
-          seed.usedPreviousFrame ? " [memory→video]" : " [identity→video]"
-        }`,
-      );
-      const generated = await veo.generateVideo({
+      const genArgs = {
         prompt,
         negativePrompt,
         assetId: shot.id,
         sceneId: shot.id,
-        aspectRatio: "9:16",
+        character: shot.character,
+        aspectRatio: "9:16" as const,
         durationSeconds: shot.durationSeconds,
-        resolution: input.resolution ?? "720p",
+        resolution,
         outputPath: rawVeo,
         imagePath: seed.imagePath,
         referenceImagePaths: seed.referenceImagePaths,
-      });
-      modelUsed = generated.metadata.model;
-      imageToVideo = Boolean(generated.metadata.imageToVideo);
+      };
+      console.log(
+        `[creative-composition] ${activeLabel} performance ${shot.id} (${shot.character}, ${shot.durationSeconds}s)${
+          seed.usedPreviousFrame ? " [memory→video]" : " [identity→video]"
+        }`,
+      );
+      try {
+        if (primaryProvider === "kie" && kie) {
+          const generated = await kie.generateVideo(genArgs);
+          modelUsed = generated.metadata.model;
+          imageToVideo = Boolean(generated.metadata.imageToVideo);
+          shotProvider = "kie-veo";
+        } else if (primaryProvider === "kie-kling" && kling) {
+          const generated = await kling.generateVideo(genArgs);
+          modelUsed = generated.metadata.model;
+          imageToVideo = Boolean(generated.metadata.imageToVideo);
+          shotProvider = "kie-kling";
+        } else {
+          const generated = await googleVeo.generateVideo(genArgs);
+          modelUsed = generated.metadata.model;
+          imageToVideo = Boolean(generated.metadata.imageToVideo);
+          shotProvider = "google-veo";
+        }
+      } catch (primaryErr) {
+        // Cost/reliability fallback: if KIE Veo fails and Google key exists, try Google once.
+        // Kling bakeoff does not fall back (keep cost comparison clean).
+        const canFallbackGoogle =
+          primaryProvider === "kie" &&
+          Boolean(input.geminiApiKey) &&
+          process.env.AMYNEST_VIDEO_FALLBACK_GOOGLE !== "0";
+        if (!canFallbackGoogle) throw primaryErr;
+        console.warn(
+          `[creative-composition] KIE failed for ${shot.id} — falling back to Google Veo: ${
+            primaryErr instanceof Error ? primaryErr.message : String(primaryErr)
+          }`,
+        );
+        const generated = await googleVeo.generateVideo(genArgs);
+        modelUsed = generated.metadata.model;
+        imageToVideo = Boolean(generated.metadata.imageToVideo);
+        shotProvider = "google-veo";
+      }
     }
 
     if (shot.kind === "cta-overlay") {
@@ -368,9 +494,9 @@ export async function composeCinematicVisuals(
         plan: shot,
         videoPath: outClip,
         keyframePath,
-        provider: "google-veo",
+        provider: shotProvider,
         model: modelUsed,
-        detail: `Veo continuous performance — ${shot.character}`,
+        detail: `${shotProvider} continuous performance — ${shot.character}`,
         imageToVideo,
       });
     }
@@ -394,7 +520,7 @@ export async function composeCinematicVisuals(
     continuity.push({
       shotId: shot.id,
       character: shot.character,
-      provider: "google-veo",
+      provider: shotProvider,
       model: modelUsed,
       imageToVideo,
       keyframePath,
@@ -436,7 +562,7 @@ export async function composeCinematicVisuals(
     shots,
     clipPaths,
     ctaPlatePath,
-    detail: `Composed ${shots.length} Veo character performances (${veoModel}); rules=${plan.rulesApplied.join(",")}${
+    detail: `Composed ${shots.length} character performances via ${activeLabel}; rules=${plan.rulesApplied.join(",")}${
       memoryEnabled ? "; character-memory=on" : ""
     }${storyMemoryChain.length ? "; story-memory=on" : ""}`,
     continuity,

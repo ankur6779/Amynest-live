@@ -25,7 +25,8 @@ Does **not** modify: Rendering · Providers · Validators · Character Bible · 
 | Feature props | Phonics→magnets/CVC · Speech→mirror/mic · Health→stretch/water · never Study Zone tablet for unrelated features |
 | Metadata | Unique title, description, hashtags, playlist from script |
 | Thumbnails | Rotating hero composition + script headline |
-| Gate | Similarity to previous **10** Shorts must be **≤ 40%**; Diversity Score **> 90** |
+| Gate | Similarity to previous **20** Shorts must be **≤ 40%**; Diversity Score **> 90**; reject reused opening location / same-room templates |
+| World style | Photoreal environments + stylized Amy AI (Paddington/Ted); Indian lived-in homes; story-driven locations/cameras/props |
 
 ---
 

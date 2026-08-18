@@ -1,96 +1,174 @@
 /**
- * Scene / camera / pose libraries — script picks, never a single default room.
+ * Scene / camera / pose libraries — script picks a unique short-film world.
+ * Never a single default living-room / study-desk template.
  */
 
 import type { CompositionCamera, EnvironmentId } from "../creative-composition/types.js";
 import type { AmyPoseId, DiversityTopicBucket } from "./types.js";
 
+/** Full rotatable world — Indian premium middle-class + public spaces. */
+export const WORLD_LOCATIONS: EnvironmentId[] = [
+  "living-room",
+  "kitchen-table",
+  "healthy-kitchen",
+  "balcony",
+  "terrace",
+  "balcony-night",
+  "child-bedroom",
+  "bedroom-morning",
+  "bedroom-night",
+  "homework-corner",
+  "study-desk",
+  "reading-corner",
+  "garden",
+  "park",
+  "park-bench",
+  "playground",
+  "school",
+  "school-bus",
+  "library",
+  "book-store",
+  "cafe",
+  "museum",
+  "science-center",
+  "science-room",
+  "math-laboratory",
+  "art-room",
+  "music-room",
+  "apartment-hallway",
+  "car-ride",
+  "rainy-window",
+  "festival-home",
+  "festival",
+  "morning-breakfast",
+  "dining-table",
+  "playroom",
+  "indoor-tent",
+  "grandparents",
+  "outdoor-learning",
+  "nature-walk",
+  "weekend-picnic",
+  "fridge-magnet-wall",
+  "mirror-practice-nook",
+  "calendar-wall",
+  "astro-observatory",
+];
+
 export const SCENE_LIBRARY: Record<DiversityTopicBucket, EnvironmentId[]> = {
   learning: [
-    "study-desk",
     "homework-corner",
     "reading-corner",
     "library",
-    "art-room",
-    "math-laboratory",
-    "indoor-tent",
+    "book-store",
     "school",
+    "science-center",
+    "math-laboratory",
+    "art-room",
+    "cafe",
+    "apartment-hallway",
+    "terrace",
+    "dining-table",
+    "car-ride",
+    "museum",
   ],
   phonics: [
+    "fridge-magnet-wall",
+    "kitchen-table",
     "homework-corner",
     "reading-corner",
-    "kitchen-table",
     "bedroom-morning",
-    "fridge-magnet-wall",
     "library",
-    "study-desk",
+    "book-store",
+    "living-room",
+    "festival-home",
+    "grandparents",
   ],
   reading: [
     "reading-corner",
     "library",
+    "book-store",
     "child-bedroom",
-    "living-room",
-    "indoor-tent",
+    "rainy-window",
     "park-bench",
-    "story-castle",
+    "cafe",
+    "terrace",
+    "indoor-tent",
+    "living-room",
   ],
   speech: [
-    "child-bedroom",
     "mirror-practice-nook",
+    "child-bedroom",
     "living-room",
+    "balcony",
+    "car-ride",
     "playroom",
     "garden",
     "music-room",
+    "apartment-hallway",
+    "cafe",
   ],
   health: [
     "garden",
-    "outdoor-learning",
-    "healthy-kitchen",
-    "living-room",
+    "balcony",
+    "terrace",
     "park",
+    "playground",
+    "healthy-kitchen",
     "nature-walk",
     "bedroom-morning",
+    "outdoor-learning",
   ],
   games: [
-    "playroom",
+    "playground",
     "park",
     "garden",
+    "playroom",
     "indoor-tent",
+    "weekend-picnic",
+    "terrace",
     "living-room",
     "birthday",
-    "weekend-picnic",
   ],
   astro: [
-    "bedroom-night",
-    "astro-observatory",
-    "space-world",
-    "rainy-window",
     "balcony-night",
-    "fantasy-learning-world",
+    "terrace",
+    "astro-observatory",
+    "bedroom-night",
+    "rainy-window",
+    "apartment-hallway",
+    "park-bench",
   ],
   routine: [
     "morning-breakfast",
     "kitchen-table",
     "bedroom-night",
-    "living-room",
-    "calendar-wall",
     "school-bus",
-    "grandparents",
+    "car-ride",
+    "apartment-hallway",
+    "calendar-wall",
+    "living-room",
+    "balcony",
   ],
   parenting: [
     "dining-table",
-    "living-room",
     "kitchen-table",
-    "homework-corner",
+    "living-room",
     "rainy-window",
-    "travel",
+    "cafe",
+    "car-ride",
+    "terrace",
+    "festival-home",
+    "homework-corner",
   ],
   coach: [
     "living-room",
     "garden",
+    "balcony",
     "reading-corner",
-    "playroom",
+    "cafe",
+    "park-bench",
     "bedroom-morning",
+    "terrace",
   ],
 };
 
@@ -107,6 +185,8 @@ export const CAMERA_LIBRARY: CompositionCamera[] = [
   "push-in",
   "pull-out",
   "low-angle",
+  "high-angle",
+  "handheld",
   "eye-level",
   "walking-follow",
   "reaction",
@@ -115,6 +195,20 @@ export const CAMERA_LIBRARY: CompositionCamera[] = [
   "pan-right",
   "pan-left",
   "slow-zoom",
+  "two-shot",
+  "profile",
+];
+
+/** Dialogue coverage — rotate these; avoid frontal talking heads. */
+export const CONVERSATION_COVERAGE: CompositionCamera[] = [
+  "wide",
+  "over-shoulder",
+  "close-up",
+  "reaction",
+  "two-shot",
+  "profile",
+  "medium",
+  "handheld",
 ];
 
 export const AMY_POSE_LIBRARY: AmyPoseId[] = [
@@ -135,14 +229,14 @@ export const AMY_POSE_LIBRARY: AmyPoseId[] = [
 ];
 
 export const FEATURE_PROPS: Record<DiversityTopicBucket, string[]> = {
-  learning: ["books", "whiteboard", "pencil", "flashcards", "lesson card"],
+  learning: ["books", "whiteboard", "pencil", "flashcards", "lesson card", "school bag"],
   phonics: ["letter magnets", "flashcards", "CVC tiles", "sound cards", "pencil"],
-  reading: ["picture book", "bookmark", "reading lamp", "story pages"],
+  reading: ["picture book", "bookmark", "reading lamp", "story pages", "library shelf"],
   speech: ["mirror", "mouth practice card", "mic", "pronunciation cue"],
   health: ["water bottle", "stretch mat", "breathing bubble", "fruit bowl"],
   games: ["soft ball", "jump mat", "celebration confetti", "game tokens"],
   astro: ["star chart", "telescope", "constellation glow", "night sky window"],
-  routine: ["calendar", "breakfast bowl", "bedtime lamp", "family checklist"],
+  routine: ["calendar", "breakfast bowl", "bedtime lamp", "family checklist", "shoes by door"],
   parenting: ["notebook", "warm mug", "soft lamp", "family photo frame"],
   coach: ["coach card", "habit sticker", "encouragement star"],
 };
@@ -163,29 +257,32 @@ export function pickUniqueBySeed<T>(
   seed: string,
   count: number,
   salt: string,
+  avoid: readonly T[] = [],
 ): T[] {
   if (!items.length) return [];
+  const avoidSet = new Set(avoid.map((x) => String(x)));
+  const preferred = items.filter((x) => !avoidSet.has(String(x)));
+  const pool = preferred.length >= Math.min(2, count) ? preferred : [...items];
   const out: T[] = [];
   const used = new Set<number>();
   let i = 0;
-  while (out.length < Math.min(count, items.length) && i < items.length * 3) {
+  while (out.length < Math.min(count, pool.length) && i < pool.length * 4) {
     const idx =
       ([...`${seed}|${salt}|${i}`].reduce(
         (a, c) => (a * 33 + c.charCodeAt(0)) >>> 0,
         0,
       ) +
         i * 17) %
-      items.length;
+      pool.length;
     i += 1;
     if (used.has(idx)) continue;
     used.add(idx);
-    out.push(items[idx]!);
+    out.push(pool[idx]!);
   }
-  // fill remaining sequentially if collisions
-  for (let j = 0; out.length < Math.min(count, items.length) && j < items.length; j++) {
+  for (let j = 0; out.length < Math.min(count, pool.length) && j < pool.length; j++) {
     if (used.has(j)) continue;
     used.add(j);
-    out.push(items[j]!);
+    out.push(pool[j]!);
   }
   return out;
 }
