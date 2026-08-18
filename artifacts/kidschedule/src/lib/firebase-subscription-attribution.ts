@@ -5,10 +5,10 @@
  */
 
 import { getApps } from "firebase/app";
-import { getAnalytics, isSupported, logEvent, type Analytics } from "firebase/analytics";
+import { getAnalytics, isSupported, logEvent, setUserId, type Analytics } from "firebase/analytics";
 import type { Plan } from "@/hooks/use-subscription";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { initializeFirebase } from "@/lib/firebase";
+import { getFirebaseAuth, initializeFirebase } from "@/lib/firebase";
 import { resolveMetaPlanPrice } from "@/lib/meta-attribution";
 import { getNativeBilling, waitForBillingBridge } from "@/lib/native-billing";
 
@@ -66,6 +66,14 @@ function buildEcommerceParams(
   };
 }
 
+function currentAuthUserId(): string | null {
+  try {
+    return getFirebaseAuth().currentUser?.uid ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function logNativeAndroidSubscriptionEvent(
   event: "purchase" | "begin_checkout" | "sign_up",
   productId: string,
@@ -84,10 +92,37 @@ async function logNativeAndroidSubscriptionEvent(
       currency,
       value,
       source,
+      userId: currentAuthUserId() ?? undefined,
     });
     return result.ok === true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Bind Firebase Analytics (Google Ads) to the signed-in AmyNest user.
+ * Pass `null` on sign-out so the next account is not attributed to this ID.
+ */
+export async function setFirebaseAnalyticsUserId(userId: string | null): Promise<void> {
+  if (shouldUseNativeAndroidFirebase()) {
+    await waitForBillingBridge(2_000);
+    const billing = getNativeBilling();
+    if (billing?.setAnalyticsUserId) {
+      try {
+        await billing.setAnalyticsUserId(userId);
+      } catch {
+        /* native FA identity is best-effort */
+      }
+    }
+  }
+
+  const analytics = await getFirebaseAnalytics();
+  if (!analytics) return;
+  try {
+    setUserId(analytics, userId);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -154,6 +189,9 @@ export async function trackFirebaseSubscriptionPurchase(
   plan: Plan | string | undefined,
   opts?: FirebaseSubscriptionOpts,
 ): Promise<void> {
+  const uid = currentAuthUserId();
+  if (uid) await setFirebaseAnalyticsUserId(uid);
+
   const { value, currency, itemId } = resolvePlanValue(plan, opts);
   const params = buildEcommerceParams(itemId, currency, value, opts?.source);
 

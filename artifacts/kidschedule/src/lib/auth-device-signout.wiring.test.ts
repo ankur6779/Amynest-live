@@ -33,4 +33,14 @@ describe("sign-out and account-switch device wiring", () => {
     expect(src).toMatch(/nav\.sign_out/);
     expect(src).toMatch(/AlertDialog/);
   });
+
+  it("binds Firebase Analytics to the signed-in user id for purchase attribution", () => {
+    const auth = read("./firebase-auth.tsx");
+    expect(auth).toMatch(/setFirebaseAnalyticsUserId/);
+    const purchase = read("./firebase-subscription-attribution.ts");
+    expect(purchase).toMatch(/currentAuthUserId/);
+    expect(purchase).toMatch(/setFirebaseAnalyticsUserId\(uid\)/);
+    const funnel = read("./subscription-analytics.ts");
+    expect(funnel).toMatch(/upgrade_completed/);
+  });
 });

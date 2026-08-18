@@ -72,6 +72,10 @@ class BillingBridge(
             "isAvailable" -> resolve(replyProxy, cbId, JSONObject().put("available", isReady()))
             "setUserId" -> {
                 val userId = msg.optString("userId")
+                val ctx = activityRef.get()?.applicationContext
+                if (ctx != null && userId.isNotBlank()) {
+                    FirebaseSubscriptionAnalytics.setUserId(ctx, userId)
+                }
                 if (!isReady() || userId.isBlank()) {
                     resolve(replyProxy, cbId, JSONObject().put("ok", true))
                     return@handleMessage
@@ -90,6 +94,10 @@ class BillingBridge(
             "logOut" -> {
                 // Reset to a fresh anonymous customer on sign-out so the next
                 // user on this device never inherits stale entitlements.
+                val ctx = activityRef.get()?.applicationContext
+                if (ctx != null) {
+                    FirebaseSubscriptionAnalytics.setUserId(ctx, null)
+                }
                 if (!isReady()) {
                     resolve(replyProxy, cbId, JSONObject().put("ok", true))
                     return@handleMessage
@@ -104,6 +112,19 @@ class BillingBridge(
                         resolve(replyProxy, cbId, JSONObject().put("ok", true))
                     },
                 )
+            }
+            "setAnalyticsUserId" -> {
+                val ctx = activityRef.get()?.applicationContext
+                if (ctx == null) {
+                    resolve(replyProxy, cbId, JSONObject().put("ok", false).put("skipped", true))
+                    return@handleMessage
+                }
+                val analyticsUserId = msg.optString("userId")
+                FirebaseSubscriptionAnalytics.setUserId(
+                    ctx,
+                    analyticsUserId.takeIf { it.isNotBlank() },
+                )
+                resolve(replyProxy, cbId, JSONObject().put("ok", true))
             }
             "getOfferings" -> getOfferings(replyProxy, cbId)
             "purchase" -> purchase(replyProxy, cbId, msg.optString("packageId"))
@@ -254,6 +275,10 @@ class BillingBridge(
         val currency = msg.optString("currency", "INR")
         val value = msg.optDouble("value", 0.0)
         val source = msg.optString("source", "web_bridge")
+        val analyticsUserId = msg.optString("userId").takeIf { it.isNotBlank() }
+        if (analyticsUserId != null) {
+            FirebaseSubscriptionAnalytics.setUserId(ctx, analyticsUserId)
+        }
         when (event) {
             FirebaseSubscriptionAnalytics.EVENT_BEGIN_CHECKOUT ->
                 FirebaseSubscriptionAnalytics.logBeginCheckout(ctx, productId, currency, value, source)

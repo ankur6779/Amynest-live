@@ -96,6 +96,23 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
     }
+
+    // Bind Google Ads / Firebase Analytics to this account so a later
+    // subscription purchase is attributed to the signed-in ID, not a
+    // previous user on the same device.
+    if (authStatus === "authenticated" && uid) {
+      void import("@/lib/firebase-subscription-attribution").then(
+        ({ setFirebaseAnalyticsUserId }) => {
+          void setFirebaseAnalyticsUserId(uid);
+        },
+      );
+    } else if (authStatus === "unauthenticated") {
+      void import("@/lib/firebase-subscription-attribution").then(
+        ({ setFirebaseAnalyticsUserId }) => {
+          void setFirebaseAnalyticsUserId(null);
+        },
+      );
+    }
   }, []);
 
   useEffect(() => {

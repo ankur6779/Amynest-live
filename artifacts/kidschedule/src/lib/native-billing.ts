@@ -128,6 +128,8 @@ export type NativeBilling = {
   >;
   restore: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
   getCustomerInfo: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
+  /** Bind native Firebase Analytics to this AmyNest user (or clear on null). */
+  setAnalyticsUserId: (userId: string | null) => Promise<{ ok?: boolean; error?: string } | void>;
   /** Forward subscription funnel events to native Firebase Analytics (Google Ads). */
   logSubscriptionAnalytics: (payload: {
     event: "begin_checkout" | "purchase" | "sign_up";
@@ -135,6 +137,7 @@ export type NativeBilling = {
     currency: string;
     value: number;
     source?: string;
+    userId?: string;
   }) => Promise<{ ok: boolean; error?: string }>;
 };
 
@@ -221,6 +224,13 @@ export function getNativeBilling(): NativeBilling | null {
         10_000,
       );
     },
+    setAnalyticsUserId: async (userId) => {
+      return callAsync<{ ok?: boolean; error?: string }>(
+        bridge,
+        { action: "setAnalyticsUserId", userId: userId ?? "" },
+        4_000,
+      );
+    },
     getOfferings: () => callAsync(bridge, { action: "getOfferings" }),
     purchase: (pkg) => callAsync(bridge, { action: "purchase", packageId: pkg }),
     presentPaywall: (options) =>
@@ -241,6 +251,7 @@ export function getNativeBilling(): NativeBilling | null {
           currency: payload.currency,
           value: payload.value,
           ...(payload.source ? { source: payload.source } : {}),
+          ...(payload.userId ? { userId: payload.userId } : {}),
         },
         4_000,
       );

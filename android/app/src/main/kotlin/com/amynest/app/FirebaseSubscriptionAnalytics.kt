@@ -16,6 +16,16 @@ object FirebaseSubscriptionAnalytics {
     const val EVENT_BEGIN_CHECKOUT = "begin_checkout"
     const val EVENT_SIGN_UP = "sign_up"
 
+    fun setUserId(context: Context, userId: String?) {
+        try {
+            val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
+            analytics.setUserId(userId)
+            Log.d(TAG, "Set analytics userId=${userId ?: "null"}")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to set analytics userId", t)
+        }
+    }
+
     private fun ecommerceBundle(
         productId: String,
         currency: String,

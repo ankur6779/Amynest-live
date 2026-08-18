@@ -154,6 +154,15 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
   }
 
   if (payload.event === "purchase_success") {
+    import("@/lib/analytics").then(({ track }) => {
+      track("upgrade_completed", {
+        source: payload.source,
+        action:
+          typeof payload.extra?.action === "string" ? payload.extra.action : "checkout",
+        module: typeof payload.extra?.module === "string" ? payload.extra.module : undefined,
+        entitlement_state: "premium",
+      });
+    });
     getAnalyticsService().trackFunnel("subscription", "purchase_completed", {
       reason: payload.reason,
       plan: payload.plan,
