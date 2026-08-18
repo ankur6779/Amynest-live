@@ -193,7 +193,9 @@ export default function SubscriptionTrialEndedPage() {
 
     if (nativeBilling.wrapperPresent && nativeBilling.available) {
       setSubmitting(true);
-      const res = await nativeBilling.purchase("yearly");
+      const res = await nativeBilling.purchase("yearly", {
+        source: "trial_ended_fullscreen",
+      });
       setSubmitting(false);
       logSubscriptionDebug({
         phase: "trial_ended_purchase_result",
@@ -212,12 +214,7 @@ export default function SubscriptionTrialEndedPage() {
           plan: "yearly",
         });
       }
-      if (res.ok) {
-        trackSubscriptionEvent({
-          event: "purchase_success",
-          source: "trial_ended_fullscreen",
-          plan: "yearly",
-        });
+      if (res.ok && res.isPremiumSubscriber) {
         void syncRevenueCatSubscriptionAttributes({
           last_plan: "yearly",
           last_paywall_reason: "trial_ended",

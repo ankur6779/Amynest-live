@@ -44,6 +44,7 @@ import {
 import { countChildFormRender, logChildFormEffect } from "@/lib/child-form-debug";
 import { isFeatureMitigated } from "@/lib/self-healing/feature-mitigation";
 import { recordSelfHealingAction } from "@/lib/self-healing/action-log";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import {
   buildChildEducationPatchKey,
   buildChildHydrationKey,
@@ -676,6 +677,11 @@ function ChildForm() {
         data: payload
       }, {
         onSuccess: (created) => {
+          trackSubscriptionEvent({
+            event: "child_profile_created",
+            source: "children_form",
+            extra: { child_id: created?.id ?? 0 },
+          });
           toast({
             title: t("toasts.children.profile_added")
           });

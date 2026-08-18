@@ -25,6 +25,8 @@ type FirebaseSubscriptionOpts = {
   source?: string;
   value?: number;
   currency?: string;
+  productId?: string;
+  transactionId?: string;
 };
 
 let analyticsInstance: Analytics | null | undefined;
@@ -47,6 +49,7 @@ function buildEcommerceParams(
   currency: string,
   value: number,
   source?: string,
+  transactionId?: string,
 ): AnalyticsEventParams {
   return {
     currency,
@@ -63,6 +66,7 @@ function buildEcommerceParams(
       },
     ],
     ...(source ? { source } : {}),
+    ...(transactionId ? { transaction_id: transactionId } : {}),
   };
 }
 
@@ -80,6 +84,7 @@ async function logNativeAndroidSubscriptionEvent(
   currency: string,
   value: number,
   source?: string,
+  transactionId?: string,
 ): Promise<boolean> {
   if (typeof window === "undefined") return false;
   await waitForBillingBridge(4_000);
@@ -93,6 +98,7 @@ async function logNativeAndroidSubscriptionEvent(
       value,
       source,
       userId: currentAuthUserId() ?? undefined,
+      transactionId,
     });
     return result.ok === true;
   } catch {
@@ -161,11 +167,17 @@ function resolvePlanValue(
   plan: Plan | string | undefined,
   opts?: FirebaseSubscriptionOpts,
 ): { value: number; currency: string; itemId: string } {
+  const itemId =
+    opts?.productId?.trim() ||
+    (typeof plan === "string" ? plan : plan ?? "subscription");
+  if (opts?.value != null && opts.currency) {
+    return { value: opts.value, currency: opts.currency, itemId };
+  }
   const resolved = resolveMetaPlanPrice(plan);
   return {
     value: opts?.value ?? resolved.value,
     currency: opts?.currency ?? resolved.currency,
-    itemId: typeof plan === "string" ? plan : plan ?? "subscription",
+    itemId,
   };
 }
 
@@ -193,7 +205,13 @@ export async function trackFirebaseSubscriptionPurchase(
   if (uid) await setFirebaseAnalyticsUserId(uid);
 
   const { value, currency, itemId } = resolvePlanValue(plan, opts);
-  const params = buildEcommerceParams(itemId, currency, value, opts?.source);
+  const params = buildEcommerceParams(
+    itemId,
+    currency,
+    value,
+    opts?.source,
+    opts?.transactionId,
+  );
 
   if (shouldUseNativeAndroidFirebase()) {
     const nativeOk = await logNativeAndroidSubscriptionEvent(
@@ -202,6 +220,7 @@ export async function trackFirebaseSubscriptionPurchase(
       currency,
       value,
       opts?.source,
+      opts?.transactionId,
     );
     if (nativeOk) return;
   }
@@ -218,7 +237,13 @@ export async function trackFirebaseBeginCheckout(
   opts?: FirebaseSubscriptionOpts,
 ): Promise<void> {
   const { value, currency, itemId } = resolvePlanValue(plan, opts);
-  const params = buildEcommerceParams(itemId, currency, value, opts?.source);
+  const params = buildEcommerceParams(
+    itemId,
+    currency,
+    value,
+    opts?.source,
+    opts?.transactionId,
+  );
 
   if (shouldUseNativeAndroidFirebase()) {
     const nativeOk = await logNativeAndroidSubscriptionEvent(
@@ -227,6 +252,7 @@ export async function trackFirebaseBeginCheckout(
       currency,
       value,
       opts?.source,
+      opts?.transactionId,
     );
     if (nativeOk) return;
   }

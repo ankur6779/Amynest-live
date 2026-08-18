@@ -56,6 +56,12 @@ export function SubscriptionTrialOffer({
       plan: "yearly",
       extra: { intent: "start_free_trial" },
     });
+    trackSubscriptionEvent({
+      event: "checkout_started",
+      source,
+      plan: "yearly",
+      extra: { intent: "start_free_trial" },
+    });
     logSubscriptionDebug({
       phase: "free_trial_cta_click",
       source,
@@ -76,8 +82,8 @@ export function SubscriptionTrialOffer({
     try {
       // Native: start Play / App Store free trial via yearly package.
       if (isNativeAmyNestShell() && nativeBilling.wrapperPresent && nativeBilling.available) {
-        const res = await nativeBilling.purchase("yearly");
-        if (res.ok) {
+        const res = await nativeBilling.purchase("yearly", { source });
+        if (res.ok && res.isPremiumSubscriber) {
           await refresh();
           onActivated?.();
           return;

@@ -35,6 +35,8 @@ import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { AmyAiConversationWorkspace } from "@/components/ask-amy/amy-ai-conversation-workspace";
 import { AmyAiQuotaHint } from "@/components/ask-amy/amy-ai-quota-hint";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { hasOnboardingMilestone, trackOnboardingMilestone } from "@/lib/retention-engine";
 import "@/components/ask-amy/ask-amy-living-room.css";
 
 function childTotalMonths(child: { age?: number | null; ageMonths?: number | null }): number {
@@ -233,6 +235,13 @@ export default function AssistantPage() {
       const answer = readAssistantAnswer(data);
       if (!answer) throw new Error("empty_answer");
       setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+      if (!hasOnboardingMilestone("first_amy_chat")) {
+        trackOnboardingMilestone("first_amy_chat", { source: "assistant" });
+        trackSubscriptionEvent({
+          event: "first_amy_chat",
+          source: "assistant",
+        });
+      }
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch (err) {
       if (controller.signal.aborted) return;

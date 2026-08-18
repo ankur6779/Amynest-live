@@ -22,6 +22,12 @@ import {
 import type { Plan } from "@/hooks/use-subscription";
 import type { StorePlanPrice } from "@/lib/plan-price";
 import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
+import {
+  recordEntitlementActivated,
+  recordVerifiedStorePurchase,
+  type StorePurchaseMetadata,
+} from "@/lib/subscription-purchase-coordinator";
+import { storeMetadataFromAndroidPurchase } from "@/lib/subscription-purchase-metadata";
 import { getGuestCheckoutBlock } from "@/lib/anonymous-auth";
 
 type RcConfig = {
@@ -76,8 +82,15 @@ export type NativeBillingState = {
   storePricesByPlan: Partial<Record<Exclude<Plan, "free">, StorePlanPrice>>;
   purchase: (
     plan: Exclude<Plan, "free">,
-  ) => Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }>;
-  restore: () => Promise<boolean>;
+    opts?: { source?: string },
+  ) => Promise<{
+    ok: boolean;
+    reason?: string;
+    userCancelled?: boolean;
+    purchase?: import("@/lib/subscription-purchase-coordinator").StorePurchaseMetadata;
+    isPremiumSubscriber?: boolean;
+  }>;
+  restore: (source?: string) => Promise<boolean>;
 };
 
 /**
@@ -454,7 +467,14 @@ export function useNativeBilling(): NativeBillingState {
   const purchase = useCallback(
     async (
       plan: Exclude<Plan, "free">,
-    ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
+      opts?: { source?: string },
+    ): Promise<{
+      ok: boolean;
+      reason?: string;
+      userCancelled?: boolean;
+      purchase?: StorePurchaseMetadata;
+      isPremiumSubscriber?: boolean;
+    }> => {
       const guestBlock = getGuestCheckoutBlock(user);
       if (guestBlock.blocked) {
         return { ok: false, reason: guestBlock.message };
@@ -480,12 +500,39 @@ export function useNativeBilling(): NativeBillingState {
           if (!pkg) {
             return { ok: false, reason: "This plan is not available on the App Store right now." };
           }
-          const result = await purchaseIOSPackage(pkg);
-          if (result.ok) {
-            const finalized = await finalizeNativePurchase(authFetch, qc);
-            return { ok: finalized.isPremium, reason: finalized.isPremium ? undefined : "Premium is activating — please wait a moment and try Restore Purchases." };
+          const result = await purchaseIOSPackage(pkg, plan);
+          if (!result.ok) {
+            return result;
           }
-          return result;
+          const storeMeta = result.purchase
+            ? {
+                transactionId: result.purchase.transactionId,
+                productId: result.purchase.productId,
+                currency: result.purchase.currency,
+                value: result.purchase.value,
+              }
+            : null;
+          const finalized = await finalizeNativePurchase(authFetch, qc);
+          if (finalized.isPremiumSubscriber && storeMeta) {
+            recordVerifiedStorePurchase({
+              plan,
+              source: opts?.source ?? "native_store",
+              store: storeMeta,
+            });
+            recordEntitlementActivated({
+              plan,
+              source: opts?.source ?? "native_store",
+              transactionId: storeMeta.transactionId,
+            });
+          }
+          return {
+            ok: finalized.isPremiumSubscriber,
+            isPremiumSubscriber: finalized.isPremiumSubscriber,
+            purchase: storeMeta ?? undefined,
+            reason: finalized.isPremiumSubscriber
+              ? undefined
+              : "Premium is activating — please wait a moment and try Restore Purchases.",
+          };
         }
 
         // ── Android Google Play ───────────────────────────────────────────
@@ -509,10 +556,27 @@ export function useNativeBilling(): NativeBillingState {
             reason: result.userCancelled ? undefined : result.error || "Google Play purchase failed.",
           };
         }
+        const storeMeta = storeMetadataFromAndroidPurchase(result.purchase ?? null, plan);
         const finalized = await finalizeNativePurchase(authFetch, qc);
+        if (finalized.isPremiumSubscriber && storeMeta) {
+          recordVerifiedStorePurchase({
+            plan,
+            source: opts?.source ?? "native_store",
+            store: storeMeta,
+          });
+          recordEntitlementActivated({
+            plan,
+            source: opts?.source ?? "native_store",
+            transactionId: storeMeta.transactionId,
+          });
+        }
         return {
-          ok: finalized.isPremium,
-          reason: finalized.isPremium ? undefined : "Payment received — premium is activating. Wait a few seconds or tap Restore Purchases.",
+          ok: finalized.isPremiumSubscriber,
+          isPremiumSubscriber: finalized.isPremiumSubscriber,
+          purchase: storeMeta ?? undefined,
+          reason: finalized.isPremiumSubscriber
+            ? undefined
+            : "Payment received — premium is activating. Wait a few seconds or tap Restore Purchases.",
         };
       } catch (err) {
         return {
@@ -527,21 +591,39 @@ export function useNativeBilling(): NativeBillingState {
   );
 
   // ── restore ───────────────────────────────────────────────────────────────
-  const restore = useCallback(async (): Promise<boolean> => {
+  const restore = useCallback(async (source = "native_store"): Promise<boolean> => {
     const guestBlock = getGuestCheckoutBlock(user);
     if (guestBlock.blocked) return false;
     if (!billingReady) return false;
     const canonicalAppUserId = await requireRevenueCatAppUserId();
     if (!canonicalAppUserId) return false;
 
+    void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+      trackSubscriptionEvent({ event: "restore_purchase", source });
+    });
+
     if (iosShell) {
       const init = await initIOSBilling(canonicalAppUserId);
-      if (!init.ok) return false;
+      if (!init.ok) {
+        void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+          trackSubscriptionEvent({ event: "restore_purchase_failed", source });
+        });
+        return false;
+      }
       const result = await restoreIOSPurchases();
       if (result.ok) {
         const finalized = await finalizeNativeRestore(authFetch, qc);
+        void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+          trackSubscriptionEvent({
+            event: finalized.isPremium ? "restore_success" : "restore_purchase_failed",
+            source,
+          });
+        });
         return finalized.isPremium;
       }
+      void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+        trackSubscriptionEvent({ event: "restore_purchase_failed", source });
+      });
       return false;
     }
 
@@ -551,8 +633,17 @@ export function useNativeBilling(): NativeBillingState {
     const res = await androidBridge.restore();
     if (res.ok) {
       const finalized = await finalizeNativeRestore(authFetch, qc);
+      void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+        trackSubscriptionEvent({
+          event: finalized.isPremium ? "restore_success" : "restore_purchase_failed",
+          source,
+        });
+      });
       return finalized.isPremium;
     }
+    void import("@/lib/subscription-analytics").then(({ trackSubscriptionEvent }) => {
+      trackSubscriptionEvent({ event: "restore_purchase_failed", source });
+    });
     return false;
   }, [iosShell, androidBridge, billingReady, qc, authFetch, requireRevenueCatAppUserId, user]);
 

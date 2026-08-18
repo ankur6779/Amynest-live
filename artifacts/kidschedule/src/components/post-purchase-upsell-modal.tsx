@@ -10,9 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ANNUAL_UPSELL } from "@workspace/subscription-marketing";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useNativeBilling } from "@/hooks/use-native-billing";
-import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { useQueryClient } from "@tanstack/react-query";
-import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { markPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { usePricingRegion } from "@/lib/pricing-region";
@@ -34,8 +31,6 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
   const [busy, setBusy] = useState(false);
   const { checkoutRazorpay } = useSubscription();
   const nativeBilling = useNativeBilling();
-  const authFetch = useAuthFetch();
-  const qc = useQueryClient();
   const { user } = useUser();
   const { isIndia } = usePricingRegion({
     enabled: !nativeBilling.wrapperPresent,
@@ -82,13 +77,18 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
       extra: { from: purchasedPlan },
     });
     trackSubscriptionEvent({ event: "annual_upgrade", plan: "yearly", source: "post_purchase" });
+    trackSubscriptionEvent({
+      event: "checkout_started",
+      plan: "yearly",
+      source: "post_purchase_upsell",
+    });
 
     try {
       if (nativeBilling.wrapperPresent && nativeBilling.available) {
-        const res = await nativeBilling.purchase("yearly");
-        if (res.ok) {
-          await finalizeNativePurchase(authFetch, qc);
-          trackSubscriptionEvent({ event: "purchase_success", plan: "yearly", source: "post_purchase_upsell" });
+        const res = await nativeBilling.purchase("yearly", {
+          source: "post_purchase_upsell",
+        });
+        if (res.ok && res.isPremiumSubscriber) {
           releaseMonetizationSurface("subscription_modal");
           setOpen(false);
           onDone();

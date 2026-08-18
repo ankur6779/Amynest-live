@@ -211,19 +211,23 @@ class BillingBridge(
                                 .put("code", err.code.code),
                         )
                     },
-                    onSuccess = { _, customerInfo ->
-                        FirebaseSubscriptionAnalytics.logSubscriptionPurchase(
-                            activity,
-                            productId,
-                            currency,
-                            value,
-                            "native_purchase_success",
-                        )
+                    onSuccess = { storeTransaction, customerInfo ->
+                        val transactionId =
+                            storeTransaction.orderId?.takeIf { it.isNotBlank() }
+                                ?: storeTransaction.id
                         sendRaw(
                             replyProxy, cbId,
                             JSONObject()
                                 .put("ok", true)
-                                .put("customerInfo", customerInfoToJson(customerInfo)),
+                                .put("customerInfo", customerInfoToJson(customerInfo))
+                                .put(
+                                    "purchase",
+                                    JSONObject()
+                                        .put("transactionId", transactionId)
+                                        .put("productId", productId)
+                                        .put("currency", currency)
+                                        .put("value", value),
+                                ),
                         )
                     },
                 )
@@ -276,14 +280,15 @@ class BillingBridge(
         val value = msg.optDouble("value", 0.0)
         val source = msg.optString("source", "web_bridge")
         val analyticsUserId = msg.optString("userId").takeIf { it.isNotBlank() }
+        val transactionId = msg.optString("transactionId").takeIf { it.isNotBlank() }
         if (analyticsUserId != null) {
             FirebaseSubscriptionAnalytics.setUserId(ctx, analyticsUserId)
         }
         when (event) {
             FirebaseSubscriptionAnalytics.EVENT_BEGIN_CHECKOUT ->
-                FirebaseSubscriptionAnalytics.logBeginCheckout(ctx, productId, currency, value, source)
+                FirebaseSubscriptionAnalytics.logBeginCheckout(ctx, productId, currency, value, source, transactionId)
             "purchase", FirebaseSubscriptionAnalytics.EVENT_SUBSCRIPTION_CONVERT ->
-                FirebaseSubscriptionAnalytics.logSubscriptionPurchase(ctx, productId, currency, value, source)
+                FirebaseSubscriptionAnalytics.logSubscriptionPurchase(ctx, productId, currency, value, source, transactionId)
             FirebaseSubscriptionAnalytics.EVENT_SIGN_UP, "signup", "signup_completed" ->
                 FirebaseSubscriptionAnalytics.logSignUp(
                     ctx,
@@ -444,7 +449,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.5.2"
+        const val BRIDGE_VERSION = "2.6.0"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"

@@ -12,6 +12,7 @@ import {
 import { finalizeNativePurchase, finalizeNativeRestore } from "@/lib/native-purchase-finalize";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { track } from "@/lib/analytics";
+import { logSubscriptionDebug } from "@/lib/subscription-debug";
 import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 import { requestPremiumWelcome } from "@/lib/premium-welcome-controller";
 
@@ -67,19 +68,22 @@ export function PaywallModalLazy() {
             ? await finalizeNativeRestore(authFetch, qc)
             : await finalizeNativePurchase(authFetch, qc);
           closePaywall();
-          if (finalized.isPremium) {
-            track("upgrade_completed", {
-              module: state.module,
-              action: state.action ?? "checkout",
-              source: state.source ?? "native_rc_paywall",
-              entitlement_state: "premium",
+          if (outcome.restored) {
+            trackSubscriptionEvent({
+              event: finalized.isPremium ? "restore_success" : "restore_purchase_failed",
+              reason: paywallReason,
+              source: "native_rc_paywall",
+            });
+          } else if (finalized.isPremiumSubscriber) {
+            logSubscriptionDebug({
+              phase: "native_rc_paywall_purchase_no_txn",
+              source: "native_rc_paywall",
+              reason: paywallReason,
+              extra: {
+                note: "RC dashboard paywall lacks store transaction id — purchase conversion relies on hook path or webhook",
+              },
             });
           }
-          trackSubscriptionEvent({
-            event: "purchase_success",
-            reason: paywallReason,
-            source: "native_rc_paywall",
-          });
           if (finalized.isPremium) {
             requestPremiumWelcome();
           } else {

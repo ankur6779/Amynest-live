@@ -37,7 +37,16 @@ export type NativeCustomerInfo = {
 };
 
 export type NativePurchaseResult =
-  | { ok: true; customerInfo: NativeCustomerInfo }
+  | {
+      ok: true;
+      customerInfo: NativeCustomerInfo;
+      purchase?: {
+        transactionId: string;
+        productId: string;
+        currency: string;
+        value: number;
+      };
+    }
   | { ok: false; userCancelled?: boolean; error: string; code?: number };
 
 /**
@@ -138,6 +147,7 @@ export type NativeBilling = {
     value: number;
     source?: string;
     userId?: string;
+    transactionId?: string;
   }) => Promise<{ ok: boolean; error?: string }>;
 };
 
@@ -252,6 +262,7 @@ export function getNativeBilling(): NativeBilling | null {
           value: payload.value,
           ...(payload.source ? { source: payload.source } : {}),
           ...(payload.userId ? { userId: payload.userId } : {}),
+          ...(payload.transactionId ? { transactionId: payload.transactionId } : {}),
         },
         4_000,
       );

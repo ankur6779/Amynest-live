@@ -27,7 +27,7 @@ import {
 } from "./userIdentityService.js";
 
 /** Best-effort server-side subscription funnel events (auto-trials skip the client). */
-async function trackServerSubscriptionFunnel(
+export async function trackServerSubscriptionFunnel(
   userId: string,
   step: string,
   extra: Record<string, string> = {},

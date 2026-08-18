@@ -18,6 +18,8 @@ export type InstallAttribution = {
   utmContent?: string;
   utmTerm?: string;
   gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
   fbclid?: string;
   ref?: string;
   landingPath?: string;
@@ -66,12 +68,16 @@ function parseReferrerQuery(referrer: string): Partial<InstallAttribution> {
     const utmContent = params.get("utm_content");
     const utmTerm = params.get("utm_term");
     const gclid = params.get("gclid");
+    const gbraid = params.get("gbraid");
+    const wbraid = params.get("wbraid");
     if (utmSource && utmSource !== "(not set)") result.utmSource = utmSource;
     if (utmMedium && utmMedium !== "(not set)") result.utmMedium = utmMedium;
     if (utmCampaign && utmCampaign !== "(not set)") result.utmCampaign = utmCampaign;
     if (utmContent) result.utmContent = utmContent;
     if (utmTerm) result.utmTerm = utmTerm;
     if (gclid) result.gclid = gclid;
+    if (gbraid) result.gbraid = gbraid;
+    if (wbraid) result.wbraid = wbraid;
   } catch {
     /* ignore malformed referrer strings */
   }
@@ -88,6 +94,8 @@ function parseUtmFromUrl(): Partial<InstallAttribution> {
   const utmContent = params.get("utm_content");
   const utmTerm = params.get("utm_term");
   const gclid = params.get("gclid");
+  const gbraid = params.get("gbraid");
+  const wbraid = params.get("wbraid");
   const fbclid = params.get("fbclid");
   const ref = params.get("ref");
   if (utmSource) result.utmSource = utmSource;
@@ -96,6 +104,8 @@ function parseUtmFromUrl(): Partial<InstallAttribution> {
   if (utmContent) result.utmContent = utmContent;
   if (utmTerm) result.utmTerm = utmTerm;
   if (gclid) result.gclid = gclid;
+  if (gbraid) result.gbraid = gbraid;
+  if (wbraid) result.wbraid = wbraid;
   if (fbclid) result.fbclid = fbclid;
   if (ref) result.ref = ref;
   result.landingPath = window.location.pathname;
@@ -116,6 +126,8 @@ function mergePlayReferrer(existing: InstallAttribution, play: PlayInstallReferr
     utmContent: fromReferrer.utmContent ?? existing.utmContent,
     utmTerm: fromReferrer.utmTerm ?? existing.utmTerm,
     gclid: fromReferrer.gclid ?? existing.gclid,
+    gbraid: fromReferrer.gbraid ?? existing.gbraid,
+    wbraid: fromReferrer.wbraid ?? existing.wbraid,
   };
 }
 
@@ -137,6 +149,8 @@ function buildInstallSourcePayload(attr: InstallAttribution) {
     utm_medium: attr.utmMedium,
     utm_campaign: attr.utmCampaign,
     gclid: attr.gclid,
+    gbraid: attr.gbraid,
+    wbraid: attr.wbraid,
     ref: attr.ref,
     landing_path: attr.landingPath,
     play_referrer: attr.playReferrer,

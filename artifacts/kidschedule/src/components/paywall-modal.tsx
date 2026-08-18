@@ -390,7 +390,9 @@ export function PaywallModal() {
     });
     setSubmitting(true);
     setNotice(null);
-    const res = await nativeBilling.purchase(selected);
+    const res = await nativeBilling.purchase(selected, {
+      source: state.source ?? "paywall_modal",
+    });
     setSubmitting(false);
     logSubscriptionDebug({
       phase: "paywall_purchase_result",
@@ -400,19 +402,7 @@ export function PaywallModal() {
       purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
       extra: { method: "native_store" },
     });
-    if (res.ok) {
-      track("upgrade_completed", {
-        module: state.module,
-        source: state.source ?? "paywall_modal",
-        action: state.action ?? "checkout",
-        entitlement_state: "premium",
-      });
-      trackSubscriptionEvent({
-        event: "purchase_success",
-        plan: selected,
-        reason,
-        source: "paywall_modal",
-      });
+    if (res.ok && res.isPremiumSubscriber) {
       void syncRevenueCatSubscriptionAttributes({
         last_plan: selected,
         last_paywall_reason: reason,
@@ -670,11 +660,7 @@ export function PaywallModal() {
               <button
                 type="button"
                 onClick={() => {
-                  trackSubscriptionEvent({
-                    event: "restore_purchase",
-                    source: "paywall_modal",
-                  });
-                  void nativeBilling.restore();
+                  void nativeBilling.restore("paywall_modal");
                 }}
                 className="w-full mt-2 text-white/60 text-xs font-semibold py-2 hover:text-white/85"
                 data-testid="paywall-restore"

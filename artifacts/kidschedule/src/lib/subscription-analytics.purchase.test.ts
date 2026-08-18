@@ -46,6 +46,22 @@ describe("trackSubscriptionEvent purchase", () => {
     trackFunnel.mockClear();
   });
 
+  it("paywall_opened does not emit begin_checkout via Firebase", async () => {
+    const { trackFirebaseBeginCheckout } = await import("./firebase-subscription-attribution");
+    const { trackSubscriptionEvent } = await import("./subscription-analytics");
+    trackSubscriptionEvent({
+      event: "paywall_opened",
+      source: "paywall_modal",
+      plan: "yearly",
+    });
+    expect(trackFunnel).toHaveBeenCalledWith(
+      "subscription",
+      "paywall_opened",
+      expect.any(Object),
+    );
+    expect(trackFirebaseBeginCheckout).not.toHaveBeenCalled();
+  });
+
   it("records upgrade_completed against the purchase_success path", async () => {
     const { trackSubscriptionEvent } = await import("./subscription-analytics");
     trackSubscriptionEvent({

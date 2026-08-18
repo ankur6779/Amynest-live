@@ -11,6 +11,7 @@ import {
   maybeAutoGrantPremium,
   PLAN_PRICES,
   RAZORPAY_PLAN_PRICES_INR,
+  trackServerSubscriptionFunnel,
   type Plan,
 } from "../services/subscriptionService";
 import { getLivePlanPrices } from "../services/rcPricingService";
@@ -46,6 +47,30 @@ function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
 function preferredRevenueCatUserId(...ids: Array<string | null | undefined>): string | null {
   const present = ids.filter((id): id is string => typeof id === "string" && id.length > 0);
   return present.find((id) => !isRevenueCatAnonymousId(id)) ?? present[0] ?? null;
+}
+
+function revenueCatWebhookLifecycleStep(
+  eventType: string,
+  cancelReason?: string | null,
+): string | null {
+  switch (eventType) {
+    case "INITIAL_PURCHASE":
+      return "subscription_started";
+    case "RENEWAL":
+      return "subscription_renewed";
+    case "CANCELLATION":
+      return cancelReason === "CUSTOMER_SUPPORT" ? "refund" : "subscription_cancelled";
+    case "EXPIRATION":
+      return "subscription_expired";
+    case "BILLING_ISSUE":
+      return "billing_issue";
+    case "REFUND":
+      return "refund";
+    case "REFUND_REVERSED":
+      return "refund_reversed";
+    default:
+      return null;
+  }
 }
 
 const router: IRouter = Router();
@@ -395,6 +420,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     period_type?: string;
     price?: number;
     auto_renew_status?: boolean;
+    cancel_reason?: string;
   };
 
   const rawRevenueCatUserId = preferredRevenueCatUserId(event.app_user_id, event.original_app_user_id);
@@ -441,6 +467,8 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     "BILLING_ISSUE",
     "TRANSFER",
     "SUBSCRIPTION_PAUSED",
+    "REFUND",
+    "REFUND_REVERSED",
   ]);
 
   if (!event.type || !supportedEvents.has(event.type)) {
@@ -488,7 +516,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       const gracePeriodExpirationAt = event.grace_period_expiration_at_ms
         ? new Date(event.grace_period_expiration_at_ms)
         : null;
-      if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED") {
+      if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED" || event.type === "REFUND") {
         const fallback = await applyRevenueCatSnapshot(userId, {
           appUserId: userId,
           originalAppUserId: event.original_app_user_id ?? null,
@@ -525,6 +553,21 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       providerEventId: eventId,
       metadata: { eventType: event.type, appliedFrom, isPremium: applied.isPremium },
     });
+
+    const lifecycleStep = revenueCatWebhookLifecycleStep(
+      event.type ?? "",
+      event.cancel_reason ?? null,
+    );
+    if (lifecycleStep) {
+      void trackServerSubscriptionFunnel(userId, lifecycleStep, {
+        event_type: event.type ?? "unknown",
+        product_id: event.product_id ?? "",
+        transaction_id: event.transaction_id ?? "",
+        store: event.store ?? "",
+        ...(event.cancel_reason ? { cancel_reason: event.cancel_reason } : {}),
+      });
+    }
+
     res.json({ ok: true, eventId, applied: { userId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });
     return;
   } catch (err) {

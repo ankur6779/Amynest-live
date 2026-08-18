@@ -155,6 +155,31 @@ describe("firebase-subscription-attribution", () => {
     expect(setUserId).toHaveBeenCalledWith(expect.anything(), null);
   });
 
+  it("forwards transaction id on native Android purchase event", async () => {
+    const logSubscriptionAnalytics = vi.fn(async () => ({ ok: true }));
+    const setAnalyticsUserId = vi.fn(async () => ({ ok: true }));
+    isNativeAmyNestAndroidWrapper.mockReturnValue(true);
+    waitForBillingBridge.mockResolvedValue({ postMessage: vi.fn(), onmessage: null });
+    getNativeBilling.mockReturnValue({ logSubscriptionAnalytics, setAnalyticsUserId });
+
+    await trackFirebaseSubscriptionPurchase("yearly", {
+      source: "pricing",
+      value: 1499,
+      currency: "INR",
+      productId: "amynest_yearly",
+      transactionId: "GPA.9999",
+    });
+
+    expect(logSubscriptionAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "purchase",
+        productId: "amynest_yearly",
+        transactionId: "GPA.9999",
+      }),
+    );
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
   it("forwards the signed-in user id on the Android native purchase event", async () => {
     const logSubscriptionAnalytics = vi.fn(async () => ({ ok: true }));
     const setAnalyticsUserId = vi.fn(async () => ({ ok: true }));

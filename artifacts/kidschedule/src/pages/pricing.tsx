@@ -16,7 +16,6 @@ import {
   PLAY_MANAGE_SUBSCRIPTIONS_URL,
 } from "@/lib/geo";
 import { usePricingRegion, applyIndiaPricing } from "@/lib/pricing-region";
-import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useHubJourney } from "@/hooks/use-hub-journey";
@@ -326,7 +325,7 @@ export default function PricingPage() {
       extra: { method: "native_store" },
     });
     try {
-      const res = await nativeBilling.purchase(selected);
+      const res = await nativeBilling.purchase(selected, { source: "pricing" });
       logSubscriptionDebug({
         phase: "pricing_purchase_result",
         source: "pricing",
@@ -339,17 +338,21 @@ export default function PricingPage() {
         extra: { method: "native_store" },
       });
       if (!res.ok) {
-        if (!res.userCancelled) {
+        if (res.userCancelled) {
+          trackSubscriptionEvent({
+            event: "purchase_cancelled",
+            plan: selected,
+            source: "pricing",
+          });
+        } else {
           trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
           setNotice(res.reason ?? t("pricing.checkout_unavailable"));
         }
         return;
       }
-      const finalized = await finalizeNativePurchase(authFetch, qc);
-      if (finalized.isPremium) {
+      if (res.isPremiumSubscriber) {
         setPaymentSuccess(true);
         onPurchaseSuccess(selected);
-        trackSubscriptionEvent({ event: "purchase_success", plan: selected, source: "pricing" });
         toast({
           title: t("pricing.payment_success_title"),
           description: t("pricing.payment_success_body"),
@@ -368,8 +371,7 @@ export default function PricingPage() {
       setNotice(guestBlock.message);
       return;
     }
-    trackSubscriptionEvent({ event: "restore_purchase", source: "pricing" });
-    const ok = await nativeBilling.restore();
+    const ok = await nativeBilling.restore("pricing");
     if (ok) {
       toast({
         title: t("pricing.payment_success_title", { defaultValue: PURCHASE_SCREEN.successTitle }),

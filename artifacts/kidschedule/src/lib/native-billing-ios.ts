@@ -259,11 +259,23 @@ export async function getIOSPackageForPlan(
 
 export async function purchaseIOSPackage(
   pkg: RCPackage,
-): Promise<{ ok: boolean; userCancelled?: boolean; reason?: string; customerInfo?: RCCustomerInfo }> {
+  plan?: string,
+): Promise<{
+  ok: boolean;
+  userCancelled?: boolean;
+  reason?: string;
+  customerInfo?: RCCustomerInfo;
+  purchase?: {
+    transactionId: string;
+    productId: string;
+    currency: string;
+    value: number;
+  };
+}> {
   const plugin = getPurchasesPlugin();
   if (!plugin) return { ok: false, reason: "RevenueCat plugin not available." };
   try {
-    const { customerInfo } = await plugin.purchasePackage({ aPackage: pkg });
+    const { customerInfo, transaction } = await plugin.purchasePackage({ aPackage: pkg });
     const entitlements = customerInfo.entitlements.active;
     const isPremium =
       Object.values(entitlements).some((e) => e.isActive) ||
@@ -274,7 +286,24 @@ export async function purchaseIOSPackage(
         reason: "Purchase succeeded but entitlement not active. Please restore purchases.",
       };
     }
-    return { ok: true, customerInfo };
+    const { storeMetadataFromIosTransaction } = await import(
+      "@/lib/subscription-purchase-metadata"
+    );
+    const storeMeta = storeMetadataFromIosTransaction(transaction, pkg, plan);
+    return {
+      ok: true,
+      customerInfo,
+      ...(storeMeta
+        ? {
+            purchase: {
+              transactionId: storeMeta.transactionId,
+              productId: storeMeta.productId,
+              currency: storeMeta.currency,
+              value: storeMeta.value,
+            },
+          }
+        : {}),
+    };
   } catch (err: unknown) {
     const e = err as { code?: number; message?: string; userCancelled?: boolean };
     if (e?.code === 1 || e?.userCancelled === true) {

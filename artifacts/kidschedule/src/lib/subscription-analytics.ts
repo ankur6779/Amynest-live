@@ -1,5 +1,5 @@
 import { isIndiaRegion } from "@/lib/geo";
-import { isCapacitorIosShell } from "@/lib/device-lite";
+import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 import type { PaywallReason } from "@/contexts/paywall-context";
@@ -32,7 +32,10 @@ export type SubscriptionAnalyticsEvent =
   | "purchase_cancelled"
   | "purchase_failed"
   | "restore_purchase"
+  | "restore_started"
+  | "restore_success"
   | "restore_purchase_failed"
+  | "entitlement_activated"
   | "premium_unlocked"
   | "feature_unlocked"
   | "routine_started"
@@ -78,7 +81,15 @@ export type SubscriptionAnalyticsEvent =
   | "exit_intercept_continue"
   | "exit_intercept_dismiss"
   | "premium_welcome_viewed"
-  | "premium_welcome_continue";
+  | "premium_welcome_continue"
+  | "child_profile_created"
+  | "first_amy_chat"
+  | "subscription_started"
+  | "subscription_renewed"
+  | "subscription_cancelled"
+  | "subscription_expired"
+  | "billing_issue"
+  | "refund";
 
 export type SubscriptionAnalyticsPayload = {
   event: SubscriptionAnalyticsEvent;
@@ -100,10 +111,89 @@ function detectCountry(): string {
   return isIndiaRegion() ? "IN" : "GLOBAL";
 }
 
+function shouldSkipAndroidFirebaseCheckout(): boolean {
+  return isNativeAmyNestAndroidWrapper();
+}
+
+/** Fan-out for a verified purchase_success (called once per transaction by coordinator). */
+export function emitPurchaseSuccessFanOut(payload: SubscriptionAnalyticsPayload): void {
+  const platform = payload.platform ?? detectPlatform();
+  const country = payload.country ?? detectCountry();
+  const txId =
+    typeof payload.extra?.transaction_id === "string"
+      ? payload.extra.transaction_id
+      : undefined;
+
+  getAnalyticsService().trackFunnel("subscription", "purchase_success", {
+    reason: payload.reason,
+    plan: payload.plan,
+    source: payload.source,
+    country,
+    platform,
+    ...payload.extra,
+  });
+
+  import("@/lib/analytics").then(({ track }) => {
+    track("upgrade_completed", {
+      source: payload.source,
+      action:
+        typeof payload.extra?.action === "string" ? payload.extra.action : "checkout",
+      module: typeof payload.extra?.module === "string" ? payload.extra.module : undefined,
+      entitlement_state: "premium",
+      ...(txId ? { transaction_id: txId } : {}),
+    });
+  });
+
+  getAnalyticsService().trackFunnel("subscription", "purchase_completed", {
+    reason: payload.reason,
+    plan: payload.plan,
+    source: payload.source,
+    country,
+    platform,
+    ...payload.extra,
+  });
+
+  import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
+    trackPremiumConversion(payload.source ?? "subscription");
+  });
+
+  const value =
+    typeof payload.extra?.value === "number" ? payload.extra.value : undefined;
+  const currency =
+    typeof payload.extra?.currency === "string" ? payload.extra.currency : undefined;
+  const productId =
+    typeof payload.extra?.product_id === "string" ? payload.extra.product_id : undefined;
+
+  void import("@/lib/meta-attribution").then(({ trackMetaSubscribe }) => {
+    trackMetaSubscribe(payload.plan, {
+      source: payload.source,
+      value,
+      currency,
+    });
+  });
+
+  void import("@/lib/firebase-subscription-attribution").then(
+    ({ trackFirebaseSubscriptionPurchase }) => {
+      trackFirebaseSubscriptionPurchase(payload.plan, {
+        source: payload.source,
+        value,
+        currency,
+        productId,
+        transactionId: txId,
+      });
+    },
+  );
+}
+
 /** Central subscription funnel analytics — persisted to analytics_events. */
 export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): void {
   const platform = payload.platform ?? detectPlatform();
   const country = payload.country ?? detectCountry();
+
+  if (payload.event === "purchase_success") {
+    emitPurchaseSuccessFanOut(payload);
+    return;
+  }
 
   getAnalyticsService().trackFunnel("subscription", payload.event, {
     reason: payload.reason,
@@ -114,17 +204,8 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     ...payload.extra,
   });
 
-  // Map paywall_opened → taxonomy aliases (paywall_view / paywall_viewed)
   if (payload.event === "paywall_opened") {
     getAnalyticsService().trackFunnel("subscription", "paywall_viewed", {
-      reason: payload.reason,
-      plan: payload.plan,
-      source: payload.source,
-      country,
-      platform,
-      ...payload.extra,
-    });
-    getAnalyticsService().trackFunnel("subscription", "paywall_view", {
       reason: payload.reason,
       plan: payload.plan,
       source: payload.source,
@@ -135,82 +216,35 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     import("@/lib/analytics").then(({ track }) => {
       track("premium_paywall_viewed", { source: payload.source });
     });
-    // Early Google Ads signal — most users never reach checkout_started.
-    void import("@/lib/firebase-subscription-attribution").then(
-      ({ trackFirebaseBeginCheckout }) => {
-        trackFirebaseBeginCheckout(payload.plan ?? "yearly", {
-          source: payload.source ? `paywall:${payload.source}` : "paywall_opened",
-        });
-      },
-    );
   }
 
-  if (payload.event === "subscribe_clicked" || payload.event === "checkout_started") {
-    void import("@/lib/firebase-subscription-attribution").then(
-      ({ trackFirebaseBeginCheckout }) => {
-        trackFirebaseBeginCheckout(payload.plan, { source: payload.source });
-      },
-    );
+  if (payload.event === "restore_purchase") {
+    getAnalyticsService().trackFunnel("subscription", "restore_started", {
+      reason: payload.reason,
+      source: payload.source,
+      country,
+      platform,
+      ...payload.extra,
+    });
   }
 
-  if (payload.event === "purchase_success") {
-    import("@/lib/analytics").then(({ track }) => {
-      track("upgrade_completed", {
-        source: payload.source,
-        action:
-          typeof payload.extra?.action === "string" ? payload.extra.action : "checkout",
-        module: typeof payload.extra?.module === "string" ? payload.extra.module : undefined,
-        entitlement_state: "premium",
-      });
-    });
-    getAnalyticsService().trackFunnel("subscription", "purchase_completed", {
-      reason: payload.reason,
-      plan: payload.plan,
-      source: payload.source,
-      country,
-      platform,
-      ...payload.extra,
-    });
-    getAnalyticsService().trackFunnel("subscription", "premium_unlocked", {
-      reason: payload.reason,
-      plan: payload.plan,
-      source: payload.source,
-      country,
-      platform,
-      ...payload.extra,
-    });
-    getAnalyticsService().trackFunnel("subscription", "feature_unlocked", {
-      reason: payload.reason,
-      plan: payload.plan,
-      source: payload.source,
-      country,
-      platform,
-      ...payload.extra,
-    });
-    import("@/lib/retention-engine").then(({ trackPremiumConversion }) => {
-      trackPremiumConversion(payload.source ?? "subscription");
-    });
-    void import("@/lib/meta-attribution").then(({ trackMetaSubscribe }) => {
-      const value =
-        typeof payload.extra?.value === "number" ? payload.extra.value : undefined;
-      const currency =
-        typeof payload.extra?.currency === "string" ? payload.extra.currency : undefined;
-      trackMetaSubscribe(payload.plan, {
-        source: payload.source,
-        value,
-        currency,
-      });
-    });
+  if (
+    (payload.event === "subscribe_clicked" || payload.event === "checkout_started") &&
+    !shouldSkipAndroidFirebaseCheckout()
+  ) {
     void import("@/lib/firebase-subscription-attribution").then(
-      ({ trackFirebaseSubscriptionPurchase }) => {
+      ({ trackFirebaseBeginCheckout }) => {
         const value =
           typeof payload.extra?.value === "number" ? payload.extra.value : undefined;
         const currency =
           typeof payload.extra?.currency === "string" ? payload.extra.currency : undefined;
-        trackFirebaseSubscriptionPurchase(payload.plan, {
+        const productId =
+          typeof payload.extra?.product_id === "string" ? payload.extra.product_id : undefined;
+        trackFirebaseBeginCheckout(payload.plan, {
           source: payload.source,
           value,
           currency,
+          productId,
         });
       },
     );
