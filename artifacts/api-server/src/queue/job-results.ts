@@ -144,6 +144,23 @@ export async function waitForPollApiResult(
   return readJobRecord(jobId);
 }
 
+/** True when a job status is terminal (slot must be released exactly once). */
+export function isTerminalAiJobStatus(status: AiJobStatus | undefined): boolean {
+  return status === "completed" || status === "failed" || status === "timed_out";
+}
+
+/**
+ * Release the per-user active-job slot only when transitioning into a terminal
+ * status. Poll finalize patches `apiResult` / `sideEffectsApplied` while status
+ * stays `completed` — releasing again undercounts active work and bypasses the cap.
+ */
+export function shouldReleaseUserSlotOnPatch(
+  previousStatus: AiJobStatus | undefined,
+  nextStatus: AiJobStatus | undefined,
+): boolean {
+  return isTerminalAiJobStatus(nextStatus) && !isTerminalAiJobStatus(previousStatus);
+}
+
 export async function patchJobRecord(
   jobId: string,
   patch: Partial<
@@ -167,11 +184,7 @@ export async function patchJobRecord(
     updatedAt: Date.now(),
   };
   await writeJobRecord(updated);
-  if (
-    updated.status === "completed" ||
-    updated.status === "failed" ||
-    updated.status === "timed_out"
-  ) {
+  if (shouldReleaseUserSlotOnPatch(existing.status, updated.status)) {
     await releaseUserSlot(updated.userId);
     if (updated.type === "ai-coach.initial_wins") {
       void (async () => {
