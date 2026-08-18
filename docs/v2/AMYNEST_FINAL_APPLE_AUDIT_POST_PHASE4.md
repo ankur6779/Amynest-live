@@ -298,22 +298,26 @@ Executed this run against candidate `5bb33cc0`. **No code was changed to make te
 
 | Gate | Result |
 |---|---|
-| TypeScript libs (`pnpm run typecheck:libs`) | *this-run log* |
-| kidschedule `tsc` | *this-run log* |
-| api-server `tsc` | *this-run log* |
-| Living / FA-02 / nav / leave-path | *this-run log* |
-| Routine R2 / R3 / living dashboard | *this-run log* |
-| Amy AI composer / living-room / latency | *this-run log* |
-| Health Lab D3 freeze + API premium tests | *this-run log* |
-| Speech D4 matrix | *this-run log* |
-| P0-7 hard-day | *this-run log* |
-| FA-02 living universe | *this-run log* |
-| Phase 3 freeze | *this-run log* |
-| Pricing living display | *this-run log* |
-| Production web build | *this-run log* |
-| Production API build | *this-run log* |
+| TypeScript libs (`pnpm run typecheck:libs`) | **PASS** (pre-commit on this docs branch) |
+| kidschedule `tsc` | **PASS** (pre-commit) |
+| api-server `tsc` | **PASS** |
+| Living / FA-02 / nav / leave-path / speech-legacy | **PASS** (included in 22 files / 115 tests) |
+| Routine R2 / R3 / living dashboard | **PASS** |
+| Amy AI composer / living-room / latency | **PASS** |
+| Health Lab D3 freeze (Vitest) + API premium matrix | **PASS** (API: 39 D3/D4 tests, 0 fail, 0 skip, including DB enforcement) |
+| Speech D4 matrix | **PASS** (lifetime, peek, register, heartbeat, premium 600, trial 120, not in `FREE_FEATURE_LIMITS`) |
+| P0-7 hard-day (web) | **PASS** (`hard-day-monetization` + `sub-item-gate.hard-day`) |
+| FA-02 living universe | **PASS** |
+| Phase 3 freeze | **PASS** |
+| Phase 4 freeze | **PASS** |
+| Pricing living display / source | **PASS** |
+| `isPremiumNow` premium-gate | **PASS** (16 tests) |
+| Production web build (`pnpm run build:web`) | **PASS** (`✓ built in 23.11s`) |
+| Production API build | **PASS** (`[build] OK`) |
+| P0 cost-safety **route wiring** | **PASS** (3 tests) |
+| P0 cost-safety **integration** | **Cancelled by parent** — Node `--experimental-test-module-mocks` pending event loop. Pre-existing harness issue (same as Phase 4 review). Not treated as a Phase 4 product failure. |
 
-*(Filled after execution in this same document.)*
+Logs: `/opt/cursor/artifacts/post_p4_web_targeted_tests.log`, `post_p4_api_d3d4_tests.log`, `post_p4_premium_gate_tests.log`, `post_p4_p0_cost_tests.log`, `post_p4_api_typecheck.log`, `post_p4_api_build.log`, `post_p4_web_build.log`.
 
 ---
 
@@ -493,5 +497,24 @@ This audit answers:
 They would still understand a **calm parenting home**. They would see a locked Health Lab as a quiet Care room with a continue path, and Speech V2 as a one-time try rather than a daily free quota. They would not stumble into Games, Rewards, Worksheet Studio, or speech-live legacy by normal use. They cannot be told the app is accessibility-certified.
 
 **Wait for Founder approval.** No implementation. No follow-up product phase. No UI polish pass. No Phase 4 modification.
+
+---
+
+## This-run verification
+
+| Gate | Result |
+|---|---|
+| `pnpm run typecheck:libs` | **PASS** |
+| `pnpm --filter @workspace/kidschedule run typecheck` | **PASS** |
+| `pnpm --filter @workspace/api-server typecheck` | **PASS** |
+| Targeted web Vitest (living, FA-02, nav, leave, Routine R2/R3, Amy AI, D3/D4 freeze, P0-7, Phase 3 freeze, pricing) | **22 files / 115 tests PASS** |
+| API D3/D4 + usage policy | **39 tests PASS** |
+| `subscription-premium-gate` | **16 tests PASS** |
+| P0 cost wiring | **PASS** |
+| P0 cost integration | **cancelledByParent** (pre-existing Node harness) |
+| `pnpm run build:web` | **PASS** |
+| `pnpm --filter @workspace/api-server build` | **PASS** |
+| Visual device recapture | **NOT TESTED** this run |
+| VoiceOver / Dynamic Type / TalkBack | **NOT CERTIFIED** |
 
 STOP.
