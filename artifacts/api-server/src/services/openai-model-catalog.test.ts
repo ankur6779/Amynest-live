@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import {
+  GPT5_MIN_COMPLETION_TOKENS_FAST,
+  GPT5_MIN_COMPLETION_TOKENS_REASONING,
   OPENAI_CHAT_MODEL_DEFAULTS,
+  classifyOpenAiEmptyCompletion,
   isGpt5FamilyModel,
+  isGpt5ReasoningModel,
   openAiChatTemperatureField,
   resolveOpenAiChatModel,
   resolveOpenAiChatModelCatalog,
+  resolveOpenAiCompletionBudget,
 } from "./openai-model-catalog.js";
 import { resolveBirthSkyModelCatalog } from "./birth-sky/ai-model-router.js";
 
@@ -122,6 +127,10 @@ describe("openAiChatTemperatureField (GPT-5 compatibility)", () => {
     assert.equal(isGpt5FamilyModel("gpt-5.4-mini"), true);
     assert.equal(isGpt5FamilyModel("gpt-4o-mini"), false);
     assert.equal(isGpt5FamilyModel("gpt-4o"), false);
+    assert.equal(isGpt5ReasoningModel("gpt-5"), true);
+    assert.equal(isGpt5ReasoningModel("gpt-5-mini"), false);
+    assert.equal(isGpt5ReasoningModel("gpt-5.4-mini"), false);
+    assert.equal(isGpt5ReasoningModel("gpt-4o-mini"), false);
   });
 
   it("omits temperature on Birth Sky FAST (gpt-5-mini) and REASONING (gpt-5)", () => {
@@ -136,24 +145,171 @@ describe("openAiChatTemperatureField (GPT-5 compatibility)", () => {
 
       const fastRequest = {
         model: catalog.fast,
-        max_completion_tokens: 500,
+        max_completion_tokens: resolveOpenAiCompletionBudget({
+          model: catalog.fast,
+          requested: 500,
+        }),
         ...openAiChatTemperatureField(catalog.fast, 0.7),
       };
       const reasoningRequest = {
         model: catalog.reasoning,
-        max_completion_tokens: 500,
+        max_completion_tokens: resolveOpenAiCompletionBudget({
+          model: catalog.reasoning,
+          requested: 500,
+        }),
         ...openAiChatTemperatureField(catalog.reasoning, 0.7),
       };
 
       assert.equal(fastRequest.temperature, undefined);
       assert.equal("temperature" in fastRequest, false);
+      assert.equal(fastRequest.max_completion_tokens, GPT5_MIN_COMPLETION_TOKENS_FAST);
       assert.equal(reasoningRequest.temperature, undefined);
       assert.equal("temperature" in reasoningRequest, false);
+      assert.equal(
+        reasoningRequest.max_completion_tokens,
+        GPT5_MIN_COMPLETION_TOKENS_REASONING,
+      );
     } finally {
       if (prevFast === undefined) delete process.env.OPENAI_CHAT_MODEL_FAST;
       else process.env.OPENAI_CHAT_MODEL_FAST = prevFast;
       if (prevReasoning === undefined) delete process.env.OPENAI_CHAT_MODEL_REASONING;
       else process.env.OPENAI_CHAT_MODEL_REASONING = prevReasoning;
     }
+  });
+});
+
+describe("resolveOpenAiCompletionBudget (GPT-5 reasoning headroom)", () => {
+  it("raises GPT-5-mini caps that are too small for reasoning + visible output", () => {
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 120 }),
+      GPT5_MIN_COMPLETION_TOKENS_FAST,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 320 }),
+      GPT5_MIN_COMPLETION_TOKENS_FAST,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 500 }),
+      GPT5_MIN_COMPLETION_TOKENS_FAST,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 600 }),
+      GPT5_MIN_COMPLETION_TOKENS_FAST,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5.4-mini", requested: 600 }),
+      GPT5_MIN_COMPLETION_TOKENS_FAST,
+    );
+  });
+
+  it("raises GPT-5 reasoning caps that are too small for long Birth Sky prompts", () => {
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5", requested: 500 }),
+      GPT5_MIN_COMPLETION_TOKENS_REASONING,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5", requested: 1200 }),
+      GPT5_MIN_COMPLETION_TOKENS_REASONING,
+    );
+  });
+
+  it("preserves caller limits already above the GPT-5 floor", () => {
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 1600 }),
+      1600,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 3000 }),
+      3000,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5-mini", requested: 8000 }),
+      8000,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-5", requested: 2000 }),
+      2000,
+    );
+  });
+
+  it("does not change gpt-4o-mini completion budgets", () => {
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-4o-mini", requested: 120 }),
+      120,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-4o-mini", requested: 500 }),
+      500,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-4o-mini", requested: 600 }),
+      600,
+    );
+    assert.equal(
+      resolveOpenAiCompletionBudget({ model: "gpt-4o-mini" }),
+      600,
+    );
+  });
+});
+
+describe("classifyOpenAiEmptyCompletion", () => {
+  it("classifies finish_reason=length with empty content as budget exhaustion", () => {
+    assert.equal(
+      classifyOpenAiEmptyCompletion({
+        content: "",
+        finishReason: "length",
+        reasoningTokens: 600,
+        completionTokens: 600,
+      }),
+      "ai_budget_exhausted",
+    );
+  });
+
+  it("classifies reasoning that consumed the whole completion budget as exhaustion", () => {
+    assert.equal(
+      classifyOpenAiEmptyCompletion({
+        content: "   ",
+        finishReason: null,
+        reasoningTokens: 500,
+        completionTokens: 500,
+      }),
+      "ai_budget_exhausted",
+    );
+  });
+
+  it("treats finish_reason=stop with visible content as success", () => {
+    assert.equal(
+      classifyOpenAiEmptyCompletion({
+        content: "Turn the lamp off and I'll sit with you for one minute.",
+        finishReason: "stop",
+        reasoningTokens: 512,
+        completionTokens: 552,
+      }),
+      "ok",
+    );
+  });
+
+  it("does not treat truncated-but-visible output as empty", () => {
+    assert.equal(
+      classifyOpenAiEmptyCompletion({
+        content: "The Moon in a chart speaks to how a child feels safe",
+        finishReason: "length",
+        reasoningTokens: 761,
+        completionTokens: 800,
+      }),
+      "ok",
+    );
+  });
+
+  it("classifies a normal empty stop as genuine empty content", () => {
+    assert.equal(
+      classifyOpenAiEmptyCompletion({
+        content: "",
+        finishReason: "stop",
+        reasoningTokens: 0,
+        completionTokens: 12,
+      }),
+      "ai_empty",
+    );
   });
 });

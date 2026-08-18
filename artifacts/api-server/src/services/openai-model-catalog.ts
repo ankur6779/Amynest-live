@@ -64,3 +64,66 @@ export function openAiChatTemperatureField(
   if (isGpt5FamilyModel(model)) return {};
   return { temperature };
 }
+
+/**
+ * GPT-5 Chat Completions count reasoning tokens against `max_completion_tokens`.
+ * Caps below these floors can finish with `length` and empty visible content.
+ * Unused headroom is a cap, not billed usage.
+ */
+export const GPT5_MIN_COMPLETION_TOKENS_FAST = 1200;
+export const GPT5_MIN_COMPLETION_TOKENS_REASONING = 1800;
+
+/** Full GPT-5 (not mini/nano) — Birth Sky REASONING and similar. */
+export function isGpt5ReasoningModel(model: string): boolean {
+  const id = model.trim().toLowerCase();
+  if (!isGpt5FamilyModel(id)) return false;
+  return !id.includes("mini") && !id.includes("nano");
+}
+
+export function gpt5MinCompletionTokens(model: string): number {
+  if (!isGpt5FamilyModel(model)) return 0;
+  return isGpt5ReasoningModel(model)
+    ? GPT5_MIN_COMPLETION_TOKENS_REASONING
+    : GPT5_MIN_COMPLETION_TOKENS_FAST;
+}
+
+/**
+ * Raise GPT-5-family caps that are too small for reasoning+output.
+ * Legacy models keep the caller limit. Callers already above the floor keep theirs.
+ */
+export function resolveOpenAiCompletionBudget(params: {
+  model: string;
+  requested?: number;
+}): number {
+  const requested = params.requested ?? 600;
+  if (!isGpt5FamilyModel(params.model)) return requested;
+  return Math.max(requested, gpt5MinCompletionTokens(params.model));
+}
+
+export type OpenAiEmptyClassification = "ok" | "ai_budget_exhausted" | "ai_empty";
+
+/**
+ * Distinguish completion-budget exhaustion (reasoning ate the cap) from a
+ * genuine empty completion. Internal taxonomy only — do not show to users.
+ */
+export function classifyOpenAiEmptyCompletion(params: {
+  content: string | null | undefined;
+  finishReason: string | null | undefined;
+  reasoningTokens?: number | null;
+  completionTokens?: number | null;
+}): OpenAiEmptyClassification {
+  const text = params.content?.trim() ?? "";
+  if (text) return "ok";
+  if (params.finishReason === "length") return "ai_budget_exhausted";
+  const reasoning = params.reasoningTokens;
+  const completion = params.completionTokens;
+  if (
+    reasoning != null &&
+    completion != null &&
+    completion > 0 &&
+    reasoning >= completion
+  ) {
+    return "ai_budget_exhausted";
+  }
+  return "ai_empty";
+}

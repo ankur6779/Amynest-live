@@ -3,7 +3,12 @@
  */
 
 import { getOpenAiClient } from "../ai-runtime.js";
-import { openAiChatTemperatureField } from "../openai-model-catalog.js";
+import { logger } from "../../lib/logger.js";
+import {
+  classifyOpenAiEmptyCompletion,
+  openAiChatTemperatureField,
+  resolveOpenAiCompletionBudget,
+} from "../openai-model-catalog.js";
 import { BIRTH_SKY_AI_STREAM_TIMEOUT_MS } from "./ai-constants.js";
 import { resolveBirthSkyModelCatalog } from "./ai-model-router.js";
 import type { ChatMessage } from "../openai-chat.js";
@@ -73,11 +78,15 @@ export async function streamBirthSkyChat(params: {
 
   try {
     const openai = await getOpenAiClient();
+    const maxCompletionTokens = resolveOpenAiCompletionBudget({
+      model: modelVersion,
+      requested: 500,
+    });
     const stream = await openai.chat.completions.create(
       {
         model: modelVersion,
         messages: params.messages,
-        max_completion_tokens: 500,
+        max_completion_tokens: maxCompletionTokens,
         ...openAiChatTemperatureField(modelVersion, 0.7),
         stream: true,
         stream_options: { include_usage: true },
@@ -85,6 +94,8 @@ export async function streamBirthSkyChat(params: {
       { signal: controller.signal },
     );
 
+    let finishReason: string | null = null;
+    let reasoningTokens: number | null = null;
     for await (const part of stream) {
       if (controller.signal.aborted || params.signal?.aborted) {
         clearTimeout(timer);
@@ -97,8 +108,11 @@ export async function streamBirthSkyChat(params: {
           inputTokens: u.prompt_tokens ?? null,
           outputTokens: u.completion_tokens ?? null,
         };
+        reasoningTokens = u.completion_tokens_details?.reasoning_tokens ?? reasoningTokens;
       }
-      const delta = part.choices[0]?.delta?.content ?? "";
+      const choice = part.choices[0];
+      if (choice?.finish_reason) finishReason = choice.finish_reason;
+      const delta = choice?.delta?.content ?? "";
       if (!delta) continue;
       text += delta;
       sequence += 1;
@@ -108,6 +122,29 @@ export async function streamBirthSkyChat(params: {
     clearTimeout(timer);
     params.signal?.removeEventListener("abort", onAbort);
     if (!text.trim()) {
+      const classification = classifyOpenAiEmptyCompletion({
+        content: text,
+        finishReason,
+        reasoningTokens,
+        completionTokens: usage.outputTokens,
+      });
+      logger.warn(
+        {
+          evt:
+            classification === "ai_budget_exhausted"
+              ? "birth_sky.stream_budget_exhausted"
+              : "birth_sky.stream_empty",
+          classification,
+          finishReason,
+          modelVersion,
+          maxCompletionTokens,
+          reasoningTokens,
+          completionTokens: usage.outputTokens,
+        },
+        classification === "ai_budget_exhausted"
+          ? "Birth Sky stream exhausted the completion budget before visible output"
+          : "Birth Sky stream completed without visible content",
+      );
       return fail("empty", false);
     }
     return {

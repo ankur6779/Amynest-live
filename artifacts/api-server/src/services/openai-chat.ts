@@ -1,7 +1,9 @@
 import { getOpenAiClient } from "./ai-runtime.js";
 import {
+  classifyOpenAiEmptyCompletion,
   openAiChatTemperatureField,
   resolveOpenAiChatModel,
+  resolveOpenAiCompletionBudget,
 } from "./openai-model-catalog.js";
 
 export type ChatMessage = {
@@ -65,11 +67,15 @@ export async function chatCompletionWithTimeout(
   try {
     const openai = await getOpenAiClient();
     const model = params.model ?? resolveOpenAiChatModel("legacy");
+    const maxCompletionTokens = resolveOpenAiCompletionBudget({
+      model,
+      requested: params.max_completion_tokens,
+    });
     const completion = await openai.chat.completions.create(
       {
         model,
         messages: params.messages,
-        max_completion_tokens: params.max_completion_tokens ?? 600,
+        max_completion_tokens: maxCompletionTokens,
         ...openAiChatTemperatureField(model, params.temperature),
         ...(params.response_format ? { response_format: params.response_format } : {}),
       },
@@ -77,18 +83,53 @@ export async function chatCompletionWithTimeout(
     );
 
     const choice = completion.choices[0];
+    const finishReason = choice?.finish_reason ?? null;
+    const content = choice?.message?.content?.trim() ?? null;
+    const reasoningTokens =
+      completion.usage?.completion_tokens_details?.reasoning_tokens ?? null;
+    const completionTokens = completion.usage?.completion_tokens ?? null;
+    const classification = classifyOpenAiEmptyCompletion({
+      content,
+      finishReason,
+      reasoningTokens,
+      completionTokens,
+    });
     if (params.traceId) {
       void import("../lib/coach-generate-trace.js").then(({ logCoachGenerateTrace }) =>
         logCoachGenerateTrace("openai.request_completed", {
           traceId: params.traceId!,
           layer: "openai",
-          meta: { durationMs: Date.now() - openaiStarted, finishReason: choice?.finish_reason },
+          meta: { durationMs: Date.now() - openaiStarted, finishReason },
         }),
       );
     }
+    if (classification !== "ok") {
+      logger.warn(
+        {
+          evt:
+            classification === "ai_budget_exhausted"
+              ? "openai.chat_budget_exhausted"
+              : "openai.chat_empty",
+          model,
+          finishReason,
+          maxCompletionTokens,
+          reasoningTokens,
+          completionTokens,
+        },
+        classification === "ai_budget_exhausted"
+          ? "OpenAI chat exhausted the completion budget before visible output"
+          : "OpenAI chat returned empty content",
+      );
+      return {
+        content: null,
+        finishReason,
+        timedOut: false,
+        error: classification,
+      };
+    }
     return {
-      content: choice?.message?.content?.trim() ?? null,
-      finishReason: choice?.finish_reason ?? null,
+      content,
+      finishReason,
       timedOut: false,
     };
   } catch (err) {
