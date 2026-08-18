@@ -11,6 +11,9 @@ export const AMY_TALK_FRAMES = AMY_STAGE_ASSETS.talk;
 // Rigged 3D model. See public/amy-3d/README.md.
 export const AMY_MODEL_SRC = "/amy-3d/amy.glb";
 
+/** 2D headshot of the production GLB Amy — same asset as the landing avatar. */
+export const AMY_3D_AVATAR_SRC = "/amy-3d/amy-idle.webp";
+
 // Module-level cache so we probe the asset exactly once per session (no 404
 // spam across the ~30 places AmyIcon is used).
 let cached: boolean | null = null;
