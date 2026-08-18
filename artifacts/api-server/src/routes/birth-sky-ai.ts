@@ -29,6 +29,7 @@ import {
 import {
   ackBirthSkyDelivery,
   evaluateBirthSkyAiGate,
+  shouldServerConsumeFreeInsightOnDelivery,
 } from "../services/birth-sky/ai-entitlement.js";
 import { streamBirthSkyChat } from "../services/birth-sky/ai-stream.js";
 import { validateBirthSkyAiOutput } from "../services/birth-sky/ai-safety.js";
@@ -1010,6 +1011,29 @@ router.post(
         .update(birthSkyConversationsTable)
         .set({ updatedAt: new Date() })
         .where(eq(birthSkyConversationsTable.id, conversationId));
+
+      // Consume free insight on the server once delivery is persisted. Client ACK is
+      // idempotent UI sync only — trusting ACK alone lets free users skip it forever.
+      if (shouldServerConsumeFreeInsightOnDelivery("complete")) {
+        try {
+          await ackBirthSkyDelivery({
+            userId,
+            profileId: conv.profileId,
+            conversationId,
+            jobId,
+            deliveryId,
+          });
+        } catch (ackErr) {
+          logger.error(
+            {
+              evt: "birth_sky.free_insight_consume_failed",
+              deliveryId,
+              message: ackErr instanceof Error ? ackErr.message : String(ackErr),
+            },
+            "Birth Sky free-insight consume failed after successful delivery",
+          );
+        }
+      }
 
       emitTelemetry("ok");
 
