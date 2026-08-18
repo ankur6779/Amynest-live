@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
+import { AMY_3D_AVATAR_SRC } from "@/lib/amy-3d/baked-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -333,7 +334,12 @@ export default function AssistantPage() {
         items.push({
           kind: "system",
           id: "empty",
-          content: <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>,
+          content: (
+            <div className="flex flex-col items-center justify-center gap-3 px-2 py-2 text-center">
+              <AmyIcon size={72} ring src={AMY_3D_AVATAR_SRC} />
+              <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
+            </div>
+          ),
         });
       }
 
@@ -421,7 +427,7 @@ export default function AssistantPage() {
           <header className="assistant-chat-header">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <AmyIcon size={28} ring />
+                <AmyIcon size={28} ring src={AMY_3D_AVATAR_SRC} />
                 <h1 className="truncate font-quicksand text-lg font-bold text-foreground">
                   {t("ai.page_title")}
                 </h1>
