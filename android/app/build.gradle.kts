@@ -45,8 +45,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 99
-        versionName = "1.4.56"
+        versionCode = 100
+        versionName = "1.4.57"
         resValue(
             "string",
             "facebook_client_token",

@@ -13,11 +13,17 @@ const livingCss = readFileSync(
 
 describe("Plans living remanufacture — source contracts", () => {
   it("keeps existing purchase, restore, and India overlay paths", () => {
+    const billingHook = readFileSync(
+      path.resolve(import.meta.dirname, "../hooks/use-native-billing.ts"),
+      "utf8",
+    );
     expect(pricingPage).toContain("checkoutRazorpay");
     expect(pricingPage).toContain("nativeBilling.purchase");
     expect(pricingPage).toContain("nativeBilling.restore");
     expect(pricingPage).toContain("applyIndiaPricing");
-    expect(pricingPage).toContain("finalizeNativePurchase");
+    // Native purchase finalize + idempotent conversion live in the billing hook.
+    expect(billingHook).toContain("finalizeNativePurchase");
+    expect(billingHook).toContain("recordVerifiedStorePurchase");
     expect(pricingPage).toContain('data-testid={`plan-card-${p.id}`}');
     expect(pricingPage).toContain('data-testid="button-upgrade-app-store"');
     expect(pricingPage).toContain('data-testid="button-upgrade-googlepay"');
