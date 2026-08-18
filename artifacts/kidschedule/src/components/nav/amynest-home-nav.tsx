@@ -1,8 +1,20 @@
 import { Settings2, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AppLink } from "@/components/app-link";
 import { AmyAIIcon } from "@/components/ask-amy/amy-ai-icon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   LIVING_NAV_BRAND,
   LIVING_NAV_HOME_LINE,
@@ -278,11 +290,40 @@ export function HomeNavSignOut({
   onSignOut: () => void;
   testId: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="amynest-home-nav-footer">
-      <button type="button" className="amynest-home-nav-signout" data-testid={testId} onClick={onSignOut}>
-        Sign out
-      </button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button type="button" className="amynest-home-nav-signout" data-testid={testId}>
+            {t("nav.sign_out", { defaultValue: "Sign Out" })}
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent
+          className="z-[300] rounded-3xl max-w-sm mx-auto"
+          overlayClassName="z-[300]"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("nav.sign_out_confirm_title", { defaultValue: "Sign out?" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("nav.sign_out_confirm_body", {
+                defaultValue:
+                  "You can sign back in anytime. Your account and subscription stay with you — this only ends the session on this device.",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">
+              {t("nav.sign_out_confirm_cancel", { defaultValue: "Stay signed in" })}
+            </AlertDialogCancel>
+            <AlertDialogAction className="rounded-full" onClick={onSignOut}>
+              {t("nav.sign_out_confirm_action", { defaultValue: "Sign Out" })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db, userDevicesTable, type UserDevice } from "@workspace/db";
 import {
   getOrCreateSubscription,
@@ -10,7 +10,7 @@ import {
   normalizeDeviceMetadata,
   type DeviceMetadataInput,
 } from "../lib/device-metadata.js";
-import { canAddNewDevice } from "./deviceLimitLogic.js";
+import { decideDeviceRegistration } from "./deviceLimitLogic.js";
 
 export { canAddNewDevice, isDeviceLimitExempt } from "./deviceLimitLogic.js";
 
@@ -151,9 +151,79 @@ function buildRowPatch(
 }
 
 /**
- * Register or refresh a device. Existing active devices are grandfathered even
- * when over the current plan limit; only *new* devices are blocked.
- * Uses a per-user advisory lock to prevent concurrent over-limit registration.
+ * A physical installation can only be actively owned by one account.
+ * Historical rows stay (`is_active=0`); they must not block Email B.
+ */
+async function releaseDeviceFromOtherUsers(
+  tx: DbExec,
+  deviceId: string,
+  keepUserId: string,
+): Promise<number> {
+  const released = await tx
+    .update(userDevicesTable)
+    .set({ isActive: 0, lastSeenAt: new Date() })
+    .where(
+      and(
+        eq(userDevicesTable.deviceId, deviceId),
+        eq(userDevicesTable.isActive, 1),
+        ne(userDevicesTable.userId, keepUserId),
+      ),
+    )
+    .returning({ id: userDevicesTable.id });
+  return released.length;
+}
+
+/** Claim this installation only when the current account will own it. */
+async function transferDeviceIfNeeded(
+  tx: DbExec,
+  deviceId: string,
+  keepUserId: string,
+): Promise<void> {
+  const transferred = await releaseDeviceFromOtherUsers(tx, deviceId, keepUserId);
+  if (transferred > 0) {
+    logger.info(
+      { evt: "device.transferred", userId: keepUserId, deviceId, releasedCount: transferred },
+      "Released other accounts' active claim on this installation",
+    );
+  }
+}
+
+async function deactivateOldestActiveExcept(
+  tx: DbExec,
+  userId: string,
+  exceptDeviceId: string,
+): Promise<boolean> {
+  const rows = await tx
+    .select()
+    .from(userDevicesTable)
+    .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)))
+    .orderBy(userDevicesTable.lastSeenAt);
+
+  const victim = rows.find((row) => row.deviceId !== exceptDeviceId);
+  if (!victim) return false;
+
+  await tx
+    .update(userDevicesTable)
+    .set({ isActive: 0, lastSeenAt: new Date() })
+    .where(eq(userDevicesTable.id, victim.id));
+  logger.info(
+    {
+      evt: "device.replaced_stale",
+      userId,
+      removedDeviceId: victim.deviceId,
+      newDeviceId: exceptDeviceId,
+    },
+    "Released previous active session for this account",
+  );
+  return true;
+}
+
+/**
+ * Register or refresh a device. Existing *active* devices for this user are
+ * grandfathered. A device id that is active for another user is transferred
+ * (their row is deactivated — not deleted). Free single-session accounts
+ * replace their previous active installation instead of remaining blocked
+ * after uninstall/sign-out.
  */
 export async function registerOrRefreshDevice(params: {
   userId: string;
@@ -167,6 +237,7 @@ export async function registerOrRefreshDevice(params: {
 
   return db.transaction(async (tx) => {
     await advisoryLockUser(tx, userId);
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`deviceid:${deviceId}`}))`);
 
     const [existing] = await tx
       .select()
@@ -174,7 +245,9 @@ export async function registerOrRefreshDevice(params: {
       .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.deviceId, deviceId)))
       .limit(1);
 
-    if (existing?.isActive === 1) {
+    const thisUserHasActiveRow = existing?.isActive === 1;
+    if (thisUserHasActiveRow) {
+      await transferDeviceIfNeeded(tx, deviceId, userId);
       const patch = buildRowPatch(meta, existing);
       const [updated] = await tx
         .update(userDevicesTable)
@@ -190,8 +263,14 @@ export async function registerOrRefreshDevice(params: {
 
     const limit = await resolveDeviceLimit(userId, params.email);
     const activeCount = await countActiveDevices(userId, tx);
+    const action = decideDeviceRegistration({
+      thisUserHasActiveRow: false,
+      thisUserHasInactiveRow: Boolean(existing),
+      activeCountForUser: activeCount,
+      limit,
+    });
 
-    if (activeCount >= limit) {
+    if (action === "block") {
       const devices = (
         await tx
           .select()
@@ -211,6 +290,29 @@ export async function registerOrRefreshDevice(params: {
         activeDeviceCount: activeCount,
         devices,
       };
+    }
+
+    await transferDeviceIfNeeded(tx, deviceId, userId);
+
+    if (action === "replace_oldest") {
+      const replaced = await deactivateOldestActiveExcept(tx, userId, deviceId);
+      if (!replaced) {
+        const devices = (
+          await tx
+            .select()
+            .from(userDevicesTable)
+            .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)))
+            .orderBy(userDevicesTable.lastSeenAt)
+        ).map((row) => toDeviceRecord(row, deviceId));
+        return {
+          ok: false as const,
+          error: "device_limit_reached" as const,
+          message: `Your free plan supports up to ${limit} active device. Remove an existing device or upgrade to continue.`,
+          limit,
+          activeDeviceCount: devices.length,
+          devices,
+        };
+      }
     }
 
     if (existing) {
@@ -316,6 +418,15 @@ export async function deactivateDevice(
     logger.info({ evt: "device.removed", userId, deviceId }, "Device deactivated");
     return { ok: true as const };
   });
+}
+
+/** Sign-out / account-switch: mark this installation inactive for the user. */
+export async function releaseCurrentDeviceSession(
+  userId: string,
+  deviceId: string,
+): Promise<{ ok: boolean }> {
+  const result = await deactivateDevice(userId, deviceId);
+  return { ok: result.ok };
 }
 
 export async function replaceDevice(params: {

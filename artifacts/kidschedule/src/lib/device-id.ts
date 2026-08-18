@@ -1,6 +1,8 @@
 /**
- * Persistent installation device identity — survives logout so reinstall
- * bypass is harder when localStorage is preserved (native WebView / PWA).
+ * Persistent *installation* identity — survives logout on this install so the
+ * backend can treat it as one active session, not a new device every sign-in.
+ * Uninstall (app data cleared) mints a new id. It must never permanently bind
+ * hardware to one AmyNest account; active ownership lives in `user_devices`.
  */
 
 import { isCapacitorNativeShell, isNativeAmyNestShell } from "@/lib/native-shell";
@@ -96,7 +98,7 @@ function safeWrite(key: string, value: string): void {
   }
 }
 
-/** Stable per-installation ID. Created once and reused across sessions. */
+/** Stable per-installation ID. Created once and reused across sessions on this install. */
 export function getOrCreateDeviceId(): string {
   const existing = safeRead(DEVICE_ID_KEY);
   if (existing && existing.length >= 8) return existing;

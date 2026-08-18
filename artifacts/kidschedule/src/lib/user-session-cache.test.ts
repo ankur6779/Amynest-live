@@ -33,4 +33,10 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(readStoredSessionUid()).toBeNull();
   });
+
+  it("does not delete the installation device id", () => {
+    localStorage.setItem("amynest:device:id:v1", "install-device-keep");
+    clearUserSessionCaches();
+    expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
+  });
 });

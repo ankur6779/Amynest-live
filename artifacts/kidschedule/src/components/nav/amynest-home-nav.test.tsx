@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { Router } from "wouter";
 import { NAV_ITEMS } from "@/lib/mobile-menu-config";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
@@ -43,11 +43,31 @@ describe("AmyNest home navigation chrome", () => {
     expect(screen.queryByText(/SMART PARENT/i)).toBeNull();
   });
 
-  it("keeps sign out as a quiet secondary action", () => {
-    wrap(<HomeNavSignOut onSignOut={() => undefined} testId="button-sign-out-mobile" />);
+  it("shows a clearly labeled Sign Out action with confirmation", async () => {
+    const onSignOut = vi.fn();
+    wrap(<HomeNavSignOut onSignOut={onSignOut} testId="button-sign-out-mobile" />);
     const btn = screen.getByTestId("button-sign-out-mobile");
-    expect(btn).toHaveTextContent("Sign out");
+    expect(btn).toHaveTextContent("Sign Out");
     expect(btn.className).not.toMatch(/rose|pink|violet|fuchsia/i);
+
+    btn.click();
+    expect(await screen.findByText("Sign out?")).toBeTruthy();
+    expect(
+      screen.getByText(/this only ends the session on this device/i),
+    ).toBeTruthy();
+    expect(onSignOut).not.toHaveBeenCalled();
+
+    screen.getByRole("button", { name: "Stay signed in" }).click();
+    expect(onSignOut).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText("Sign out?")).toBeNull();
+    });
+
+    btn.click();
+    expect(await screen.findByText("Sign out?")).toBeTruthy();
+    const confirmButtons = screen.getAllByRole("button", { name: "Sign Out" });
+    confirmButtons[confirmButtons.length - 1].click();
+    expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
   it("does not render a PRIMARY catalogue or equal-weight product tiles", () => {

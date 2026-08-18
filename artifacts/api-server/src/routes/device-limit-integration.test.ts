@@ -25,6 +25,7 @@ describe("device limit integration wiring", () => {
     assert.match(src, /router\.post\("\/devices\/register"/);
     assert.match(src, /router\.get\("\/devices"/);
     assert.match(src, /router\.delete\("\/devices\/:deviceId"/);
+    assert.match(src, /router\.post\("\/devices\/release"/);
     assert.match(src, /router\.post\("\/devices\/replace"/);
   });
 
@@ -37,6 +38,16 @@ describe("device limit integration wiring", () => {
   it("grandfathers existing devices in registerOrRefreshDevice", () => {
     const src = readSource("../services/deviceLimitService.ts");
     assert.match(src, /existing\?\.isActive === 1/);
-    assert.match(src, /activeCount >= limit/);
+    assert.match(src, /decideDeviceRegistration/);
+    assert.match(src, /transferDeviceIfNeeded/);
+  });
+
+  it("does not transfer occupancy when the new account is blocked at its own limit", () => {
+    const src = readSource("../services/deviceLimitService.ts");
+    const decideIdx = src.indexOf("const action = decideDeviceRegistration");
+    const blockIdx = src.indexOf('if (action === "block")');
+    const transferClaimIdx = src.lastIndexOf("await transferDeviceIfNeeded");
+    assert.ok(decideIdx > 0 && blockIdx > decideIdx);
+    assert.ok(transferClaimIdx > blockIdx, "claim transfer must happen after the block return");
   });
 });

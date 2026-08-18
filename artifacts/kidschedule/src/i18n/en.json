@@ -177,7 +177,11 @@
     "referrals": "Referrals",
     "dark_mode": "Dark mode",
     "light_mode": "Light mode",
-    "sign_out": "Sign out",
+    "sign_out": "Sign Out",
+    "sign_out_confirm_title": "Sign out?",
+    "sign_out_confirm_body": "You can sign back in anytime. Your account and subscription stay with you — this only ends the session on this device.",
+    "sign_out_confirm_cancel": "Stay signed in",
+    "sign_out_confirm_action": "Sign Out",
     "premium_tagline": "AI for Smart Parenting",
     "greeting": "Hi, {{name}}!",
     "groups": {

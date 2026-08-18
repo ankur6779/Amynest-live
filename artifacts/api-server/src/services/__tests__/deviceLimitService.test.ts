@@ -6,7 +6,11 @@ import {
   normalizeDeviceMetadata,
   resolveClientIp,
 } from "../../lib/device-metadata.js";
-import { canAddNewDevice, isDeviceLimitExempt } from "../deviceLimitLogic.js";
+import {
+  canAddNewDevice,
+  decideDeviceRegistration,
+  isDeviceLimitExempt,
+} from "../deviceLimitLogic.js";
 
 describe("device-metadata", () => {
   it("hashClientIp returns stable sha256 prefix", () => {
@@ -60,7 +64,85 @@ describe("deviceLimitService", () => {
     const dir = dirname(fileURLToPath(import.meta.url));
     const src = readFileSync(join(dir, "../deviceLimitService.ts"), "utf8");
     assert.match(src, /pg_advisory_xact_lock/);
+    assert.match(src, /deviceid:/);
     assert.match(src, /db\.transaction/);
+    assert.match(src, /releaseDeviceFromOtherUsers/);
+    assert.match(src, /releaseCurrentDeviceSession/);
+    assert.match(src, /replace_oldest/);
+  });
+});
+
+describe("decideDeviceRegistration", () => {
+  it("refreshes an already-active row for this user", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: true,
+        thisUserHasInactiveRow: false,
+        activeCountForUser: 1,
+        limit: 1,
+      }),
+      "refresh",
+    );
+  });
+
+  it("registers when under the active-device limit", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: false,
+        thisUserHasInactiveRow: false,
+        activeCountForUser: 0,
+        limit: 1,
+      }),
+      "register",
+    );
+  });
+
+  it("reactivates a historical row for this user when under limit", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: false,
+        thisUserHasInactiveRow: true,
+        activeCountForUser: 0,
+        limit: 1,
+      }),
+      "reactivate",
+    );
+  });
+
+  it("replaces the oldest active session on free single-device plans (reinstall)", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: false,
+        thisUserHasInactiveRow: false,
+        activeCountForUser: 1,
+        limit: 1,
+      }),
+      "replace_oldest",
+    );
+  });
+
+  it("blocks when a multi-device plan is at capacity", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: false,
+        thisUserHasInactiveRow: false,
+        activeCountForUser: 3,
+        limit: 3,
+      }),
+      "block",
+    );
+  });
+
+  it("still registers on premium when under the active-device cap", () => {
+    assert.equal(
+      decideDeviceRegistration({
+        thisUserHasActiveRow: false,
+        thisUserHasInactiveRow: false,
+        activeCountForUser: 2,
+        limit: 3,
+      }),
+      "register",
+    );
   });
 });
 

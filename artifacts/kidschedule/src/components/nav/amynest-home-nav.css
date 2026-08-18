@@ -232,23 +232,29 @@
 
 .amynest-home-nav-footer {
   flex-shrink: 0;
-  padding: 0.45rem 1rem max(0.85rem, env(safe-area-inset-bottom, 0px));
+  padding: 0.65rem 1rem max(0.85rem, env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--ahn-line);
 }
 
 .amynest-home-nav-signout {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   min-height: 44px;
-  padding: 0.25rem 0.15rem;
-  border: 0;
-  background: transparent;
-  color: var(--ahn-muted);
-  font-size: 0.88rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--ahn-line);
+  border-radius: 12px;
+  background: rgba(255, 252, 248, 0.07);
+  color: var(--ahn-ink);
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .amynest-home-nav-signout:hover,
 .amynest-home-nav-signout:focus-visible {
+  background: rgba(255, 252, 248, 0.12);
   color: var(--ahn-ink);
 }
 

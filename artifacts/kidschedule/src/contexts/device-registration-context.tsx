@@ -40,7 +40,7 @@ export function useDeviceRegistration() {
 }
 
 export function DeviceRegistrationProvider({ children }: { children: ReactNode }) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const authFetch = useAuthFetch();
   const authFetchRef = useRef(authFetch);
   authFetchRef.current = authFetch;
@@ -89,15 +89,17 @@ export function DeviceRegistrationProvider({ children }: { children: ReactNode }
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn) {
+    if (!isSignedIn || !userId) {
       setStatus("idle");
       setMessage(null);
       setDevices([]);
       lastUserRef.current = null;
       return;
     }
+    if (lastUserRef.current === userId) return;
+    lastUserRef.current = userId;
     void runRegistration();
-  }, [isSignedIn, runRegistration]);
+  }, [isSignedIn, userId, runRegistration]);
 
   const value = useMemo(
     () => ({ status, message, devices, limit, refresh, markReady }),

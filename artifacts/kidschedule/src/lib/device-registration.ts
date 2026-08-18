@@ -1,6 +1,7 @@
 import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 import { getApiUrl } from "@/lib/api";
 import {
+  applyDeviceHeaders,
   detectBrowser,
   detectDeviceName,
   detectDevicePlatform,
@@ -8,6 +9,7 @@ import {
   getAppVersion,
   getOrCreateDeviceId,
 } from "@/lib/device-id";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { track } from "@/lib/analytics";
 
 export type UserDeviceRecord = {
@@ -190,4 +192,44 @@ export async function replaceUserDevice(
     limit: body.limit ?? 3,
     registered: !!body.registered,
   };
+}
+
+/**
+ * Mark this installation as no longer an ACTIVE session for the signed-in user.
+ * Best-effort: sign-out continues even if this fails (network / expired token).
+ * Does not rotate or delete the local installation id.
+ */
+export async function releaseCurrentDeviceSession(): Promise<void> {
+  const payload = devicePayload();
+  const { getFirebaseAuth } = await import("@/lib/firebase");
+  const user = getFirebaseAuth().currentUser;
+  if (!user) return;
+
+  let token: string;
+  try {
+    token = await user.getIdToken();
+  } catch {
+    return;
+  }
+  if (!token) return;
+
+  const headers = new Headers({
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  });
+  applyDeviceHeaders(headers);
+
+  try {
+    await fetchWithTimeout(
+      getApiUrl("/api/devices/release"),
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ deviceId: payload.deviceId }),
+      },
+      4_000,
+    );
+  } catch (err) {
+    console.warn("[device-registration] release failed", err);
+  }
 }

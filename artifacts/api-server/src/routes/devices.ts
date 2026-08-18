@@ -14,6 +14,7 @@ import {
   deactivateDevice,
   listActiveDevicesForUser,
   registerOrRefreshDevice,
+  releaseCurrentDeviceSession,
   replaceDevice,
   withLegacyIsCurrent,
 } from "../services/deviceLimitService.js";
@@ -223,6 +224,26 @@ router.delete("/devices/:deviceId", async (req, res): Promise<void> => {
   }
 
   void trackDeviceAnalytics(userId, "device_removed", { deviceId });
+  res.sendStatus(204);
+});
+
+router.post("/devices/release", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const parsed = RegisterBody.safeParse(req.body);
+  const headers = readDeviceHeaders(req);
+  const deviceId = (parsed.success ? parsed.data.deviceId : "") || headers.deviceId;
+  if (!deviceId || deviceId.length < 8) {
+    res.status(400).json({ error: "device_id_required" });
+    return;
+  }
+
+  await releaseCurrentDeviceSession(userId, deviceId);
+  logger.info({ evt: "device.released", userId, deviceId }, "Device session released");
   res.sendStatus(204);
 });
 

@@ -10,6 +10,10 @@ const SESSION_UID_KEY = "amynest:session:uid:v1";
  * Wipe client-side caches tied to a prior account/session.
  * Required after account deletion or when Firebase uid changes — otherwise
  * stale onboarding/children data blocks child add and skips onboarding.
+ *
+ * Does not remove `amynest:device:id:v1`. The installation id is reused so
+ * the backend can treat this install as one session; account ownership lives
+ * in `user_devices`, not in the local id.
  */
 export function clearUserSessionCaches(): void {
   clearOnboardingCompletionCache();

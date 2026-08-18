@@ -120,6 +120,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
+    try {
+      const { releaseCurrentDeviceSession } = await import("@/lib/device-registration");
+      await releaseCurrentDeviceSession();
+    } catch (err) {
+      console.warn("[firebase-auth] device release failed:", err);
+    }
     const { clearUserSessionCaches } = await import("@/lib/user-session-cache");
     clearUserSessionCaches();
     try {
