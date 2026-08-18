@@ -1,4 +1,5 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { generateOpenAiTts } from "../ttsGenerate.js";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { PHONEME_PROMPTS } from "../../routes/phonics.js";
@@ -29,7 +30,7 @@ export async function runPhonicsWeeklyInsight(input: {
 }): Promise<{ message: string; suggestion: string }> {
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [{ role: "user", content: input.prompt }],
       max_completion_tokens: 200,
       temperature: 0.6,

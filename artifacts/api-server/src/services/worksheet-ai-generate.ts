@@ -21,9 +21,9 @@ import {
   type WorksheetGenerateResponse,
 } from "@workspace/worksheet-studio";
 import { chatCompletionWithTimeout, type ChatMessage } from "./openai-chat.js";
+import { resolveOpenAiChatModel } from "./openai-model-catalog.js";
 import { logger } from "../lib/logger.js";
 
-const MODEL = "gpt-4o-mini";
 const MAX_ATTEMPTS = 3; // 1 initial + 2 retries
 const NAMESPACE = "worksheet_studio_contract_v1";
 
@@ -85,7 +85,7 @@ export async function runWorksheetAiContractGeneration(
 
     const outcome = await chatCompletionWithTimeout(
       {
-        model: MODEL,
+        model: resolveOpenAiChatModel("legacy"),
         messages,
         max_completion_tokens: 2500,
         temperature: attempt === 0 ? 0.55 : 0.2,
@@ -99,7 +99,7 @@ export async function runWorksheetAiContractGeneration(
     storeRawAiResponse({ responseId, attempt, raw: json });
     session.captureRaw(json, {
       responseId: `${responseId}_a${attempt}`,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       pageCountHint: reqBody.pageCount,
     });
 

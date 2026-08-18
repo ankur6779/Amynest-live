@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { generateOpenAiTts } from "../ttsGenerate.js";
 import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 
@@ -48,7 +49,7 @@ export async function runSpellingAiGenerate(input: {
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.85,
       messages: [
         {

@@ -5,6 +5,8 @@
  * Env-overridable model ids; never hardcode at call sites.
  */
 
+import { resolveOpenAiChatModelCatalog } from "../openai-model-catalog.js";
+
 export type BirthSkyModelTier = "fast" | "reasoning";
 
 export type BirthSkyRouteDecision = {
@@ -57,21 +59,15 @@ function escalationThreshold(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : 7;
 }
 
-/** Env-driven model ids — never scatter hardcodes at call sites. */
+/** Env-driven model ids — shared product catalog; OPENAI_CHAT_MODEL cannot collapse tiers. */
 export function resolveBirthSkyModelCatalog(): {
   fast: string;
   reasoning: string;
 } {
-  const legacy = process.env.OPENAI_CHAT_MODEL?.trim();
+  const catalog = resolveOpenAiChatModelCatalog();
   return {
-    fast:
-      process.env.OPENAI_CHAT_MODEL_FAST?.trim() ||
-      legacy ||
-      "gpt-5-mini",
-    reasoning:
-      process.env.OPENAI_CHAT_MODEL_REASONING?.trim() ||
-      legacy ||
-      "gpt-5",
+    fast: catalog.fast,
+    reasoning: catalog.reasoning,
   };
 }
 

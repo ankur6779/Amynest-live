@@ -3,6 +3,7 @@ import {
   MEALS_AI_OPENAI_TIMEOUT_MS,
 } from "../../lib/meals-ai-timeouts.js";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import {
   getAgeBand,
   buildAgeSafetyPromptBlock,
@@ -86,7 +87,7 @@ export async function runMealsGenerateAi(input: {
   const prompt = buildMealPrompt(input.count, input.region, input.type, input.isVeg);
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_completion_tokens: 2000,
@@ -156,7 +157,7 @@ export async function runMealsAiGenerate(input: {
 }): Promise<{ meals: unknown[]; amyMessage: string; ageBand?: string }> {
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [
         {
           role: "system",
@@ -230,7 +231,7 @@ export async function runMealsWeekPlan(input: {
 }): Promise<{ plan: unknown[]; cached: false }> {
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [
         {
           role: "system",
@@ -257,7 +258,7 @@ export async function runMealsFamilyPortions(input: {
 }): Promise<Record<string, unknown> & { cached: false }> {
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [
         {
           role: "system",

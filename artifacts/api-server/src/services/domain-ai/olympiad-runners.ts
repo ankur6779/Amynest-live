@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import {
   countryProfile,
   type OlympiadAgeBand,
@@ -61,7 +62,7 @@ Output JSON only: {"questions":[{"subject":"math|science|reasoning|gk","question
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.7,
       max_completion_tokens: 2500,
       messages: [

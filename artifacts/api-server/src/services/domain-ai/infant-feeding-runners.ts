@@ -1,4 +1,5 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import {
   buildInfantFeedingPlanPrompt,
   buildInfantFeedingPlanFallback,
@@ -11,8 +12,6 @@ import {
   logInfantAiCost,
 } from "../infantAiCostMonitor.js";
 
-const MODEL = "gpt-4o-mini";
-
 export async function runInfantFeedingPlan(input: {
   context: InfantFeedingPlanContext;
   userId?: string;
@@ -22,7 +21,7 @@ export async function runInfantFeedingPlan(input: {
   const prompt = buildInfantFeedingPlanPrompt(input.context);
   const outcome = await chatCompletionWithTimeout(
     {
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       messages: [
         {
           role: "system",
@@ -43,7 +42,7 @@ export async function runInfantFeedingPlan(input: {
       job: "infant_feeding_plan",
       userId: input.userId,
       childId: input.childId,
-      model: MODEL,
+      model: resolveOpenAiChatModel("legacy"),
       estimatedTokens:
         estimateTokensFromText(prompt) + estimateTokensFromText(outcome.content ?? ""),
       cached: false,

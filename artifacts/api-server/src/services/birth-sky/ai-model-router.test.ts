@@ -76,9 +76,20 @@ describe("routeBirthSkyModel (weighted)", () => {
     assert.equal(d.tier, "fast");
   });
 
-  it("uses env catalog models", () => {
-    const cat = resolveBirthSkyModelCatalog();
-    assert.ok(cat.fast.length > 0);
-    assert.ok(cat.reasoning.length > 0);
+  it("defaults FAST to gpt-5-mini and REASONING to gpt-5", () => {
+    const prevFast = process.env.OPENAI_CHAT_MODEL_FAST;
+    const prevReasoning = process.env.OPENAI_CHAT_MODEL_REASONING;
+    delete process.env.OPENAI_CHAT_MODEL_FAST;
+    delete process.env.OPENAI_CHAT_MODEL_REASONING;
+    try {
+      const cat = resolveBirthSkyModelCatalog();
+      assert.equal(cat.fast, "gpt-5-mini");
+      assert.equal(cat.reasoning, "gpt-5");
+    } finally {
+      if (prevFast === undefined) delete process.env.OPENAI_CHAT_MODEL_FAST;
+      else process.env.OPENAI_CHAT_MODEL_FAST = prevFast;
+      if (prevReasoning === undefined) delete process.env.OPENAI_CHAT_MODEL_REASONING;
+      else process.env.OPENAI_CHAT_MODEL_REASONING = prevReasoning;
+    }
   });
 });

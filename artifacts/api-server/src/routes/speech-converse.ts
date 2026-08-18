@@ -7,6 +7,7 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
+import { resolveOpenAiChatModel } from "../services/openai-model-catalog.js";
 import {
   conversationTrialWindow,
   ensureConversationFirstUseUnix,
@@ -61,8 +62,6 @@ import { asyncRoute } from "../middlewares/async-route.js";
  */
 
 const router: IRouter = Router();
-
-const MODEL = "gpt-4o-mini";
 
 /** Free-tier per-day live conversation cap (seconds). 5 minutes = one session. */
 export const LIVE_CONVERSATION_DAILY_SECONDS = 300;
@@ -418,7 +417,7 @@ router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
 
   const openAiPayload: OpenAiChatPayload = {
     namespace: `speech-converse:${body.childId ?? "anon"}:${ageBand}:${phase}`,
-    model: MODEL,
+    model: resolveOpenAiChatModel("fast"),
     messages: [
       {
         role: "system",

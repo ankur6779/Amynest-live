@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { SMART_SUBJECTS, type SmartSubjectId } from "@workspace/study-zone";
 
 const AiQuestionSchema = z.object({
@@ -40,7 +41,7 @@ Output JSON: {"questions":[{"question":"...","options":["..."],"answer":"..."}]}
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.7,
       max_completion_tokens: 2000,
       messages: [

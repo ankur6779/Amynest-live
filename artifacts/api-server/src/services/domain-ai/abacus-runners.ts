@@ -1,4 +1,5 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { buildAbacusTutorPrompt, type LevelId } from "@workspace/abacus";
 import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 
@@ -32,7 +33,7 @@ export async function runAbacusTutor(input: {
     input.language === "en" ? appendLearningZoneEnglishRule(system) : system;
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       messages: [
         { role: "system", content: systemWithRules },
         { role: "user", content: user },

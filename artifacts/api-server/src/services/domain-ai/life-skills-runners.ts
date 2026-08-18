@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { resolveOpenAiChatModel } from "../openai-model-catalog.js";
 import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 import type {
   LifeSkillAgeBand,
@@ -69,7 +70,7 @@ Output JSON only: {"tasks":[{"category":"...","difficulty":"easy|medium|hard","t
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.7,
       max_completion_tokens: 2500,
       messages: [
@@ -127,7 +128,7 @@ Output JSON: {"words":["cat","map",...]}`;
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-4o-mini",
+      model: resolveOpenAiChatModel("legacy"),
       temperature: 0.5,
       messages: [
         {
