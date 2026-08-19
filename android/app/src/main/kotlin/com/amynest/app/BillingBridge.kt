@@ -212,9 +212,11 @@ class BillingBridge(
                         )
                     },
                     onSuccess = { storeTransaction, customerInfo ->
+                        // Play orderId is preferred; purchaseToken is always present as fallback.
                         val transactionId =
-                            storeTransaction.orderId?.takeIf { it.isNotBlank() }
-                                ?: storeTransaction.id
+                            storeTransaction?.orderId?.takeIf { it.isNotBlank() }
+                                ?: storeTransaction?.purchaseToken?.takeIf { it.isNotBlank() }
+                                ?: ""
                         sendRaw(
                             replyProxy, cbId,
                             JSONObject()
