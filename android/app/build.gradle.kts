@@ -45,8 +45,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 101
-        versionName = "1.4.58"
+        versionCode = 102
+        versionName = "1.4.59"
         resValue(
             "string",
             "facebook_client_token",
@@ -195,14 +195,16 @@ tasks.register<Exec>("validateFacebookLoginConfig") {
 }
 
 dependencies {
-    // Core
-    implementation("androidx.core:core-ktx:1.13.1")
+    // Core — Activity 1.9.3+ provides enableEdgeToEdge() (Android 15 Play guidance)
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.9.1")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    // Material 1.14.0-alpha05 avoids deprecated setStatusBarColor/setNavigationBarColor
+    // inside BottomSheetDialog / EdgeToEdgeUtils (Play Console Android 15 recommendation).
+    implementation("com.google.android.material:material:1.14.0-alpha05")
 
     // WebView (for AmyNestPushNative + AmyNestBillingNative message listeners)
-    implementation("androidx.webkit:webkit:1.11.0")
+    implementation("androidx.webkit:webkit:1.12.1")
 
     // Google Play Billing via RevenueCat. Handles purchase verification and
     // subscription state through the backend RevenueCat webhook.
