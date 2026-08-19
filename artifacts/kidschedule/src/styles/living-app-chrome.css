@@ -1,0 +1,72 @@
+/**
+ * Living global chrome — header + bottom tab bar continuity.
+ * Gated by html.amynest-living-universe (FA-02 living production face).
+ * Living OFF / legacy keeps index.css navy/card chrome unchanged.
+ * Presentation only — no nav architecture, routes, or business logic.
+ */
+
+html.amynest-living-universe,
+html.amynest-living-universe body {
+  background-color: var(--sanctuary-floor-deep);
+}
+
+html.amynest-living-universe .app-shell.main-container,
+html.amynest-living-universe .app-shell,
+html.amynest-living-universe .main-container {
+  background-color: var(--sanctuary-floor-deep);
+  background-image: none;
+}
+
+/* Header — embedded in the room top, not a cool-navy toolbar */
+html.amynest-living-universe .app-header,
+html.amynest-living-universe.amynest-native-shell .app-header,
+html.amynest-living-universe.amynest-android-shell .app-header,
+html.amynest-living-universe.amynest-native-shell:not(.amynest-android-shell) .app-header {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sanctuary-floor-top) 88%, transparent) 0%,
+      color-mix(in srgb, var(--sanctuary-floor-mid) 55%, transparent) 100%
+    );
+  backdrop-filter: blur(16px) saturate(1.04);
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  border-bottom: 1px solid var(--sanctuary-chrome-edge);
+  box-shadow: none;
+}
+
+html.amynest-living-universe .app-header .page-back-btn {
+  background: rgba(255, 252, 248, 0.06);
+  border-color: var(--sanctuary-chrome-edge);
+  color: var(--atmosphere-night-ink);
+  box-shadow: none;
+}
+
+/* Footer shell — kill legacy rgba(10,15,30) navy block */
+html.amynest-living-universe .app-footer,
+html.amynest-living-universe.amynest-android-shell .app-footer,
+html.amynest-living-universe.amynest-native-shell .app-footer,
+html.amynest-living-universe.amynest-android-shell .app-footer.tabbar,
+html.amynest-living-universe.amynest-native-shell .app-footer.tabbar {
+  background: transparent;
+}
+
+/* Tab bar — subtle elevated sanctuary surface, same night family */
+html.amynest-living-universe .app-footer__nav {
+  border-top: 1px solid var(--sanctuary-chrome-edge);
+  background:
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--sanctuary-floor-deep) 92%, transparent) 0%,
+      color-mix(in srgb, var(--sanctuary-floor-mid) 72%, transparent) 55%,
+      color-mix(in srgb, var(--sanctuary-chrome-fill) 88%, transparent) 100%
+    );
+  backdrop-filter: blur(18px) saturate(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.04);
+  box-shadow:
+    0 -12px 28px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 252, 248, 0.04);
+}
+
+html.amynest-living-universe .app-footer__nav .text-muted-foreground {
+  color: rgba(244, 238, 230, 0.58);
+}

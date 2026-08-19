@@ -53,7 +53,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
     >
       <AmyFab embedded />
       <nav
-        className="app-footer__nav w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
+        className="app-footer__nav w-full"
         aria-label={t("nav.main", { defaultValue: "Main" })}
       >
         <LayoutGroup id="bottom-tab-bar">

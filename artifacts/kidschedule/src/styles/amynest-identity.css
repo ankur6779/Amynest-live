@@ -14,6 +14,31 @@
   --atmosphere-night-ink: #f4eee6;
   --atmosphere-night-ink-soft: #9a90a8;
 
+  /*
+   * Shared sanctuary floor + chrome vocabulary.
+   * Same night/sand family as FE / Today Home / Rooms / Routines.
+   * Global chrome must inherit these — never cool navy #0a0f1e blocks.
+   */
+  --sanctuary-floor-top: #100d16;
+  --sanctuary-floor-mid: #0a0810;
+  --sanctuary-floor-deep: #030208;
+  --sanctuary-sand-spill: rgba(232, 212, 184, 0.16);
+  --sanctuary-chrome-edge: rgba(232, 212, 184, 0.12);
+  --sanctuary-chrome-fill: rgba(8, 6, 12, 0.55);
+  --sanctuary-chrome-fill-strong: rgba(8, 6, 12, 0.72);
+  --sanctuary-floor:
+    radial-gradient(
+      ellipse 80% 55% at 50% 8%,
+      var(--sanctuary-sand-spill) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      var(--sanctuary-floor-top) 0%,
+      var(--sanctuary-floor-mid) 42%,
+      var(--sanctuary-floor-deep) 100%
+    );
+
   /* Morning */
   --atmosphere-morning-bg: #f3e8d8;
   --atmosphere-morning-key: #e8d4b8;

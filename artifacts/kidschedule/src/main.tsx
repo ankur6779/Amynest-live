@@ -9,6 +9,9 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
+import { syncAmynestLivingUniverseDocumentClass } from "@/lib/amynest-living-universe";
+
+syncAmynestLivingUniverseDocumentClass();
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import {

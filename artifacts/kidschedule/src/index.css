@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 @import "./styles/amynest-identity.css";
+@import "./styles/living-app-chrome.css";
 
 :root {
   --sab: 0px;
@@ -2507,6 +2508,7 @@ html[data-theme="dark"] {
   min-width: 0;
   min-height: 100%;
   box-sizing: border-box;
+  background-color: hsl(var(--background));
 }
 
 .app-scroll > *,
@@ -2592,6 +2594,8 @@ html[data-theme="dark"] {
   background: hsl(var(--background) / 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid hsl(var(--border) / 0.8);
+  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.35);
 }
 
 .app-header__bar {
@@ -2731,6 +2735,11 @@ html.amynest-native-shell .drawer-overlay {
   box-sizing: border-box;
   pointer-events: auto;
   transform: none !important;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.95);
+  box-shadow: 0 -8px 28px var(--shadow-color);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 /* Ask Amy — anchored to footer top (immune to inflated --sab on viewport bottom). */
