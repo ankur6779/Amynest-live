@@ -290,7 +290,8 @@ export async function kieGenerateVideo(
   });
 
   // Veo sometimes fails audio branch on child/dialogue prompts; visual still needed.
-  // Retry once with silence lock — keep the same reference imageUrls (identity intact).
+  // Retry 1: same REFERENCE refs + silence lock.
+  // Retry 2: FIRST_AND_LAST with canonical bible only (still fails closed if bible missing).
   if (
     pollResult.error &&
     /unable to generate audio|audio for this request/i.test(pollResult.error)
@@ -298,9 +299,10 @@ export async function kieGenerateVideo(
     console.warn(
       `[kie-video] audio-branch fail — retrying same refs with silence lock: ${pollResult.error}`,
     );
+    const silentPrompt = `${options.prompt}\n\nSILENT VIDEO ONLY. No speech, no dialogue, no singing. Ambient silence. Visual performance only.`;
     const silentBody = {
       ...requestBody,
-      prompt: `${options.prompt}\n\nSILENT VIDEO ONLY. No speech, no dialogue, no singing. Ambient silence. Visual performance only.`,
+      prompt: silentPrompt,
     };
     const retry = await httpJson("https://api.kie.ai/api/v1/veo/generate", {
       method: "POST",
@@ -322,19 +324,78 @@ export async function kieGenerateVideo(
       maxPollAttempts,
       signal: options.signal,
     });
-    if (retryPoll.error) throw new Error(retryPoll.error);
+    if (!retryPoll.error) {
+      const creditsAfter = await kieCredits(options.apiKey, options.signal).catch(
+        () => undefined,
+      );
+      return {
+        videoPath: options.outputPath,
+        taskId: retryId,
+        rawUri: retryPoll.rawUri!,
+        model: effectiveModel,
+        pollAttempts: retryPoll.pollAttempts,
+        creditsBefore,
+        creditsAfter,
+        requestEvidence,
+      };
+    }
+
+    console.warn(
+      `[kie-video] silence retry failed — falling back to FIRST_AND_LAST with canonical bible: ${retryPoll.error}`,
+    );
+    // Prefer bible URL (index 0 when required refs ordered first).
+    const bibleOnlyUrls = [imageUrls[0]!];
+    const fallbackBody = {
+      prompt: silentPrompt,
+      imageUrls: bibleOnlyUrls,
+      model: effectiveModel,
+      generationType: "FIRST_AND_LAST_FRAMES_2_VIDEO" as KieGenerationType,
+      aspect_ratio: aspectRatio,
+      resolution,
+      duration: requestedDuration,
+      enableTranslation: false,
+    };
+    console.log(
+      `[kie-video] FINAL HTTP payload (redacted fallback): character=${options.character ?? "n/a"} refs=1 type=FIRST_AND_LAST_FRAMES_2_VIDEO model=${effectiveModel} duration=${requestedDuration} hash=${hashes[0]?.slice(0, 12)}`,
+    );
+    const fb = await httpJson("https://api.kie.ai/api/v1/veo/generate", {
+      method: "POST",
+      key: options.apiKey,
+      signal: options.signal,
+      body: fallbackBody,
+    });
+    const fbId = fb.json?.data?.taskId as string | undefined;
+    if (!fb.ok || !fbId) {
+      throw new Error(
+        `KIE bible fallback create failed (${fb.status}): ${JSON.stringify(fb.json).slice(0, 500)}`,
+      );
+    }
+    const fbPoll = await pollKieTask({
+      apiKey: options.apiKey,
+      taskId: fbId,
+      outputPath: options.outputPath,
+      pollIntervalMs,
+      maxPollAttempts,
+      signal: options.signal,
+    });
+    if (fbPoll.error) throw new Error(fbPoll.error);
     const creditsAfter = await kieCredits(options.apiKey, options.signal).catch(
       () => undefined,
     );
     return {
       videoPath: options.outputPath,
-      taskId: retryId,
-      rawUri: retryPoll.rawUri!,
+      taskId: fbId,
+      rawUri: fbPoll.rawUri!,
       model: effectiveModel,
-      pollAttempts: retryPoll.pollAttempts,
+      pollAttempts: fbPoll.pollAttempts,
       creditsBefore,
       creditsAfter,
-      requestEvidence,
+      requestEvidence: {
+        ...requestEvidence,
+        generationType: "FIRST_AND_LAST_FRAMES_2_VIDEO",
+        imageUrlCount: 1,
+        durationSeconds: requestedDuration,
+      },
     };
   }
 
