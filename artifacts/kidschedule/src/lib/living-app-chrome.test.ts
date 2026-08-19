@@ -1,10 +1,17 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 
 const srcDir = resolve(import.meta.dirname, "..");
 
 describe("living global chrome continuity", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    document.documentElement.classList.remove("amynest-living-universe");
+    document.body?.classList.remove("amynest-living-universe");
+  });
+
   it("shared sanctuary chrome tokens exist for header/footer inheritance", () => {
     const identity = readFileSync(
       resolve(srcDir, "styles/amynest-identity.css"),
