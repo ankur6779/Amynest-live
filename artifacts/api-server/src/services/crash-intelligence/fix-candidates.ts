@@ -8,10 +8,10 @@ export const FIX_CANDIDATES: FixCandidate[] = [
     readableFingerprint: "ChildForm|MaximumDepth|InfantEffect",
     issue: "Unconditional setValue in infant-normalize effect.",
     evidence: [
-      "form.tsx:336 — setValue called when patches.educationStage is truthy without comparing current value",
+      "form.tsx:345 — setValue called when patches.educationStage is truthy without comparing current value",
       "infantFormNormalizationPatches returns patch when educationStage !== 'at_home'",
       "Effect deps [isInfant, watchDob, form] — form object identity triggers re-runs",
-      "Hydration reset (form.tsx:425) can change educationStage, re-triggering infant effect",
+      "Hydration reset (form.tsx:448) can change educationStage, re-triggering infant effect",
       "Production stack: Maximum update depth exceeded at ChildForm",
     ],
     proposedFix:
@@ -25,12 +25,12 @@ export const FIX_CANDIDATES: FixCandidate[] = [
     readableFingerprint: "ChildForm|MaximumDepth|ChildForm",
     issue: "form.reset on every React Query refetch despite hydration key guard.",
     evidence: [
-      "form.tsx:359-467 — hydration useEffect depends on child + parentCountry",
+      "form.tsx:369-481 — hydration useEffect depends on child + parentCountry",
       "childFormResetValuesEqual exists but reset still fires when watchers churn",
       "buildChildHydrationKey uses childId:dob:parentCountry (stable)",
     ],
     proposedFix:
-      "Early-return when childHydrationKeyRef matches hydrationKey before any setValue/reset. Use country-only patch path (lines 407-424) when only parentCountry changed.",
+      "Early-return when childHydrationKeyRef matches hydrationKey before any setValue/reset. Use country-only patch path (lines 419-444) when only parentCountry changed.",
     confidence: 90,
     risk: "Low",
     minimalDiffHint: "if (childHydrationKeyRef.current === hydrationKey) return;",
