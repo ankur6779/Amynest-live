@@ -5,6 +5,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   searchConversations,
@@ -15,9 +16,11 @@ import {
 import { NEW_CHAT_TITLE } from "./conversation-title";
 
 const USER = "test-user";
+const OTHER_USER = "other-user";
 
 afterEach(() => {
   localStorage.removeItem(storageKeyForUser(USER));
+  localStorage.removeItem(storageKeyForUser(OTHER_USER));
 });
 
 describe("conversation-sessions", () => {
@@ -90,5 +93,18 @@ describe("conversation-sessions", () => {
     saveSessionStore(USER, { conversations: [conv] });
     expect(loadSessionStore(USER).conversations[0]?.title).toBe("Hello");
     expect(emptyConversation().title).toBe(NEW_CHAT_TITLE);
+  });
+
+  it("prepareAmyAiSessionForUser returns empty current chat and the target user's store", () => {
+    const conv = appendMessage(emptyConversation(), { role: "user", content: "User A secret" });
+    saveSessionStore(USER, { conversations: [conv] });
+
+    const reset = prepareAmyAiSessionForUser(OTHER_USER);
+    expect(reset.current.messages).toHaveLength(0);
+    expect(reset.store.conversations).toHaveLength(0);
+
+    const userA = prepareAmyAiSessionForUser(USER);
+    expect(userA.current.messages).toHaveLength(0);
+    expect(userA.store.conversations[0]?.title).toBe("User A secret");
   });
 });
