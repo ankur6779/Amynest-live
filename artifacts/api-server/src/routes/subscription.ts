@@ -34,7 +34,7 @@ import {
   razorpayPlanIdToPlan,
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
-import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
+import { applyRevenueCatSnapshot, isRevenueCatImmediateRevoke, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
 import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
@@ -512,11 +512,25 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
 
     if (!synced.dbUpdated) {
       const plan = productIdToPlan(event.product_id);
+      const immediateRevoke = isRevenueCatImmediateRevoke({
+        eventType: event.type,
+        cancelReason: event.cancel_reason,
+        price: event.price,
+      });
       const expirationAt = event.expiration_at_ms ? new Date(event.expiration_at_ms) : null;
       const gracePeriodExpirationAt = event.grace_period_expiration_at_ms
         ? new Date(event.grace_period_expiration_at_ms)
         : null;
-      if (plan || event.type === "EXPIRATION" || event.type === "BILLING_ISSUE" || event.type === "SUBSCRIPTION_PAUSED" || event.type === "REFUND") {
+      // Refunds must apply even without a mapped product id — otherwise a failed
+      // RC sync leaves the prior paid row untouched after money is returned.
+      if (
+        plan ||
+        immediateRevoke ||
+        event.type === "EXPIRATION" ||
+        event.type === "BILLING_ISSUE" ||
+        event.type === "SUBSCRIPTION_PAUSED" ||
+        event.type === "REFUND"
+      ) {
         const fallback = await applyRevenueCatSnapshot(userId, {
           appUserId: userId,
           originalAppUserId: event.original_app_user_id ?? null,
@@ -529,12 +543,21 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
           expirationAt,
           gracePeriodExpirationAt,
           autoRenewStatus:
-            event.type === "CANCELLATION" || event.type === "EXPIRATION" || event.type === "SUBSCRIPTION_PAUSED"
+            immediateRevoke ||
+            event.type === "CANCELLATION" ||
+            event.type === "EXPIRATION" ||
+            event.type === "SUBSCRIPTION_PAUSED"
               ? false
               : event.auto_renew_status ?? null,
-          cancelledAt: event.cancellation_at_ms ? new Date(event.cancellation_at_ms) : null,
+          cancelledAt: event.cancellation_at_ms
+            ? new Date(event.cancellation_at_ms)
+            : immediateRevoke
+              ? new Date()
+              : null,
           eventType: event.type,
           eventAt,
+          cancelReason: event.cancel_reason ?? null,
+          price: typeof event.price === "number" ? event.price : null,
         }, { source: "webhook", providerEventId: eventId });
         appliedFrom = "webhook_payload";
         applied = { isPremium: fallback.isPremium, plan: fallback.plan === "free" ? undefined : fallback.plan, reason: fallback.reason };
