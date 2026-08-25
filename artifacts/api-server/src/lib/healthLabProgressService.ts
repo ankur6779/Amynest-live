@@ -185,8 +185,11 @@ export async function appendHealthLabSession(
   clientUpdatedAt: number,
 ) {
   const existing = await loadRow(childId);
-  const profile = (existing?.profile as Record<string, unknown>) ?? { version: 2, childId };
-  const history = (profile.gameHistory as unknown[]) ?? [];
+  const base = (existing?.profile as Record<string, unknown>) ?? { version: 2, childId };
+  // Clone — session POST only adds history; it must not outrank a fuller profile sync
+  // by bumping clientUpdatedAt through syncHealthLabProfile.
+  const profile: Record<string, unknown> = { ...base };
+  const history = (base.gameHistory as unknown[]) ?? [];
   const byTs = new Map<number, unknown>();
   for (const s of history) {
     const ts = (s as { timestamp?: number }).timestamp ?? 0;
@@ -194,8 +197,31 @@ export async function appendHealthLabSession(
   }
   byTs.set(session.timestamp, session);
   profile.gameHistory = [...byTs.values()].slice(-500);
-  profile.totalSessions = Number(profile.totalSessions ?? 0) + 1;
-  return syncHealthLabProfile(childId, userId, profile, clientUpdatedAt);
+  profile.totalSessions = Number(base.totalSessions ?? 0) + 1;
+
+  if (existing) {
+    const [updated] = await db
+      .update(healthLabProgressTable)
+      .set({
+        profile,
+        // Preserve watermark so a history-only append cannot block a newer full sync.
+        updatedAt: new Date(),
+      })
+      .where(eq(healthLabProgressTable.childId, childId))
+      .returning();
+    return updated;
+  }
+
+  const [created] = await db
+    .insert(healthLabProgressTable)
+    .values({
+      childId,
+      userId,
+      profile,
+      clientUpdatedAt: new Date(clientUpdatedAt),
+    })
+    .returning();
+  return created;
 }
 
 export async function verifyChildOwner(childId: number, userId: string) {

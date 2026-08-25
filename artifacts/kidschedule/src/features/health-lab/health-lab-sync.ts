@@ -21,6 +21,10 @@ const META_KEY = "amynest:health-lab-sync-meta:";
 const hydrated = new Set<number>();
 let globalFetch: AuthFetchFn | null = null;
 
+/** Per-child single-flight + coalesced reflush after local advances mid-request. */
+const flushInFlight = new Map<number, Promise<boolean>>();
+const flushAgain = new Set<number>();
+
 type QueueEntry = { kind: "full" | "session"; clientUpdatedAt: number };
 
 function isOnline(): boolean {
@@ -101,6 +105,14 @@ export function configureHealthLabSync(fetcher: AuthFetchFn): void {
 
 let onlineListenerAttached = false;
 
+/** Test-only: clear in-flight flush bookkeeping between cases. */
+export function resetHealthLabSyncForTests(): void {
+  flushInFlight.clear();
+  flushAgain.clear();
+  hydrated.clear();
+  globalFetch = null;
+}
+
 export async function hydrateHealthLabProfile(
   childId: number,
   authFetch?: AuthFetchFn | null,
@@ -145,7 +157,31 @@ export function enqueueHealthLabSync(childId: number): void {
   if (isOnline() && globalFetch) void flushHealthLabSync(childId);
 }
 
+/**
+ * Flush queued profile sync. Single-flight per child: concurrent callers coalesce
+ * into one follow-up flush so a slow response cannot wipe newer local progress
+ * or clear a queue that advanced mid-flight.
+ */
 export async function flushHealthLabSync(childId: number): Promise<boolean> {
+  const existing = flushInFlight.get(childId);
+  if (existing) {
+    flushAgain.add(childId);
+    return existing;
+  }
+
+  const run = runFlushHealthLabSync(childId).finally(() => {
+    flushInFlight.delete(childId);
+  });
+  flushInFlight.set(childId, run);
+
+  const ok = await run;
+  if (flushAgain.delete(childId)) {
+    return flushHealthLabSync(childId);
+  }
+  return ok;
+}
+
+async function runFlushHealthLabSync(childId: number): Promise<boolean> {
   const fetcher = globalFetch;
   if (!fetcher || !isOnline()) return false;
 
@@ -166,8 +202,23 @@ export async function flushHealthLabSync(childId: number): Promise<boolean> {
       return false;
     }
     const json = (await parseApiJson<{ profile?: Partial<HealthLabPersistedState> }>(res));
+
+    const metaNow = readMeta(childId);
+    // Local play advanced while this request was in flight — never clobber or
+    // drop the queue; a coalesced reflush will push the newer snapshot.
+    if (metaNow > clientUpdatedAt) {
+      const q = loadQueue(childId);
+      if (q.length === 0) {
+        saveQueue(childId, [{ kind: "full", clientUpdatedAt: metaNow }]);
+      }
+      flushAgain.add(childId);
+      trackHealthLabEvent("health_lab_sync_success", childId, { action: "flush_stale_skipped" });
+      return true;
+    }
+
     if (json.profile) {
-      const merged = mergeState(state, json.profile, clientUpdatedAt, clientUpdatedAt);
+      const current = loadHealthLabState(childId);
+      const merged = mergeState(current, json.profile, clientUpdatedAt, metaNow || clientUpdatedAt);
       saveHealthLabState(merged);
     }
     saveQueue(childId, []);
@@ -183,6 +234,7 @@ export async function postHealthLabSession(
   childId: number,
   session: HealthLabPersistedState["gameHistory"][number],
 ): Promise<void> {
+  // Caller should persist local progress before this so enqueue/flush see fresh state.
   enqueueHealthLabSync(childId);
   const fetcher = globalFetch;
   if (!fetcher || !isOnline()) return;
@@ -193,7 +245,8 @@ export async function postHealthLabSession(
       body: JSON.stringify({
         childId,
         session,
-        clientUpdatedAt: Date.now(),
+        // Align with profile sync meta so session append cannot outrank full sync.
+        clientUpdatedAt: readMeta(childId) || Date.now(),
       }),
     });
   } catch {

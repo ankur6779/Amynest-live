@@ -78,3 +78,35 @@ test("mergeProfiles accepts empty server", () => {
   assert.equal(winner, "client");
   assert.equal(profile.totalXp, 10);
 });
+
+/**
+ * Session append must not call syncHealthLabProfile with a history-only patch and a
+ * fresh clientUpdatedAt — that bumps the watermark and can make a concurrent full
+ * profile sync (with XP/level) lose via clientTs < serverTs.
+ * Guard: appendHealthLabSession updates profile history in place and preserves
+ * existing clientUpdatedAt (see healthLabProgressService.ts).
+ */
+test("mergeProfiles older full sync loses when watermark was bumped (documents session-append hazard)", () => {
+  const serverAfterSessionAppend = {
+    version: 2,
+    childId: 1,
+    totalXp: 10,
+    coins: 0,
+    streakDays: 0,
+    badges: [],
+    gameHistory: [{ gameId: "breath-control", timestamp: 100, durationMs: 1000, xpEarned: 50, xpTier: "good", score: 80 }],
+  };
+  const fullClient = {
+    version: 2,
+    childId: 1,
+    totalXp: 60,
+    coins: 5,
+    streakDays: 1,
+    badges: [],
+    gameHistory: [{ gameId: "breath-control", timestamp: 100, durationMs: 1000, xpEarned: 50, xpTier: "good", score: 80 }],
+  };
+  // Watermark after buggy session append (T=2000) vs full sync meta (T=1500).
+  const { profile, winner } = mergeProfiles(serverAfterSessionAppend, fullClient, 2000, 1500);
+  assert.equal(winner, "server");
+  assert.equal(profile.totalXp, 10, "full XP sync rejected when session append outranked it");
+});
