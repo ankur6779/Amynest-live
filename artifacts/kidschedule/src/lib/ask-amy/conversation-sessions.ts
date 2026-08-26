@@ -47,6 +47,17 @@ export function createConversationId(): string {
   return `c-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Reset in-memory UI state when the signed-in user changes on a shared device. */
+export function prepareAmyAiSessionForUser(userId: string | null | undefined): {
+  store: AmyAiSessionStore;
+  current: AmyAiConversation;
+} {
+  return {
+    store: loadSessionStore(userId),
+    current: emptyConversation(),
+  };
+}
+
 export function emptyConversation(id = createConversationId()): AmyAiConversation {
   const ts = nowIso();
   return {
