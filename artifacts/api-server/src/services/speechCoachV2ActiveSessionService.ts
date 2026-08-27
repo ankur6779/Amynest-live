@@ -245,12 +245,18 @@ export async function registerActiveSession(input: {
           .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
         return input.sessionState;
       }
-      if (!stale) {
-        await tx
-          .update(speechCoachV2ActiveSessionsTable)
-          .set({ status: "terminated", updatedAt: new Date() })
-          .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
-      }
+      // Always clear the prior active row before inserting a replacement.
+      // Stale rows were previously left status='active', which blocks the
+      // partial unique index (user_id, child_id) WHERE status='active' and
+      // permanently locks out discard / new-device starts (expireStaleSessions
+      // exists but is never scheduled).
+      await tx
+        .update(speechCoachV2ActiveSessionsTable)
+        .set({
+          status: stale ? "expired" : "terminated",
+          updatedAt: new Date(),
+        })
+        .where(eq(speechCoachV2ActiveSessionsTable.id, existing.id));
     }
 
     const dailyUsed = policy.isFirstUseFree
