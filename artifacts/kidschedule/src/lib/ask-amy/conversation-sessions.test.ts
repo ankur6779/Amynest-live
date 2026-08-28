@@ -5,6 +5,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   searchConversations,
@@ -90,5 +91,23 @@ describe("conversation-sessions", () => {
     saveSessionStore(USER, { conversations: [conv] });
     expect(loadSessionStore(USER).conversations[0]?.title).toBe("Hello");
     expect(emptyConversation().title).toBe(NEW_CHAT_TITLE);
+  });
+
+  it("prepareAmyAiSessionForUser returns empty current even when history exists", () => {
+    const conv = appendMessage(emptyConversation(), { role: "user", content: "Private thread" });
+    saveSessionStore(USER, { conversations: [conv] });
+    const prepared = prepareAmyAiSessionForUser(USER);
+    expect(prepared.store.conversations).toHaveLength(1);
+    expect(prepared.current.messages).toHaveLength(0);
+    expect(prepared.current.title).toBe(NEW_CHAT_TITLE);
+  });
+
+  it("prepareAmyAiSessionForUser isolates users", () => {
+    saveSessionStore("user-a", {
+      conversations: [appendMessage(emptyConversation(), { role: "user", content: "A secret" })],
+    });
+    const b = prepareAmyAiSessionForUser("user-b");
+    expect(b.store.conversations).toHaveLength(0);
+    expect(b.current.messages).toHaveLength(0);
   });
 });
