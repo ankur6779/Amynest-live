@@ -30,6 +30,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   seedFromServerHistory,
@@ -109,9 +110,18 @@ export function AmyAiConversationWorkspace({
 
   useEffect(() => {
     let cancelled = false;
+    const prepared = prepareAmyAiSessionForUser(userId);
+    storeRef.current = prepared.store;
+    setStore(prepared.store);
+    setCurrent(prepared.current);
+    setInput("");
+    setPendingRetry(null);
+    setLoading(false);
+    setSlowWait(false);
+    sendAbortRef.current?.abort();
+    sendAbortRef.current = null;
     (async () => {
-      const loaded = loadSessionStore(userId);
-      storeRef.current = loaded;
+      const loaded = prepared.store;
       try {
         const r = await authFetch("/api/ai/messages");
         if (r.ok) {
