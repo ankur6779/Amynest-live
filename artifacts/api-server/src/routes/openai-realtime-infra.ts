@@ -11,20 +11,6 @@ import {
 
 const router: IRouter = Router();
 
-function assertInfraDebugAllowed(): void {
-  const allowed =
-    process.env.NODE_ENV !== "production"
-    || process.env.OPENAI_REALTIME_DEBUG === "1"
-    || process.env.OPENAI_REALTIME_DEBUG === "true"
-    || process.env.SPEECH_COACH_V2_DEBUG === "1"
-    || process.env.SPEECH_COACH_V2_DEBUG === "true";
-  if (!allowed) {
-    const err = new Error("OpenAI Realtime infra debug is disabled");
-    (err as Error & { status: number }).status = 404;
-    throw err;
-  }
-}
-
 function openAiApiKey(): string | null {
   return (
     process.env.AI_INTEGRATIONS_OPENAI_API_KEY?.trim()
@@ -60,7 +46,6 @@ async function probeOpenAiReachable(apiKey: string): Promise<boolean> {
 router.get(
   "/debug/openai-realtime-health",
   asyncRoute(async (_req, res) => {
-    assertInfraDebugAllowed();
 
     const apiKey = openAiApiKey();
     if (!apiKey) {
@@ -117,7 +102,6 @@ router.get(
 router.post(
   "/debug/openai-realtime-token",
   asyncRoute(async (req, res) => {
-    assertInfraDebugAllowed();
     const body = z
       .object({
         instructions: z.string().min(10).max(4000).optional(),
@@ -143,7 +127,6 @@ router.post(
       voice: minted.voice,
       callsUrl: minted.callsUrl,
       sessionId: minted.sessionId,
-      mintResponse: minted.mintResponse,
     });
   }),
 );

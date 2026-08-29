@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import "./lib/instrumentation.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { logger } from "./lib/logger";
 import { resolveCorsOrigin } from "./lib/cors-origins.js";
@@ -43,6 +44,15 @@ export async function createApp(): Promise<Express> {
   });
 
   app.use(cookieParser());
+  const isProd =
+    (process.env.AMYNEST_ENV ?? process.env.NODE_ENV ?? "").toLowerCase() === "production";
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      hsts: isProd ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false,
+    }),
+  );
   app.use(requestIdMiddleware);
   app.use(sentryRequestMiddleware);
   app.use(requestTimeout);
