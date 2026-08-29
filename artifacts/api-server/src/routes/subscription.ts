@@ -598,16 +598,31 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
  * Returns updated entitlements.
  */
 router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const auth = getAuth(req);
+  const userId = auth.userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
 
   const requestId = requestIdFrom(req);
+  const subscriptionOwnerUserId = await recoverPremiumOwnerForAuth({
+    userId,
+    email: auth.email,
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
+  const cancelAuditUserId = subscriptionOwnerUserId;
+  const cancelAuditExtra =
+    subscriptionOwnerUserId !== userId
+      ? { authFirebaseUid: userId, subscriptionOwnerUserId }
+      : undefined;
 
   // Heal stale rows before deciding whether a real provider cancellation is needed.
-  await getEntitlements(userId);
+  await getEntitlements(userId, auth.email, {
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
 
   type CancelOutcome =
     | { kind: "missing" }
@@ -623,30 +638,30 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     outcome = await db.transaction(async (tx): Promise<CancelOutcome> => {
       // Serialize cancellation per user across app instances. This makes double
       // clicks and retry storms deterministic without relying on in-memory locks.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${subscriptionOwnerUserId}))`);
 
       const rows = await tx
         .select()
         .from(subscriptionsTable)
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .limit(1);
       const sub = rows[0];
 
       if (!sub) {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_failed",
           status: "warning",
           reason: "missing_subscription",
-          metadata: cancelAuditMetadata({ requestId }),
+          metadata: cancelAuditMetadata({ requestId, extra: cancelAuditExtra }),
         });
         return { kind: "missing" };
       }
 
       const before = subscriptionStatusSnapshot(sub);
       await recordBillingAuditEvent({
-        userId,
+        userId: cancelAuditUserId,
         source: "api",
         eventName: "subscription_cancel_requested",
         metadata: cancelAuditMetadata({
@@ -654,12 +669,13 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           provider: sub.provider ?? null,
           subscriptionId: sub.providerSubscriptionId ?? null,
           statusBefore: before,
+          extra: cancelAuditExtra,
         }),
       });
 
       if (sub.cancelAtPeriodEnd === 1) {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_duplicate",
           reason: "already_scheduled",
@@ -668,6 +684,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider ?? null,
             subscriptionId: sub.providerSubscriptionId ?? null,
             statusBefore: before,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "duplicate", provider: sub.provider ?? null };
@@ -675,7 +692,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
 
       if (!["active", "trialing"].includes(sub.status)) {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_duplicate",
           reason: "already_inactive",
@@ -684,6 +701,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider ?? null,
             subscriptionId: sub.providerSubscriptionId ?? null,
             statusBefore: before,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "inactive", status: sub.status ?? null };
@@ -691,7 +709,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
 
       if (!["none", "manual", "razorpay", "revenuecat"].includes(sub.provider ?? "none")) {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_failed",
           status: "warning",
@@ -701,6 +719,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider ?? null,
             subscriptionId: sub.providerSubscriptionId ?? null,
             statusBefore: before,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "invalid_provider" as const, provider: sub.provider ?? null };
@@ -711,7 +730,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
       // relationship, and webhooks/reconciliation mirror that result locally.
       if (sub.provider === "revenuecat") {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_failed",
           status: "warning",
@@ -721,6 +740,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider,
             subscriptionId: sub.providerSubscriptionId ?? null,
             statusBefore: before,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "redirect_to_store", provider: sub.provider };
@@ -728,7 +748,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
 
       if (sub.provider === "razorpay" && !sub.providerSubscriptionId) {
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_failed",
           status: "warning",
@@ -738,6 +758,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider,
             subscriptionId: null,
             statusBefore: before,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "invalid_subscription_id" as const, provider: sub.provider };
@@ -748,7 +769,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           await rzpCancelSubscription(sub.providerSubscriptionId, true);
         } catch (err) {
           await recordBillingAuditEvent({
-            userId,
+            userId: cancelAuditUserId,
             source: "api",
             eventName: "subscription_cancel_failed",
             status: "error",
@@ -758,6 +779,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
               provider: sub.provider,
               subscriptionId: sub.providerSubscriptionId,
               statusBefore: before,
+              extra: cancelAuditExtra,
             }),
           });
           throw err;
@@ -770,10 +792,10 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             cancelledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptionsTable.userId, userId))
+          .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
           .returning();
         await recordBillingAuditEvent({
-          userId,
+          userId: cancelAuditUserId,
           source: "api",
           eventName: "subscription_cancel_scheduled",
           metadata: cancelAuditMetadata({
@@ -782,6 +804,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             subscriptionId: sub.providerSubscriptionId,
             statusBefore: before,
             statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+            extra: cancelAuditExtra,
           }),
         });
         return { kind: "completed", provider: sub.provider };
@@ -806,10 +829,10 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           expiredAt: now,
           updatedAt: now,
         })
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
         .returning();
       await recordBillingAuditEvent({
-        userId,
+        userId: cancelAuditUserId,
         source: "api",
         eventName: "subscription_cancel_completed",
         metadata: cancelAuditMetadata({
@@ -818,17 +841,18 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           subscriptionId: sub.providerSubscriptionId ?? null,
           statusBefore: before,
           statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+          extra: cancelAuditExtra,
         }),
       });
       return { kind: "completed", provider: sub.provider ?? null };
     });
   } catch (err: any) {
     const current = await db.query.subscriptionsTable.findFirst({
-      where: eq(subscriptionsTable.userId, userId),
+      where: eq(subscriptionsTable.userId, subscriptionOwnerUserId),
     });
     const snapshot = current ? subscriptionStatusSnapshot(current) : null;
     await recordBillingAuditEvent({
-      userId,
+      userId: cancelAuditUserId,
       source: "api",
       eventName: "subscription_cancel_failed",
       status: "error",
@@ -839,13 +863,17 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
         subscriptionId: current?.providerSubscriptionId ?? null,
         statusBefore: snapshot,
         statusAfter: snapshot,
+        extra: cancelAuditExtra,
       }),
     });
     res.status(502).json({ error: "cancel_failed", message: err?.message ?? "Cancellation failed" });
     return;
   }
 
-  const ent = await getEntitlements(userId);
+  const ent = await getEntitlements(userId, auth.email, {
+    emailVerified: auth.emailVerified,
+    provider: auth.signInProvider,
+  });
   if (outcome.kind === "missing") {
     res.status(404).json({ error: "missing_subscription", entitlements: ent });
     return;
