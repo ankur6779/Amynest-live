@@ -103,6 +103,27 @@ import {
   ttsCacheTable,
   coachAudioCacheTable,
   revenuecatWebhookEventsTable,
+  birthProfilesTable,
+  birthSkyPreferencesTable,
+  skySnapshotsTable,
+  birthSkyConversationsTable,
+  birthSkyMessagesTable,
+  birthSkyAiDeliveriesTable,
+  birthSkyPdfExportsTable,
+  healthLabProgressTable,
+  speechCoachV2DailyUsageTable,
+  speechCoachV2SessionsTable,
+  speechCoachV2TurnLogTable,
+  speechCoachV2StreaksTable,
+  speechCoachV2ActiveSessionsTable,
+  speechCoachV2MonthlyUsageTable,
+  speechCoachV2SessionTokenUsageTable,
+  speechCoachV2MonthlyCostUsageTable,
+  nutritionDailyLogTable,
+  nutritionMealMemoryTable,
+  nutritionCaregiverShareTable,
+  userDevicesTable,
+  userIdentityAliasesTable,
 } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 
@@ -124,6 +145,150 @@ async function countDeleted(
   }
 }
 
+/**
+ * Birth Sky rows for one child (DOB/place, chat, PDFs). Profile-linked tables
+ * have no child_id column — resolve via birth_profiles first.
+ */
+async function purgeBirthSkyChildData(
+  tx: DbTx,
+  childId: number,
+  audit: DeletionAuditEntry[],
+): Promise<void> {
+  const profiles = await tx
+    .select({ id: birthProfilesTable.id })
+    .from(birthProfilesTable)
+    .where(eq(birthProfilesTable.childId, childId));
+  const profileIds = profiles.map((p: { id: string }) => p.id);
+
+  if (profileIds.length > 0) {
+    const byProfile: Array<{ table: string; run: () => Promise<{ id?: unknown }[]> }> = [
+      {
+        table: "birth_sky_messages",
+        run: () =>
+          tx
+            .delete(birthSkyMessagesTable)
+            .where(inArray(birthSkyMessagesTable.profileId, profileIds))
+            .returning({ id: birthSkyMessagesTable.id }),
+      },
+      {
+        table: "birth_sky_ai_deliveries",
+        run: () =>
+          tx
+            .delete(birthSkyAiDeliveriesTable)
+            .where(inArray(birthSkyAiDeliveriesTable.profileId, profileIds))
+            .returning({ deliveryId: birthSkyAiDeliveriesTable.deliveryId }),
+      },
+      {
+        table: "birth_sky_pdf_exports",
+        run: () =>
+          tx
+            .delete(birthSkyPdfExportsTable)
+            .where(inArray(birthSkyPdfExportsTable.profileId, profileIds))
+            .returning({ id: birthSkyPdfExportsTable.id }),
+      },
+      {
+        table: "birth_sky_conversations",
+        run: () =>
+          tx
+            .delete(birthSkyConversationsTable)
+            .where(inArray(birthSkyConversationsTable.profileId, profileIds))
+            .returning({ id: birthSkyConversationsTable.id }),
+      },
+      {
+        table: "sky_snapshots",
+        run: () =>
+          tx
+            .delete(skySnapshotsTable)
+            .where(inArray(skySnapshotsTable.profileId, profileIds))
+            .returning({ id: skySnapshotsTable.id }),
+      },
+    ];
+    for (const { table, run } of byProfile) {
+      await countDeleted(tx, table, await run(), audit);
+    }
+  }
+
+  await countDeleted(
+    tx,
+    "birth_profiles",
+    await tx
+      .delete(birthProfilesTable)
+      .where(eq(birthProfilesTable.childId, childId))
+      .returning({ id: birthProfilesTable.id }),
+    audit,
+  );
+}
+
+/** Remaining Birth Sky rows keyed only by userId (preferences + orphans). */
+async function purgeBirthSkyUserData(
+  tx: DbTx,
+  userId: string,
+  audit: DeletionAuditEntry[],
+): Promise<void> {
+  const birthSkyDeletes: Array<{ table: string; run: () => Promise<{ id?: unknown }[]> }> = [
+    {
+      table: "birth_sky_messages",
+      run: () =>
+        tx
+          .delete(birthSkyMessagesTable)
+          .where(eq(birthSkyMessagesTable.userId, userId))
+          .returning({ id: birthSkyMessagesTable.id }),
+    },
+    {
+      table: "birth_sky_ai_deliveries",
+      run: () =>
+        tx
+          .delete(birthSkyAiDeliveriesTable)
+          .where(eq(birthSkyAiDeliveriesTable.userId, userId))
+          .returning({ deliveryId: birthSkyAiDeliveriesTable.deliveryId }),
+    },
+    {
+      table: "birth_sky_pdf_exports",
+      run: () =>
+        tx
+          .delete(birthSkyPdfExportsTable)
+          .where(eq(birthSkyPdfExportsTable.userId, userId))
+          .returning({ id: birthSkyPdfExportsTable.id }),
+    },
+    {
+      table: "birth_sky_conversations",
+      run: () =>
+        tx
+          .delete(birthSkyConversationsTable)
+          .where(eq(birthSkyConversationsTable.userId, userId))
+          .returning({ id: birthSkyConversationsTable.id }),
+    },
+    {
+      table: "sky_snapshots",
+      run: () =>
+        tx
+          .delete(skySnapshotsTable)
+          .where(eq(skySnapshotsTable.userId, userId))
+          .returning({ id: skySnapshotsTable.id }),
+    },
+    {
+      table: "birth_profiles",
+      run: () =>
+        tx
+          .delete(birthProfilesTable)
+          .where(eq(birthProfilesTable.userId, userId))
+          .returning({ id: birthProfilesTable.id }),
+    },
+    {
+      table: "birth_sky_preferences",
+      run: () =>
+        tx
+          .delete(birthSkyPreferencesTable)
+          .where(eq(birthSkyPreferencesTable.userId, userId))
+          .returning({ userId: birthSkyPreferencesTable.userId }),
+    },
+  ];
+
+  for (const { table, run } of birthSkyDeletes) {
+    await countDeleted(tx, table, await run(), audit);
+  }
+}
+
 /** Remove all rows scoped to a single child (integer child_id or text child_id). */
 export async function purgeChildScopedData(
   tx: DbTx,
@@ -131,6 +296,8 @@ export async function purgeChildScopedData(
   audit: DeletionAuditEntry[],
 ): Promise<void> {
   const childIdStr = String(childId);
+
+  await purgeBirthSkyChildData(tx, childId, audit);
 
   const intChildDeletes: Array<{ table: string; run: () => Promise<{ id?: unknown }[]> }> = [
     { table: "behaviors", run: () => tx.delete(behaviorsTable).where(eq(behaviorsTable.childId, childId)).returning({ id: behaviorsTable.id }) },
@@ -158,6 +325,17 @@ export async function purgeChildScopedData(
     { table: "speech_progress", run: () => tx.delete(speechProgressTable).where(eq(speechProgressTable.childId, childId)).returning({ id: speechProgressTable.id }) },
     { table: "speech_conversation_memory", run: () => tx.delete(speechConversationMemoryTable).where(eq(speechConversationMemoryTable.childId, childId)).returning({ id: speechConversationMemoryTable.id }) },
     { table: "speech_practice_log", run: () => tx.delete(speechPracticeLogTable).where(eq(speechPracticeLogTable.childId, childId)).returning({ id: speechPracticeLogTable.id }) },
+    { table: "speech_coach_v2_turn_log", run: () => tx.delete(speechCoachV2TurnLogTable).where(eq(speechCoachV2TurnLogTable.childId, childId)).returning({ id: speechCoachV2TurnLogTable.id }) },
+    { table: "speech_coach_v2_session_token_usage", run: () => tx.delete(speechCoachV2SessionTokenUsageTable).where(eq(speechCoachV2SessionTokenUsageTable.childId, childId)).returning({ id: speechCoachV2SessionTokenUsageTable.id }) },
+    { table: "speech_coach_v2_sessions", run: () => tx.delete(speechCoachV2SessionsTable).where(eq(speechCoachV2SessionsTable.childId, childId)).returning({ id: speechCoachV2SessionsTable.id }) },
+    { table: "speech_coach_v2_active_sessions", run: () => tx.delete(speechCoachV2ActiveSessionsTable).where(eq(speechCoachV2ActiveSessionsTable.childId, childId)).returning({ id: speechCoachV2ActiveSessionsTable.id }) },
+    { table: "speech_coach_v2_daily_usage", run: () => tx.delete(speechCoachV2DailyUsageTable).where(eq(speechCoachV2DailyUsageTable.childId, childId)).returning({ id: speechCoachV2DailyUsageTable.id }) },
+    { table: "speech_coach_v2_monthly_usage", run: () => tx.delete(speechCoachV2MonthlyUsageTable).where(eq(speechCoachV2MonthlyUsageTable.childId, childId)).returning({ id: speechCoachV2MonthlyUsageTable.id }) },
+    { table: "speech_coach_v2_monthly_cost_usage", run: () => tx.delete(speechCoachV2MonthlyCostUsageTable).where(eq(speechCoachV2MonthlyCostUsageTable.childId, childId)).returning({ id: speechCoachV2MonthlyCostUsageTable.id }) },
+    { table: "speech_coach_v2_streaks", run: () => tx.delete(speechCoachV2StreaksTable).where(eq(speechCoachV2StreaksTable.childId, childId)).returning({ id: speechCoachV2StreaksTable.id }) },
+    { table: "health_lab_progress", run: () => tx.delete(healthLabProgressTable).where(eq(healthLabProgressTable.childId, childId)).returning({ id: healthLabProgressTable.id }) },
+    { table: "nutrition_daily_log", run: () => tx.delete(nutritionDailyLogTable).where(eq(nutritionDailyLogTable.childId, childId)).returning({ id: nutritionDailyLogTable.id }) },
+    { table: "nutrition_meal_memory", run: () => tx.delete(nutritionMealMemoryTable).where(eq(nutritionMealMemoryTable.childId, childId)).returning({ id: nutritionMealMemoryTable.id }) },
     { table: "spelling_progress", run: () => tx.delete(spellingProgressTable).where(eq(spellingProgressTable.childId, childId)).returning({ id: spellingProgressTable.id }) },
     { table: "spelling_sessions", run: () => tx.delete(spellingSessionsTable).where(eq(spellingSessionsTable.childId, childId)).returning({ id: spellingSessionsTable.id }) },
     { table: "spelling_tournaments", run: () => tx.delete(spellingTournamentsTable).where(eq(spellingTournamentsTable.childId, childId)).returning({ id: spellingTournamentsTable.id }) },
@@ -361,6 +539,7 @@ async function purgeUserScopedData(
     .limit(1);
 
   await purgeUserLinkedCaches(tx, userId, planCacheKeys, audit);
+  await purgeBirthSkyUserData(tx, userId, audit);
 
   const grantConditions = [];
   const normalizedEmail = options?.accountEmail?.trim().toLowerCase();
@@ -390,6 +569,9 @@ async function purgeUserScopedData(
     { table: "onboarding_profiles", run: () => tx.delete(onboardingProfilesTable).where(eq(onboardingProfilesTable.userId, userId)).returning({ id: onboardingProfilesTable.id }) },
     { table: "notification_preferences", run: () => tx.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).returning({ id: notificationPreferencesTable.id }) },
     { table: "custom_recipes", run: () => tx.delete(customRecipesTable).where(eq(customRecipesTable.userId, userId)).returning({ id: customRecipesTable.id }) },
+    { table: "nutrition_caregiver_share", run: () => tx.delete(nutritionCaregiverShareTable).where(eq(nutritionCaregiverShareTable.userId, userId)).returning({ id: nutritionCaregiverShareTable.id }) },
+    { table: "user_devices", run: () => tx.delete(userDevicesTable).where(eq(userDevicesTable.userId, userId)).returning({ id: userDevicesTable.id }) },
+    { table: "user_identity_aliases", run: () => tx.delete(userIdentityAliasesTable).where(or(eq(userIdentityAliasesTable.internalUserId, userId), eq(userIdentityAliasesTable.firebaseUid, userId))).returning({ id: userIdentityAliasesTable.id }) },
     { table: "subscriptions", run: () => tx.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, userId)).returning({ id: subscriptionsTable.id }) },
     { table: "usage_daily", run: () => tx.delete(usageDailyTable).where(eq(usageDailyTable.userId, userId)).returning({ id: usageDailyTable.id }) },
     { table: "push_tokens", run: () => tx.delete(pushTokensTable).where(eq(pushTokensTable.userId, userId)).returning({ id: pushTokensTable.id }) },
