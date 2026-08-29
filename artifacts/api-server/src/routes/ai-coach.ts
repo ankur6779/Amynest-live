@@ -459,7 +459,10 @@ async function userHasCoachFeedbackForGoal(userId: string, goalId: string): Prom
 }
 
 // ─── GET /ai-coach/observability — admin dashboard for Phase 2 metrics ───
-async function handleCoachObservability(req: import("express").Request, res: import("express").Response): Promise<void> => {
+async function handleCoachObservability(
+  req: import("express").Request,
+  res: import("express").Response,
+): Promise<void> {
   const { describeCoachCacheLayers } = await import("../services/coachPlanCacheKey.js");
   res.json({
     ok: true,
