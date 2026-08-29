@@ -127,3 +127,66 @@ describe("Co-parent routine access", () => {
     assert.match(src, /canAccessChild/);
   });
 });
+
+describe("BUG-012 endpoint rate limit wiring", () => {
+  const routesDir = join(__dir, "../routes");
+
+  function readRoute(name: string): string {
+    return readFileSync(join(routesDir, name), "utf8");
+  }
+
+  const ipLimitedRoutes: Array<{ file: string; scope: string }> = [
+    { file: "auth.ts", scope: "auth-check-reset" },
+    { file: "auth-debug.ts", scope: "auth-whoami" },
+    { file: "phonics-library.ts", scope: "phonics-library" },
+    { file: "animal-world-library.ts", scope: "animal-world-library" },
+    { file: "worlds-library.ts", scope: "worlds-library" },
+    { file: "static-audio.ts", scope: "static-audio-stream" },
+    { file: "tts.ts", scope: "tts-audio-stream" },
+    { file: "phonics.ts", scope: "phonics-sound" },
+    { file: "audio-signed-url.ts", scope: "audio-signed-url" },
+    { file: "audio-signed-url.ts", scope: "audio-stream" },
+    { file: "spelling-library.ts", scope: "spelling-library" },
+    { file: "startup-telemetry.ts", scope: "startup-events" },
+    { file: "startup-funnel.ts", scope: "startup-funnel-events" },
+    { file: "ota.ts", scope: "ota-check" },
+    { file: "ota.ts", scope: "ota-bundle" },
+    { file: "nutrition-caregiver-share.ts", scope: "nutrition-share" },
+  ];
+
+  for (const { file, scope } of ipLimitedRoutes) {
+    it(`${file} rate-limits ${scope} via distributed limiter`, () => {
+      const src = readRoute(file);
+      assert.match(src, /checkDistributedRateLimit|rejectIfIpRateLimited/);
+      assert.match(src, new RegExp(scope));
+    });
+  }
+
+  it("speech transcribe has per-user burst rate limit", () => {
+    const src = readRoute("speech.ts");
+    assert.match(src, /rejectIfUserRateLimited/);
+    assert.match(src, /speech-transcribe-burst/);
+  });
+
+  it("client logs has per-user ingest rate limit", () => {
+    const src = readRoute("client-logs.ts");
+    assert.match(src, /rejectIfUserRateLimited/);
+    assert.match(src, /client-logs/);
+  });
+
+  it("AI enqueue path uses distributed rate limiting", () => {
+    const aiQueue = readFileSync(join(__dir, "../lib/ai-queue-http.ts"), "utf8");
+    const routeQueue = readFileSync(join(__dir, "../lib/route-ai-queue.ts"), "utf8");
+    assert.match(aiQueue, /checkAiRateLimitAsync/);
+    assert.match(routeQueue, /TTS_ENQUEUE_RATE_LIMIT/);
+  });
+
+  it("TTS synthesize routes use cost guard burst limits", () => {
+    const ttsGuard = readFileSync(
+      join(__dir, "../services/ttsCostGuardService.ts"),
+      "utf8",
+    );
+    assert.match(ttsGuard, /checkAiRateLimitAsync/);
+    assert.match(ttsGuard, /tts:burst/);
+  });
+});

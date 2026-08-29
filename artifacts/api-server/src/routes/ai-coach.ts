@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { db, aiCacheTable, userProgressTable, userCoachSessionsTable } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";
@@ -457,14 +458,17 @@ async function userHasCoachFeedbackForGoal(userId: string, goalId: string): Prom
   }
 }
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
+// ─── GET /ai-coach/observability — admin dashboard for Phase 2 metrics ───
+async function handleCoachObservability(req: import("express").Request, res: import("express").Response): Promise<void> => {
+  const { describeCoachCacheLayers } = await import("../services/coachPlanCacheKey.js");
+  res.json({
+    ok: true,
+    dashboard: await getCoachObservabilityDashboardAsync(),
+    cacheLayers: describeCoachCacheLayers(),
+  });
 }
+
+router.get("/ai-coach/observability", requireAdmin, asyncRoute(handleCoachObservability));
 
 async function handleCoachGenerate(req: import("express").Request, res: import("express").Response): Promise<void> {
   pruneMem();
@@ -969,22 +973,6 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
   });
 }
 
-// ─── GET /ai-coach/observability — admin dashboard for Phase 2 metrics ───
-async function handleCoachObservability(req: import("express").Request, res: import("express").Response): Promise<void> {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-  const { describeCoachCacheLayers } = await import("../services/coachPlanCacheKey.js");
-  res.json({
-    ok: true,
-    dashboard: await getCoachObservabilityDashboardAsync(),
-    cacheLayers: describeCoachCacheLayers(),
-  });
-}
-
-router.get("/ai-coach/observability", asyncRoute(handleCoachObservability));
 router.post("/ai-coach", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachGenerate));
 router.post("/coach/generate", infantCoachPreviewGate(), aiUsageGate, asyncRoute(handleCoachGenerate));
 router.post("/coach/generate-fallback", infantCoachPreviewGate(), asyncRoute(handleCoachGenerateFallback));

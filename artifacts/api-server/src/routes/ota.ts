@@ -6,13 +6,23 @@ import {
   resolveApiServerRoot,
   type CapgoOtaCheckBody,
 } from "../services/otaService.js";
+import { rejectIfIpRateLimited } from "../lib/endpoint-rate-limit.js";
 
 const router: IRouter = Router();
 
 const OTA_BUNDLES_DIR = resolve(resolveApiServerRoot(), "ota/bundles");
 
 /** Serve published www zip bundles (upload same files to CDN in production). */
-router.get("/app/ota/bundle/:filename", (req: Request, res: Response): void => {
+router.get("/app/ota/bundle/:filename", async (req: Request, res: Response): Promise<void> => {
+  if (
+    await rejectIfIpRateLimited(req, res, "ota-bundle", {
+      windowMs: 60_000,
+      maxPerWindow: 20,
+    })
+  ) {
+    return;
+  }
+
   const raw = String(req.params.filename ?? "");
   if (!/^amynest-www-\d+\.\d+\.\d+\.zip$/.test(raw)) {
     res.status(400).json({ error: "invalid_bundle_name" });
@@ -39,7 +49,16 @@ router.get("/app/ota/bundle/:filename", (req: Request, res: Response): void => {
  * Response when store upgrade required:
  *   { error, message }
  */
-router.post("/app/ota/check", (req: Request, res: Response): void => {
+router.post("/app/ota/check", async (req: Request, res: Response): Promise<void> => {
+  if (
+    await rejectIfIpRateLimited(req, res, "ota-check", {
+      windowMs: 60_000,
+      maxPerWindow: 30,
+    })
+  ) {
+    return;
+  }
+
   const body = (req.body ?? {}) as CapgoOtaCheckBody;
   const builtin =
     process.env.OTA_BUILTIN_BUNDLE_VERSION?.trim() || "1.0.0";

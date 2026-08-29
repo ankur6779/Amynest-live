@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import {
   childrenTable,
   db,
@@ -624,25 +625,11 @@ router.get("/notifications/analytics/outcomes", async (req, res): Promise<void> 
   res.json({ windowDays, ...summary });
 });
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
 /**
  * GET /api/notifications/analytics/executive
  * Admin executive dashboard — ROI by category and goal.
  */
-router.get("/notifications/analytics/executive", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
+router.get("/notifications/analytics/executive", requireAdmin, async (req, res): Promise<void> => {
   const windowDays = Math.min(Number(req.query["days"]) || 30, 90);
   const cutoff = new Date(Date.now() - windowDays * 86400000);
 
