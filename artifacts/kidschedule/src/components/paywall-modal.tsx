@@ -307,7 +307,7 @@ export function PaywallModal() {
       purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
       extra: { method: "razorpay" },
     });
-    if (res.ok) {
+    if (res.ok && res.isPremiumSubscriber) {
       track("upgrade_completed", {
         module: state.module,
         source: state.source ?? "paywall_modal",

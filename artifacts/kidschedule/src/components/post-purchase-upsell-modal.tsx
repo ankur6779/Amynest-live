@@ -96,7 +96,7 @@ export function PostPurchaseUpsellModal({ purchasedPlan, onDone }: Props) {
         }
       } else if (isIndia) {
         const res = await checkoutRazorpay("yearly");
-        if (res.ok) {
+        if (res.ok && res.isPremiumSubscriber) {
           trackSubscriptionEvent({ event: "purchase_success", plan: "yearly", source: "post_purchase_upsell" });
           releaseMonetizationSurface("subscription_modal");
           setOpen(false);

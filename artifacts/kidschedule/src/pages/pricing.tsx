@@ -229,7 +229,7 @@ export default function PricingPage() {
       purchase: { ok: res.ok, userCancelled: res.userCancelled, error: res.reason },
       extra: { method: key },
     });
-    if (res.ok) {
+    if (res.ok && res.isPremiumSubscriber) {
       setPaymentSuccess(true);
       onPurchaseSuccess(selected);
       trackSubscriptionEvent({ event: "purchase_success", plan: selected, source: "pricing" });
