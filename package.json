@@ -28,6 +28,7 @@
     "youtube:upload": "pnpm --filter @workspace/scripts run youtube:upload",
     "youtube:publish": "pnpm --filter @workspace/scripts run youtube:publish",
     "youtube:daily-promo": "pnpm --filter @workspace/scripts run youtube:daily-promo",
+    "youtube:sync-coolify-env": "pnpm --filter @workspace/scripts run youtube:sync-coolify-env",
     "content-engine:test": "pnpm --filter @workspace/content-engine test",
     "content-engine:typecheck": "pnpm --filter @workspace/content-engine typecheck",
     "amynest:daily-short": "pnpm --filter @workspace/content-engine run amynest:daily-short",

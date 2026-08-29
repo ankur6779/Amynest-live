@@ -99,7 +99,8 @@
     "youtube:oauth-setup": "node ./youtube-oauth-setup.mjs",
     "youtube:upload": "node ./youtube-upload.mjs",
     "youtube:publish": "node ./youtube-publish.mjs",
-    "youtube:daily-promo": "node ./daily-promo-pipeline.mjs"
+    "youtube:daily-promo": "node ./daily-promo-pipeline.mjs",
+    "youtube:sync-coolify-env": "node ./sync-youtube-env-from-coolify.mjs"
   },
   "dependencies": {
     "googleapis": "^148.0.0",
