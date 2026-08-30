@@ -12,7 +12,6 @@ export const HUB_REMOVED_TILE_IDS = new Set<string>([
   "generate-routine",
   "tomorrow-forecast",
   "command-center",
-  "gaming-rewards",
   "amy-quick-tutor",
 ]);
 
@@ -57,6 +56,7 @@ export const TILE_TO_ROOM: Record<string, ParentHubRoomId> = {
   "talking-amy": "moments",
   "discovery-worlds": "moments",
   "event-prep": "moments",
+  "gaming-rewards": "moments",
 };
 
 /** Legacy mall group → room (deep-link / navigate fallback when tile unknown). */

@@ -15,6 +15,7 @@ describe("moments living-room", () => {
       "presence",
       "story",
       "make",
+      "games",
       "talking-amy",
     ]);
     expect(MOMENTS_QUIET_PATHS[0]?.id).toBe("presence");
@@ -46,6 +47,7 @@ describe("moments living-room", () => {
     expect(momentsPathForTile("activities")).toBe("presence");
     expect(momentsPathForTile("story-hub")).toBe("story");
     expect(momentsPathForTile("coloring-books")).toBe("make");
+    expect(momentsPathForTile("gaming-rewards")).toBe("games");
     expect(momentsPathForTile("talking-amy")).toBe("talking-amy");
     expect(momentsPathForTile("amy-ai")).toBeNull();
   });
@@ -53,6 +55,7 @@ describe("moments living-room", () => {
   it("resolves primary tile per path", () => {
     expect(tileIdForMomentsPath("story")).toBe("story-hub");
     expect(tileIdForMomentsPath("make")).toBe("worksheets");
+    expect(tileIdForMomentsPath("games")).toBe("gaming-rewards");
   });
 
   it("living flag defaults ON", () => {

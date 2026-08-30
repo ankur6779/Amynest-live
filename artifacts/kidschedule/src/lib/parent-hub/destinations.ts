@@ -222,6 +222,16 @@ export const ROOM_DESTINATIONS: Record<ParentHubRoomId, readonly RoomDestination
       purposeKey: "parent_hub.destinations.make.purpose",
       purposeFallback: "Make something side by side",
     },
+    {
+      id: "games",
+      room: "moments",
+      kind: "single",
+      tileIds: ["gaming-rewards"],
+      titleKey: "parent_hub.web_tiles.gaming-rewards.title",
+      titleFallback: "Games",
+      purposeKey: "parent_hub.web_tiles.gaming-rewards.description",
+      purposeFallback: "Play and earn together",
+    },
   ],
 };
 

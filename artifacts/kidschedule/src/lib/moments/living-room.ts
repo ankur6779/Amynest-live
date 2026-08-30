@@ -7,7 +7,7 @@
 
 import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
 
-export type MomentsPathId = "presence" | "story" | "make" | "talking-amy";
+export type MomentsPathId = "presence" | "story" | "make" | "games" | "talking-amy";
 
 export type MomentsRecommend = {
   id: "together";
@@ -50,6 +50,12 @@ export const MOMENTS_QUIET_PATHS: readonly MomentsQuietPath[] = [
     tileId: "worksheets",
     title: "Make together",
     purpose: "Create something side by side",
+  },
+  {
+    id: "games",
+    tileId: "gaming-rewards",
+    title: "Games",
+    purpose: "Play and earn together",
   },
   {
     id: "talking-amy",
@@ -123,6 +129,8 @@ export function momentsPathForTile(tileId: string): MomentsPathId | null {
     case "coloring-books":
     case "fun-sheets":
       return "make";
+    case "gaming-rewards":
+      return "games";
     case "talking-amy":
       return "talking-amy";
     default:

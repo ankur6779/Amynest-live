@@ -23,7 +23,7 @@ export const INFANT_HUB_OPEN_SECTION_EVENT = "infant-hub:open-section";
 const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   "infant-hub": { group: "today", tileId: "infant-hub" },
   activities: { group: "creativity", tileId: "activities" },
-  "gaming-rewards": { group: "parent", tileId: "gaming-rewards" },
+  "gaming-rewards": { group: "moments", tileId: "gaming-rewards" },
   worksheets: { group: "creativity", tileId: "worksheets" },
   "art-craft": { group: "creativity", tileId: "art-craft" },
   "fun-sheets": { group: "creativity", tileId: "fun-sheets" },

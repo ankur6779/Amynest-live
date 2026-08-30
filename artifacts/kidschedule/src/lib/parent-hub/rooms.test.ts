@@ -21,6 +21,7 @@ describe("parent-hub rooms map", () => {
     expect(roomForTile("infant-hub")).toBe("care");
     expect(roomForTile("story-hub")).toBe("moments");
     expect(roomForTile("talking-amy")).toBe("moments");
+    expect(roomForTile("gaming-rewards")).toBe("moments");
   });
 
   it("treats removed Hub chrome as non-rooms", () => {
@@ -49,6 +50,6 @@ describe("parent-hub rooms map", () => {
     ];
     expect(tileIdsForRoom("help", visible)).toEqual(["amy-ai", "emotional"]);
     expect(tileIdsForRoom("care", visible)).toEqual(["nutrition"]);
-    expect(tileIdsForRoom("moments", visible)).toEqual(["story-hub"]);
+    expect(tileIdsForRoom("moments", visible)).toEqual(["story-hub", "gaming-rewards"]);
   });
 });
