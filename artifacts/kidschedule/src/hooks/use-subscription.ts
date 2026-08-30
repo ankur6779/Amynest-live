@@ -12,6 +12,7 @@ import {
 } from "@/lib/dashboard-data-cache";
 import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
 import { clearLearningZonePremiumCaches } from "@/lib/learning-zone-premium-cache";
+import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 
 export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
@@ -163,7 +164,12 @@ export function useSubscription() {
       plan: Exclude<Plan, "free">,
       prefill?: { name?: string; email?: string; contact?: string },
       method?: string,
-    ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
+    ): Promise<{
+      ok: boolean;
+      reason?: string;
+      userCancelled?: boolean;
+      isPremiumSubscriber?: boolean;
+    }> => {
       const guestBlock = getGuestCheckoutBlock(user);
       if (guestBlock.blocked) {
         return { ok: false, reason: guestBlock.message };
@@ -250,30 +256,23 @@ export function useSubscription() {
       });
 
       if (result.ok) {
-        // Optimistic refresh + a few delayed polls so the webhook has time to
-        // land. The verify endpoint already activates the row, so the first
-        // refresh usually shows premium immediately.
-        refresh();
-        let observedPremium = false;
-        for (const delay of [1500, 3500, 6000]) {
-          await new Promise((r) => setTimeout(r, delay));
-          await qc.invalidateQueries({ queryKey: qkey });
-          const data = qc.getQueryData<SubscriptionResponse>(qkey);
-          if (data?.entitlements.isPremium) {
-            observedPremium = true;
-            break;
-          }
+        // Verify persists provider linkage only; activation is webhook-driven.
+        // Poll for paid subscriber entitlement — internal trials set isPremium
+        // without isPremiumSubscriber and must not count as checkout success.
+        const finalized = await finalizeNativePurchase(authFetch, qc);
+        if (finalized.ok && finalized.isPremiumSubscriber) {
+          return { ok: true, isPremiumSubscriber: true };
         }
-        if (!observedPremium) {
-          return {
-            ok: false,
-            reason: "Payment received. Premium is still verifying; please try again in a moment.",
-          };
-        }
+        return {
+          ok: false,
+          isPremiumSubscriber: finalized.isPremiumSubscriber,
+          reason:
+            "Payment received. Premium is still verifying; please try again in a moment.",
+        };
       }
       return result;
     },
-    [authFetch, qc, qkey, refresh, user],
+    [authFetch, qc, user],
   );
 
   /**
