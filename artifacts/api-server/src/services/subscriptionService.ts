@@ -936,6 +936,16 @@ export async function maybeAutoGrantPremium(
       expiredAt: null,
       syncError: null,
       cancelAtPeriodEnd: 0,
+      // Clear leftover RC identity so reconcile/read-refresh cannot wipe this grant.
+      revenuecatAppUserId: null,
+      originalAppUserId: null,
+      originalTransactionId: null,
+      latestTransactionId: null,
+      entitlementId: null,
+      store: null,
+      environment: null,
+      lastEventType: null,
+      lastEventAt: null,
       updatedAt: new Date(),
     })
     .where(eq(subscriptionsTable.userId, userId));
@@ -1029,6 +1039,24 @@ export async function activateSubscription(
     return existing;
   }
 
+  // Non-RC activates must clear leftover RevenueCat identity so GET /subscription
+  // refresh + billing reconcile cannot apply empty-RC FREE over live premium.
+  const clearRevenueCatIdentity =
+    provider === "razorpay" || provider === "stripe"
+      ? {
+          revenuecatAppUserId: null,
+          originalAppUserId: null,
+          originalTransactionId: null,
+          latestTransactionId: null,
+          entitlementId: null,
+          store: null,
+          environment: null,
+          lastEventType: null,
+          lastEventAt: null,
+          syncError: null,
+        }
+      : {};
+
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
@@ -1041,6 +1069,7 @@ export async function activateSubscription(
       expiresAt: opts.periodEnd ?? null,
       currentPeriodEnd: opts.periodEnd ?? null,
       updatedAt: new Date(),
+      ...clearRevenueCatIdentity,
     })
     .where(eq(subscriptionsTable.userId, userId))
     .returning();

@@ -1,4 +1,9 @@
-import { db, billingAuditEventsTable, subscriptionsTable } from "@workspace/db";
+import {
+  db,
+  billingAuditEventsTable,
+  subscriptionsTable,
+  type Subscription,
+} from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { Plan, Status } from "./subscriptionService";
 
@@ -38,6 +43,35 @@ export type SubscriptionApplyResult = {
   expiresAt: Date | null;
   reason: string;
 };
+
+/** Billing providers that must not be overwritten by RevenueCat snapshots. */
+const NON_RC_BILLING_PROVIDERS = new Set(["razorpay", "manual", "stripe"]);
+
+/**
+ * Leftover RevenueCat identity columns often remain after a user switches to
+ * Razorpay/manual/stripe. Empty RC sync / stale EXPIRATION must not wipe that
+ * live non-RC premium row.
+ */
+export function shouldPreserveNonRcPremiumAgainstRevenueCat(
+  local: Subscription | null | undefined,
+): boolean {
+  if (!local) return false;
+  if (!NON_RC_BILLING_PROVIDERS.has(local.provider ?? "")) return false;
+  const until = local.currentPeriodEnd ?? local.expiresAt;
+  if (!until || until.getTime() <= Date.now()) return false;
+  if (local.subscriptionState === "PAUSED") return false;
+  if (
+    local.subscriptionState === "EXPIRED" ||
+    local.subscriptionState === "FREE"
+  ) {
+    return (
+      local.status === "active" ||
+      local.status === "canceled" ||
+      local.status === "past_due"
+    );
+  }
+  return true;
+}
 
 const PAID_STATES = new Set<SubscriptionState>(["TRIAL", "ACTIVE", "GRACE_PERIOD", "CANCELLED"]);
 
@@ -153,6 +187,35 @@ export async function applyRevenueCatSnapshot(
     where: eq(subscriptionsTable.userId, userId),
   });
   const fromState = ((existing?.subscriptionState as SubscriptionState | undefined) ?? "FREE");
+  if (shouldPreserveNonRcPremiumAgainstRevenueCat(existing)) {
+    await recordBillingAuditEvent({
+      userId,
+      source: opts.source,
+      eventName: "entitlement_preserve_non_rc",
+      status: "warning",
+      providerEventId: opts.providerEventId ?? null,
+      fromState,
+      toState: fromState,
+      reason: "non_rc_premium_preserved",
+      metadata: {
+        localProvider: existing?.provider ?? null,
+        productId: snapshot.productId ?? null,
+        eventType: snapshot.eventType ?? null,
+        currentPeriodEnd: existing?.currentPeriodEnd?.toISOString() ?? null,
+      },
+    });
+    const preservedUntil = existing?.currentPeriodEnd ?? existing?.expiresAt ?? null;
+    return {
+      userId,
+      fromState,
+      toState: fromState,
+      plan: (existing?.plan as Plan) ?? "free",
+      status: (existing?.status as Status) ?? "free",
+      isPremium: true,
+      expiresAt: preservedUntil,
+      reason: "non_rc_premium_preserved",
+    };
+  }
   const { state, reason, premiumUntil } = deriveStateFromRevenueCatSnapshot(snapshot);
   const plan = state === "FREE" || state === "EXPIRED" ? "free" : productIdToPlan(snapshot.productId) ?? "monthly";
   const status = mapStateToLegacyStatus(state);
