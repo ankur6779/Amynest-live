@@ -24,6 +24,7 @@ import {
 } from "@/lib/guidance/living-room";
 import {
   MOMENTS_STREAM_TILE_ID,
+  destinationIdForMomentsPath,
   isMomentsLivingV1Enabled,
   momentsDeepenCueForTile,
   momentsPathForTile,
@@ -314,15 +315,7 @@ export function ParentHubRoomsShell({
 
   const selectMomentsTile = (tileId: string) => {
     const closing = selectedTileId === tileId;
-    const path = momentsPathForTile(tileId);
-    const destId =
-      path === "story"
-        ? "story"
-        : path === "make"
-          ? "make"
-          : path === "talking-amy"
-            ? "presence"
-            : "presence";
+    const destId = destinationIdForMomentsPath(momentsPathForTile(tileId));
     setOpenDestinationId(closing ? null : destId);
     setSelectedTileId(closing ? null : tileId);
     if (!closing) setPathCompleted(true);

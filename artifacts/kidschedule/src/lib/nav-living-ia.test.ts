@@ -89,6 +89,7 @@ describe("living home navigation IA", () => {
       "/parenting-hub",
     );
     expect(more).toContain("/nutrition");
+    expect(more).toContain("/games");
   });
 
   it("uses companion wording for Amy, not assistant SaaS copy", () => {

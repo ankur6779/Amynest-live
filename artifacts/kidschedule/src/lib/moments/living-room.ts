@@ -144,6 +144,17 @@ export function tileIdForMomentsPath(pathId: MomentsPathId): string {
   return path?.tileId ?? "activities";
 }
 
+/** Pack 3 destination id for a Moments living path — never fall through to Presence. */
+export function destinationIdForMomentsPath(pathId: MomentsPathId | null): string {
+  if (pathId === "story") return "story";
+  if (pathId === "make") return "make";
+  if (pathId === "games") return "games";
+  return "presence";
+}
+
+/** Canonical Games product route — never /routines or /dashboard. */
+export const GAMES_MODULE_HREF = "/games" as const;
+
 /** Quiet deepen cue for a legacy Hub tile — never four-product language. */
 export function momentsDeepenCueForTile(tileId: string): {
   title: string;

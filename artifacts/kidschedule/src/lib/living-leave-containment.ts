@@ -7,9 +7,12 @@
  */
 import { isAmynestLivingUniverseEnabled } from "@/lib/amynest-living-universe";
 
-/** More / drawer hrefs that open a leftover catalogue or dashboard. */
+/**
+ * More / drawer hrefs that open a leftover catalogue.
+ * `/games` stays visible — founder restored Games under Moments and the
+ * Games page must remain reachable from every Games-labeled control.
+ */
 export const LIVING_NAV_CONTAINED_HREFS = [
-  "/games",
   "/study",
   "/insights",
   "/progress",
@@ -24,7 +27,6 @@ export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number]
  * those keep their living shells.
  */
 export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
-  "/games": "/dashboard",
   "/rewards": "/dashboard",
   "/insights": "/dashboard",
   "/progress": "/dashboard",

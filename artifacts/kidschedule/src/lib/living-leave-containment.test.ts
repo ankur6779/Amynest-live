@@ -40,9 +40,9 @@ describe("living leave-path containment", () => {
       { href: "/nutrition" },
       { href: "/dashboard" },
     ]).map((i) => i.href);
-    expect(kept).toEqual(["/nutrition", "/dashboard"]);
-    expect([...LIVING_NAV_CONTAINED_HREFS]).toContain("/games");
-    expect(livingDirectUrlContainment("/games")).toBe("/dashboard");
+    expect(kept).toEqual(["/games", "/nutrition", "/dashboard"]);
+    expect([...LIVING_NAV_CONTAINED_HREFS]).not.toContain("/games");
+    expect(livingDirectUrlContainment("/games")).toBeNull();
     expect(livingDirectUrlContainment("/rewards")).toBe("/dashboard");
     expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
     expect(livingDirectUrlContainment("/speech-coach/live-session")).toBe("/speech-coach");

@@ -28,7 +28,7 @@ type DiscoveryItem = {
   maxAgeYears?: number;
 };
 
-const DISCOVERY_POOL: DiscoveryItem[] = [
+export const DISCOVERY_POOL: DiscoveryItem[] = [
   {
     id: "amy_astro_intelligence",
     href: "/birth-sky",
@@ -46,7 +46,7 @@ const DISCOVERY_POOL: DiscoveryItem[] = [
   },
   {
     id: "hub_story_hub",
-    href: "/parenting-hub#story-hub",
+    href: "/parenting-hub#tile-story-hub",
     label: "Story Hub",
     sub: "Stories for bedtime",
     icon: BookOpen,
@@ -61,7 +61,7 @@ const DISCOVERY_POOL: DiscoveryItem[] = [
   },
   {
     id: "hub_gaming_rewards",
-    href: "/parenting-hub#gaming-rewards",
+    href: "/parenting-hub#tile-gaming-rewards",
     label: "Gaming Rewards",
     sub: "Earn from routines",
     icon: Gamepad2,

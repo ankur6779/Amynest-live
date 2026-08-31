@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  GAMES_MODULE_HREF,
   MOMENTS_QUIET_PATHS,
   MOMENTS_STREAM_TILE_ID,
+  destinationIdForMomentsPath,
   isMomentsLivingV1Enabled,
   momentsDeepenCueForTile,
   momentsPathForTile,
@@ -56,6 +58,15 @@ describe("moments living-room", () => {
     expect(tileIdForMomentsPath("story")).toBe("story-hub");
     expect(tileIdForMomentsPath("make")).toBe("worksheets");
     expect(tileIdForMomentsPath("games")).toBe("gaming-rewards");
+  });
+
+  it("maps Games to its own destination — never Presence/Routine", () => {
+    expect(destinationIdForMomentsPath("games")).toBe("games");
+    expect(destinationIdForMomentsPath("story")).toBe("story");
+    expect(destinationIdForMomentsPath("make")).toBe("make");
+    expect(destinationIdForMomentsPath("presence")).toBe("presence");
+    expect(destinationIdForMomentsPath("talking-amy")).toBe("presence");
+    expect(GAMES_MODULE_HREF).toBe("/games");
   });
 
   it("living flag defaults ON", () => {
