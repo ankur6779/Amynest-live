@@ -57,6 +57,7 @@ function facts(overrides: Partial<ReengagementFacts> = {}): ReengagementFacts {
     lastActiveAt: new Date("2026-08-27T08:00:00Z"),
     sentProactiveToday: 0,
     sentProactiveThisWeek: 0,
+    lastProactiveAt: null,
     lastSentByCategory: {},
     hasPushToken: true,
     permissionGranted: true,
@@ -188,7 +189,7 @@ test("daily and weekly caps block send", () => {
     facts: facts({ sentProactiveToday: 1 }),
     now: WED_0830,
   });
-  assert.equal(daily.skipCode, "daily_cap");
+  assert.equal(daily.skipCode, "global_daily_cap");
   assert.equal(daily.action, "skip");
 
   const weekly = decideReengagement({
@@ -196,7 +197,7 @@ test("daily and weekly caps block send", () => {
     facts: facts({ sentProactiveThisWeek: 4 }),
     now: WED_0830,
   });
-  assert.equal(weekly.skipCode, "weekly_cap");
+  assert.equal(weekly.skipCode, "global_weekly_cap");
 });
 
 test("quiet hours delay; permission and opt-out skip", () => {
@@ -239,6 +240,27 @@ test("recent app open suppresses proactive send", () => {
   });
   assert.equal(d.skipCode, "recent_app_open");
   assert.equal(d.action, "skip");
+});
+
+test("C: proactive 60 minutes ago is suppressed by global gap", () => {
+  const d = decideReengagement({
+    signals: signals({ daysSinceLastActive: 4 }),
+    facts: facts({
+      lastProactiveAt: new Date(WED_0830.getTime() - 60 * 60 * 1000),
+      sentProactiveThisWeek: 1,
+    }),
+    now: WED_0830,
+  });
+  assert.equal(d.skipCode, "recent_notification");
+});
+
+test("J: stale token skips send", () => {
+  const d = decideReengagement({
+    signals: signals(),
+    facts: facts({ hasPushToken: true, tokenStale: true }),
+    now: WED_0830,
+  });
+  assert.equal(d.skipCode, "stale_token");
 });
 
 test("category cooldown blocks the duplicate but can fall through", () => {
@@ -298,6 +320,39 @@ test("privacy: clinical lock-screen copy is rewritten", () => {
   const safe = sanitizeLockScreenCopy("John's speech problem", "Needs therapy today");
   assert.equal(safe.title, "Amy has something ready for today");
   assert.doesNotMatch(safe.body, /speech|therapy/i);
+});
+
+test("K: child name never appears in lock-screen proactive copy", () => {
+  const categories = [
+    "UNFINISHED_ACTION",
+    "TODAY_PLAN",
+    "CHILD_CONTEXT",
+    "ROUTINE_CONTINUITY",
+    "AMY_COMPANION",
+    "WEEKLY_RECAP",
+    "WINBACK",
+    "GENERIC_REMINDER",
+  ] as const;
+  for (const category of categories) {
+    const copy = buildCategoryCopy({
+      userId: "user-aaa",
+      category,
+      segment: "INACTIVE_7_DAYS",
+      childName: "John",
+      daysSinceLastActive: 8,
+    });
+    assert.doesNotMatch(copy.title, /John/i, category);
+    assert.doesNotMatch(copy.body, /John/i, category);
+  }
+  const planReady = buildCategoryCopy({
+    userId: "user-week",
+    category: "TODAY_PLAN",
+    segment: "INACTIVE_7_DAYS",
+    childName: "John",
+    daysSinceLastActive: 8,
+  });
+  assert.equal(planReady.variant, "plan_ready");
+  assert.equal(planReady.title, "Today's plan is ready");
 });
 
 test("A/B copy variant is deterministic per user", () => {

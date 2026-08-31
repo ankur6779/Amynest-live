@@ -731,6 +731,7 @@ router.post("/notifications/cron/ping", async (req, res): Promise<void> => {
 /**
  * GET /api/notifications/reengagement/dry-run
  * Admin audit: who would receive which re-engagement notification and why.
+ * Strictly READ ONLY — never INSERT/UPDATE/DELETE preferences or logs.
  * Never sends. Capped to 50 users unless ?limit= is provided (max 200).
  */
 router.get("/notifications/reengagement/dry-run", async (req, res): Promise<void> => {
@@ -745,10 +746,17 @@ router.get("/notifications/reengagement/dry-run", async (req, res): Promise<void
       "../services/reengagementNotificationService.js"
     );
     const rows = await dryRunReengagementSnapshot(limit);
+    const wouldSend = rows.filter((r) => r.finalAction === "WOULD_SEND").length;
+    const delayed = rows.filter((r) => r.finalAction.startsWith("DELAYED_")).length;
+    const suppressed = rows.length - wouldSend - delayed;
     res.json({
       mode: reengagementMode(),
       liveSendEnabled: false,
+      readOnly: true,
       count: rows.length,
+      wouldSend,
+      delayed,
+      suppressed,
       rows,
     });
   } catch (err) {

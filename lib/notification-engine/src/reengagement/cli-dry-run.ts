@@ -58,6 +58,7 @@ function facts(overrides: Partial<ReengagementFacts> = {}): ReengagementFacts {
     lastActiveAt: new Date("2026-08-20T08:00:00Z"),
     sentProactiveToday: 0,
     sentProactiveThisWeek: 0,
+    lastProactiveAt: null,
     lastSentByCategory: {},
     hasPushToken: true,
     permissionGranted: true,

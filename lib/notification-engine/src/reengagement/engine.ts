@@ -2,6 +2,7 @@ import type { OutcomeSignals } from "../outcomes/types.js";
 import { inLocalQuietHours, getLocalDateTimeParts } from "../global/timezone.js";
 import { contentFingerprint } from "../delivery/guard.js";
 import { REENGAGEMENT_POLICY, CATEGORY_COOLDOWN_MS } from "./policy.js";
+import { evaluateGlobalProactiveFatigue, minutesSince } from "../delivery/global-fatigue.js";
 import {
   resolveReengagementSegment,
   type ReengagementSegment,
@@ -25,8 +26,11 @@ export interface ReengagementFacts {
   lastActiveAt: Date | null;
   sentProactiveToday: number;
   sentProactiveThisWeek: number;
+  lastProactiveAt: Date | null;
   lastSentByCategory: Partial<Record<ReengagementCategory, Date>>;
   hasPushToken: boolean;
+  /** True when tokens exist but every lastSeenAt is past the stale window. */
+  tokenStale?: boolean;
   permissionGranted: boolean | undefined;
   engagementOptIn: boolean;
   timezone: string;
@@ -47,13 +51,17 @@ export interface ReengagementCandidate {
 export type ReengagementSkipCode =
   | "mode_off"
   | "no_token"
+  | "stale_token"
   | "permission_denied"
   | "opted_out"
   | "quiet_hours"
   | "outside_send_window"
   | "recent_app_open"
+  | "recent_notification"
   | "daily_cap"
   | "weekly_cap"
+  | "global_daily_cap"
+  | "global_weekly_cap"
   | "cooldown"
   | "no_eligible_candidate"
   | "active_user_no_unfinished";
@@ -72,6 +80,11 @@ export interface ReengagementDecision {
   gates: Record<string, boolean>;
   localDate: string;
   localHour: number;
+  timezone: string;
+  lastProactiveAt: Date | null;
+  minutesSinceLastProactive: number | null;
+  sentProactiveToday: number;
+  sentProactiveThisWeek: number;
 }
 
 export interface DecideReengagementInput {
@@ -89,8 +102,18 @@ export function decideReengagement(input: DecideReengagementInput): Reengagement
   const local = getLocalDateTimeParts(facts.timezone, now);
   const scheduledLocal = `${String(REENGAGEMENT_POLICY.preferredSendHour).padStart(2, "0")}:${String(REENGAGEMENT_POLICY.preferredSendMinute).padStart(2, "0")}`;
 
+  const fatigue = evaluateGlobalProactiveFatigue({
+    category: "engagement",
+    sentProactiveToday: facts.sentProactiveToday,
+    sentProactiveThisWeek: facts.sentProactiveThisWeek,
+    lastProactiveAt: facts.lastProactiveAt,
+    lastAppOpenAt: facts.lastActiveAt,
+    now,
+  });
+
   const gates = {
     hasToken: facts.hasPushToken,
+    tokenStale: facts.tokenStale === true,
     permissionOk: facts.permissionGranted !== false,
     optedIn: facts.engagementOptIn,
     quietHours: inLocalQuietHours(
@@ -100,9 +123,10 @@ export function decideReengagement(input: DecideReengagementInput): Reengagement
       now,
     ),
     inSendWindow: isInSendWindow(local.hour, facts.preferredHour),
-    recentAppOpen: isRecentlyOpened(facts, signals, now),
-    dailyCapOk: facts.sentProactiveToday < REENGAGEMENT_POLICY.maxProactivePerDay,
-    weeklyCapOk: facts.sentProactiveThisWeek < REENGAGEMENT_POLICY.maxProactivePerWeek,
+    recentAppOpen: fatigue.reason === "recent_app_open",
+    recentNotification: fatigue.reason === "recent_notification",
+    dailyCapOk: fatigue.reason !== "global_daily_cap",
+    weeklyCapOk: fatigue.reason !== "global_weekly_cap",
   };
 
   const base = {
@@ -113,6 +137,11 @@ export function decideReengagement(input: DecideReengagementInput): Reengagement
     neverActivated: seg.neverActivated,
     localDate: local.localDate,
     localHour: local.hour,
+    timezone: facts.timezone,
+    lastProactiveAt: facts.lastProactiveAt,
+    minutesSinceLastProactive: minutesSince(facts.lastProactiveAt, now),
+    sentProactiveToday: facts.sentProactiveToday,
+    sentProactiveThisWeek: facts.sentProactiveThisWeek,
     gates,
   };
 
@@ -149,16 +178,20 @@ export function decideReengagement(input: DecideReengagementInput): Reengagement
     rejected,
   });
 
+  if (gates.tokenStale) return finish("skip", "stale_token");
   if (!gates.hasToken) return finish("skip", "no_token");
   if (!gates.permissionOk) return finish("skip", "permission_denied");
   if (!gates.optedIn) return finish("skip", "opted_out");
-  if (!gates.dailyCapOk) return finish("skip", "daily_cap");
-  if (!gates.weeklyCapOk) return finish("skip", "weekly_cap");
+  if (!gates.dailyCapOk) return finish("skip", "global_daily_cap");
+  if (!gates.weeklyCapOk) return finish("skip", "global_weekly_cap");
   if (!winner) return finish("skip", "no_eligible_candidate");
 
   if (gates.quietHours) return finish("delay", "quiet_hours");
   if (!input.ignoreSendWindow && !gates.inSendWindow) {
     return finish("delay", "outside_send_window");
+  }
+  if (gates.recentNotification) {
+    return finish("skip", "recent_notification");
   }
   if (gates.recentAppOpen) {
     return finish("skip", "recent_app_open");
@@ -175,12 +208,6 @@ function isInSendWindow(hour: number, preferredHour: number | null): boolean {
     return hour === preferredHour;
   }
   return hour === REENGAGEMENT_POLICY.preferredSendHour;
-}
-
-function isRecentlyOpened(facts: ReengagementFacts, _signals: OutcomeSignals, now: Date): boolean {
-  if (!facts.lastActiveAt) return false;
-  const mins = (now.getTime() - facts.lastActiveAt.getTime()) / 60000;
-  return mins >= 0 && mins < REENGAGEMENT_POLICY.recentAppOpenSuppressionMinutes;
 }
 
 function collectCandidates(

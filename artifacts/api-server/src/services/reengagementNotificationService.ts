@@ -18,6 +18,8 @@ import {
   isReengagementSendSlot,
   parseReengagementMode,
   getLocalDateTimeParts,
+  isProactiveNotificationCategory,
+  isStalePushToken,
   type ReengagementCategory,
   type ReengagementDecision,
   type ReengagementDryRunRow,
@@ -28,7 +30,9 @@ import { logger } from "../lib/logger.js";
 import { loadOutcomeSignals } from "./notificationOutcomeService.js";
 import {
   dispatchNotification,
+  dryRunDefaultPreferences,
   getOrCreatePreferences,
+  getPreferencesIfExists,
 } from "./notificationDispatchService.js";
 
 export function reengagementMode(): ReengagementMode {
@@ -76,6 +80,7 @@ async function loadFacts(
       .select({
         sentAt: notificationLogTable.sentAt,
         status: notificationLogTable.status,
+        category: notificationLogTable.category,
         campaignId: notificationLogTable.campaignId,
         recommendationKey: notificationLogTable.recommendationKey,
         dedupKey: notificationLogTable.dedupKey,
@@ -108,11 +113,12 @@ async function loadFacts(
     }
   }
 
-  const proactive = recent.filter(
+  const reengagementRows = recent.filter(
     (r) =>
       r.campaignId === "reengagement" ||
       (r.dedupKey != null && r.dedupKey.includes("_reengagement_")),
   );
+  const proactive = recent.filter((r) => isProactiveNotificationCategory(r.category));
 
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -121,9 +127,13 @@ async function loadFacts(
     day: "2-digit",
   });
   const sentProactiveToday = proactive.filter((r) => fmt.format(r.sentAt) === localDate).length;
+  const lastProactiveAt = proactive.reduce<Date | null>((acc, r) => {
+    if (!acc || r.sentAt > acc) return r.sentAt;
+    return acc;
+  }, null);
 
   const lastSentByCategory: Partial<Record<ReengagementCategory, Date>> = {};
-  for (const row of proactive) {
+  for (const row of reengagementRows) {
     const key = row.recommendationKey as ReengagementCategory | null;
     if (!key) continue;
     const prev = lastSentByCategory[key];
@@ -135,6 +145,8 @@ async function loadFacts(
     if (!acc || t.lastSeenAt > acc) return t.lastSeenAt;
     return acc;
   }, null);
+  const tokenStale =
+    tokens.length > 0 && tokens.every((t) => isStalePushToken(t.lastSeenAt, now));
 
   return {
     todayPlanExists,
@@ -145,8 +157,10 @@ async function loadFacts(
     lastActiveAt: lastSeen,
     sentProactiveToday,
     sentProactiveThisWeek: proactive.length,
+    lastProactiveAt,
     lastSentByCategory,
     hasPushToken: tokens.length > 0,
+    tokenStale,
     permissionGranted: tokens.length > 0 ? true : undefined,
     engagementOptIn: prefs.engagementEnabled,
     timezone,
@@ -165,11 +179,20 @@ export interface ReengagementEvalResult {
 
 export async function evaluateReengagementForUser(
   userId: string,
-  opts: { now?: Date; ignoreSendWindow?: boolean; mode?: ReengagementMode } = {},
+  opts: {
+    now?: Date;
+    ignoreSendWindow?: boolean;
+    mode?: ReengagementMode;
+    /** When true, never INSERT/UPDATE preferences or other user state. */
+    readOnly?: boolean;
+  } = {},
 ): Promise<ReengagementEvalResult | null> {
   const now = opts.now ?? new Date();
   const mode = opts.mode ?? reengagementMode();
-  const prefs = await getOrCreatePreferences(userId);
+  const readOnly = opts.readOnly === true || mode !== "live";
+  const prefs = readOnly
+    ? ((await getPreferencesIfExists(userId)) ?? dryRunDefaultPreferences(userId))
+    : await getOrCreatePreferences(userId);
   const signals = await loadOutcomeSignals(userId, prefs.timezone);
   if (!signals) return null;
 
@@ -227,6 +250,18 @@ export async function evaluateReengagementForUser(
       "Re-engagement dispatch result",
     );
   } else {
+    if (decision.skipCode) {
+      logger.info(
+        {
+          evt: "notification_suppressed",
+          reason: decision.skipCode,
+          userId,
+          category: decision.candidate?.category ?? null,
+          mode,
+        },
+        "Re-engagement candidate suppressed",
+      );
+    }
     logger.info(
       {
         evt: "notification_reengagement_dry_run",
@@ -234,6 +269,7 @@ export async function evaluateReengagementForUser(
         userId,
         action: decision.action,
         skipCode: decision.skipCode,
+        finalAction: dryRun.finalAction,
         category: decision.candidate?.category ?? null,
         segment: decision.segment,
         deepLink: decision.candidate?.copy.deepLink ?? null,
@@ -270,12 +306,17 @@ export async function runReengagementTick(now = new Date()): Promise<{
 
   for (const { userId } of tokenUsers) {
     try {
-      const prefs = await getOrCreatePreferences(userId);
+      const prefs =
+        (await getPreferencesIfExists(userId)) ?? dryRunDefaultPreferences(userId);
       const local = getLocalDateTimeParts(prefs.timezone, now);
       if (!isReengagementSendSlot(local, prefs.preferredEngagementHour)) {
         continue;
       }
-      const result = await evaluateReengagementForUser(userId, { now, mode });
+      const result = await evaluateReengagementForUser(userId, {
+        now,
+        mode,
+        readOnly: mode !== "live",
+      });
       if (!result) continue;
       evaluated++;
       if (result.dispatched) dispatched++;
@@ -309,6 +350,7 @@ export async function dryRunReengagementSnapshot(
       now,
       ignoreSendWindow: true,
       mode: "dry_run",
+      readOnly: true,
     });
     if (result) rows.push(result.dryRun);
   }

@@ -1,13 +1,16 @@
+import { GLOBAL_PROACTIVE_POLICY } from "../delivery/proactive-policy.js";
+
 /**
  * Proactive re-engagement frequency policy.
- * Transactional / time-sensitive existing jobs (routine_item, infant care)
- * are not governed by these caps.
+ * Shares the global 1/day, 4/week, 90-minute gate with the existing scheduler
+ * and CRM. Transactional categories (routine_item, infant_care) are excluded.
  */
 
 export const REENGAGEMENT_POLICY = {
-  maxProactivePerDay: 1,
-  maxProactivePerWeek: 4,
-  recentAppOpenSuppressionMinutes: 90,
+  maxProactivePerDay: GLOBAL_PROACTIVE_POLICY.maxPerLocalDay,
+  maxProactivePerWeek: GLOBAL_PROACTIVE_POLICY.maxPerRolling7Days,
+  recentAppOpenSuppressionMinutes: GLOBAL_PROACTIVE_POLICY.recentAppOpenSuppressionMinutes,
+  minGapMinutes: GLOBAL_PROACTIVE_POLICY.minGapMinutes,
   sendWindowStartHour: 8,
   sendWindowEndHour: 20,
   preferredSendHour: 8,

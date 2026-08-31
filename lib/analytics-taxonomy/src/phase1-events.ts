@@ -186,6 +186,11 @@ export const PHASE1_EVENT_PROP_SCHEMAS = {
     destination: z.string().max(256).optional(),
     experiment_variant: z.string().max(32).optional(),
   }),
+  notification_suppressed: z.object({
+    reason: z.string().max(64).optional(),
+    notification_type: z.string().max(64).optional(),
+    campaign: z.string().max(64).optional(),
+  }),
   notification_delivered: z.object({
     notification_id: z.string().max(128).optional(),
     notification_type: z.string().max(64).optional(),
@@ -262,6 +267,7 @@ export const PHASE1_EVENT_CATEGORY: Record<
   notification_opened: "growth",
   notification_scheduled: "growth",
   notification_sent: "growth",
+  notification_suppressed: "growth",
   notification_delivered: "growth",
   notification_dismissed: "growth",
   notification_action_clicked: "growth",

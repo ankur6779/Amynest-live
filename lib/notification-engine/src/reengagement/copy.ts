@@ -3,7 +3,7 @@ import {
   REENGAGEMENT_POLICY,
   type ReengagementCopyVariant,
 } from "./policy.js";
-import { sanitizeLockScreenCopy, safeChildFirstName } from "./privacy.js";
+import { sanitizeLockScreenCopy } from "./privacy.js";
 import type { ReengagementSegment } from "./segments.js";
 import {
   REENGAGEMENT_DEEP_LINKS,
@@ -36,9 +36,8 @@ export function buildCategoryCopy(input: {
   deepLinkOverride?: string | null;
 }): ReengagementCopy {
   const variant = copyVariantForUser(input.userId);
-  const name = safeChildFirstName(input.childName);
   const deepLink = input.deepLinkOverride || defaultDeepLink(input.category, input.segment);
-  const raw = rawCopy(input.category, variant, name, input.daysSinceLastActive, input.segment);
+  const raw = rawCopy(input.category, variant, input.daysSinceLastActive, input.segment);
   const safe = sanitizeLockScreenCopy(raw.title, raw.body);
   return {
     title: safe.title,
@@ -76,7 +75,6 @@ function defaultDeepLink(
 function rawCopy(
   category: ReengagementCategory,
   variant: ReengagementCopyVariant,
-  name: string | null,
   days: number,
   segment: ReengagementSegment,
 ): { title: string; body: string } {
@@ -96,21 +94,19 @@ function rawCopy(
     case "TODAY_PLAN":
       if (variant === "plan_ready") {
         return {
-          title: name ? `${name}'s plan is ready` : "Today's plan is ready",
+          title: "Today's plan is ready",
           body: "A calmer day starts with one small step.",
         };
       }
       return {
         title: "Ready for today's next right thing?",
-        body: "Amy has today's next step ready whenever you are.",
+        body: "Amy has today's next right thing ready.",
       };
 
     case "CHILD_CONTEXT":
       return {
         title: "Your next step is ready",
-        body: name
-          ? `A small step for ${name} is waiting — only if it feels right today.`
-          : "A small step is waiting — only if it feels right today.",
+        body: "A small step is waiting — only if it feels right today.",
       };
 
     case "ROUTINE_CONTINUITY":
