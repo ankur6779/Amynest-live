@@ -102,15 +102,27 @@ function parseLines(raw) {
   return updates;
 }
 
-const raw = fetchViaSsh() || (await fetchViaCoolifyApi());
-if (!raw) {
-  console.error(
-    "Error: Could not read YouTube env from Coolify. Set HETZNER_SSH_PRIVATE_KEY or COOLIFY_API_TOKEN.",
-  );
-  process.exit(1);
+function fetchFromProcessEnv() {
+  /** @type {Record<string, string>} */
+  const updates = {};
+  for (const key of wanted) {
+    const value = process.env[key]?.trim();
+    if (value) updates[key] = value;
+  }
+  return updates;
 }
 
-const updates = parseLines(raw);
+let updates = fetchFromProcessEnv();
+if (Object.keys(updates).length < 3) {
+  const raw = fetchViaSsh() || (await fetchViaCoolifyApi());
+  if (!raw) {
+    console.error(
+      "Error: Could not read YouTube env. Set YOUTUBE_* secrets, HETZNER_SSH_PRIVATE_KEY, or COOLIFY_API_TOKEN.",
+    );
+    process.exit(1);
+  }
+  updates = parseLines(raw);
+}
 for (const key of ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"]) {
   if (!updates[key]) {
     console.error(`Error: Missing ${key} in Coolify env.`);
