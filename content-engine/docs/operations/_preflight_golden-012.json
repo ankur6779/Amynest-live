@@ -1,0 +1,53 @@
+{
+  "id": "golden-012",
+  "topic": "Flamingo balance and freeze-statue challenges",
+  "featureName": "Health Lab Balance & Freeze Games",
+  "category": "Health",
+  "voiceScript": "It’s 8:47 PM. Pride — waiting sits with you at the table. They’re bouncing off the walls — not “naughty,” just full of weather they can’t land. Restlessness gets labeled as “bad behavior” when kids actually need body practice. Only now does Amy appear — as a warm guide, not a pitch. Health Lab includes flamingo balance, freeze-statue, and steadiness challenges powered by motion play. A held balance can feel like a superpower they chose. Download AmyNest AI on Google Play and the App Store.",
+  "captions": [
+    {
+      "start": 0,
+      "end": 3.5,
+      "text": "It’s 8:47 PM. Pride — waiting sits with you at the ta..."
+    },
+    {
+      "start": 3.5,
+      "end": 7,
+      "text": "They’re bouncing off the walls — not “naughty,” just ..."
+    },
+    {
+      "start": 7,
+      "end": 10.5,
+      "text": "Restlessness gets labeled as “bad behavior” when kids..."
+    },
+    {
+      "start": 10.5,
+      "end": 14,
+      "text": "Only now does Amy appear — as a warm guide, not a pit..."
+    },
+    {
+      "start": 14,
+      "end": 17.5,
+      "text": "A held balance can feel like a superpower they chose."
+    },
+    {
+      "start": 17.5,
+      "end": 21,
+      "text": "Download AmyNest AI on Google Play and the App Store."
+    }
+  ],
+  "bibles": {
+    "amy-ai": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-ai-bible.jpeg",
+      "sha256": "6f65f19d2ac5b6b48056370c943cb4c6f0665c3e9c65ad8f4d171acb73f543fb"
+    },
+    "amy-girl": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-girl-bible.jpeg",
+      "sha256": "dc09bf858293f02de97d51e0cee1344257304d301916c7bc4f33490482f09f2f"
+    },
+    "amy-boy": {
+      "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-boy-bible.jpeg",
+      "sha256": "1cc38ca7b1f5acc171a4a75d1d667e938c97216d9fad1529d11739d59abbb8ee"
+    }
+  }
+}

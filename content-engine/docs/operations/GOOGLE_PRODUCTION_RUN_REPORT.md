@@ -1,8 +1,8 @@
 # GOOGLE_PRODUCTION_RUN_REPORT
 
 **Status:** FAILED
-**Generated:** 2026-08-18T18:54:28.971Z
-**Golden Script ID:** `golden-009` — A Parent View Built for Caregivers — Not Just Kids
+**Generated:** 2026-08-19T18:46:16.373Z
+**Golden Script ID:** `golden-011` — Not a Workout App — A Secret Lab in the Sky
 **Provider policy:** Video = KIE.ai primary (Google Veo fallback). TTS/music = Gemini. No you.bot / Runware / Sharpii.
 
 ## FAILED — production stopped (no upload)
@@ -18,13 +18,13 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 | Field | Value |
 |---|---|
 | Google video model | kie/veo3_fast@720p |
-| Google voice model | google/gemini-3-1-flash-tts |
+| Google voice model | gemini-3.1-flash-tts-preview |
 | Google image model (if needed) | imagen-4.0-fast-generate-001 |
 | Video generation duration | 0 ms |
 | Video generation cost (AI Studio) | not available from API |
 | Images generated | 0 |
-| Voice generated | yes |
-| Total production time | 278101 ms |
+| Voice generated | no / reused |
+| Total production time | 209396 ms |
 | Remaining Google quota | Check Google AI Studio usage dashboard — API does not return remaining quota in this path. |
 
 ## Validation evidence
@@ -43,8 +43,8 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 ## Audio evidence
 
-- Narration asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/narration.wav`
-- Music asset: `/Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/music.wav`
+- Narration asset: `/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/.amynest-assets/p0-regression-golden-011/audio/narration.wav`
+- Music asset: `/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/.amynest-assets/p0-regression-golden-011/audio/music.wav`
 - _not measured_
 
 ## Subtitle evidence
@@ -64,11 +64,11 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 | Step | ms | Result | Detail |
 |---|---:|---|---|
-| golden-script | 36 | PASS | golden-009 — A Parent View Built for Caregivers — Not Just Kids |
-| narration-tts | 76564 | PASS | /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/narration.wav (45.3s; coverage=88%; google/gemini-3-1-flash-tts) |
-| music-lyria | 69540 | PASS | /Users/macbook/AmyNestProject/AmyNest-AI/.amynest-assets/p0-fix-golden-009/audio/music.wav (kie-suno/V4) |
-| content-diversity | 5 | PASS | score=92.0 similarity=14.5% locs=balcony/cafe/apartment-hallway/car-ride |
-| creative-composition | 0 | FAIL | The Google model was unable to generate audio for this request. Please try a different prompt. |
+| golden-script | 43 | PASS | golden-011 — Not a Workout App — A Secret Lab in the Sky |
+| narration-tts | 13912 | PASS | reused /Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/.amynest-assets/p0-regression-golden-011/audio/narration.wav (49.6s; coverage=90%) |
+| music-lyria | 0 | PASS | reused /Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/.amynest-assets/p0-regression-golden-011/audio/music.wav |
+| content-diversity | 3 | PASS | score=100.0 similarity=0.0% locs=mirror-practice-nook/apartment-hallway/garden/car-ride |
+| creative-composition | 0 | FAIL | Request blocked: The input content was flagged by safety filters for involving restricted third-party content. |
 
 ## Remaining quality issues
 
@@ -76,8 +76,8 @@ Creative Composition Layer failed — STOP (no slideshow fallback).
 
 ## Warnings / errors
 
-- KIE credits before: 6826.51
+- KIE credits before: 5572.88
 - Audio provider: kie
 - Bakeoff: YouTube upload skipped (AMYNEST_SKIP_UPLOAD=1)
-- Diversity: Speech · question · balcony, cafe, apartment-hallway, car-ride, cta-stage
-- The Google model was unable to generate audio for this request. Please try a different prompt.
+- Diversity: Speech · amy-ai-hero · mirror-practice-nook, apartment-hallway, garden, car-ride, cta-stage
+- Request blocked: The input content was flagged by safety filters for involving restricted third-party content.
