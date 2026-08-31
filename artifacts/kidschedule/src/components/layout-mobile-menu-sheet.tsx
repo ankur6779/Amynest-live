@@ -19,7 +19,6 @@ import {
 } from "@/lib/safe-user-display";
 import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
-import { isAmynestLivingUniverseEnabled } from "@/lib/amynest-living-universe";
 import {
   HomeNavFamilyRow,
   HomeNavHeader,
@@ -68,10 +67,9 @@ export function LayoutMobileMenuSheet({
 
   const safeChildren = (childList ?? []) as Array<{ name?: string | null }>;
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
-  let drawerItems =
-    isAmynestLivingUniverseEnabled() || safeMenu.some((item) => item.href === "/study")
-      ? safeMenu
-      : [...safeMenu, LEARNING_ZONE_ITEM];
+  let drawerItems = safeMenu.some((item) => item.href === "/study")
+    ? safeMenu
+    : [...safeMenu, LEARNING_ZONE_ITEM];
   const displayName = getUserDisplayName(user);
   const email = getUserEmail(user);
   const amyAstroEnabled = isBirthSkyEnabled(email);

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  HUB_REMOVED_TILE_FALLBACKS,
   HUB_REMOVED_TILE_IDS,
   PARENT_HUB_ROOM_IDS,
+  fallbackHrefForRemovedHubTile,
   isHubTileRemovedFromRooms,
   roomForLegacyGroup,
   roomForTile,
@@ -29,6 +31,21 @@ describe("parent-hub rooms map", () => {
       expect(isHubTileRemovedFromRooms(id)).toBe(true);
       expect(roomForTile(id)).toBeNull();
     }
+  });
+
+  it("sends every removed Hub tile to its living owner, never a no-op", () => {
+    expect(fallbackHrefForRemovedHubTile("generate-routine")).toBe("/routines/generate");
+    expect(fallbackHrefForRemovedHubTile("tomorrow-forecast")).toBe("/routines");
+    expect(fallbackHrefForRemovedHubTile("amy-quick-tutor")).toBe("/amy-ai-tutor");
+    expect(fallbackHrefForRemovedHubTile("command-center")).toBe("/dashboard");
+    for (const id of HUB_REMOVED_TILE_IDS) {
+      const href = fallbackHrefForRemovedHubTile(id);
+      expect(href, `${id} needs an owner fallback`).toMatch(/^\//);
+      expect(href).not.toBe("/parenting-hub");
+    }
+    expect(Object.keys(HUB_REMOVED_TILE_FALLBACKS).sort()).toEqual(
+      [...HUB_REMOVED_TILE_IDS].sort(),
+    );
   });
 
   it("maps legacy mall groups to rooms", () => {

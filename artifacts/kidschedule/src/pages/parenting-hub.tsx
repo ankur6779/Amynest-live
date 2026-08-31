@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useEffect, useCallback, useRef, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AppLink } from "@/components/app-link";
+import { AppLink, useAppNavigate } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { useListChildren, getListChildrenQueryKey, useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -166,6 +166,7 @@ import { isGrowLivingV1Enabled } from "@/lib/grow/living-room";
 import { isAskAmyLivingV1Enabled } from "@/lib/ask-amy/living-room";
 import { roomsV1AllowsQuietChildIdentity } from "@/lib/parent-hub/legacy-chrome";
 import {
+  fallbackHrefForRemovedHubTile,
   isHubTileRemovedFromRooms,
   roomForLegacyGroup,
   roomForTile,
@@ -908,6 +909,7 @@ function ParentingHubPage() {
   const {
     t
   } = useTranslation();
+  const { navigate: appNavigateTo } = useAppNavigate();
   const {
     data: children = [],
     isLoading,
@@ -1108,8 +1110,12 @@ function ParentingHubPage() {
 
   const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
     if (roomsV1) {
-      // Removed Hub chrome: soft no-op (never 404).
-      if (tileId && isHubTileRemovedFromRooms(tileId)) return;
+      // Removed Hub chrome lives on Today's plan / other owners — never a no-op click.
+      if (tileId && isHubTileRemovedFromRooms(tileId)) {
+        const href = fallbackHrefForRemovedHubTile(tileId) ?? "/routines";
+        appNavigateTo(href, { source: `rooms-v1-removed-tile:${tileId}` });
+        return;
+      }
       const room =
         roomForTile(tileId) ?? roomForLegacyGroup(group) ?? ("help" as ParentHubRoomId);
       setActiveRoom(room);

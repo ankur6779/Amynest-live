@@ -80,8 +80,9 @@ describe("getParentRoute nested paths", () => {
     expect(getParentRoute("/amy-coach/progress")).toBe("/amy-coach");
   });
 
-  it("maps games and feedback to dashboard when stack is empty", () => {
-    expect(getParentRoute("/games")).toBe("/dashboard");
+  it("maps Games back to Rooms, not Home, when stack is empty", () => {
+    expect(getParentRoute("/games")).toBe("/parenting-hub");
+    expect(getParentRoute("/games")).not.toBe("/dashboard");
     expect(getParentRoute("/feedback")).toBe("/dashboard");
   });
 });

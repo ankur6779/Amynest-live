@@ -7,13 +7,28 @@ export const PARENT_HUB_ROOM_IDS = ["help", "understand", "care", "moments"] as 
 
 export type ParentHubRoomId = (typeof PARENT_HUB_ROOM_IDS)[number];
 
-/** Tile ids removed from Hub IA when Rooms V1 is ON (products may live elsewhere). */
+/** Tile ids removed from Hub IA when Rooms V1 is ON (products live elsewhere). */
 export const HUB_REMOVED_TILE_IDS = new Set<string>([
   "generate-routine",
   "tomorrow-forecast",
   "command-center",
   "amy-quick-tutor",
 ]);
+
+/**
+ * Living owner for a removed Hub tile — never a silent no-op.
+ * Generate Routine belongs to Today's plan, not Rooms.
+ */
+export const HUB_REMOVED_TILE_FALLBACKS: Record<string, string> = {
+  "generate-routine": "/routines/generate",
+  "tomorrow-forecast": "/routines",
+  "command-center": "/dashboard",
+  "amy-quick-tutor": "/amy-ai-tutor",
+};
+
+export function fallbackHrefForRemovedHubTile(tileId: string): string | null {
+  return HUB_REMOVED_TILE_FALLBACKS[tileId] ?? null;
+}
 
 /**
  * Binding tile → room map (Production Audit).
