@@ -1029,6 +1029,37 @@ export async function activateSubscription(
     return existing;
   }
 
+  // Refuse period regression for an already-active paid row. Idempotency
+  // above only short-circuits the *same* providerSubscriptionId; a delayed
+  // Razorpay charged/activated for an older/different sub id (or a same-id
+  // webhook with a shorter current_end) would otherwise overwrite and
+  // silently shrink entitlement.
+  if (
+    existing.status === "active" &&
+    existing.currentPeriodEnd &&
+    opts.periodEnd &&
+    opts.periodEnd.getTime() < existing.currentPeriodEnd.getTime() &&
+    (existing.provider === "razorpay" ||
+      existing.provider === "stripe" ||
+      existing.provider === "revenuecat")
+  ) {
+    const { logger } = await import("../lib/logger.js");
+    logger.warn(
+      {
+        userId,
+        plan,
+        provider,
+        existingProvider: existing.provider,
+        existingProviderSubscriptionId: existing.providerSubscriptionId,
+        incomingProviderSubscriptionId: opts.providerSubscriptionId ?? null,
+        existingPeriodEnd: existing.currentPeriodEnd.toISOString(),
+        incomingPeriodEnd: opts.periodEnd.toISOString(),
+      },
+      "[subscription] refused activateSubscription period regression",
+    );
+    return existing;
+  }
+
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({

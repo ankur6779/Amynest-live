@@ -62,6 +62,10 @@ export type RedeemResult =
 /**
  * Redeems a gift token for the recipient. Grants bonus premium days on success.
  * Returns a typed result — never throws for caller-visible errors.
+ *
+ * Mark-redeemed and bonus grant run in one transaction so a failed
+ * `extendBonusPremium` rolls the token back to `available` (retryable)
+ * instead of permanently burning the gift with no premium granted.
  */
 export async function redeemGiftToken(
   giftCode: string,
@@ -80,29 +84,40 @@ export async function redeemGiftToken(
     return { ok: false, reason: "expired" };
   }
 
-  // Mark redeemed atomically — only succeeds if status is still "available"
-  const updated = await db
-    .update(giftTokensTable)
-    .set({
-      status: "redeemed",
-      recipientUserId,
-      redeemedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(giftTokensTable.giftCode, code),
-        eq(giftTokensTable.status, "available"),
-      ),
-    )
-    .returning({ id: giftTokensTable.id, bonusDays: giftTokensTable.bonusDays });
-
-  if (updated.length === 0) return { ok: false, reason: "already_redeemed" };
-
-  const bonusDays = updated[0].bonusDays;
   try {
-    await extendBonusPremium(recipientUserId, bonusDays);
-    logger.info({ recipientUserId, giftCode: code, bonusDays }, "gift_token_redeemed");
-    return { ok: true, bonusDays, giftCode: code };
+    const result = await db.transaction(async (tx) => {
+      // Mark redeemed atomically — only succeeds if status is still "available"
+      const updated = await tx
+        .update(giftTokensTable)
+        .set({
+          status: "redeemed",
+          recipientUserId,
+          redeemedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(giftTokensTable.giftCode, code),
+            eq(giftTokensTable.status, "available"),
+          ),
+        )
+        .returning({ id: giftTokensTable.id, bonusDays: giftTokensTable.bonusDays });
+
+      if (updated.length === 0) {
+        return { ok: false as const, reason: "already_redeemed" as const };
+      }
+
+      const bonusDays = updated[0].bonusDays;
+      await extendBonusPremium(recipientUserId, bonusDays, tx);
+      return { ok: true as const, bonusDays, giftCode: code };
+    });
+
+    if (result.ok) {
+      logger.info(
+        { recipientUserId, giftCode: code, bonusDays: result.bonusDays },
+        "gift_token_redeemed",
+      );
+    }
+    return result;
   } catch (err) {
     logger.error({ err, recipientUserId, giftCode: code }, "gift_token_bonus_extend_failed");
     return { ok: false, reason: "server_error" };
