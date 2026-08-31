@@ -1558,8 +1558,8 @@
       "back": "Back"
     },
     "notify_prompt": {
-      "title": "Stay on Track with Reminders",
-      "subtitle": "Amy will remind you about routines, bedtime, meals and more — right on time, every day.",
+      "title": "Want Amy to remind you when today's next right thing is ready?",
+      "subtitle": "Gentle reminders for today's plan — only when something useful is waiting. You can change this anytime.",
       "benefit_routines": "Routine reminders so nothing gets missed",
       "benefit_bedtime": "Bedtime alerts for a calm night routine",
       "benefit_meals": "Meal time nudges to keep feeding on schedule",

@@ -470,6 +470,8 @@ async function sendFcmWebPush(
       body: input.body,
       category: input.category,
       deepLink: input.deepLink ?? "",
+      fingerprint: input.dedupKey ?? "",
+      notificationId: input.dedupKey ?? "",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
@@ -550,6 +552,8 @@ async function sendFcmIosPush(
     data: {
       category: input.category,
       deepLink: input.deepLink ?? "",
+      fingerprint: input.dedupKey ?? "",
+      notificationId: input.dedupKey ?? "",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),

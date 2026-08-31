@@ -400,9 +400,15 @@ router.post("/notifications/opened", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+  const fingerprint =
+    typeof req.body?.fingerprint === "string"
+      ? req.body.fingerprint
+      : typeof req.body?.notificationId === "string"
+        ? req.body.notificationId
+        : undefined;
   try {
     const { recordNotificationOpened } = await import("../services/notificationContentHistoryService.js");
-    await recordNotificationOpened(userId);
+    await recordNotificationOpened(userId, { fingerprint, notificationId: fingerprint });
   } catch (err) {
     logger.warn({ err, userId }, "Failed to record notification opened");
   }
@@ -719,6 +725,35 @@ router.post("/notifications/cron/ping", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error({ err }, "Notification cron ping failed");
     res.status(500).json({ error: "Cron ping failed" });
+  }
+});
+
+/**
+ * GET /api/notifications/reengagement/dry-run
+ * Admin audit: who would receive which re-engagement notification and why.
+ * Never sends. Capped to 50 users unless ?limit= is provided (max 200).
+ */
+router.get("/notifications/reengagement/dry-run", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const limit = Math.min(Math.max(Number(req.query["limit"]) || 50, 1), 200);
+  try {
+    const { dryRunReengagementSnapshot, reengagementMode } = await import(
+      "../services/reengagementNotificationService.js"
+    );
+    const rows = await dryRunReengagementSnapshot(limit);
+    res.json({
+      mode: reengagementMode(),
+      liveSendEnabled: false,
+      count: rows.length,
+      rows,
+    });
+  } catch (err) {
+    logger.error({ err }, "Re-engagement dry-run failed");
+    res.status(500).json({ error: "dry-run failed" });
   }
 });
 
