@@ -374,6 +374,9 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
 
   const isPaid = isPremiumNow(sub);
 
+  // Counter bump + gift mint (or bonus premium) must share one transaction.
+  // Previously paid referrers bumped referralRewardsGranted then created gifts
+  // outside the TX — createGiftToken failure permanently burned the milestone.
   const granted = await db.transaction(async (tx) => {
     const updated = await tx
       .update(subscriptionsTable)
@@ -390,17 +393,15 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
       .returning({ id: subscriptionsTable.id });
     if (updated.length === 0) return 0;
 
-    if (!isPaid) {
+    if (isPaid) {
+      for (let i = 0; i < toGrant; i++) {
+        await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS, tx);
+      }
+    } else {
       await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
     }
     return toGrant;
   });
-
-  if (granted > 0 && isPaid) {
-    for (let i = 0; i < granted; i++) {
-      await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS);
-    }
-  }
 
   if (granted > 0) {
     await notifyReferralRewardUnlocked(referrerUserId, granted, already + granted, isPaid);
