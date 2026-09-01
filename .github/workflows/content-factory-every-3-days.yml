@@ -1,0 +1,80 @@
+# Automated AmyNest Content Factory — every 3 days @ 17:00 IST
+#
+# Wake daily at 11:30 UTC (= 17:00 Asia/Kolkata). The factory schedule gate
+# only produces on DTSTART + INTERVAL=3 days (Sep 2, 5, 8, …).
+#
+# LIVE spend requires repository variable/secret:
+#   AMYNEST_CONTENT_FACTORY_LIVE=1
+# Without it, the job runs dry-run only (0 KIE video credits).
+
+name: content-factory-every-3-days
+
+on:
+  schedule:
+    # 17:00 Asia/Kolkata == 11:30 UTC (IST is UTC+5:30, no DST)
+    - cron: "30 11 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (default) or tick"
+        required: false
+        default: "dry-run"
+
+concurrency:
+  group: amynest-content-factory
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: content-engine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Until identity locks merge to default branch, set repo variable:
+          # AMYNEST_CONTENT_FACTORY_REF=fix/p0-production-integrity
+          ref: ${{ vars.AMYNEST_CONTENT_FACTORY_REF || github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Content factory dry-run / tick
+        env:
+          AMYNEST_CONTENT_FACTORY_LIVE: ${{ vars.AMYNEST_CONTENT_FACTORY_LIVE || '0' }}
+          AMYNEST_DATA_DIR: ${{ runner.temp }}/amynest-factory-data
+          KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_ACCESS_TOKEN: ${{ secrets.YOUTUBE_ACCESS_TOKEN }}
+          YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          MODE="${{ github.event.inputs.mode || 'tick' }}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${MODE}" = "dry-run" ]; then
+            node --import tsx/esm ./operations/content-factory/cli.ts dry-run
+          else
+            # Scheduled: tick (dry unless LIVE=1 AND schedule gate matches)
+            node --import tsx/esm ./operations/content-factory/cli.ts tick
+          fi
