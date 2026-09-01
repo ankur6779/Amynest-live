@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { allGoldenSeeds } from "../golden-scripts/seeds.js";
 import { buildGoldenScript } from "../golden-scripts/build.js";
 import { wardrobeFor } from "../character-memory-engine/wardrobe.js";
-import { resolveKieReferencePaths } from "../asset-engine/providers/kie-video/client.js";
+import { resolveKieReferencePaths, isGeneratedMemoryFramePath } from "../asset-engine/providers/kie-video/client.js";
 import {
   assertGoldenVoiceIntegrity,
   buildGoldenVoiceAndCaptions,
@@ -67,5 +67,19 @@ describe("P0 KIE reference paths", () => {
         requiredReferencePaths: ["/tmp/missing-amy-bible.png"],
       }),
     );
+  });
+
+  it("strips generated memory last-frame from resolved KIE paths", () => {
+    const bible = wardrobeFor("amy-girl").bibleAsset;
+    assert.ok(existsSync(bible));
+    const fakeMemory = "/tmp/character-memory/shot-amy-host-last.png";
+    assert.equal(isGeneratedMemoryFramePath(fakeMemory), true);
+    const paths = resolveKieReferencePaths({
+      imagePath: bible,
+      referenceImagePaths: [bible],
+      requiredReferencePaths: [bible],
+    });
+    assert.ok(!paths.some((p) => /character-memory\/.*-last/i.test(p)));
+    assert.ok(paths.includes(bible));
   });
 });

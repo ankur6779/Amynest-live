@@ -80,7 +80,7 @@ export interface SceneCharacterMemory {
   lastFramePath?: string;
   /** Official character bible asset paths for this cast. */
   bibleAssetPaths: string[];
-  /** Reference stack: bible(s) + previous scene memory frame when available. */
+  /** Reference stack for providers: canonical bible(s) + identity keyframe. Generated last-frames are local-only (not KIE). */
   referenceImagePaths: string[];
   inheritsFromSceneId: string | null;
   /** Story-allowed resets (never silent identity/wardrobe drift). */

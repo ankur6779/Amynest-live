@@ -16,6 +16,7 @@ import {
   isCharacterMemoryEnabled,
   runCharacterMemoryEngine,
 } from "./engine.js";
+import { wardrobeFor } from "./wardrobe.js";
 
 describe("Character Memory Engine", () => {
   it("is enabled by default and can be disabled via env", () => {
@@ -107,7 +108,7 @@ describe("Character Memory Engine", () => {
     }
   });
 
-  it("enriches Veo prompts and prefers previous last-frame as seed", () => {
+  it("enriches Veo prompts and keeps generated last-frame out of KIE seed", () => {
     const shot: CompositionShotPlan = {
       id: "shot-amy-girl-learn",
       role: "amy-girl-learn",
@@ -126,18 +127,25 @@ describe("Character Memory Engine", () => {
     assert.match(prompt, /Clothing LOCK|Room LOCK|Camera CONTINUE/);
     assert.match(negativePrompt, /camera teleport|independent AI clip/);
     assert.ok(memory);
+    assert.match(prompt, /AMY AI IS THE EXACT CANONICAL|CINEMATIC STYLE SEPARATION/i);
 
+    const identity = memory!.bibleAssetPaths[0]!;
     const withFrame = {
       ...memory!,
-      lastFramePath: memory!.bibleAssetPaths[0]!,
+      lastFramePath: identity, // exists on disk so continue semantics fire
     };
     const seed = resolveGenerationSeed({
       character: "amy-girl",
-      identityKeyframePath: "/tmp/does-not-need-to-exist-identity.png",
+      identityKeyframePath: identity,
       previousMemory: withFrame,
+      cast: memory!.characters,
     });
     assert.equal(seed.usedPreviousFrame, true);
-    assert.equal(seed.imagePath, withFrame.lastFramePath);
-    assert.ok(seed.referenceImagePaths.includes(withFrame.lastFramePath!));
+    // Primary is lead canonical bible — never companion/keyframe swap
+    assert.equal(seed.imagePath, wardrobeFor("amy-girl").bibleAsset);
+    assert.ok(seed.note.includes("CANONICAL IDENTITY"));
+    for (const b of seed.identityBindings) {
+      assert.equal(b.biblePath, wardrobeFor(b.character).bibleAsset);
+    }
   });
 });

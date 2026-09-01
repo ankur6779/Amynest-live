@@ -1,0 +1,10 @@
+[Unit]
+Description=AmyNest Content Factory timer (daily wake; INTERVAL=3 gate inside)
+
+[Timer]
+OnCalendar=*-*-* 17:00:00
+Persistent=true
+Unit=amynest-content-factory.service
+
+[Install]
+WantedBy=timers.target

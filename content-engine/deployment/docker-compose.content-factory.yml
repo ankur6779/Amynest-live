@@ -1,0 +1,29 @@
+# Optional Coolify / Docker sidecar for Content Factory tick
+# Use alongside existing amynest-content-engine service.
+services:
+  amynest-content-factory:
+    build:
+      context: ../..
+      dockerfile: content-engine/deployment/Dockerfile
+    container_name: amynest-content-factory
+    restart: "no"
+    environment:
+      AMYNEST_ENV: production
+      AMYNEST_TIMEZONE: Asia/Kolkata
+      AMYNEST_DATA_DIR: /data
+      AMYNEST_CONTENT_FACTORY_LIVE: ${AMYNEST_CONTENT_FACTORY_LIVE:-0}
+      KIE_API_KEY: ${KIE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET}
+      YOUTUBE_REFRESH_TOKEN: ${YOUTUBE_REFRESH_TOKEN}
+    volumes:
+      - amynest-data:/data
+      - amynest-renders:/renders
+    # Coolify/cron should invoke:
+    #   node --import tsx/esm ./operations/content-factory/cli.ts tick
+    command: ["node", "--import", "tsx/esm", "./operations/content-factory/cli.ts", "tick"]
+
+volumes:
+  amynest-data:
+  amynest-renders:

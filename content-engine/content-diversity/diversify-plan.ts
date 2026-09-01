@@ -420,7 +420,7 @@ export function diversifyCompositionPlan(
     plan: {
       ...plan,
       totalDurationSeconds: stitched.reduce((a, s) => a + s.durationSeconds, 0),
-      shots: stitched,
+      shots: stitched as CompositionShotPlan[],
       rulesApplied: [
         ...plan.rulesApplied.filter((r) => !r.startsWith("content-diversity-")),
         "content-diversity-script-locations",

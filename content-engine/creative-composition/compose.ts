@@ -20,8 +20,11 @@ import {
   seedForShot,
 } from "../character-memory-engine/runtime.js";
 import type { GenerationSeed } from "../character-memory-engine/seed.js";
+import {
+  assertKieReferenceManifestSafe,
+  buildKieReferenceManifest,
+} from "../character-memory-engine/identity-lock.js";
 import type { SceneCharacterMemory } from "../character-memory-engine/types.js";
-import { wardrobeFor } from "../character-memory-engine/wardrobe.js";
 import type { SceneStoryMemory } from "../story-memory-engine/types.js";
 import type { ContentPackage } from "../types/content-package.js";
 import {
@@ -364,16 +367,12 @@ export async function composeCinematicVisuals(
           previousMemory,
           cast: sceneMemory?.characters ?? [shot.character],
         })
-      : {
-          imagePath: keyframePath,
-          referenceImagePaths: [
-            wardrobeFor(shot.character).bibleAsset,
-            keyframePath,
-          ].filter((p) => p && existsSync(p)),
-          usedPreviousFrame: false,
-          bibleAssetPaths: [wardrobeFor(shot.character).bibleAsset],
-          note: "Character Memory disabled — bible still attached for KIE identity HTTP",
-        };
+      : seedForShot({
+          character: shot.character,
+          identityKeyframePath: keyframePath,
+          previousMemory: null,
+          cast: [shot.character],
+        });
 
     if (sceneMemory) {
       sceneMemory = {
@@ -412,6 +411,7 @@ export async function composeCinematicVisuals(
         assetId: shot.id,
         sceneId: shot.id,
         character: shot.character,
+        cast: seed.identityBindings.map((b) => b.character),
         aspectRatio: "9:16" as const,
         durationSeconds: shot.durationSeconds,
         resolution,
@@ -421,8 +421,39 @@ export async function composeCinematicVisuals(
       };
       console.log(
         `[creative-composition] ${activeLabel} performance ${shot.id} (${shot.character}, ${shot.durationSeconds}s)${
-          seed.usedPreviousFrame ? " [memory→video]" : " [identity→video]"
+          seed.usedPreviousFrame
+            ? " [memory-context→video; KIE refs=canonical-bibles]"
+            : " [canonical-bible→video]"
         }`,
+      );
+      console.log(
+        [
+          `[character-memory] Character Memory: ${memoryEnabled ? "enabled" : "disabled"}`,
+          `[character-memory] Local memory freeze: ${seed.localMemoryFreezePath ? "present" : "absent"}`,
+          `[character-memory] KIE identity bindings: ${seed.identityBindings
+            .map((b) => `${b.character}:${b.role}`)
+            .join(", ")}`,
+          `[character-memory] KIE canonical refs: ${seed.referenceImagePaths.length}`,
+          `[character-memory] KIE generated memory refs: 0`,
+        ].join("\n"),
+      );
+      const manifest = buildKieReferenceManifest({
+        cast: seed.identityBindings.map((b) => b.character),
+        referenceImagePaths: seed.referenceImagePaths,
+        localMemoryFreezePath: seed.localMemoryFreezePath,
+      });
+      assertKieReferenceManifestSafe(manifest);
+      console.log(
+        `[kie-identity-manifest] ${JSON.stringify({
+          characters: Object.fromEntries(
+            Object.entries(manifest.characters).map(([k, v]) => [
+              k,
+              { sha256: v.sha256, onWire: v.onWire },
+            ]),
+          ),
+          GENERATED_MEMORY: manifest.GENERATED_MEMORY,
+          CROSS_CHARACTER_REFERENCES: manifest.CROSS_CHARACTER_REFERENCES,
+        })}`,
       );
       try {
         if (primaryProvider === "kie" && kie) {

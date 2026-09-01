@@ -1,0 +1,17 @@
+[Unit]
+Description=AmyNest Golden Content Factory (schedule-gated)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/amynest/content-engine
+EnvironmentFile=/etc/amynest/content-engine.env
+# LIVE spend only when AMYNEST_CONTENT_FACTORY_LIVE=1 in env file
+ExecStart=/usr/bin/node --import tsx/esm ./operations/content-factory/cli.ts tick
+Nice=10
+TimeoutStartSec=10800
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

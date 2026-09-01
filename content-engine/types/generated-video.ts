@@ -33,6 +33,10 @@ export interface GeneratedVideoMetadata {
   identityImagePath?: string;
   /** Extra identity / continuity reference frames (Character Bible, prior last-frame). */
   referenceImagePaths?: string[];
+  /** KIE request forensic (imageUrl count / generation type) — optional. */
+  kieRequestEvidence?: Record<string, unknown>;
+  kieImageUrlCount?: number;
+  kieGenerationType?: string;
 }
 
 export interface GeminiVideoProviderSettings {

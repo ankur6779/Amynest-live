@@ -19,7 +19,7 @@ export interface KieGenerateOptions {
   apiKey: string;
   prompt: string;
   imagePath: string;
-  /** Official bible + scene-memory refs — must reach HTTP imageUrls (max 3). */
+  /** Official bible refs — must reach HTTP imageUrls (max 3). Generated memory freezes are excluded. */
   referenceImagePaths?: string[];
   /** Fail if these paths cannot be uploaded into the provider request. */
   requiredReferencePaths?: string[];
@@ -141,8 +141,24 @@ function redactUrl(url: string): string {
 }
 
 /**
+ * True when a path looks like a generated Character Memory last-frame freeze
+ * (ffmpeg extract), which must never be uploaded to KIE imageUrls.
+ */
+export function isGeneratedMemoryFramePath(path: string): boolean {
+  const normalized = path.replace(/\\/g, "/").toLowerCase();
+  if (/\/character-memory\//.test(normalized) && /-last\.(png|jpe?g|webp)$/.test(normalized)) {
+    return true;
+  }
+  if (/-last\.(png|jpe?g|webp)$/.test(normalized) && /character-memory|memory-freeze|scene-memory/.test(normalized)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Build ordered local paths for KIE imageUrls (max 3).
- * Prefer: required bibles → primary imagePath → remaining refs (scene memory).
+ * Prefer: required bibles → primary imagePath → remaining refs.
+ * Fail-safe: strip generated memory last-frames; never substitute them for missing bibles.
  */
 export function resolveKieReferencePaths(options: {
   imagePath: string;
@@ -166,9 +182,23 @@ export function resolveKieReferencePaths(options: {
     );
   }
 
+  // Never allow a generated memory freeze as a required identity asset.
+  for (const p of required) {
+    if (isGeneratedMemoryFramePath(p)) {
+      throw new Error(
+        `KIE shot FAIL: required reference is a generated memory frame (${p}) — canonical Character Bible required; no memory substitute`,
+      );
+    }
+  }
+
+  const stripped: string[] = [];
   const ordered: string[] = [];
   const push = (p: string | undefined) => {
     if (!p || !existsSync(p)) return;
+    if (isGeneratedMemoryFramePath(p)) {
+      stripped.push(p);
+      return;
+    }
     if (ordered.includes(p)) return;
     if (ordered.length >= 3) return;
     ordered.push(p);
@@ -178,9 +208,15 @@ export function resolveKieReferencePaths(options: {
   push(options.imagePath);
   for (const p of options.referenceImagePaths ?? []) push(p);
 
+  if (stripped.length > 0) {
+    console.warn(
+      `[kie-video] FAIL-SAFE stripped generated memory frame(s) from KIE refs (count=${stripped.length}). KIE generated memory refs: 0`,
+    );
+  }
+
   if (ordered.length === 0) {
     throw new Error(
-      `KIE image-to-video requires at least one image (missing: ${options.imagePath})`,
+      `KIE image-to-video requires at least one canonical image (missing: ${options.imagePath}) — generated memory frames are not valid substitutes`,
     );
   }
   return ordered;

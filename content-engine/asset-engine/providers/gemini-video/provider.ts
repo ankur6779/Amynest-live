@@ -53,6 +53,8 @@ export interface GenerateVideoOptions {
   referenceImagePaths?: string[];
   /** Official lead character for this shot — used to require canonical bible ref. */
   character?: "amy-ai" | "amy-girl" | "amy-boy";
+  /** Full cast present in the shot — each member requires their own canonical bible. */
+  cast?: Array<"amy-ai" | "amy-girl" | "amy-boy">;
   signal?: AbortSignal;
 }
 

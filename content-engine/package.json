@@ -72,7 +72,9 @@
     "amynest:golden-scripts": "node --import tsx/esm ./golden-scripts/generate.ts",
     "amynest:intelligence": "node --import tsx/esm ./cli/amynest.ts intelligence",
     "amynest:learn": "node --import tsx/esm ./cli/amynest.ts learn",
-    "amynest:learn-thumbnails": "node --import tsx/esm ./thumbnail-learning-engine/cli.ts"
+    "amynest:learn-thumbnails": "node --import tsx/esm ./thumbnail-learning-engine/cli.ts",
+    "amynest:content-factory:dry-run": "node --import tsx/esm ./operations/content-factory/cli.ts dry-run",
+    "amynest:content-factory:tick": "node --import tsx/esm ./operations/content-factory/cli.ts tick"
   },
   "devDependencies": {
     "@types/node": "catalog:",

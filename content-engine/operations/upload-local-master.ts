@@ -51,7 +51,7 @@ function mapGoldenCategory(category: string): Topic["category"] {
     case "learning":
       return "Learning";
     case "health":
-      return "Health";
+      return "Nutrition";
     case "games":
       return "Games";
     default:
@@ -106,12 +106,18 @@ function goldenToContentPackage(script: GoldenScript): ContentPackage {
   );
 
   return {
-    id: `prod-upload-${script.id}`,
-    version: CONTENT_PACKAGE_VERSION,
-    createdAt: new Date().toISOString(),
-    title: script.title,
     topic: { ...base, title: script.topic, category },
+    title: script.title,
+    alternateTitles: [script.title, hook.slice(0, 70)],
     hook,
+    openingQuestion: script.firstThreeSeconds || hook,
+    story: [
+      script.parentingSituation,
+      script.problem,
+      script.hopeClose,
+    ].join(" "),
+    keyPoints: [script.emotionBeat, script.featureDemo, script.hopeClose],
+    cta: "Download AmyNest AI",
     voiceScript,
     sceneScript: script.storyFlow.map((b, i) => `SCENE ${i + 1} | ${b}`).join("\n"),
     captions,
@@ -124,11 +130,13 @@ function goldenToContentPackage(script: GoldenScript): ContentPackage {
     ].join("\n"),
     hashtags: ["AmyNest", "Parenting", "Shorts", script.category],
     keywords: ["amynest", "parenting", script.category.toLowerCase()],
-    cta: "Download AmyNest AI",
+    seoScore: 80,
     readingTime: Math.round(voiceScript.split(/\s+/).length / 2.5),
     estimatedDuration: TARGET_DURATION,
     language: "en-IN",
     provider: "golden-script",
+    generatedAt: new Date().toISOString(),
+    version: CONTENT_PACKAGE_VERSION,
   };
 }
 
@@ -179,7 +187,13 @@ function toRenderPackage(
     validation: {
       ok: true,
       errors: [],
-      warnings: ["Uploaded via upload-local-master (inspector path)"],
+      warnings: [
+        {
+          path: "upload-local-master",
+          message: "Uploaded via upload-local-master (inspector path)",
+          severity: "warning",
+        },
+      ],
     },
     progressLog: [],
   };
@@ -226,7 +240,7 @@ async function main(): Promise<void> {
     defaultVisibility: visibility,
     playlist: "AmyNest Shorts",
     uploadRetries: 2,
-    notificationChannels: [] as string[],
+    notificationChannels: [],
     schedulePolicy: {
       mode: "immediate" as const,
       timezone: "Asia/Kolkata",

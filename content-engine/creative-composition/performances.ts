@@ -10,6 +10,11 @@
 
 import { enrichCompositionWithCharacterMemory } from "../character-memory-engine/from-composition.js";
 import { isCharacterMemoryEnabled } from "../character-memory-engine/engine.js";
+import {
+  BOY_CANONICAL_IDENTITY_LOCK,
+  GIRL_CANONICAL_IDENTITY_LOCK,
+  formatAmyGirlVisualTokenSummary,
+} from "../character-memory-engine/identity-lock.js";
 import type { SceneCharacterMemory } from "../character-memory-engine/types.js";
 import { enrichCompositionWithCharacterStudio } from "../character-performance-studio/from-composition.js";
 import { isCharacterStudioEnabled } from "../character-performance-studio/studio.js";
@@ -154,9 +159,9 @@ function cameraLanguage(camera: CompositionCamera): string {
 function identityLock(shot: CompositionShotPlan): string {
   const continuity = [
     "CHARACTER CONSISTENCY (mandatory):",
-    "Treat this as another camera angle of the SAME character from the first-frame keyframe.",
-    "Never regenerate face, hairstyle, clothing, or proportions.",
-    "Identity must remain IDENTICAL across every scene in the Short.",
+    "Treat this as another camera angle of the SAME Official Character Bible identity.",
+    "Never regenerate face, hairstyle, clothing, or proportions from text alone.",
+    "Identity must remain IDENTICAL across every scene and every frame in the Short.",
   ].join(" ");
 
   if (shot.character === "amy-ai") {
@@ -166,22 +171,24 @@ function identityLock(shot: CompositionShotPlan): string {
       "Lock forever: face, eyes, smile, hair/cap, glow/halo, body proportions, clothes, accessories, expressions, body language.",
       "Never create a new cute AI girl. Never redesign Amy mid-story.",
       continuity,
-      "Keep the exact same Amy AI from the first frame — identical white soft-polymer body, purple AmyAI cap, headphones, purple eyes, halo.",
-      "Amy AI is STYLIZED (illustrated soft robot) living inside a PHOTOREAL Netflix-family-film world — like Paddington / Ted / Detective Pikachu.",
-      "Do not redesign Amy. Do not make the whole world cartoon. Amy is the only constant stylized identity.",
+      "Keep the exact same Amy AI from the Official Amy Character Bible — identical white soft-polymer body, purple AmyAI cap, headphones, purple eyes, halo.",
+      "AMY AI IS THE EXACT CANONICAL AMYNEST CHARACTER SHOWN IN THE SUPPLIED AMY REFERENCE. PRESERVE HER EXACT FACE, PURPLE CAP, INTEGRATED HEADPHONES, AMYAI CAP BRANDING, PURPLE EYES, ROUNDED WHITE BODY, PROPORTIONS, SILHOUETTE AND FLOATING DESIGN. DO NOT REDESIGN AMY. DO NOT SUBSTITUTE AMY. DO NOT TURN AMY INTO A GENERIC ROBOT. DO NOT REMOVE HER CAP OR HEADPHONES. DO NOT CHANGE HER BODY DESIGN.",
+      "Amy AI stays the Official Character Bible identity living inside a PHOTOREAL family-film world — cinematic style (lighting/camera/pacing) may evoke integrated live-action+stylized-character filmmaking craft, but MUST NEVER redefine Amy's identity.",
+      "Do not redesign Amy. Do not make the whole world cartoon. Amy is the only constant stylized identity from the supplied Amy reference.",
     ].join(" ");
   }
   if (shot.character === "amy-girl") {
     return [
       continuity,
-      "Keep the exact same Amy Girl from the first frame — identical brown side ponytail with yellow bow, plain purple hoodie, dark purple leggings, purple sneakers with white soles, warm brown eyes.",
-      "PHOTOREALISTIC human child for Netflix family movie — natural skin, pores, eyes, hair, clothing folds, body weight, walking. NOT 3D cartoon. NOT plastic AI. NOT CGI humans. No beauty filter. No wax face.",
+      "Identity authority for Amy Girl is the SUPPLIED OFFICIAL AMY GIRL CHARACTER BIBLE — not a regenerated keyframe, not text invention, not another character.",
+      GIRL_CANONICAL_IDENTITY_LOCK,
+      formatAmyGirlVisualTokenSummary(),
     ].join(" ");
   }
   return [
     continuity,
-    "Keep the exact same Amy Boy from the first frame — identical fluffy dark brown hair, plain purple hoodie, dark purple joggers, purple sneakers with white soles, warm brown eyes.",
-    "PHOTOREALISTIC human child for Netflix family movie — natural skin, pores, eyes, hair, clothing folds, body weight, walking. NOT 3D cartoon. NOT plastic AI. NOT CGI humans. No beauty filter. No wax face.",
+    "Identity authority for Amy Boy is the SUPPLIED OFFICIAL AMY BOY CHARACTER BIBLE.",
+    BOY_CANONICAL_IDENTITY_LOCK,
   ].join(" ");
 }
 
@@ -560,6 +567,15 @@ function cinematicHoldBlock(shot: CompositionShotPlan): string {
 
 function humanRealismBlock(shot: CompositionShotPlan): string {
   if (shot.character === "amy-ai") return "";
+  if (shot.character === "amy-girl" || shot.character === "amy-boy") {
+    return [
+      "BRAND CHILD RENDER STABILITY (mandatory):",
+      "Amy Girl / Amy Boy remain stylized animated AmyNest characters locked to their Official Character Bible — NOT photoreal humans, NOT a new redesign each frame.",
+      "Keep stable premium shading: natural skin shading, hair highlights, fabric folds, believable eyes, natural facial movement — identity immutable frame-to-frame.",
+      "Parents, teachers, friends, and background humans (if present) may be photorealistic Netflix-family humans. Environment stays photoreal.",
+      "No beauty filter. No age drift. No wax face. No random face regeneration mid-shot.",
+    ].join(" ");
+  }
   return [
     "HUMAN REALISM (mandatory):",
     "Parents, children, teachers, friends must be photorealistic Netflix family-movie humans.",
@@ -594,7 +610,8 @@ function worldStyleBlock(): string {
   return [
     "WORLD STYLE (mandatory):",
     "Photorealistic environments, furniture, trees, sky, books, kitchen, school, cars, lighting, and textures — like a live-action short film.",
-    "Amy AI remains stylized soft-robot; everything else should feel real (Paddington / Ted / Detective Pikachu integration).",
+    "CINEMATIC STYLE SEPARATION: Paddington/Ted/Detective Pikachu / soft-robot / cinematic animated-film language may influence ONLY lighting, camera, pacing, environment, emotional tone, and filmmaking craft — NEVER Amy AI / Amy Girl / Amy Boy identity (Official Character Bible is sole identity authority).",
+    "Amy AI remains the exact canonical stylized character from the supplied Amy reference; everything else should feel real.",
     "Indian premium middle-class homes with natural clutter: books, school bags, water bottles, shoes, family photos, plants, toys.",
     "Never empty AI rooms. Never force the same sofa / study desk / purple void into every Short.",
   ].join(" ");
@@ -624,8 +641,9 @@ export function performancePrompt(
   story?: SceneStoryMemory;
 } {
   const prompt = [
-    "Vertical 9:16 ONE CONTINUOUS Disney+/Pixar-quality FAMILY SHORT FILM beat — photoreal world + permanent stylized Amy AI (Paddington/Ted).",
+    "Vertical 9:16 ONE CONTINUOUS Disney+/Pixar-quality FAMILY SHORT FILM beat — photoreal world + permanent canonical AmyNest characters (identity from Official Character Bibles only).",
     "MISSION: audience believes they are watching one animated short film — never a sequence of AI clips. They should want another AmyNest story.",
+    "CINEMATIC STYLE SEPARATION: Disney+/Pixar-quality / Netflix family-film / Paddington-Ted-Pikachu integration language influences lighting, camera, pacing, environment, and emotion ONLY — never replaces Amy AI, Amy Girl, or Amy Boy identity.",
     filmRuleBlock(),
     qualityLockBlock(),
     continuousFilmBlock(shot),

@@ -1,0 +1,145 @@
+{
+  "overall": "PASS",
+  "checks": [
+    {
+      "id": "schedule_sep2_5pm_ist",
+      "ok": true,
+      "detail": "Schedule match: 2026-09-02 17:00 Asia/Kolkata (RRULE FREQ=DAILY;INTERVAL=3)"
+    },
+    {
+      "id": "schedule_not_sep3",
+      "ok": true,
+      "detail": "Not an INTERVAL=3 day (daysSinceStart=1)"
+    },
+    {
+      "id": "schedule_not_before_dtstart",
+      "ok": true,
+      "detail": "Sep 1 must not run"
+    },
+    {
+      "id": "golden_queue_next",
+      "ok": true,
+      "detail": "next=golden-014 title=Reaction Games That Train Focus Through Play"
+    },
+    {
+      "id": "idempotency_key",
+      "ok": true,
+      "detail": "amynest-golden-014-2026-09-02"
+    },
+    {
+      "id": "idempotency_no_duplicate",
+      "ok": true,
+      "detail": "No existing production for first scheduled key"
+    },
+    {
+      "id": "character_bibles",
+      "ok": true,
+      "detail": "Amy=6f65f19d2ac5… Girl=dc09bf858293… Boy=1cc38ca7b1f5…"
+    },
+    {
+      "id": "generated_memory_refs_0",
+      "ok": true,
+      "detail": "GENERATED_MEMORY=0"
+    },
+    {
+      "id": "cross_character_refs_0",
+      "ok": true,
+      "detail": "CROSS=0"
+    },
+    {
+      "id": "metadata_script_specific",
+      "ok": true,
+      "detail": "title=Reaction Games That Train Focus Through Play | AmyNest AI"
+    },
+    {
+      "id": "youtube_publish_wired",
+      "ok": true,
+      "detail": "PublishingOrchestrator + upload-local-master present"
+    },
+    {
+      "id": "failure_blocks_publication",
+      "ok": true,
+      "detail": "MAX_PRODUCTION_ATTEMPTS=1; live runner refuses publish on gate FAIL"
+    },
+    {
+      "id": "secrets_env_based",
+      "ok": true,
+      "detail": "Present: KIE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN"
+    },
+    {
+      "id": "cloud_scheduler_configured",
+      "ok": true,
+      "detail": "DTSTART 2026-09-02 17:00 Asia/Kolkata; INTERVAL=3; GH workflow content-factory-every-3-days.yml; next=2026-09-02 17:00 Asia/Kolkata"
+    },
+    {
+      "id": "no_immediate_run_on_deploy",
+      "ok": true,
+      "detail": "LIVE≠1 — factory will not spend credits now (Before DTSTART (2026-09-02 17:00 Asia/Kolkata) — first production is 2026-09-02 17:00 Asia/Kolkata)"
+    }
+  ],
+  "nextGolden": "golden-014",
+  "nextOccurrences": [
+    "2026-09-02 17:00 Asia/Kolkata",
+    "2026-09-05 17:00 Asia/Kolkata",
+    "2026-09-08 17:00 Asia/Kolkata",
+    "2026-09-11 17:00 Asia/Kolkata"
+  ],
+  "scheduleSep2": {
+    "shouldRun": true,
+    "reason": "Schedule match: 2026-09-02 17:00 Asia/Kolkata (RRULE FREQ=DAILY;INTERVAL=3)",
+    "occurrenceLocal": "2026-09-02 17:00 Asia/Kolkata",
+    "nextOccurrenceLocal": "2026-09-05 17:00 Asia/Kolkata",
+    "dtstartLocal": "2026-09-02 17:00 Asia/Kolkata",
+    "daysSinceStart": 0
+  },
+  "idempotencyKey": "amynest-golden-014-2026-09-02",
+  "identity": {
+    "ok": true,
+    "reasons": [],
+    "bibles": {
+      "amy-ai": {
+        "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-ai-bible.jpeg",
+        "sha256": "6f65f19d2ac5b6b48056370c943cb4c6f0665c3e9c65ad8f4d171acb73f543fb"
+      },
+      "amy-girl": {
+        "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-girl-bible.jpeg",
+        "sha256": "dc09bf858293f02de97d51e0cee1344257304d301916c7bc4f33490482f09f2f"
+      },
+      "amy-boy": {
+        "path": "/Users/macbook/AmyNestProject/AmyNest-AI-p0-integrity/content-engine/brand/assets/amy-boy-bible.jpeg",
+        "sha256": "1cc38ca7b1f5acc171a4a75d1d667e938c97216d9fad1529d11739d59abbb8ee"
+      }
+    },
+    "generatedMemoryOnWire": 0,
+    "crossCharacterRefs": 0,
+    "sampleCast": [
+      "amy-girl",
+      "amy-ai"
+    ]
+  },
+  "metadataSample": {
+    "title": "Reaction Games That Train Focus Through Play | AmyNest AI",
+    "hook": "It’s 8:47 PM. Curiosity sits with you at the table.",
+    "descriptionPreview": "“Pay attention” has become a broken record. Their eyes want a challenge, not a warning.\n\nAttention grows where joy and challenge meet.\n\nDownload AmyNest AI — Google Play · App Store · amynest.in",
+    "hashtags": [
+      "AmyNest",
+      "Parenting",
+      "Shorts",
+      "Health",
+      "HealthLabReaction&FineMotor"
+    ]
+  },
+  "secrets": {
+    "ok": true,
+    "present": [
+      "KIE_API_KEY",
+      "YOUTUBE_CLIENT_ID",
+      "YOUTUBE_CLIENT_SECRET",
+      "YOUTUBE_REFRESH_TOKEN"
+    ],
+    "missing": []
+  },
+  "liveEnabled": false,
+  "kieVideoCalls": 0,
+  "kieVideoCredits": 0
+}

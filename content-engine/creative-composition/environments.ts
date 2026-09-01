@@ -126,7 +126,7 @@ export function cinematicPlatePrompt(input: {
   const amyAi =
     "Official Amy AI character ONLY: floating rounded white soft-polymer body, deep purple AmyAI baseball cap with headphones, large glossy purple eyes, gentle neon purple halo, friendly premium mentor mascot at child height — never a new robot design, never announcer sticker.";
   const amyGirl =
-    "Official Amy Girl character ONLY: brown side ponytail with bright yellow bow, plain purple hoodie without logos, dark purple leggings, purple sneakers with white soles, large warm brown eyes, Pixar-quality 3D child with real-child micro-expression — never redesigned, never generic AI cartoon.";
+    "Official Amy Girl character ONLY from Official Character Bible: exact dark brown side ponytail with exact bright yellow bow, exact plain purple hoodie, exact dark purple leggings, exact purple sneakers with white soles, exact warm brown eyes and face — immutable identity; never redesigned, never aged, never beautified, never generic AI cartoon.";
 
   const characterLine = input.character === "amy-ai" ? amyAi : amyGirl;
   const performance =

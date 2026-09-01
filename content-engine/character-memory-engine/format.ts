@@ -7,6 +7,8 @@ import type {
   CharacterMemoryPackage,
   SceneCharacterMemory,
 } from "./types.js";
+import { canonicalIdentityLocksForCast, formatAmyGirlVisualTokenSummary } from "./identity-lock.js";
+import type { BrandCharacterId } from "../brand/types.js";
 
 function label(id: string): string {
   if (id === "amy-ai") return "Amy AI";
@@ -53,8 +55,12 @@ export function formatMemorySceneBlock(scene: SceneCharacterMemory): string {
     scene.inheritsFromSceneId
       ? `INHERIT approved memory from ${scene.inheritsFromSceneId}. Do NOT reset pose, wardrobe, room, lighting, or props unless listed as intentional.`
       : "SCENE 1 SEED — lock Official Character Bible identity from first frame.",
-    `Reference stack: Official Character Bible + ${scene.inheritsFromSceneId ? "Previous Scene Memory frame" : "identity keyframe"} + Current Scene Objective.`,
-    "Never generate characters from text alone — match bible + memory visuals.",
+    `Reference stack: Official Character Bible for EACH cast member (authoritative identity) + Current Scene Objective. Previous-scene continuity is textual (pose/room/lighting/camera/emotion) — generated last-frame freezes are local-only and not KIE visual refs.`,
+    "Never generate characters from text alone — match each character's Official Character Bible. Scene lead does not redefine companion identity.",
+    canonicalIdentityLocksForCast(scene.characters as BrandCharacterId[]),
+    scene.characters.includes("amy-girl")
+      ? formatAmyGirlVisualTokenSummary()
+      : "",
     `Room LOCK: ${scene.room}`,
     `Lighting LOCK: ${scene.lighting.timeOfDay}; window ${scene.lighting.windowDirection}; ${scene.lighting.sunlight}; shadows ${scene.lighting.shadowDirection}; ${scene.lighting.roomBrightness}; mood ${scene.lighting.mood}`,
     `Camera CONTINUE: momentum ${scene.camera.momentum} / ${scene.camera.movement}. ${scene.camera.framingNote}. Start where previous push/track ended — no camera teleport.`,

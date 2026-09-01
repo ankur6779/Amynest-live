@@ -108,23 +108,27 @@ function packageFor(num: number): ContentPackage {
       videoStyle: "short" as const,
     });
   return {
-    id: `safety-forensic-${script.id}`,
-    version: CONTENT_PACKAGE_VERSION,
-    createdAt: new Date().toISOString(),
+    topic: { ...base, title: script.topic, category: "Parenting" as const },
     title: script.title,
-    topic: { ...base, title: script.topic, category: script.category as any },
+    alternateTitles: [script.title],
     hook: script.selectedHook.text,
+    openingQuestion: script.selectedHook.text,
+    story: script.parentingSituation,
+    keyPoints: [script.hopeClose],
+    cta: "Download AmyNest AI",
     voiceScript,
     captions,
     sceneScript: script.storyFlow?.map((b, i) => `SCENE ${i + 1} | ${b}`).join("\n") || "",
     description: script.title,
     hashtags: ["AmyNest"],
     keywords: ["amynest", script.featureName.toLowerCase()],
-    cta: "Download AmyNest AI",
+    seoScore: 80,
     readingTime: Math.round(voiceScript.split(/\s+/).length / 2.5),
     estimatedDuration: 21,
     language: "en-IN",
     provider: "golden-script",
+    generatedAt: new Date().toISOString(),
+    version: CONTENT_PACKAGE_VERSION,
   };
 }
 
