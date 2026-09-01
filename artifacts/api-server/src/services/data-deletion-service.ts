@@ -103,6 +103,8 @@ import {
   ttsCacheTable,
   coachAudioCacheTable,
   revenuecatWebhookEventsTable,
+  anonymousDevicesTable,
+  notificationJourneyEnrollmentsTable,
 } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 
@@ -433,6 +435,9 @@ async function purgeUserScopedData(
     { table: "speech_expert_waitlist_by_user", run: () => tx.delete(speechExpertWaitlistTable).where(eq(speechExpertWaitlistTable.userId, userId)).returning({ id: speechExpertWaitlistTable.id }) },
     { table: "referrals", run: () => tx.delete(referralsTable).where(or(eq(referralsTable.referrerUserId, userId), eq(referralsTable.referredUserId, userId))).returning({ id: referralsTable.id }) },
     { table: "gift_tokens", run: () => tx.delete(giftTokensTable).where(or(eq(giftTokensTable.ownerUserId, userId), eq(giftTokensTable.recipientUserId, userId))).returning({ id: giftTokensTable.id }) },
+    // Pre-signup / CRM linkage — retain linkedUserId + FCM token / journey userId otherwise
+    { table: "anonymous_devices", run: () => tx.delete(anonymousDevicesTable).where(eq(anonymousDevicesTable.linkedUserId, userId)).returning({ id: anonymousDevicesTable.id }) },
+    { table: "notification_journey_enrollments", run: () => tx.delete(notificationJourneyEnrollmentsTable).where(eq(notificationJourneyEnrollmentsTable.userId, userId)).returning({ id: notificationJourneyEnrollmentsTable.id }) },
     { table: "children", run: () => tx.delete(childrenTable).where(eq(childrenTable.userId, userId)).returning({ id: childrenTable.id }) },
   ];
 
