@@ -68,7 +68,7 @@ import {
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
-import { applyParentingHubDeepLink, dispatchInfantHubOpenSection } from "@/lib/hub-activity-cross-link";
+import { dispatchInfantHubOpenSection, parseParentingHubDeepLink, pushParentingHubLocationHash, replaceParentingHubLocationHash } from "@/lib/hub-activity-cross-link";
 import {
   getBirthSkyViewerEmail,
   isBirthSkyHubTileEnabled,
@@ -893,6 +893,9 @@ function QuietChildIdentity({
             type="button"
             role="listitem"
             data-active={active ? "true" : "false"}
+            data-testid={`parent-hub-child-chip-${child?.id}`}
+            aria-pressed={active}
+            aria-current={active ? "true" : undefined}
             className="ph-quiet-child-chip"
             onClick={() => onSelect(child.id)}
           >
@@ -1102,10 +1105,12 @@ function ParentingHubPage() {
   const enterRoom = (roomId: ParentHubRoomId) => {
     setFocusTileId(null);
     setActiveRoom(roomId);
+    pushParentingHubLocationHash(`#${roomId}`);
   };
   const exitRoom = () => {
     setFocusTileId(null);
     setActiveRoom(null);
+    replaceParentingHubLocationHash("");
   };
 
   const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
@@ -1120,6 +1125,11 @@ function ParentingHubPage() {
         roomForTile(tileId) ?? roomForLegacyGroup(group) ?? ("help" as ParentHubRoomId);
       setActiveRoom(room);
       setFocusTileId(tileId ?? null);
+      if (tileId) {
+        replaceParentingHubLocationHash(`#tile-${tileId}`);
+      } else {
+        replaceParentingHubLocationHash(`#${room}`);
+      }
       requestAnimationFrame(() => {
         if (tileId) {
           document
@@ -1202,22 +1212,34 @@ function ParentingHubPage() {
   }, [learningTabOpen, effectiveChild?.id, totalAgeMonths, authFetch]);
 
   useEffect(() => {
-    if (!effectiveChild) return;
+    if (!effectiveChild || typeof window === "undefined") return;
     const band = getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0);
     if (!band) return;
-    const apply = () => {
-      applyParentingHubDeepLink(navigateHub);
+    const applyFromLocation = (fromUserNav: boolean) => {
+      const target = parseParentingHubDeepLink();
+      if (target) {
+        navigateHub(target.group, target.tileId || undefined, target.sectionId);
+        return;
+      }
+      if (fromUserNav) {
+        setFocusTileId(null);
+        setActiveRoom(null);
+      }
     };
-    const frame = requestAnimationFrame(apply);
-    window.addEventListener("hashchange", apply);
+    const frame = requestAnimationFrame(() => applyFromLocation(false));
+    const onHash = () => applyFromLocation(true);
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onHash);
     return () => {
       cancelAnimationFrame(frame);
-      window.removeEventListener("hashchange", apply);
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("popstate", onHash);
     };
   }, [effectiveChild?.id, effectiveChild?.age, (effectiveChild as any)?.ageMonths]);
 
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
+    setFocusTileId(null);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, String(id));
       window.dispatchEvent(
@@ -2138,6 +2160,7 @@ function ParentingHubPage() {
     hubSurface.current = surface;
     const node = s.render();
     hubSurface.current = "main";
+    if (node == null) return null;
     return (
       <HubRenderContext.Provider value={{ surface, isInfant }}>
         {node}
@@ -2291,6 +2314,7 @@ function ParentingHubPage() {
           {roomsV1 ? (
             <ParentHubRoomsShell
               childName={effectiveChild.name}
+              childId={effectiveChild.id}
               isInfant={isInfant}
               activeRoom={activeRoom}
               onEnterRoom={enterRoom}
@@ -2356,6 +2380,7 @@ function ParentingHubPage() {
                 isMomentsLivingV1Enabled()
                   ? ({ activeTileId, onSelectTile }) => (
                       <MomentsLivingStream
+                        key={effectiveChild.id}
                         childName={effectiveChild.name}
                         activeTileId={activeTileId}
                         onSelectTile={onSelectTile}
@@ -2367,6 +2392,7 @@ function ParentingHubPage() {
                 isGrowLivingV1Enabled()
                   ? ({ activeTileId, onSelectTile }) => (
                       <GrowLivingStream
+                        key={effectiveChild.id}
                         childName={effectiveChild.name}
                         ageMonths={totalAgeMonths}
                         activeTileId={activeTileId}
@@ -2379,6 +2405,7 @@ function ParentingHubPage() {
                 isAskAmyLivingV1Enabled()
                   ? ({ activePath, onSelectPath }) => (
                       <AskAmyLivingStream
+                        key={effectiveChild.id}
                         childName={effectiveChild.name}
                         activePath={activePath}
                         onSelectPath={onSelectPath}
@@ -2388,9 +2415,15 @@ function ParentingHubPage() {
               }
               renderRoomLivingStream={({ room, activeTileId, onSelectTile }) => (
                 <RoomLivingStream
+                  key={`${effectiveChild.id}:${room}`}
                   room={room}
                   childName={effectiveChild.name}
                   isInfant={isInfant}
+                  visibleTileIds={[
+                    ...forYouStandaloneFeatured.map((s) => s.id),
+                    ...todayTiles.map((s) => s.id),
+                    ...forYouGrid.map((s) => s.id),
+                  ]}
                   activeTileId={activeTileId}
                   onSelectTile={onSelectTile}
                 />

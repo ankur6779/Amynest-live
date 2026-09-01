@@ -16,6 +16,7 @@ import {
 import { ParentHubRoomHero } from "@/components/parent-hub/parent-hub-room-hero";
 import { ParentHubDestinationRow } from "@/components/parent-hub/parent-hub-destination-row";
 import { ParentHubExitPanel } from "@/components/parent-hub/parent-hub-exit-panel";
+import { ParentHubModuleUnavailable } from "@/components/parent-hub/parent-hub-module-unavailable";
 import { AppLink } from "@/components/app-link";
 import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-context";
 import {
@@ -75,6 +76,8 @@ export type AskAmyStreamRenderApi = {
 
 export type ParentHubRoomsShellProps = {
   childName: string;
+  /** Stable child id — destination state resets when the selected child changes. */
+  childId?: number | string | null;
   isInfant: boolean;
   /** Entered living room — null = room doors overview */
   activeRoom: ParentHubRoomId | null;
@@ -133,6 +136,7 @@ function memberTitle(
  */
 export function ParentHubRoomsShell({
   childName,
+  childId = null,
   isInfant,
   activeRoom,
   onEnterRoom,
@@ -244,6 +248,7 @@ export function ParentHubRoomsShell({
   }, [
     activeRoom,
     focusTileId,
+    childId,
     guidanceLiving,
     momentsLiving,
     growLiving,
@@ -373,6 +378,19 @@ export function ParentHubRoomsShell({
     setAskAmyPath(null);
   };
 
+  const renderQuietDestination = (tileId: string) => {
+    const node = renderDestination(tileId);
+    if (node == null) {
+      return (
+        <ParentHubModuleUnavailable
+          tileId={tileId}
+          onBack={clearDestination}
+        />
+      );
+    }
+    return node;
+  };
+
   // P0-6 — Help / Understand / Care one-room living (skip peer product doors).
   if (
     roomLivingEnabled &&
@@ -491,7 +509,7 @@ export function ParentHubRoomsShell({
                 data-ph-deepen="1"
               >
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(deepenTile)}
+                  {renderQuietDestination(deepenTile)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -601,7 +619,7 @@ export function ParentHubRoomsShell({
                   </div>
                 ) : null}
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(deepenTile)}
+                  {renderQuietDestination(deepenTile)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -805,7 +823,7 @@ export function ParentHubRoomsShell({
                       </div>
                     ) : null}
                     <ParentHubQuietModuleProvider>
-                      {renderDestination(growDeepenTileId)}
+                      {renderQuietDestination(growDeepenTileId)}
                     </ParentHubQuietModuleProvider>
                   </div>
                 ) : null}
@@ -821,7 +839,7 @@ export function ParentHubRoomsShell({
                 data-ph-pack="5"
               >
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(selectedTileId)}
+                  {renderQuietDestination(selectedTileId)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -851,9 +869,10 @@ export function ParentHubRoomsShell({
   return (
     <div
       className="fe-shell ph-living-shell"
-      data-testid="parent-hub-rooms-shell"
-      data-ph-mode="doors"
-      data-ph-pack="4"
+        data-testid="parent-hub-rooms-shell"
+        data-ph-mode="doors"
+        data-ph-pack="4"
+        data-ph-child-id={childId != null ? String(childId) : undefined}
       data-fe-shot="reflection"
       data-fe-room="reveal"
       data-fe-presence="settle"
@@ -904,6 +923,7 @@ export function ParentHubRoomsShell({
                 id={`hub-room-door-${roomId}`}
                 data-testid={`hub-room-door-${roomId}`}
                 data-hub-room-door={roomId}
+                aria-label={`${doorTitle}. ${feeling}`}
                 className={
                   emphasize ? "ph-room-door ph-room-door--emphasis" : "ph-room-door"
                 }

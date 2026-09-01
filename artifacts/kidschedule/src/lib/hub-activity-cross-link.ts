@@ -149,6 +149,42 @@ export function applyParentingHubDeepLink(
   return true;
 }
 
+/** Canonical Rooms hash — room doors (`#care`) or a tile (`#tile-nutrition`). */
+export function parentingHubHashForRoom(roomId: string): string {
+  return `#${roomId}`;
+}
+
+export function parentingHubHashForTile(tileId: string): string {
+  return `#tile-${tileId}`;
+}
+
+function parentingHubUrlWithHash(hash: string): string {
+  if (typeof window === "undefined") return hash;
+  const normalized =
+    hash === "" || hash === "#"
+      ? ""
+      : hash.startsWith("#")
+        ? hash
+        : `#${hash}`;
+  return `${window.location.pathname}${window.location.search}${normalized}`;
+}
+
+export function replaceParentingHubLocationHash(hash: string): void {
+  if (typeof window === "undefined") return;
+  const url = parentingHubUrlWithHash(hash);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (current === url) return;
+  window.history.replaceState(null, "", url);
+}
+
+export function pushParentingHubLocationHash(hash: string): void {
+  if (typeof window === "undefined") return;
+  const url = parentingHubUrlWithHash(hash);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (current === url) return;
+  window.history.pushState(null, "", url);
+}
+
 export function dispatchInfantHubOpenSection(sectionId: string): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(

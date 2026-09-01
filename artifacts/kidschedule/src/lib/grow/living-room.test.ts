@@ -47,15 +47,25 @@ describe("grow living-room", () => {
     const older = recommendGrowAction("Emma", 84);
     expect(older.tileId).toBe("smart-math-tricks");
     expect(older.pathId).not.toBe("challenge");
+    const newborn = recommendGrowAction("Emma", 6);
+    expect(newborn.purpose.toLowerCase()).toMatch(/age 1|begins/);
   });
 
   it("maps legacy tiles and age filters", () => {
     expect(growPathForTile("abacus")).toBe("beads");
     expect(isGrowTileId("olympiad")).toBe(true);
     expect(isGrowTileId("daily-tips")).toBe(false);
-    const youngPaths = growPathsForAge(30).map((p) => p.id);
-    expect(youngPaths).toContain("sounds");
-    expect(youngPaths).not.toContain("challenge");
+    const youngPaths = growPathsForAge(30);
+    expect(youngPaths.map((p) => p.id)).toContain("sounds");
+    expect(youngPaths.map((p) => p.id)).toContain("numbers");
+    expect(youngPaths.map((p) => p.id)).not.toContain("challenge");
+    expect(youngPaths.find((p) => p.id === "spelling")?.enabled).toBe(false);
+    expect(youngPaths.find((p) => p.id === "study")?.enabled).toBe(false);
+    const infantGrow = growPathsForAge(8);
+    expect(infantGrow.find((p) => p.id === "sounds")?.enabled).toBe(false);
+    expect(infantGrow.find((p) => p.id === "numbers")?.enabled).toBe(false);
+    expect(infantGrow.map((p) => p.id)).toContain("sounds");
+    expect(infantGrow.map((p) => p.id)).toContain("numbers");
   });
 
   it("deepen cues stay calm — never unlock theatre", () => {

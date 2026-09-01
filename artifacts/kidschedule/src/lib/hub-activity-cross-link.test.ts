@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseParentingHubDeepLink } from "./hub-activity-cross-link";
+import {
+  parseParentingHubDeepLink,
+  parentingHubHashForRoom,
+  parentingHubHashForTile,
+} from "./hub-activity-cross-link";
 
 describe("parseParentingHubDeepLink", () => {
   it("parses a simple tile hash", () => {
@@ -44,6 +48,18 @@ describe("parseParentingHubDeepLink", () => {
       tileId: "",
     });
     expect(parseParentingHubDeepLink("care")).toEqual({ group: "care", tileId: "" });
-    expect(parseParentingHubDeepLink("moments")).toEqual({ group: "moments", tileId: "" });
+    expect(parseParentingHubDeepLink("moments")).toEqual({
+      group: "moments",
+      tileId: "",
+    });
+  });
+
+  it("builds canonical Rooms hashes", () => {
+    expect(parentingHubHashForRoom("care")).toBe("#care");
+    expect(parentingHubHashForTile("nutrition")).toBe("#tile-nutrition");
+    expect(parseParentingHubDeepLink("tile-nutrition")).toEqual({
+      group: "health",
+      tileId: "nutrition",
+    });
   });
 });
