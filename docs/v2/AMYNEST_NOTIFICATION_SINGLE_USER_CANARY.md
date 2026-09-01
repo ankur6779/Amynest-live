@@ -190,6 +190,8 @@ Not A: nothing was delivered.
 Not B: the selector did not return a suppression code (it is not on production).  
 Not D: dispatch was not accepted.
 
-Keep `NOTIF_REENGAGEMENT_MODE=dry_run`. Do not send to any other user. Stop and wait for a production runtime that can run `evaluateReengagementForUser` + existing `dispatchNotification` for this one uid **without** enabling live mode or deploying scheduler-changing fatigue to all users — for example Coolify SSH/docker exec on the API container, or a dedicated admin canary handler deployed independently of the fatigue PR.
+Keep `NOTIF_REENGAGEMENT_MODE=dry_run`. Do not send to any other user.
 
-After that path exists, wait for separate Founder approval before any multi-user/live cohort.
+See `docs/v2/AMYNEST_NOTIFICATION_REENGAGEMENT_PRODUCTION_ROLLOUT.md`. This branch adds admin `POST /api/notifications/reengagement/canary`. Live Coolify still 404s that route. Account quiet hours are 22:00–07:00 Asia/Kolkata.
+
+After the route is deployed, wait for separate Founder approval before any multi-user/live cohort.

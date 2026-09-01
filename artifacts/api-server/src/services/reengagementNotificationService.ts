@@ -33,6 +33,7 @@ import {
   dryRunDefaultPreferences,
   getOrCreatePreferences,
   getPreferencesIfExists,
+  type DispatchResult,
 } from "./notificationDispatchService.js";
 
 export function reengagementMode(): ReengagementMode {
@@ -177,6 +178,71 @@ export interface ReengagementEvalResult {
   dispatched: boolean;
 }
 
+export const SINGLE_USER_CANARY_CONFIRM = "single-user-canary";
+
+/** If `NOTIF_CANARY_USER_IDS` is set, the canary may target only those uids. Empty = admin may pass any one uid. */
+export function canaryUserIdAllowed(
+  targetUserId: string,
+  rawEnv: string | undefined = process.env["NOTIF_CANARY_USER_IDS"],
+): boolean {
+  const list = (rawEnv ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (list.length === 0) return true;
+  return list.includes(targetUserId);
+}
+
+async function dispatchReengagementCandidate(
+  userId: string,
+  decision: ReengagementDecision,
+  prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
+): Promise<DispatchResult | null> {
+  const c = decision.candidate;
+  if (!c || decision.action !== "would_send") return null;
+  const result = await dispatchNotification({
+    userId,
+    category: "engagement",
+    title: c.copy.title,
+    body: c.copy.body,
+    deepLink: c.copy.deepLink,
+    dedupKey: c.fingerprint,
+    data: {
+      campaign: "reengagement",
+      notificationType: c.category,
+      fingerprint: c.fingerprint,
+      variant: c.copy.variant,
+    },
+    contentMeta: {
+      recommendationKey: c.category,
+      topicKey: "reengagement",
+      contentType: c.category.toLowerCase(),
+    },
+    outcomeMeta: {
+      goal: c.category === "WINBACK" ? "GOAL_REACTIVATION" : "GOAL_PARENT_ENGAGEMENT",
+      campaignId: "reengagement",
+      experimentId: c.copy.experimentId,
+      experimentVariant: c.copy.variant,
+      segment: decision.segment,
+    },
+    globalMeta: {
+      locale: prefs.locale,
+      timezoneAtSend: prefs.timezone,
+    },
+  });
+  logger.info(
+    {
+      evt: "notification_reengagement_dispatch",
+      userId,
+      status: result.status,
+      category: c.category,
+      fingerprint: c.fingerprint,
+    },
+    "Re-engagement dispatch result",
+  );
+  return result;
+}
+
 export async function evaluateReengagementForUser(
   userId: string,
   opts: {
@@ -207,48 +273,8 @@ export async function evaluateReengagementForUser(
 
   let dispatched = false;
   if (mode === "live" && decision.action === "would_send" && decision.candidate) {
-    const c = decision.candidate;
-    const result = await dispatchNotification({
-      userId,
-      category: "engagement",
-      title: c.copy.title,
-      body: c.copy.body,
-      deepLink: c.copy.deepLink,
-      dedupKey: c.fingerprint,
-      data: {
-        campaign: "reengagement",
-        notificationType: c.category,
-        fingerprint: c.fingerprint,
-        variant: c.copy.variant,
-      },
-      contentMeta: {
-        recommendationKey: c.category,
-        topicKey: "reengagement",
-        contentType: c.category.toLowerCase(),
-      },
-      outcomeMeta: {
-        goal: c.category === "WINBACK" ? "GOAL_REACTIVATION" : "GOAL_PARENT_ENGAGEMENT",
-        campaignId: "reengagement",
-        experimentId: c.copy.experimentId,
-        experimentVariant: c.copy.variant,
-        segment: decision.segment,
-      },
-      globalMeta: {
-        locale: prefs.locale,
-        timezoneAtSend: prefs.timezone,
-      },
-    });
-    dispatched = result.status === "sent";
-    logger.info(
-      {
-        evt: "notification_reengagement_dispatch",
-        userId,
-        status: result.status,
-        category: c.category,
-        fingerprint: c.fingerprint,
-      },
-      "Re-engagement dispatch result",
-    );
+    const result = await dispatchReengagementCandidate(userId, decision, prefs);
+    dispatched = result?.status === "sent";
   } else {
     if (decision.skipCode) {
       logger.info(
@@ -279,6 +305,68 @@ export async function evaluateReengagementForUser(
   }
 
   return { userId, decision, dryRun, dispatched };
+}
+
+export interface SingleUserCanaryResult {
+  evaluated: boolean;
+  dryRun: ReengagementDryRunRow | null;
+  dispatched: boolean;
+  dispatch: DispatchResult | null;
+  globalMode: ReengagementMode;
+  liveSendEnabled: false;
+}
+
+/**
+ * Founder-approved single-user exception: evaluate in dry_run (respect quiet
+ * hours, caps, tokens) and dispatch via existing dispatchNotification only if
+ * finalAction is WOULD_SEND. Does not set NOTIF_REENGAGEMENT_MODE=live.
+ */
+export async function runApprovedSingleUserCanary(
+  userId: string,
+  now = new Date(),
+): Promise<SingleUserCanaryResult> {
+  const globalMode = reengagementMode();
+  const evalResult = await evaluateReengagementForUser(userId, {
+    now,
+    mode: "dry_run",
+    readOnly: true,
+    ignoreSendWindow: false,
+  });
+  if (!evalResult) {
+    return {
+      evaluated: false,
+      dryRun: null,
+      dispatched: false,
+      dispatch: null,
+      globalMode,
+      liveSendEnabled: false,
+    };
+  }
+  if (evalResult.dryRun.finalAction !== "WOULD_SEND" || !evalResult.decision.candidate) {
+    return {
+      evaluated: true,
+      dryRun: evalResult.dryRun,
+      dispatched: false,
+      dispatch: null,
+      globalMode,
+      liveSendEnabled: false,
+    };
+  }
+  const prefs =
+    (await getPreferencesIfExists(userId)) ?? dryRunDefaultPreferences(userId);
+  const dispatch = await dispatchReengagementCandidate(
+    userId,
+    evalResult.decision,
+    prefs,
+  );
+  return {
+    evaluated: true,
+    dryRun: evalResult.dryRun,
+    dispatched: dispatch?.status === "sent",
+    dispatch,
+    globalMode,
+    liveSendEnabled: false,
+  };
 }
 
 export async function runReengagementTick(now = new Date()): Promise<{
@@ -355,4 +443,17 @@ export async function dryRunReengagementSnapshot(
     if (result) rows.push(result.dryRun);
   }
   return rows;
+}
+
+export async function dryRunReengagementForUserId(
+  userId: string,
+  now = new Date(),
+): Promise<ReengagementDryRunRow | null> {
+  const result = await evaluateReengagementForUser(userId, {
+    now,
+    ignoreSendWindow: false,
+    mode: "dry_run",
+    readOnly: true,
+  });
+  return result?.dryRun ?? null;
 }
