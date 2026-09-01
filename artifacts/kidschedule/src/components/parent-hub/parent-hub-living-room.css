@@ -149,18 +149,25 @@
 .ph-room-door-copy {
   min-width: 0;
   padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem; /* ~8px — title above subtitle, not one sentence */
 }
 
 .ph-room-door-title {
+  display: block;
   font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
+  line-height: 1.25;
   color: rgba(244, 238, 230, 0.96);
   letter-spacing: 0.01em;
 }
 
 .ph-room-door-feeling {
-  margin-top: 0.2rem;
+  display: block;
+  margin-top: 0;
   font-size: 0.8rem;
   line-height: 1.35;
   font-weight: 500;
