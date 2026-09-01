@@ -56,6 +56,9 @@ Thumbs.db
 audit/render-to-coolify/dumps/
 audit/render-to-coolify/*.dump
 
+# Legacy Replit config (secrets must never be committed)
+.replit
+
 # Environment (keep *.example templates)
 .env
 .env.local

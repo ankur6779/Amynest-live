@@ -53,4 +53,14 @@ describe("Launch security guards — route wiring", () => {
     assert.match(src, /checkDistributedRateLimit/);
     assert.match(src, /auth-check-reset/);
   });
+
+  it("realtime debug routes mount after requireAuth with guard", () => {
+    const routes = readSource("index.ts");
+    const authIdx = routes.indexOf("router.use(requireAuth)");
+    const guardIdx = routes.indexOf("router.use(realtimeDebugGuard)");
+    const debugIdx = routes.indexOf("router.use(speechCoachV2DebugRouter)");
+    assert.ok(authIdx >= 0);
+    assert.ok(guardIdx > authIdx);
+    assert.ok(debugIdx > guardIdx);
+  });
 });

@@ -55,6 +55,7 @@ import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import { useFailOpenAfter } from "@/lib/loading-fail-open";
+import { resolvePremiumRouteAccess } from "@/lib/premium-route-access";
 import {
   effectiveSetupStatus,
   isSetupComplete,
@@ -588,7 +589,7 @@ function ProtectedRoute({
   const deviceBlocked =
     deviceStatus === "blocked" && !location.startsWith("/manage-devices");
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
-  const { entitlements, loading: subscriptionLoading, isFetched: subscriptionFetched } =
+  const { entitlements, loading: subscriptionLoading, isFetched: subscriptionFetched, entitlementsResolved, refresh: refreshSubscription } =
     useSubscription();
   const premiumRoute = getPremiumRouteMeta(location);
   const { signOut } = useClerk();
@@ -644,8 +645,18 @@ function ProtectedRoute({
     return <Redirect to="/onboarding" />;
   }
   if (premiumRoute) {
-    if (premiumLoading && !premiumLoadingTimedOut) return <RouteLoadingShell />;
-    if (entitlements && !entitlements[premiumRoute.accessKey]) {
+    const premiumAccess = resolvePremiumRouteAccess({
+      hasPremiumRoute: true,
+      entitlementsResolved,
+      accessKey: premiumRoute.accessKey,
+      entitlements: entitlements as Record<string, boolean> | null,
+      loadingTimedOut: premiumLoadingTimedOut,
+    });
+    if (premiumAccess.kind === "loading") return <RouteLoadingShell />;
+    if (premiumAccess.kind === "retry") {
+      return <ApiRetryShell onRetry={() => void refreshSubscription()} />;
+    }
+    if (premiumAccess.kind === "denied") {
       return (
         <AppErrorBoundary label="Layout">
           <Layout>

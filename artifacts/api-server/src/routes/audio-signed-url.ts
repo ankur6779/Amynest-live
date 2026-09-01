@@ -11,6 +11,10 @@ import { resolveRhymesSignedUrl } from "../services/rhymesAudioSignedUrlService.
 import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 const router: IRouter = Router();
 
@@ -24,6 +28,10 @@ const AudioIdParams = z.object({
 
 /** GET /api/audio/signed-url/:audioId — V4 GCS signed read URL for allowlisted rhyme/lullaby. */
 router.get("/audio/signed-url/:audioId", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "audio-signed-url", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const parsed = AudioIdParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ success: false, error: "invalid_audio_id" });
@@ -70,6 +78,10 @@ router.get("/audio/signed-url/:audioId", async (req, res): Promise<void> => {
  * Browsers must not fetch storage.googleapis.com directly (no bucket CORS).
  */
 router.get("/audio/stream/:audioId", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "audio-stream", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const parsed = AudioIdParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ success: false, error: "invalid_audio_id" });

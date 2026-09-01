@@ -13,6 +13,7 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { driveFilesListAll, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
 import {
@@ -30,15 +31,6 @@ import {
 } from "@workspace/db";
 
 const router: IRouter = Router();
-
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
 
 /** Cron / scheduler — mounted before requireAuth. */
 export const storiesPublicRouter: IRouter = Router();
@@ -525,13 +517,7 @@ const gcsSyncBody = z.object({
   force: z.boolean().optional(),
 });
 
-router.post("/gcs-sync", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  if (!auth.userId || !isAdminUser(auth.userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
+router.post("/gcs-sync", requireAdmin, async (req, res): Promise<void> => {
   const parsed = gcsSyncBody.safeParse(req.body ?? {});
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });

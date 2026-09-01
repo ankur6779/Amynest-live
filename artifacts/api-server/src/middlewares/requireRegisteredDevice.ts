@@ -48,6 +48,13 @@ function missingHeaders(req: Request): string[] {
   return missing;
 }
 
+function deviceLimitStrict(): boolean {
+  if (process.env.DEVICE_LIMIT_STRICT === "0") return false;
+  if (process.env.DEVICE_LIMIT_STRICT === "1") return true;
+  const env = (process.env.AMYNEST_ENV ?? process.env.NODE_ENV ?? "").toLowerCase();
+  return env === "production";
+}
+
 /**
  * Backend device gate — requires a registered active device for authenticated
  * API calls. Mount after requireAuth. Device registration routes are exempt.
@@ -92,7 +99,7 @@ export async function requireRegisteredDevice(
   }
 
   if (!deviceId) {
-    if (process.env.DEVICE_LIMIT_STRICT === "1") {
+    if (deviceLimitStrict()) {
       res.status(403).json({
         error: "device_id_required",
         message: "Device identification is required. Please update the app and sign in again.",

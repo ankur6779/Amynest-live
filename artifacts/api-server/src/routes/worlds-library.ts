@@ -10,6 +10,10 @@ import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioSto
 import { readLocalDiscoveryWorldAudio } from "../services/discoveryWorldsLocalAudio.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 export const worldsLibraryPublicRouter: IRouter = Router();
 
@@ -102,6 +106,10 @@ function resolveWorldIdForPath(objectPath: string): WorldId | null {
 worldsLibraryPublicRouter.get(
   "/worlds-library/*objectPath",
   async (req, res): Promise<void> => {
+    if (await rejectIfIpRateLimited(req, res, "worlds-library", PUBLIC_STREAM_RATE)) {
+      return;
+    }
+
     const rawParam = req.params.objectPath;
     const objectPath = decodeObjectPathParam(
       Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),

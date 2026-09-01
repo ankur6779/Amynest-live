@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import {
   applyAdminOpsAction,
   getAdminOpsControlPanel,
@@ -23,6 +24,8 @@ import {
 } from "../services/adminHealthDigestService";
 
 const router: IRouter = Router();
+
+router.use("/admin", requireAdmin);
 
 const eventSchema = z.object({
   event: z.enum(["audio_success", "audio_failure", "audio_fallback", "audio_start"]),
@@ -65,15 +68,6 @@ const actionSchema = z.object({
     "disable_self_heal",
   ]),
 });
-
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
 
 /**
  * POST /api/audio-health — batched client audio telemetry.
@@ -118,11 +112,6 @@ router.get("/audio-ops", (_req, res): void => {
  * GET /api/admin/audio-ops-panel — full ops + predictive state (admin only).
  */
 router.get("/admin/audio-ops-panel", (req, res): void => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   res.json({
     ...getAdminOpsControlPanel(),
     ...getPredictiveOpsState(),
@@ -133,11 +122,6 @@ router.get("/admin/audio-ops-panel", (req, res): void => {
  * GET /api/admin/audio-jobs/failed — recent failed BullMQ audio jobs.
  */
 router.get("/admin/audio-jobs/failed", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const { getRecentFailedAiJobDiagnostics } = await import(
     "../queue/failed-job-diagnostics.js"
   );
@@ -160,11 +144,6 @@ router.get("/admin/audio-jobs/failed", async (req, res): Promise<void> => {
  * POST /api/admin/audio-jobs/:jobId/replay — re-enqueue a failed audio job.
  */
 router.post("/admin/audio-jobs/:jobId/replay", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const jobId = String(req.params.jobId ?? "").trim();
   if (!jobId) {
     res.status(400).json({ error: "invalid_job_id" });
@@ -183,11 +162,6 @@ router.post("/admin/audio-jobs/:jobId/replay", async (req, res): Promise<void> =
  * POST /api/admin/tts-orphan-cleanup — manual GCS orphan purge (admin only).
  */
 router.post("/admin/tts-orphan-cleanup", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const dryRun = req.body?.dryRun === true;
   const { runTtsOrphanCleanup } = await import("../services/ttsOrphanCleanup.js");
   const result = await runTtsOrphanCleanup({ dryRun });
@@ -198,12 +172,6 @@ router.post("/admin/tts-orphan-cleanup", async (req, res): Promise<void> => {
  * GET /api/admin/alerts — recent admin alert feed (dashboard-only INFO + all severities).
  */
 router.get("/admin/alerts", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json({ alerts: getAdminAlerts() });
 });
 
@@ -211,12 +179,6 @@ router.get("/admin/alerts", async (req, res): Promise<void> => {
  * GET /api/admin/audio-health-gate — live deployment gate evaluation (admin).
  */
 router.get("/admin/audio-health-gate", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   const { runLiveAudioHealthGate } = await import("../services/audio-health-gate-live.js");
   res.json(await runLiveAudioHealthGate());
 });
@@ -225,12 +187,6 @@ router.get("/admin/audio-health-gate", async (req, res): Promise<void> => {
  * GET /api/admin/dashboard — unified system health dashboard.
  */
 router.get("/admin/dashboard", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json(getAdminDashboard());
 });
 
@@ -238,12 +194,6 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
  * GET /api/admin/audio-slo — TTFA p50/p95/p99 SLO snapshot (admin only).
  */
 router.get("/admin/audio-slo", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json(getAudioSloSnapshot());
 });
 
@@ -251,12 +201,6 @@ router.get("/admin/audio-slo", async (req, res): Promise<void> => {
  * GET /api/admin/system-health — global infra + audio health snapshot.
  */
 router.get("/admin/system-health", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json(await getSystemHealthSnapshot());
 });
 
@@ -264,12 +208,6 @@ router.get("/admin/system-health", async (req, res): Promise<void> => {
  * GET /api/admin/predictive-health — trend history + predicted incidents.
  */
 router.get("/admin/predictive-health", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json({
     ops: getPredictiveOpsState(),
     trends: getMetricsHistory(),
@@ -281,12 +219,6 @@ router.get("/admin/predictive-health", async (req, res): Promise<void> => {
  * GET /api/admin/audio-health — back-compat alias.
  */
 router.get("/admin/audio-health", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   res.json(getAudioHealthDashboard());
 });
 
@@ -295,11 +227,6 @@ router.get("/admin/audio-health", async (req, res): Promise<void> => {
  */
 router.post("/admin/dashboard/actions", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   const parsed = actionSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
@@ -316,12 +243,6 @@ router.post("/admin/dashboard/actions", async (req, res): Promise<void> => {
  * without waiting for the next scheduled run.
  */
 router.post("/admin/health-digest/send", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   if (!isAdminHealthDigestEnabled()) {
     res.status(409).json({
       ok: false,
