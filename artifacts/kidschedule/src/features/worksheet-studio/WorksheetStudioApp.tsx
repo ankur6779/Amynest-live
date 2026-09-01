@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
 import { toast } from "sonner";
@@ -83,6 +84,7 @@ export type WorksheetStudioAppProps = {
 
 export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack, onWorksheetReady }: WorksheetStudioAppProps = {}) {
   const authFetch = useAuthFetch();
+  const { userId } = useAuth();
   const { back } = useAppNavigate();
   const { generate, improve, loading, improving } = useWorksheetAi(authFetch);
   const { reconstruct, loading: reconstructing, stage: reconstructStage } = useWorksheetReconstruction(authFetch);
@@ -119,7 +121,7 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
     if (shouldSkipDraftRestore()) {
       setHasDraft(false);
       console.info("[LivePipelineAudit] STEP8 cleanSession — draft restore disabled");
-      void flushOfflineQueue(authFetch).then((n) => {
+      void flushOfflineQueue(authFetch, userId).then((n) => {
         if (n > 0) toast.success(`Synced ${n} offline request${n > 1 ? "s" : ""}`);
       });
       return;
@@ -130,10 +132,10 @@ export function WorksheetStudioApp({ embedded, onViewChange, onRegisterOpenPack,
         setLastWorksheetTitle(d.document.meta.title || d.document.meta.topic);
       }
     });
-    void flushOfflineQueue(authFetch).then((n) => {
+    void flushOfflineQueue(authFetch, userId).then((n) => {
       if (n > 0) toast.success(`Synced ${n} offline request${n > 1 ? "s" : ""}`);
     });
-  }, [authFetch]);
+  }, [authFetch, userId]);
 
   const { saveNow, saveState, savedAt } = useWorksheetAutosave(document);
 
