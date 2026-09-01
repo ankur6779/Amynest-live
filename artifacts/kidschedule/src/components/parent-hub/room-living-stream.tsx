@@ -103,6 +103,7 @@ export function RoomLivingStream({
         className="mo-recommend-btn"
         data-testid={`${room}-recommend`}
         data-active={recommendActive ? "true" : "false"}
+        aria-label={`${recommend.title}. ${recommend.purpose}`}
         onClick={() => onSelectTile(recommend.tileId)}
       >
         <span className="mo-recommend-cue">{recommend.label}</span>
@@ -127,6 +128,7 @@ export function RoomLivingStream({
                 data-testid={`${room}-quiet-${path.id}`}
                 data-active={active ? "true" : "false"}
                 data-demoted={path.demoted ? "true" : "false"}
+                aria-label={`${path.title}. ${path.purpose}`}
                 aria-current={active ? "true" : undefined}
                 onClick={() => onSelectTile(path.tileId)}
               >

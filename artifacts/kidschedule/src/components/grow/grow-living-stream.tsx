@@ -97,6 +97,7 @@ export function GrowLivingStream({
         data-testid="grow-recommend"
         data-active={recommendActive ? "true" : "false"}
         data-enabled={recommendEnabled ? "true" : "false"}
+        aria-label={`${recommend.title}. ${recommend.purpose}`}
         aria-disabled={recommendEnabled ? undefined : "true"}
         disabled={!recommendEnabled}
         onClick={() => {
@@ -128,6 +129,7 @@ export function GrowLivingStream({
                 data-active={active ? "true" : "false"}
                 data-demoted={path.demoted ? "true" : "false"}
                 data-enabled={enabled ? "true" : "false"}
+                aria-label={`${path.title}. ${enabled ? path.purpose : path.disabledReason ?? path.purpose}`}
                 aria-current={active ? "true" : undefined}
                 aria-disabled={enabled ? undefined : "true"}
                 disabled={!enabled}
