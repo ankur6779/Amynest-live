@@ -122,6 +122,14 @@ async function refreshRevenueCatBeforeSubscriptionRead(userId: string): Promise<
     where: eq(subscriptionsTable.userId, userId),
   });
   if (!row) return;
+  // Razorpay/manual/stripe own the row — leftover RC identity must not drive sync.
+  if (
+    row.provider === "razorpay" ||
+    row.provider === "manual" ||
+    row.provider === "stripe"
+  ) {
+    return;
+  }
   if (
     row.provider !== "revenuecat" &&
     !row.revenuecatAppUserId &&

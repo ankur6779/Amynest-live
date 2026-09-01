@@ -122,6 +122,7 @@ export async function reconcileRevenueCatSubscriptions(limit = 100): Promise<Rec
   const rows = await db
     .select({
       userId: subscriptionsTable.userId,
+      provider: subscriptionsTable.provider,
       subscriptionState: subscriptionsTable.subscriptionState,
       currentPeriodEnd: subscriptionsTable.currentPeriodEnd,
       syncError: subscriptionsTable.syncError,
@@ -142,6 +143,15 @@ export async function reconcileRevenueCatSubscriptions(limit = 100): Promise<Rec
 
   const summary: ReconciliationSummary = { checked: 0, repaired: 0, failed: 0, results: [] };
   for (const row of rows) {
+    // Leftover RC identity on Razorpay/manual/stripe rows must not be reconciled —
+    // empty RC would otherwise wipe live non-RC premium via applyRevenueCatSnapshot.
+    if (
+      row.provider === "razorpay" ||
+      row.provider === "manual" ||
+      row.provider === "stripe"
+    ) {
+      continue;
+    }
     summary.checked += 1;
     try {
       const result = await reconcileOneRevenueCatAppUserId(row.userId, "reconciliation");
