@@ -43,6 +43,14 @@ export const ACTIVE_EXPERIMENTS: ExperimentDefinition[] = [
     primaryMetric: "learning_completion",
     active: true,
   },
+  {
+    id: "reengagement_copy_v1",
+    name: "Re-engagement lock-screen copy",
+    dimension: "copy",
+    variants: ["plan_ready", "next_right_thing"],
+    primaryMetric: "retention",
+    active: true,
+  },
 ];
 
 export function assignExperimentVariant(

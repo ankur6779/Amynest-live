@@ -400,9 +400,15 @@ router.post("/notifications/opened", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+  const fingerprint =
+    typeof req.body?.fingerprint === "string"
+      ? req.body.fingerprint
+      : typeof req.body?.notificationId === "string"
+        ? req.body.notificationId
+        : undefined;
   try {
     const { recordNotificationOpened } = await import("../services/notificationContentHistoryService.js");
-    await recordNotificationOpened(userId);
+    await recordNotificationOpened(userId, { fingerprint, notificationId: fingerprint });
   } catch (err) {
     logger.warn({ err, userId }, "Failed to record notification opened");
   }
@@ -719,6 +725,109 @@ router.post("/notifications/cron/ping", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error({ err }, "Notification cron ping failed");
     res.status(500).json({ error: "Cron ping failed" });
+  }
+});
+
+/**
+ * GET /api/notifications/reengagement/dry-run
+ * Admin audit: who would receive which re-engagement notification and why.
+ * Strictly READ ONLY — never INSERT/UPDATE/DELETE preferences or logs.
+ * Never sends. Capped to 50 users unless ?limit= is provided (max 200).
+ * Pass ?userId= to evaluate exactly one uid (send-window and quiet hours apply).
+ */
+router.get("/notifications/reengagement/dry-run", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const targetUserId =
+    typeof req.query["userId"] === "string" ? req.query["userId"].trim() : "";
+  try {
+    const {
+      dryRunReengagementSnapshot,
+      dryRunReengagementForUserId,
+      reengagementMode,
+    } = await import("../services/reengagementNotificationService.js");
+    if (targetUserId) {
+      const row = await dryRunReengagementForUserId(targetUserId);
+      res.json({
+        mode: reengagementMode(),
+        liveSendEnabled: false,
+        readOnly: true,
+        count: row ? 1 : 0,
+        wouldSend: row?.finalAction === "WOULD_SEND" ? 1 : 0,
+        delayed: row?.finalAction.startsWith("DELAYED_") ? 1 : 0,
+        suppressed: row && !row.finalAction.startsWith("DELAYED_") && row.finalAction !== "WOULD_SEND" ? 1 : 0,
+        rows: row ? [row] : [],
+      });
+      return;
+    }
+    const limit = Math.min(Math.max(Number(req.query["limit"]) || 50, 1), 200);
+    const rows = await dryRunReengagementSnapshot(limit);
+    const wouldSend = rows.filter((r) => r.finalAction === "WOULD_SEND").length;
+    const delayed = rows.filter((r) => r.finalAction.startsWith("DELAYED_")).length;
+    const suppressed = rows.length - wouldSend - delayed;
+    res.json({
+      mode: reengagementMode(),
+      liveSendEnabled: false,
+      readOnly: true,
+      count: rows.length,
+      wouldSend,
+      delayed,
+      suppressed,
+      rows,
+    });
+  } catch (err) {
+    logger.error({ err }, "Re-engagement dry-run failed");
+    res.status(500).json({ error: "dry-run failed" });
+  }
+});
+
+const CanarySchema = z.object({
+  confirm: z.literal("single-user-canary"),
+  userId: z.string().min(8).max(128),
+});
+
+/**
+ * POST /api/notifications/reengagement/canary
+ * Founder-approved single-user send via existing dispatchNotification.
+ * Does not set NOTIF_REENGAGEMENT_MODE=live. Does not use /notifications/test.
+ * Sends only if the selector finalAction is WOULD_SEND.
+ */
+router.post("/notifications/reengagement/canary", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const parsed = CanarySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid body" });
+    return;
+  }
+  const {
+    canaryUserIdAllowed,
+    runApprovedSingleUserCanary,
+    reengagementMode,
+  } = await import("../services/reengagementNotificationService.js");
+  if (!canaryUserIdAllowed(parsed.data.userId)) {
+    res.status(403).json({ error: "canary_user_not_allowlisted" });
+    return;
+  }
+  if (reengagementMode() === "off") {
+    res.status(409).json({ error: "reengagement_off", mode: "off" });
+    return;
+  }
+  try {
+    const result = await runApprovedSingleUserCanary(parsed.data.userId);
+    res.json({
+      ...result,
+      targetUserId: parsed.data.userId,
+    });
+  } catch (err) {
+    logger.error({ err }, "Re-engagement canary failed");
+    res.status(500).json({ error: "canary failed" });
   }
 });
 

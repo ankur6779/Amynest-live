@@ -109,6 +109,7 @@
     "upload:animal-world-visuals": "pnpm --filter @workspace/scripts run upload-animal-world-visuals",
     "generate:discovery-worlds-audio": "pnpm --filter @workspace/scripts run generate-discovery-worlds-audio",
     "generate:notification-sounds": "pnpm --filter @workspace/scripts run generate-notification-sounds",
+    "notif:reengagement-dry-run": "pnpm --filter @workspace/notification-engine run dry-run",
     "generate:discovery-worlds-visuals": "pnpm --filter @workspace/scripts run generate-discovery-worlds-visuals",
     "upload:discovery-worlds-visuals": "pnpm --filter @workspace/scripts run upload-discovery-worlds-visuals",
     "upload:discovery-worlds-catalog": "pnpm --filter @workspace/scripts run upload-discovery-worlds-catalog",
