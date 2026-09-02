@@ -16,6 +16,7 @@ import {
   livingGrowPrimaryCta,
   livingGrowWorkbookPurpose,
   livingGrowWorkbookTitle,
+  isGrowRecommendEnabled,
   recommendGrowAction,
 } from "./living-room";
 
@@ -47,15 +48,67 @@ describe("grow living-room", () => {
     const older = recommendGrowAction("Emma", 84);
     expect(older.tileId).toBe("smart-math-tricks");
     expect(older.pathId).not.toBe("challenge");
+    const newborn = recommendGrowAction("Emma", 6);
+    expect(newborn.purpose.toLowerCase()).toMatch(/age 1|begins/);
+  });
+
+  it("applies Grow content floors at every published age boundary", () => {
+    const cases: Array<{
+      months: number;
+      enabled: string[];
+      disabled: string[];
+      challenge: boolean;
+    }> = [
+      { months: 11, enabled: [], disabled: ["sounds", "numbers", "beads", "spelling", "study"], challenge: false },
+      { months: 12, enabled: ["sounds"], disabled: ["numbers", "beads", "spelling", "study"], challenge: false },
+      { months: 23, enabled: ["sounds"], disabled: ["numbers", "beads", "spelling", "study"], challenge: false },
+      { months: 24, enabled: ["sounds", "numbers", "beads"], disabled: ["spelling", "study"], challenge: false },
+      { months: 35, enabled: ["sounds", "numbers", "beads"], disabled: ["spelling", "study"], challenge: false },
+      { months: 36, enabled: ["sounds", "numbers", "beads", "spelling"], disabled: ["study"], challenge: false },
+      { months: 47, enabled: ["sounds", "numbers", "beads", "spelling"], disabled: ["study"], challenge: false },
+      { months: 48, enabled: ["sounds", "numbers", "beads", "spelling", "study"], disabled: [], challenge: false },
+      { months: 59, enabled: ["sounds", "numbers", "beads", "spelling", "study"], disabled: [], challenge: false },
+      { months: 60, enabled: ["sounds", "numbers", "beads", "spelling", "study"], disabled: [], challenge: false },
+      { months: 71, enabled: ["sounds", "numbers", "beads", "spelling", "study"], disabled: [], challenge: false },
+      { months: 72, enabled: ["sounds", "numbers", "beads", "spelling", "study", "challenge"], disabled: [], challenge: true },
+    ];
+
+    for (const row of cases) {
+      const paths = growPathsForAge(row.months);
+      const ids = paths.map((p) => p.id);
+      expect(ids, `${row.months}m listed`).toEqual(
+        expect.arrayContaining(["sounds", "numbers", "beads", "spelling", "study"]),
+      );
+      expect(ids.includes("challenge"), `${row.months}m challenge`).toBe(row.challenge);
+      for (const id of row.enabled) {
+        expect(paths.find((p) => p.id === id)?.enabled, `${row.months}m ${id} on`).not.toBe(false);
+      }
+      for (const id of row.disabled) {
+        expect(paths.find((p) => p.id === id)?.enabled, `${row.months}m ${id} off`).toBe(false);
+        expect(paths.find((p) => p.id === id)?.disabledReason).toMatch(/ready|begins|age/i);
+      }
+    }
+
+    expect(recommendGrowAction("Aria", 11).purpose).toMatch(/age 1|begins/i);
+    expect(isGrowRecommendEnabled(11)).toBe(false);
+    expect(isGrowRecommendEnabled(12)).toBe(true);
   });
 
   it("maps legacy tiles and age filters", () => {
     expect(growPathForTile("abacus")).toBe("beads");
     expect(isGrowTileId("olympiad")).toBe(true);
     expect(isGrowTileId("daily-tips")).toBe(false);
-    const youngPaths = growPathsForAge(30).map((p) => p.id);
-    expect(youngPaths).toContain("sounds");
-    expect(youngPaths).not.toContain("challenge");
+    const youngPaths = growPathsForAge(30);
+    expect(youngPaths.map((p) => p.id)).toContain("sounds");
+    expect(youngPaths.map((p) => p.id)).toContain("numbers");
+    expect(youngPaths.map((p) => p.id)).not.toContain("challenge");
+    expect(youngPaths.find((p) => p.id === "spelling")?.enabled).toBe(false);
+    expect(youngPaths.find((p) => p.id === "study")?.enabled).toBe(false);
+    const infantGrow = growPathsForAge(8);
+    expect(infantGrow.find((p) => p.id === "sounds")?.enabled).toBe(false);
+    expect(infantGrow.find((p) => p.id === "numbers")?.enabled).toBe(false);
+    expect(infantGrow.map((p) => p.id)).toContain("sounds");
+    expect(infantGrow.map((p) => p.id)).toContain("numbers");
   });
 
   it("deepen cues stay calm — never unlock theatre", () => {

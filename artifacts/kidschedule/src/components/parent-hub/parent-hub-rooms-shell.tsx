@@ -16,6 +16,7 @@ import {
 import { ParentHubRoomHero } from "@/components/parent-hub/parent-hub-room-hero";
 import { ParentHubDestinationRow } from "@/components/parent-hub/parent-hub-destination-row";
 import { ParentHubExitPanel } from "@/components/parent-hub/parent-hub-exit-panel";
+import { ParentHubModuleUnavailable } from "@/components/parent-hub/parent-hub-module-unavailable";
 import { AppLink } from "@/components/app-link";
 import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-context";
 import {
@@ -48,6 +49,7 @@ import {
   isRoomLivingPeerRoom,
   type RoomLivingPeerRoom,
 } from "@/lib/parent-hub/room-living";
+import { isUrlSafeRoomTileId } from "@/lib/parent-hub/eligibility";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
@@ -75,6 +77,8 @@ export type AskAmyStreamRenderApi = {
 
 export type ParentHubRoomsShellProps = {
   childName: string;
+  /** Stable child id — destination state resets when the selected child changes. */
+  childId?: number | string | null;
   isInfant: boolean;
   /** Entered living room — null = room doors overview */
   activeRoom: ParentHubRoomId | null;
@@ -110,6 +114,11 @@ export type ParentHubRoomsShellProps = {
    * When provided, skips equal peer destination catalogues for those rooms.
    */
   renderRoomLivingStream?: (api: RoomLivingStreamRenderApi) => ReactNode;
+  /**
+   * Sync the parenting-hub URL when a room module opens or closes.
+   * Synthetic stream ids are reported as null (keep the room hash).
+   */
+  onDeepenTile?: (tileId: string | null) => void;
   homeHref?: string;
 };
 
@@ -133,6 +142,7 @@ function memberTitle(
  */
 export function ParentHubRoomsShell({
   childName,
+  childId = null,
   isInfant,
   activeRoom,
   onEnterRoom,
@@ -145,6 +155,7 @@ export function ParentHubRoomsShell({
   renderGrowStream,
   renderAskAmyStream,
   renderRoomLivingStream,
+  onDeepenTile,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
@@ -244,6 +255,7 @@ export function ParentHubRoomsShell({
   }, [
     activeRoom,
     focusTileId,
+    childId,
     guidanceLiving,
     momentsLiving,
     growLiving,
@@ -251,6 +263,10 @@ export function ParentHubRoomsShell({
     roomLivingEnabled,
     isInfant,
   ]);
+
+  const announceDeepen = (tileId: string | null) => {
+    onDeepenTile?.(tileId && isUrlSafeRoomTileId(tileId) ? tileId : null);
+  };
 
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
@@ -267,6 +283,7 @@ export function ParentHubRoomsShell({
         setSelectedTileId(closing ? null : ASK_AMY_STREAM_TILE_ID);
         setAskAmyPath(null);
         setGrowDeepenTileId(null);
+        announceDeepen(closing ? null : ASK_AMY_STREAM_TILE_ID);
         if (!closing) setPathCompleted(true);
         return;
       }
@@ -275,6 +292,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : tileId);
       setGrowDeepenTileId(null);
+      announceDeepen(closing ? null : tileId);
       if (!closing && tileId) setPathCompleted(true);
       return;
     }
@@ -286,6 +304,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : GUIDANCE_STREAM_TILE_ID);
       setGrowDeepenTileId(null);
+      announceDeepen(null);
       if (!closing) setPathCompleted(true);
       return;
     }
@@ -297,12 +316,14 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : GROW_STREAM_TILE_ID);
       setGrowDeepenTileId(null);
+      announceDeepen(null);
       if (!closing) setPathCompleted(true);
       return;
     }
     setOpenDestinationId((prev) => (prev === dest.id ? null : dest.id));
     setSelectedTileId(null);
     setGrowDeepenTileId(null);
+    announceDeepen(null);
   };
 
   const selectMember = (tileId: string, destId: string) => {
@@ -310,6 +331,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destId);
     setSelectedTileId(closing ? null : tileId);
     setGrowDeepenTileId(null);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -318,6 +340,7 @@ export function ParentHubRoomsShell({
     const destId = destinationIdForMomentsPath(momentsPathForTile(tileId));
     setOpenDestinationId(closing ? null : destId);
     setSelectedTileId(closing ? null : tileId);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -326,6 +349,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId("grow");
     setSelectedTileId(GROW_STREAM_TILE_ID);
     setGrowDeepenTileId(closing ? null : tileId);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -333,6 +357,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destinationIdForAskAmyPath(pathId));
     setSelectedTileId(ASK_AMY_STREAM_TILE_ID);
     setAskAmyPath(pathId);
+    announceDeepen(pathId === "feelings" ? "emotional" : "amy-ai");
     setPathCompleted(true);
   };
 
@@ -364,6 +389,7 @@ export function ParentHubRoomsShell({
       setAskAmyPath(null);
     }
     if (!closing) setPathCompleted(true);
+    announceDeepen(closing ? null : openTile);
   };
 
   const clearDestination = () => {
@@ -371,6 +397,20 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(null);
     setGrowDeepenTileId(null);
     setAskAmyPath(null);
+    announceDeepen(null);
+  };
+
+  const renderQuietDestination = (tileId: string) => {
+    const node = renderDestination(tileId);
+    if (node == null) {
+      return (
+        <ParentHubModuleUnavailable
+          tileId={tileId}
+          onBack={clearDestination}
+        />
+      );
+    }
+    return node;
   };
 
   // P0-6 — Help / Understand / Care one-room living (skip peer product doors).
@@ -383,6 +423,9 @@ export function ParentHubRoomsShell({
     const hero = heroForRoom(activeRoom);
     const title = t(hero.titleKey, { defaultValue: hero.titleFallback });
     const deepenTile = selectedTileId;
+    const growDeepenCue = growDeepenTileId
+      ? growDeepenCueForTile(growDeepenTileId)
+      : null;
 
     return (
       <div
@@ -469,19 +512,40 @@ export function ParentHubRoomsShell({
             ) : selectedTileId === GROW_STREAM_TILE_ID &&
               growLiving &&
               renderGrowStream ? (
-              <div
-                className="ph-module-quiet"
-                data-testid="hub-room-module-grow"
-                data-section-id="grow"
-                data-ph-pack="5"
-              >
-                <ParentHubQuietModuleProvider>
-                  {renderGrowStream({
-                    activeTileId: growDeepenTileId,
-                    onSelectTile: selectGrowTile,
-                  })}
-                </ParentHubQuietModuleProvider>
-              </div>
+              <>
+                <div
+                  className="ph-module-quiet"
+                  data-testid="hub-room-module-grow"
+                  data-section-id="grow"
+                  data-ph-pack="5"
+                >
+                  <ParentHubQuietModuleProvider>
+                    {renderGrowStream({
+                      activeTileId: growDeepenTileId,
+                      onSelectTile: selectGrowTile,
+                    })}
+                  </ParentHubQuietModuleProvider>
+                </div>
+                {growDeepenTileId ? (
+                  <div
+                    className="ph-module-quiet gw-deepen"
+                    data-testid={`hub-room-module-${growDeepenTileId}`}
+                    data-section-id={growDeepenTileId}
+                    data-ph-pack="5"
+                    data-gw-deepen="1"
+                  >
+                    {growDeepenCue ? (
+                      <div className="gw-deepen-cue" data-testid="grow-deepen-cue">
+                        <p className="gw-deepen-cue-title">{growDeepenCue.title}</p>
+                        <p className="gw-deepen-cue-purpose">{growDeepenCue.purpose}</p>
+                      </div>
+                    ) : null}
+                    <ParentHubQuietModuleProvider>
+                      {renderQuietDestination(growDeepenTileId)}
+                    </ParentHubQuietModuleProvider>
+                  </div>
+                ) : null}
+              </>
             ) : deepenTile ? (
               <div
                 className="ph-module-quiet mo-deepen"
@@ -491,7 +555,7 @@ export function ParentHubRoomsShell({
                 data-ph-deepen="1"
               >
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(deepenTile)}
+                  {renderQuietDestination(deepenTile)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -601,7 +665,7 @@ export function ParentHubRoomsShell({
                   </div>
                 ) : null}
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(deepenTile)}
+                  {renderQuietDestination(deepenTile)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -805,7 +869,7 @@ export function ParentHubRoomsShell({
                       </div>
                     ) : null}
                     <ParentHubQuietModuleProvider>
-                      {renderDestination(growDeepenTileId)}
+                      {renderQuietDestination(growDeepenTileId)}
                     </ParentHubQuietModuleProvider>
                   </div>
                 ) : null}
@@ -821,7 +885,7 @@ export function ParentHubRoomsShell({
                 data-ph-pack="5"
               >
                 <ParentHubQuietModuleProvider>
-                  {renderDestination(selectedTileId)}
+                  {renderQuietDestination(selectedTileId)}
                 </ParentHubQuietModuleProvider>
               </div>
             ) : null}
@@ -851,9 +915,10 @@ export function ParentHubRoomsShell({
   return (
     <div
       className="fe-shell ph-living-shell"
-      data-testid="parent-hub-rooms-shell"
-      data-ph-mode="doors"
-      data-ph-pack="4"
+        data-testid="parent-hub-rooms-shell"
+        data-ph-mode="doors"
+        data-ph-pack="4"
+        data-ph-child-id={childId != null ? String(childId) : undefined}
       data-fe-shot="reflection"
       data-fe-room="reveal"
       data-fe-presence="settle"
@@ -904,6 +969,7 @@ export function ParentHubRoomsShell({
                 id={`hub-room-door-${roomId}`}
                 data-testid={`hub-room-door-${roomId}`}
                 data-hub-room-door={roomId}
+                aria-label={`${doorTitle}. ${feeling}`}
                 className={
                   emphasize ? "ph-room-door ph-room-door--emphasis" : "ph-room-door"
                 }

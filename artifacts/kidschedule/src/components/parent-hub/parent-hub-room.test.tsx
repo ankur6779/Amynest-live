@@ -391,4 +391,151 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.getByTestId("mod-nutrition")).toBeTruthy();
     expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
   });
+
+  it("keeps room door title and feeling as separate fields", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Child 2"
+        isInfant={false}
+        activeRoom={null}
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai", "nutrition"]}
+        renderDestination={() => null}
+      />,
+    );
+
+    const help = screen.getByTestId("hub-room-door-help");
+    const title = help.querySelector(".ph-room-door-title");
+    const feeling = help.querySelector(".ph-room-door-feeling");
+    expect(title?.textContent).toBe("Help");
+    expect(feeling?.textContent).toBe("You are not alone.");
+    expect(help).toHaveAttribute("aria-label", "Help. You are not alone.");
+    expect(title?.compareDocumentPosition(feeling!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it("shows a recovery state when a module has no content", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Emma"
+        isInfant={false}
+        activeRoom="help"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["amy-ai"]}
+        renderDestination={() => null}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-ask-amy"));
+    expect(screen.getByTestId("parent-hub-module-unavailable")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("parent-hub-module-unavailable-back"));
+    expect(screen.queryByTestId("parent-hub-module-unavailable")).toBeNull();
+  });
+
+  it("opens Grow path destinations from Understand living", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Devan"
+        isInfant={false}
+        activeRoom="understand"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["daily-tips", "phonics"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderGrowStream={({ onSelectTile }) => (
+          <div data-testid="grow-living-stream">
+            <button
+              type="button"
+              data-testid="grow-quiet-sounds"
+              onClick={() => onSelectTile("phonics")}
+            >
+              Sounds
+            </button>
+          </div>
+        )}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="understand-quiet-grow"
+              onClick={() => onSelectTile("__grow_stream__")}
+            >
+              Grow
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("understand-quiet-grow"));
+    fireEvent.click(screen.getByTestId("grow-quiet-sounds"));
+    expect(screen.getByTestId("mod-phonics")).toBeTruthy();
+  });
+
+  it("announces URL-safe deepen tiles when a Care path opens", () => {
+    const onDeepenTile = vi.fn();
+    render(
+      <ParentHubRoomsShell
+        childName="Aria"
+        isInfant={false}
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        onDeepenTile={onDeepenTile}
+        visibleTileIds={["nutrition", "health-lab"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="care-quiet-nutrition"
+              onClick={() => onSelectTile("nutrition")}
+            >
+              Nutrition
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("care-quiet-nutrition"));
+    expect(screen.getByTestId("mod-nutrition")).toBeTruthy();
+    expect(onDeepenTile).toHaveBeenCalledWith("nutrition");
+  });
+
+  it("clears an open module when the selected child changes", () => {
+    const { rerender } = render(
+      <ParentHubRoomsShell
+        childName="John"
+        childId={1}
+        isInfant
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["infant-hub", "nutrition"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("hub-dest-row-infant-care"));
+    expect(screen.getByTestId("mod-infant-hub")).toBeTruthy();
+
+    rerender(
+      <ParentHubRoomsShell
+        childName="Child 2"
+        childId={2}
+        isInfant={false}
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["nutrition", "health-lab"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+      />,
+    );
+
+    expect(screen.queryByTestId("mod-infant-hub")).toBeNull();
+  });
 });

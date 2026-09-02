@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
-  quietPathsForRoom,
   recommendPathForRoom,
   roomLivingEyebrow,
   roomLivingPurpose,
@@ -16,6 +15,7 @@ import {
   roomLivingTitle,
   type RoomLivingPeerRoom,
 } from "@/lib/parent-hub/room-living";
+import { resolveQuietPathsForRoom } from "@/lib/parent-hub/eligibility";
 import "@/pages/first-experience-material.css";
 import "@/components/moments/moments-living-room.css";
 
@@ -23,6 +23,8 @@ export type RoomLivingStreamProps = {
   room: RoomLivingPeerRoom;
   childName: string;
   isInfant: boolean;
+  /** Hub-visible tile ids — filters age-gated quiet paths without hiding Nutrition. */
+  visibleTileIds?: readonly string[];
   activeTileId?: string | null;
   onSelectTile: (tileId: string) => void;
 };
@@ -31,6 +33,7 @@ export function RoomLivingStream({
   room,
   childName,
   isInfant,
+  visibleTileIds,
   activeTileId = null,
   onSelectTile,
 }: RoomLivingStreamProps) {
@@ -41,8 +44,8 @@ export function RoomLivingStream({
     [room, isInfant, childName],
   );
   const quietPaths = useMemo(
-    () => quietPathsForRoom(room, { isInfant }),
-    [room, isInfant],
+    () => resolveQuietPathsForRoom(room, { isInfant, visibleTileIds }),
+    [room, isInfant, visibleTileIds],
   );
   const recommendActive = activeTileId === recommend.tileId;
 
@@ -100,6 +103,7 @@ export function RoomLivingStream({
         className="mo-recommend-btn"
         data-testid={`${room}-recommend`}
         data-active={recommendActive ? "true" : "false"}
+        aria-label={`${recommend.title}. ${recommend.purpose}`}
         onClick={() => onSelectTile(recommend.tileId)}
       >
         <span className="mo-recommend-cue">{recommend.label}</span>
@@ -124,6 +128,7 @@ export function RoomLivingStream({
                 data-testid={`${room}-quiet-${path.id}`}
                 data-active={active ? "true" : "false"}
                 data-demoted={path.demoted ? "true" : "false"}
+                aria-label={`${path.title}. ${path.purpose}`}
                 aria-current={active ? "true" : undefined}
                 onClick={() => onSelectTile(path.tileId)}
               >

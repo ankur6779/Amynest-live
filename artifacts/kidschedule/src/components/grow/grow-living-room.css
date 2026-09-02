@@ -127,6 +127,12 @@
     rgba(255, 252, 248, 0.08);
 }
 
+.gw-recommend-btn:disabled,
+.gw-recommend-btn[data-enabled="false"] {
+  cursor: default;
+  opacity: 0.78;
+}
+
 .gw-recommend-cue {
   font-size: 0.65rem;
   font-weight: 700;
@@ -194,6 +200,19 @@
 
 .gw-quiet-path[data-demoted="true"] {
   opacity: 0.86;
+}
+
+.gw-quiet-path:disabled,
+.gw-quiet-path[data-enabled="false"] {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.gw-quiet-path:disabled:hover,
+.gw-quiet-path[data-enabled="false"]:hover,
+.gw-quiet-path:disabled:focus-visible,
+.gw-quiet-path[data-enabled="false"]:focus-visible {
+  border-color: rgba(232, 212, 184, 0.12);
 }
 
 .gw-quiet-path-title {

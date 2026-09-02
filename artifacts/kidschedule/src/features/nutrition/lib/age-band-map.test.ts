@@ -13,6 +13,20 @@ describe("monthsToAgeGroupId", () => {
     expect(monthsToAgeGroupId(84)).toBe("school_6_10");
   });
 
+  it("flips nutrition bands at the published month boundaries", () => {
+    expect(monthsToAgeGroupId(5)).toBe("infant_0_6");
+    expect(monthsToAgeGroupId(6)).toBe("infant_6_12");
+    expect(monthsToAgeGroupId(11)).toBe("infant_6_12");
+    expect(monthsToAgeGroupId(12)).toBe("toddler_1_3");
+    expect(monthsToAgeGroupId(23)).toBe("toddler_1_3");
+    expect(monthsToAgeGroupId(24)).toBe("toddler_1_3");
+    expect(monthsToAgeGroupId(35)).toBe("toddler_1_3");
+    expect(monthsToAgeGroupId(36)).toBe("preschool_3_6");
+    expect(monthsToAgeGroupId(59)).toBe("preschool_3_6");
+    expect(monthsToAgeGroupId(71)).toBe("preschool_3_6");
+    expect(monthsToAgeGroupId(72)).toBe("school_6_10");
+  });
+
   it("defaults when unknown", () => {
     expect(monthsToAgeGroupId(null)).toBe("toddler_1_3");
   });
