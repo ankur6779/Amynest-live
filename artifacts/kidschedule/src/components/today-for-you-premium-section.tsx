@@ -7,6 +7,7 @@ import { InfantExplorePreviewBanner } from "@/components/infant-explore-preview-
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubSectionPoints, useInfantDiscoveryPreview } from "@/lib/hub-render-context";
 import { HUB_EXPANDED_CONTENT_STACK } from "@/lib/parent-hub-premium";
+import { useQuietDestinationDefaultOpen } from "@/lib/parent-hub/quiet-destination";
 import {
   TODAY_FOR_YOU_CARD_BADGES,
   TODAY_FOR_YOU_CARD_VISUALS,
@@ -47,7 +48,7 @@ export function TodayForYouPremiumSection({
 }: TodayForYouPremiumSectionProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(useQuietDestinationDefaultOpen(defaultOpen));
   const cardKey = TODAY_FOR_YOU_HUB_SECTION_MAP[id] as
     | Exclude<TodayForYouCardId, "section-header">
     | undefined;

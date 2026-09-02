@@ -14,6 +14,7 @@ import {
   type ParentSupportCardId,
 } from "@/lib/parent-support-card-config";
 import { HUB_EXPANDED_CONTENT, HUB_FEATURE_TILE_PREVIEW } from "@/lib/parent-hub-premium";
+import { useQuietDestinationDefaultOpen } from "@/lib/parent-hub/quiet-destination";
 import { cn } from "@/lib/utils";
 
 type ParentSupportPremiumSectionProps = {
@@ -48,7 +49,7 @@ export function ParentSupportPremiumSection({
 }: ParentSupportPremiumSectionProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(useQuietDestinationDefaultOpen(defaultOpen));
   const cardKey = PARENT_SUPPORT_HUB_SECTION_MAP[id] as
     | Exclude<ParentSupportCardId, "section-header">
     | undefined;

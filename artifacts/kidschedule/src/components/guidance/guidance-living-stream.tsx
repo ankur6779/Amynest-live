@@ -4,7 +4,7 @@
  * Never a blog. Never a content catalogue.
  * Presentation only — tip/article engines reused as-is.
  */
-import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
@@ -66,6 +66,9 @@ export function GuidanceLivingStream({
   const [activeLane, setActiveLane] = useState<GuidanceStreamLaneId | null>(
     null,
   );
+  useEffect(() => {
+    setActiveLane(null);
+  }, [childName, ageGroup, childAgeMonths]);
   const recommend = useMemo(() => recommendGuidanceAction(), []);
   const sacred = useMemo(
     () => pickGuidanceSacredSentence(ageGroup),

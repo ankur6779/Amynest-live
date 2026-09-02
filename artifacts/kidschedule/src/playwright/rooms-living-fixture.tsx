@@ -14,6 +14,7 @@ import { RoomLivingStream } from "@/components/parent-hub/room-living-stream";
 import { GrowLivingStream } from "@/components/grow/grow-living-stream";
 import { MomentsLivingStream } from "@/components/moments/moments-living-stream";
 import { monthsToAgeGroupId } from "@/features/nutrition/lib/age-band-map";
+import { NutritionHubParentContent } from "@/components/nutrition-hub-parent-tile";
 import {
   isHubSectionVisible,
   type HubSectionVisibilityInput,
@@ -211,6 +212,38 @@ function Fixture() {
               const knownTiles = new Set(visibleTileIds);
               if (tileId === "not-a-module" || !knownTiles.has(tileId)) return null;
               if (tileId === "infant-hub" && !isInfant) return null;
+              if (tileId === "nutrition") {
+                return (
+                  <div data-testid="dest-nutrition" data-child-id={String(child.id)}>
+                    <NutritionHubParentContent
+                      childAgeMonths={child.ageMonths}
+                      childName={child.name}
+                      isFreeJourneyPeriod={false}
+                      isPremium
+                    />
+                  </div>
+                );
+              }
+              if (tileId === "speech-coach") {
+                const preview = child.ageMonths < 24;
+                return (
+                  <div
+                    data-testid="dest-speech-coach"
+                    data-child-id={String(child.id)}
+                    data-speech-mode={preview ? "preview" : "full"}
+                  >
+                    {preview ? (
+                      <div data-testid="speech-coach-preview">
+                        Speech preview for {child.name}
+                      </div>
+                    ) : (
+                      <div data-testid="speech-coach-full">
+                        Speech practice for {child.name}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
               return (
                 <div
                   data-testid={`dest-${tileId}`}
@@ -220,13 +253,6 @@ function Fixture() {
                   data-nutrition-band={
                     tileId === "nutrition"
                       ? monthsToAgeGroupId(child.ageMonths)
-                      : undefined
-                  }
-                  data-speech-mode={
-                    tileId === "speech-coach"
-                      ? child.ageMonths < 24
-                        ? "preview"
-                        : "full"
                       : undefined
                   }
                 >
