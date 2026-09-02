@@ -423,6 +423,9 @@ export function ParentHubRoomsShell({
     const hero = heroForRoom(activeRoom);
     const title = t(hero.titleKey, { defaultValue: hero.titleFallback });
     const deepenTile = selectedTileId;
+    const growDeepenCue = growDeepenTileId
+      ? growDeepenCueForTile(growDeepenTileId)
+      : null;
 
     return (
       <div
@@ -509,19 +512,40 @@ export function ParentHubRoomsShell({
             ) : selectedTileId === GROW_STREAM_TILE_ID &&
               growLiving &&
               renderGrowStream ? (
-              <div
-                className="ph-module-quiet"
-                data-testid="hub-room-module-grow"
-                data-section-id="grow"
-                data-ph-pack="5"
-              >
-                <ParentHubQuietModuleProvider>
-                  {renderGrowStream({
-                    activeTileId: growDeepenTileId,
-                    onSelectTile: selectGrowTile,
-                  })}
-                </ParentHubQuietModuleProvider>
-              </div>
+              <>
+                <div
+                  className="ph-module-quiet"
+                  data-testid="hub-room-module-grow"
+                  data-section-id="grow"
+                  data-ph-pack="5"
+                >
+                  <ParentHubQuietModuleProvider>
+                    {renderGrowStream({
+                      activeTileId: growDeepenTileId,
+                      onSelectTile: selectGrowTile,
+                    })}
+                  </ParentHubQuietModuleProvider>
+                </div>
+                {growDeepenTileId ? (
+                  <div
+                    className="ph-module-quiet gw-deepen"
+                    data-testid={`hub-room-module-${growDeepenTileId}`}
+                    data-section-id={growDeepenTileId}
+                    data-ph-pack="5"
+                    data-gw-deepen="1"
+                  >
+                    {growDeepenCue ? (
+                      <div className="gw-deepen-cue" data-testid="grow-deepen-cue">
+                        <p className="gw-deepen-cue-title">{growDeepenCue.title}</p>
+                        <p className="gw-deepen-cue-purpose">{growDeepenCue.purpose}</p>
+                      </div>
+                    ) : null}
+                    <ParentHubQuietModuleProvider>
+                      {renderQuietDestination(growDeepenTileId)}
+                    </ParentHubQuietModuleProvider>
+                  </div>
+                ) : null}
+              </>
             ) : deepenTile ? (
               <div
                 className="ph-module-quiet mo-deepen"

@@ -18,13 +18,18 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-mobile",
-      use: { ...devices["iPhone 12"], viewport: { width: 360, height: 740 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 360, height: 740 },
+        isMobile: true,
+        hasTouch: true,
+      },
     },
   ],
   webServer: {
     command: `PORT=${PORT} BASE_PATH=/ pnpm exec vite --config vite.config.ts --port ${PORT} --host 127.0.0.1 --strictPort`,
     url: `http://127.0.0.1:${PORT}/playwright-rooms-living.html`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

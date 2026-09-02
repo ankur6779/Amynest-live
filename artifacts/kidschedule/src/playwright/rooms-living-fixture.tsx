@@ -208,7 +208,8 @@ function Fixture() {
             onDeepenTile={deepenRoomsTile}
             visibleTileIds={visibleTileIds}
             renderDestination={(tileId) => {
-              if (tileId === "not-a-module") return null;
+              const knownTiles = new Set(visibleTileIds);
+              if (tileId === "not-a-module" || !knownTiles.has(tileId)) return null;
               if (tileId === "infant-hub" && !isInfant) return null;
               return (
                 <div

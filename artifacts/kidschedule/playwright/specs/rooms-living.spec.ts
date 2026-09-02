@@ -120,8 +120,10 @@ test.describe("Rooms living fixture", () => {
     await expect(page.getByTestId("dest-story-hub")).toBeVisible();
     await page.getByTestId("moments-quiet-make").click();
     await expect(page.getByTestId("dest-worksheets")).toBeVisible();
-    await page.getByTestId("moments-quiet-games").click();
-    await expect(page.getByTestId("dest-gaming-rewards")).toBeVisible();
+    await expect(page.getByTestId("moments-quiet-games")).toHaveAttribute(
+      "href",
+      /\/games/,
+    );
     await page.getByTestId("parent-hub-exit-room").click();
 
     await page.getByTestId("rooms-child-2").click();

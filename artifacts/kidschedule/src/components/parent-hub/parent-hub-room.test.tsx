@@ -435,6 +435,46 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.queryByTestId("parent-hub-module-unavailable")).toBeNull();
   });
 
+  it("opens Grow path destinations from Understand living", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Devan"
+        isInfant={false}
+        activeRoom="understand"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["daily-tips", "phonics"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderGrowStream={({ onSelectTile }) => (
+          <div data-testid="grow-living-stream">
+            <button
+              type="button"
+              data-testid="grow-quiet-sounds"
+              onClick={() => onSelectTile("phonics")}
+            >
+              Sounds
+            </button>
+          </div>
+        )}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="understand-quiet-grow"
+              onClick={() => onSelectTile("__grow_stream__")}
+            >
+              Grow
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("understand-quiet-grow"));
+    fireEvent.click(screen.getByTestId("grow-quiet-sounds"));
+    expect(screen.getByTestId("mod-phonics")).toBeTruthy();
+  });
+
   it("announces URL-safe deepen tiles when a Care path opens", () => {
     const onDeepenTile = vi.fn();
     render(
