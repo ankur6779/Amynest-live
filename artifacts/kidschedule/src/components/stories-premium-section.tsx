@@ -14,6 +14,7 @@ import {
   type StoriesCardId,
 } from "@/lib/stories-card-config";
 import { HUB_EXPANDED_CONTENT, HUB_FEATURE_TILE_PREVIEW } from "@/lib/parent-hub-premium";
+import { useQuietDestinationDefaultOpen } from "@/lib/parent-hub/quiet-destination";
 import { cn } from "@/lib/utils";
 
 type StoriesPremiumSectionProps = {
@@ -46,7 +47,7 @@ export function StoriesPremiumSection({
 }: StoriesPremiumSectionProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(useQuietDestinationDefaultOpen(defaultOpen));
   const cardKey = STORIES_HUB_SECTION_MAP[id] as Exclude<StoriesCardId, "section-header"> | undefined;
   const visual = cardKey ? STORIES_CARD_VISUALS[cardKey] : undefined;
   const badge = cardKey ? STORIES_CARD_BADGES[cardKey] : undefined;

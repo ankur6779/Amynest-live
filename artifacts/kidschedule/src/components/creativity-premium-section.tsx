@@ -13,6 +13,7 @@ import {
   type CreativityCardId,
 } from "@/lib/creativity-card-config";
 import { HUB_EXPANDED_CONTENT, HUB_FEATURE_TILE_PREVIEW } from "@/lib/parent-hub-premium";
+import { useQuietDestinationDefaultOpen } from "@/lib/parent-hub/quiet-destination";
 import { cn } from "@/lib/utils";
 
 type CreativityPremiumSectionProps = {
@@ -45,7 +46,7 @@ export function CreativityPremiumSection({
 }: CreativityPremiumSectionProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(useQuietDestinationDefaultOpen(defaultOpen));
   const cardKey = CREATIVITY_HUB_SECTION_MAP[id] as Exclude<CreativityCardId, "section-header"> | undefined;
   const visual = cardKey ? CREATIVITY_CARD_VISUALS[cardKey] : undefined;
 
