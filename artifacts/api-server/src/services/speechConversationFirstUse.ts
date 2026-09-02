@@ -6,8 +6,13 @@
  * never expose a fake quota.
  *
  * Authority: server Date.now() / UTC. Reinstall/login persist by userId.
+ *
+ * Do NOT infer the stamp from speech_conversation_seconds history. That bucket
+ * also records premium practice, so seeding from it would immediately expire
+ * the free 3-day window after entitlement lapse. Stamp only on free-path
+ * converse when no lifetime row exists yet.
  */
-import { and, asc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, usageDailyTable } from "@workspace/db";
 
 export { conversationTrialWindow, FREE_CONVERSATION_TRIAL_DAYS } from "./speechConversationTrialWindow.js";
@@ -49,42 +54,16 @@ async function persistStampUnix(userId: string, unixSeconds: number): Promise<nu
 }
 
 /**
- * Earliest converse-seconds row createdAt — backward compat for users who
- * already talked before this stamp existed. Kickoff-only (0s) has no row.
- */
-async function inferFirstUseFromConverseHistory(userId: string): Promise<number | null> {
-  const rows = await db
-    .select({ createdAt: usageDailyTable.createdAt })
-    .from(usageDailyTable)
-    .where(
-      and(
-        eq(usageDailyTable.userId, userId),
-        eq(usageDailyTable.feature, "speech_conversation_seconds"),
-      ),
-    )
-    .orderBy(asc(usageDailyTable.createdAt))
-    .limit(1);
-  const at = rows[0]?.createdAt;
-  if (!at) return null;
-  const unix = Math.floor(at.getTime() / 1000);
-  return unix > 0 ? unix : null;
-}
-
-/**
  * Stamp first actual Talk session (including kickoff). Insert-if-absent; never increment.
- * Returns unix seconds of first use.
+ * Returns unix seconds of first use. Does not reuse premium converse history.
  */
 export async function ensureConversationFirstUseUnix(userId: string): Promise<number> {
   const existing = await readStampUnix(userId);
   if (existing) return existing;
-  const inferred = await inferFirstUseFromConverseHistory(userId);
-  const unix = inferred ?? Math.floor(Date.now() / 1000);
-  return persistStampUnix(userId, unix);
+  return persistStampUnix(userId, Math.floor(Date.now() / 1000));
 }
 
 export async function peekConversationFirstUseMs(userId: string): Promise<number | null> {
   const unix = await readStampUnix(userId);
-  if (unix) return unix * 1000;
-  const inferred = await inferFirstUseFromConverseHistory(userId);
-  return inferred != null ? inferred * 1000 : null;
+  return unix ? unix * 1000 : null;
 }

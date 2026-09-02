@@ -78,6 +78,14 @@ describe("speechCoachV2 first-use freeze", () => {
     assert.doesNotMatch(registerBlock, /chargeSpeechCoachV2FirstUseSeconds/);
   });
 
+  it("does not seed lifetime from paid/trial daily_usage or sessions history", () => {
+    const src = read("speechCoachV2FirstUse.ts");
+    assert.doesNotMatch(src, /inferPriorV2Seconds/);
+    assert.doesNotMatch(src, /speechCoachV2DailyUsageTable/);
+    assert.doesNotMatch(src, /speechCoachV2SessionsTable/);
+    assert.match(src, /const seed = existing \?\? 0/);
+  });
+
   it("routes refuse exhausted first-use without daily-reset copy", () => {
     const src = read("../routes/speech-coach-v2.ts");
     assert.match(src, /first_use_limit_reached/);
@@ -221,6 +229,67 @@ describe("speechCoachV2 first-use premium does not consume lifetime", { skip: !d
   });
 });
 
+describe("speechCoachV2 first-use after premium lapse", { skip: !dbOk }, () => {
+  const userId = `p4-speech-lapse-${randomUUID()}`;
+  let childId = 0;
+
+  before(async () => {
+    await db.insert(subscriptionsTable).values({
+      userId,
+      plan: "free",
+      status: "free",
+      provider: "none",
+    });
+    const child = await db
+      .insert(childrenTable)
+      .values({
+        userId,
+        name: "Lapse Child",
+        age: 1,
+        ageMonths: 0,
+        schoolStartTime: "08:00",
+        schoolEndTime: "14:00",
+        goals: "p4-speech-lapse",
+      })
+      .returning({ id: childrenTable.id });
+    childId = child[0]!.id;
+    // Simulate paid-period practice already recorded in daily usage / sessions.
+    await db.insert(speechCoachV2DailyUsageTable).values({
+      userId,
+      childId,
+      day: "2026-08-01",
+      secondsUsed: 600,
+    });
+  });
+
+  after(async () => {
+    await db.delete(speechCoachV2DailyUsageTable).where(eq(speechCoachV2DailyUsageTable.userId, userId));
+    await db.delete(usageDailyTable).where(eq(usageDailyTable.userId, userId));
+    await db.delete(childrenTable).where(eq(childrenTable.userId, userId));
+    await db.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, userId));
+  });
+
+  it("does not burn the free 90s from paid daily_usage history", async () => {
+    const used = await peekSpeechCoachV2FirstUseUsed(userId);
+    assert.equal(used, 0);
+    assert.equal(await peekSpeechCoachV2FirstUseRemaining(userId), 90);
+    const policy = await resolveSpeechCoachV2UsagePolicy(userId);
+    assert.equal(policy.isFirstUseFree, true);
+    assert.equal(policy.firstUseRemainingSeconds, 90);
+    assert.equal(policy.dailyLimitSeconds, 90);
+    const lifetime = await db
+      .select()
+      .from(usageDailyTable)
+      .where(
+        and(
+          eq(usageDailyTable.userId, userId),
+          eq(usageDailyTable.feature, SPEECH_COACH_V2_FIRST_USE_FEATURE),
+        ),
+      );
+    assert.equal(lifetime.length, 0);
+  });
+});
+
 describe("speechCoachV2 first-use session accounting", { skip: !dbOk }, () => {
   const userId = `p4-speech-sess-${randomUUID()}`;
   let childId = 0;
@@ -237,7 +306,7 @@ describe("speechCoachV2 first-use session accounting", { skip: !dbOk }, () => {
       .values({
         userId,
         name: "First Use Child",
-        age: 5,
+        age: 1,
         ageMonths: 0,
         schoolStartTime: "08:00",
         schoolEndTime: "14:00",
