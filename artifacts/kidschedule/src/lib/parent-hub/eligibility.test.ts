@@ -8,6 +8,7 @@ import {
   isUrlSafeRoomTileId,
   resolveQuietPathsForRoom,
   UNIVERSAL_ROOM_MODULE_TILE_IDS,
+  visibleHelpTileIdsForAge,
 } from "./eligibility";
 import { GROW_STREAM_TILE_ID } from "@/lib/grow/living-room";
 
@@ -79,5 +80,41 @@ describe("Rooms eligibility product model", () => {
     expect(isSyntheticRoomTileId(GROW_STREAM_TILE_ID)).toBe(true);
     expect(isUrlSafeRoomTileId("nutrition")).toBe(true);
     expect(isUrlSafeRoomTileId(GROW_STREAM_TILE_ID)).toBe(false);
+  });
+
+  it("flips Infant Care exactly at the 24-month boundary", () => {
+    expect(isInfantCareAge(23)).toBe(true);
+    expect(isInfantCareAge(24)).toBe(false);
+    const infant = resolveQuietPathsForRoom("care", { isInfant: isInfantCareAge(23) });
+    const toddler = resolveQuietPathsForRoom("care", { isInfant: isInfantCareAge(24) });
+    expect(infant.map((p) => p.tileId)).toEqual(["nutrition", "health-lab"]);
+    expect(toddler.map((p) => p.tileId)).toEqual(["nutrition", "health-lab"]);
+  });
+
+  it("intersects Help quiet paths with Hub visibility at infant and school ages", () => {
+    const infantVisible = visibleHelpTileIdsForAge(11);
+    expect(infantVisible).toContain("speech-coach");
+    expect(infantVisible).not.toContain("ptm-prep");
+    expect(infantVisible).not.toContain("life-skills");
+
+    const infantHelp = resolveQuietPathsForRoom("help", {
+      isInfant: true,
+      visibleTileIds: infantVisible,
+    });
+    expect(infantHelp.map((p) => p.id)).toEqual(["emotional", "speech-coach"]);
+
+    const schoolVisible = visibleHelpTileIdsForAge(72);
+    expect(schoolVisible).toContain("ptm-prep");
+    expect(schoolVisible).toContain("life-skills");
+    const schoolHelp = resolveQuietPathsForRoom("help", {
+      isInfant: false,
+      visibleTileIds: schoolVisible,
+    });
+    expect(schoolHelp.map((p) => p.id)).toEqual([
+      "emotional",
+      "speech-coach",
+      "ptm-prep",
+      "life-skills",
+    ]);
   });
 });

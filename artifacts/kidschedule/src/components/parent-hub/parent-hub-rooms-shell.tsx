@@ -49,6 +49,7 @@ import {
   isRoomLivingPeerRoom,
   type RoomLivingPeerRoom,
 } from "@/lib/parent-hub/room-living";
+import { isUrlSafeRoomTileId } from "@/lib/parent-hub/eligibility";
 import "@/pages/first-experience-material.css";
 import "./parent-hub-living-room.css";
 
@@ -113,6 +114,11 @@ export type ParentHubRoomsShellProps = {
    * When provided, skips equal peer destination catalogues for those rooms.
    */
   renderRoomLivingStream?: (api: RoomLivingStreamRenderApi) => ReactNode;
+  /**
+   * Sync the parenting-hub URL when a room module opens or closes.
+   * Synthetic stream ids are reported as null (keep the room hash).
+   */
+  onDeepenTile?: (tileId: string | null) => void;
   homeHref?: string;
 };
 
@@ -149,6 +155,7 @@ export function ParentHubRoomsShell({
   renderGrowStream,
   renderAskAmyStream,
   renderRoomLivingStream,
+  onDeepenTile,
   homeHref = "/dashboard",
 }: ParentHubRoomsShellProps) {
   const { t } = useTranslation();
@@ -257,6 +264,10 @@ export function ParentHubRoomsShell({
     isInfant,
   ]);
 
+  const announceDeepen = (tileId: string | null) => {
+    onDeepenTile?.(tileId && isUrlSafeRoomTileId(tileId) ? tileId : null);
+  };
+
   const selectDestination = (dest: ResolvedDestination) => {
     if (dest.kind === "single") {
       // Ask Amy living — companionship room for Ask Amy + Emotional.
@@ -272,6 +283,7 @@ export function ParentHubRoomsShell({
         setSelectedTileId(closing ? null : ASK_AMY_STREAM_TILE_ID);
         setAskAmyPath(null);
         setGrowDeepenTileId(null);
+        announceDeepen(closing ? null : ASK_AMY_STREAM_TILE_ID);
         if (!closing) setPathCompleted(true);
         return;
       }
@@ -280,6 +292,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : tileId);
       setGrowDeepenTileId(null);
+      announceDeepen(closing ? null : tileId);
       if (!closing && tileId) setPathCompleted(true);
       return;
     }
@@ -291,6 +304,7 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : GUIDANCE_STREAM_TILE_ID);
       setGrowDeepenTileId(null);
+      announceDeepen(null);
       if (!closing) setPathCompleted(true);
       return;
     }
@@ -302,12 +316,14 @@ export function ParentHubRoomsShell({
       setOpenDestinationId(closing ? null : dest.id);
       setSelectedTileId(closing ? null : GROW_STREAM_TILE_ID);
       setGrowDeepenTileId(null);
+      announceDeepen(null);
       if (!closing) setPathCompleted(true);
       return;
     }
     setOpenDestinationId((prev) => (prev === dest.id ? null : dest.id));
     setSelectedTileId(null);
     setGrowDeepenTileId(null);
+    announceDeepen(null);
   };
 
   const selectMember = (tileId: string, destId: string) => {
@@ -315,6 +331,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destId);
     setSelectedTileId(closing ? null : tileId);
     setGrowDeepenTileId(null);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -323,6 +340,7 @@ export function ParentHubRoomsShell({
     const destId = destinationIdForMomentsPath(momentsPathForTile(tileId));
     setOpenDestinationId(closing ? null : destId);
     setSelectedTileId(closing ? null : tileId);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -331,6 +349,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId("grow");
     setSelectedTileId(GROW_STREAM_TILE_ID);
     setGrowDeepenTileId(closing ? null : tileId);
+    announceDeepen(closing ? null : tileId);
     if (!closing) setPathCompleted(true);
   };
 
@@ -338,6 +357,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(destinationIdForAskAmyPath(pathId));
     setSelectedTileId(ASK_AMY_STREAM_TILE_ID);
     setAskAmyPath(pathId);
+    announceDeepen(pathId === "feelings" ? "emotional" : "amy-ai");
     setPathCompleted(true);
   };
 
@@ -369,6 +389,7 @@ export function ParentHubRoomsShell({
       setAskAmyPath(null);
     }
     if (!closing) setPathCompleted(true);
+    announceDeepen(closing ? null : openTile);
   };
 
   const clearDestination = () => {
@@ -376,6 +397,7 @@ export function ParentHubRoomsShell({
     setOpenDestinationId(null);
     setGrowDeepenTileId(null);
     setAskAmyPath(null);
+    announceDeepen(null);
   };
 
   const renderQuietDestination = (tileId: string) => {

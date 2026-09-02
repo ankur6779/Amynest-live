@@ -1,3 +1,4 @@
+import { isUrlSafeRoomTileId } from "@/lib/parent-hub/eligibility";
 import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/rooms";
 
 /** Deep links from routines → Parent Hub activity tiles. */
@@ -156,6 +157,31 @@ export function parentingHubHashForRoom(roomId: string): string {
 
 export function parentingHubHashForTile(tileId: string): string {
   return `#tile-${tileId}`;
+}
+
+/** Room doors hash, or a real tile hash — never a synthetic stream id. */
+export function resolveRoomsDeepLinkHash(args: {
+  room: ParentHubRoomId | null;
+  tileId: string | null | undefined;
+}): string {
+  if (args.tileId && isUrlSafeRoomTileId(args.tileId)) {
+    return parentingHubHashForTile(args.tileId);
+  }
+  if (args.room) return parentingHubHashForRoom(args.room);
+  return "";
+}
+
+/**
+ * Child switch must not keep a previous child's module hash.
+ * Returns the replacement hash, or null when the URL should stay as-is.
+ */
+export function roomsHashAfterChildSwitch(args: {
+  activeRoom: ParentHubRoomId | null;
+  currentHash?: string;
+}): string | null {
+  const parsed = parseParentingHubDeepLink(args.currentHash);
+  if (!parsed?.tileId) return null;
+  return args.activeRoom ? parentingHubHashForRoom(args.activeRoom) : "";
 }
 
 function parentingHubUrlWithHash(hash: string): string {

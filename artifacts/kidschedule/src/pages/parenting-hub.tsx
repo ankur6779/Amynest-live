@@ -68,7 +68,8 @@ import {
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
-import { dispatchInfantHubOpenSection, parseParentingHubDeepLink, pushParentingHubLocationHash, replaceParentingHubLocationHash } from "@/lib/hub-activity-cross-link";
+import { dispatchInfantHubOpenSection, parseParentingHubDeepLink, parentingHubHashForRoom, parentingHubHashForTile, pushParentingHubLocationHash, replaceParentingHubLocationHash, resolveRoomsDeepLinkHash, roomsHashAfterChildSwitch } from "@/lib/hub-activity-cross-link";
+import { isUrlSafeRoomTileId } from "@/lib/parent-hub/eligibility";
 import {
   getBirthSkyViewerEmail,
   isBirthSkyHubTileEnabled,
@@ -1105,12 +1106,20 @@ function ParentingHubPage() {
   const enterRoom = (roomId: ParentHubRoomId) => {
     setFocusTileId(null);
     setActiveRoom(roomId);
-    pushParentingHubLocationHash(`#${roomId}`);
+    pushParentingHubLocationHash(parentingHubHashForRoom(roomId));
   };
   const exitRoom = () => {
     setFocusTileId(null);
     setActiveRoom(null);
     replaceParentingHubLocationHash("");
+  };
+
+  const deepenRoomsTile = (tileId: string | null) => {
+    const nextFocus = tileId && isUrlSafeRoomTileId(tileId) ? tileId : null;
+    setFocusTileId(nextFocus);
+    pushParentingHubLocationHash(
+      resolveRoomsDeepLinkHash({ room: activeRoom, tileId: nextFocus }),
+    );
   };
 
   const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
@@ -1125,10 +1134,10 @@ function ParentingHubPage() {
         roomForTile(tileId) ?? roomForLegacyGroup(group) ?? ("help" as ParentHubRoomId);
       setActiveRoom(room);
       setFocusTileId(tileId ?? null);
-      if (tileId) {
-        replaceParentingHubLocationHash(`#tile-${tileId}`);
+      if (tileId && isUrlSafeRoomTileId(tileId)) {
+        replaceParentingHubLocationHash(parentingHubHashForTile(tileId));
       } else {
-        replaceParentingHubLocationHash(`#${room}`);
+        replaceParentingHubLocationHash(parentingHubHashForRoom(room));
       }
       requestAnimationFrame(() => {
         if (tileId) {
@@ -1241,6 +1250,13 @@ function ParentingHubPage() {
     setSelectedChildId(id);
     setFocusTileId(null);
     if (typeof window !== "undefined") {
+      const nextHash = roomsHashAfterChildSwitch({
+        activeRoom,
+        currentHash: window.location.hash,
+      });
+      if (nextHash != null) {
+        replaceParentingHubLocationHash(nextHash);
+      }
       window.localStorage.setItem(STORAGE_KEY, String(id));
       window.dispatchEvent(
         new CustomEvent("amynest:active-child-changed", { detail: { childId: id } }),
@@ -2320,6 +2336,7 @@ function ParentingHubPage() {
               onEnterRoom={enterRoom}
               onExitRoom={exitRoom}
               focusTileId={focusTileId}
+              onDeepenTile={deepenRoomsTile}
               visibleTileIds={[
                 ...forYouStandaloneFeatured.map((s) => s.id),
                 ...todayTiles.map((s) => s.id),

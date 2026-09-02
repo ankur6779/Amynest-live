@@ -45,6 +45,23 @@ describe("isHubSectionVisible", () => {
     ).toBe(true);
   });
 
+  it("applies Help month/band gates at the published Rooms boundaries", () => {
+    const speech = { id: "speech-coach", bands: ["0-2", "2-4", "4-6", "6-8"] as const };
+    const ptm = { id: "ptm-prep", bands: ["4-6", "6-8", "8-10", "10-12", "12-15"] as const };
+    const life = { id: "life-skills", bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"] as const };
+
+    expect(isHubSectionVisible(speech, "0-2", 11)).toBe(true);
+    expect(isHubSectionVisible(speech, "0-2", 23)).toBe(true);
+    expect(isHubSectionVisible(ptm, "0-2", 23)).toBe(false);
+    expect(isHubSectionVisible(life, "0-2", 23)).toBe(false);
+    expect(isHubSectionVisible({ id: "infant-hub", bands: ["0-2"] }, "0-2", 23)).toBe(true);
+    expect(isHubSectionVisible({ id: "infant-hub", bands: ["0-2"] }, "2-4", 24)).toBe(false);
+    expect(isHubSectionVisible(ptm, "2-4", 24)).toBe(true);
+    expect(isHubSectionVisible(life, "2-4", 24)).toBe(true);
+    expect(isHubSectionVisible(ptm, "2-4", 35)).toBe(true);
+    expect(isHubSectionVisible(ptm, "4-6", 36)).toBe(true);
+  });
+
   it("keeps infant band + month rules below 24 months", () => {
     expect(
       isHubSectionVisible(

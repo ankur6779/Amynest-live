@@ -32,6 +32,7 @@
     "test:e2e:birth-sky-rc2": "playwright test --config playwright.config.birth-sky-rc2.ts",
     "test:e2e:gaming-hub-certification": "playwright test --config playwright.config.gaming-hub-certification.ts",
     "cert:gaming-hub": "tsx scripts/certify-gaming-hub-games.mts",
+    "test:e2e:rooms": "playwright test --config playwright.config.rooms-living.ts",
     "test:e2e:health-lab": "playwright test --config playwright.config.health-lab.ts",
     "test:e2e:startup": "playwright test --config playwright.config.startup.ts",
     "test:e2e:onboarding": "playwright test --config playwright.config.onboarding.ts",

@@ -3,7 +3,10 @@ import {
   parseParentingHubDeepLink,
   parentingHubHashForRoom,
   parentingHubHashForTile,
+  resolveRoomsDeepLinkHash,
+  roomsHashAfterChildSwitch,
 } from "./hub-activity-cross-link";
+import { GROW_STREAM_TILE_ID } from "@/lib/grow/living-room";
 
 describe("parseParentingHubDeepLink", () => {
   it("parses a simple tile hash", () => {
@@ -61,5 +64,38 @@ describe("parseParentingHubDeepLink", () => {
       group: "health",
       tileId: "nutrition",
     });
+  });
+
+  it("recovers unknown hashes without a blank-screen target", () => {
+    expect(parseParentingHubDeepLink("nonexistent")).toBeNull();
+    expect(parseParentingHubDeepLink("tile-invalid")).toEqual({
+      group: "creativity",
+      tileId: "invalid",
+    });
+  });
+
+  it("keeps synthetic stream ids off the URL", () => {
+    expect(
+      resolveRoomsDeepLinkHash({ room: "understand", tileId: GROW_STREAM_TILE_ID }),
+    ).toBe("#understand");
+    expect(
+      resolveRoomsDeepLinkHash({ room: "care", tileId: "nutrition" }),
+    ).toBe("#tile-nutrition");
+    expect(resolveRoomsDeepLinkHash({ room: null, tileId: null })).toBe("");
+  });
+
+  it("clears a module hash when the selected child changes", () => {
+    expect(
+      roomsHashAfterChildSwitch({
+        activeRoom: "care",
+        currentHash: "#tile-infant-hub",
+      }),
+    ).toBe("#care");
+    expect(
+      roomsHashAfterChildSwitch({
+        activeRoom: "help",
+        currentHash: "#help",
+      }),
+    ).toBeNull();
   });
 });

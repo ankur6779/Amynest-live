@@ -435,6 +435,37 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.queryByTestId("parent-hub-module-unavailable")).toBeNull();
   });
 
+  it("announces URL-safe deepen tiles when a Care path opens", () => {
+    const onDeepenTile = vi.fn();
+    render(
+      <ParentHubRoomsShell
+        childName="Aria"
+        isInfant={false}
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        onDeepenTile={onDeepenTile}
+        visibleTileIds={["nutrition", "health-lab"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room, onSelectTile }) => (
+          <div data-testid={`${room}-living-stream`}>
+            <button
+              type="button"
+              data-testid="care-quiet-nutrition"
+              onClick={() => onSelectTile("nutrition")}
+            >
+              Nutrition
+            </button>
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("care-quiet-nutrition"));
+    expect(screen.getByTestId("mod-nutrition")).toBeTruthy();
+    expect(onDeepenTile).toHaveBeenCalledWith("nutrition");
+  });
+
   it("clears an open module when the selected child changes", () => {
     const { rerender } = render(
       <ParentHubRoomsShell

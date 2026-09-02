@@ -19,6 +19,11 @@
  * than removed from the room.
  */
 
+import { getAgeBand } from "@/lib/age-bands";
+import {
+  isHubSectionVisible,
+  type HubSectionVisibilityInput,
+} from "@/lib/hub-visibility";
 import type { RoomLivingPath, RoomLivingPeerRoom } from "@/lib/parent-hub/room-living";
 import { quietPathsForRoom } from "@/lib/parent-hub/room-living";
 import { ASK_AMY_STREAM_TILE_ID } from "@/lib/ask-amy/living-room";
@@ -96,4 +101,29 @@ export function resolveQuietPathsForRoom(
 export function isCareNutritionVisible(opts: { isInfant: boolean }): boolean {
   void opts;
   return true;
+}
+
+/**
+ * Help quiet-path Hub specs — must stay aligned with parenting-hub section
+ * `alwaysCurrent` / `bands` so Rooms never shows a tile Hub would hide.
+ */
+export const HELP_ROOM_HUB_SECTIONS: readonly HubSectionVisibilityInput[] = [
+  { id: "amy-ai", alwaysCurrent: true },
+  { id: "emotional", alwaysCurrent: true },
+  { id: "speech-coach", bands: ["0-2", "2-4", "4-6", "6-8"] },
+  { id: "ptm-prep", bands: ["4-6", "6-8", "8-10", "10-12", "12-15"] },
+  { id: "life-skills", bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"] },
+];
+
+export function ageBandFromTotalMonths(ageMonths: number) {
+  const safe = Number.isFinite(ageMonths) ? Math.max(0, ageMonths) : 0;
+  return getAgeBand(Math.floor(safe / 12), safe % 12);
+}
+
+/** Hub-visible Help tiles for this age — Rooms intersects this set. */
+export function visibleHelpTileIdsForAge(ageMonths: number): string[] {
+  const band = ageBandFromTotalMonths(ageMonths);
+  return HELP_ROOM_HUB_SECTIONS.filter((section) =>
+    isHubSectionVisible(section, band, ageMonths),
+  ).map((section) => section.id);
 }
