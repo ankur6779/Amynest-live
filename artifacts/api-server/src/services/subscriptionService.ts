@@ -1040,6 +1040,14 @@ export async function activateSubscription(
       subscriptionState: "ACTIVE",
       expiresAt: opts.periodEnd ?? null,
       currentPeriodEnd: opts.periodEnd ?? null,
+      // Resume / re-activate must clear cancel+expiry leftovers. Leaving
+      // cancelAtPeriodEnd=1 after subscription.resumed made GET /subscription
+      // still report a scheduled cancel and blocked a fresh cancel as duplicate.
+      cancelAtPeriodEnd: 0,
+      cancelledAt: null,
+      expiredAt: null,
+      gracePeriodExpiresAt: null,
+      syncError: null,
       updatedAt: new Date(),
     })
     .where(eq(subscriptionsTable.userId, userId))
