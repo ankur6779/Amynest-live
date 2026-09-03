@@ -106,6 +106,19 @@ export function getPendingPlaySyncCount(): number {
 }
 
 /**
+ * Drop the device-global offline play queue on sign-out / account switch.
+ * Otherwise flushPendingPlaySync posts the prior user's plays under the next uid.
+ */
+export function clearPendingPlaySync(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* private mode */
+  }
+}
+
+/**
  * Flush pending server play records. Best-effort; never throws to callers.
  */
 export async function flushPendingPlaySync(
