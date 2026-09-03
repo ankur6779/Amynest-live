@@ -90,3 +90,21 @@ export function applyWalletSnapshot(snapshot: WalletSnapshotPayload): void {
     });
   }
 }
+
+/**
+ * Drop device-global gaming wallet keys on sign-out / account switch.
+ * Leftover points/unlocks/playLog would otherwise POST via syncWalletFromClient
+ * under the next uid (Math.max merge + unlock union → permanent wrong-account writes).
+ */
+export function clearLocalGamingWallet(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(POINTS_KEY);
+    localStorage.removeItem(UNLOCKED_KEY);
+    localStorage.removeItem(PLAY_LOG_KEY);
+    localStorage.removeItem(SKILLS_KEY);
+    localStorage.removeItem(LEDGER_KEY);
+  } catch {
+    /* private mode */
+  }
+}
