@@ -42,16 +42,16 @@ jobs:
           # AMYNEST_CONTENT_FACTORY_REF=fix/p0-production-integrity
           ref: ${{ vars.AMYNEST_CONTENT_FACTORY_REF || github.ref_name }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install
         working-directory: .
