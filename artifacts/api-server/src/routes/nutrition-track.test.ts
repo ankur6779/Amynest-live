@@ -123,4 +123,50 @@ describe("nutrition-track routes — smoke", { skip: !dbIntegrationOk }, () => {
     const res = await fetch(`${baseUrl}/nutrition/daily-score?childId=${otherChildId}&date=${TODAY}`);
     assert.equal(res.status, 403);
   });
+
+  it("keeps newer server row when stale clientUpdatedAt is provided", async () => {
+    const first = await fetch(`${baseUrl}/nutrition/daily-score`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        dateKey: TODAY,
+        checklist: {
+          breakfast: true,
+          protein: true,
+          dairy: true,
+          greens: true,
+          fruit: true,
+          water: true,
+        },
+        clientUpdatedAt: Date.now(),
+      }),
+    });
+    assert.equal(first.status, 200);
+    const firstJson = (await first.json()) as {
+      log: { score: number; updatedAt: string; checklist: Record<string, boolean> };
+    };
+    assert.ok(firstJson.log.score >= 75);
+
+    const staleTs = Date.parse(firstJson.log.updatedAt) - 60_000;
+    const stale = await fetch(`${baseUrl}/nutrition/daily-score`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        dateKey: TODAY,
+        checklist: { breakfast: true },
+        clientUpdatedAt: staleTs,
+      }),
+    });
+    assert.equal(stale.status, 200);
+    const staleJson = (await stale.json()) as {
+      keptServer?: boolean;
+      log: { score: number; checklist: Record<string, boolean> };
+    };
+    assert.equal(staleJson.keptServer, true);
+    assert.equal(staleJson.log.score, firstJson.log.score);
+    assert.equal(staleJson.log.checklist.water, true);
+    assert.equal(staleJson.log.checklist.protein, true);
+  });
 });
