@@ -95,8 +95,10 @@ export async function saveDailyScore(
   userId: string,
   dateKey: string,
   checklist: Record<string, boolean>,
+  clientUpdatedAtMs?: number,
 ): Promise<
-  { ok: false; error: "forbidden" } | { ok: true; log: ReturnType<typeof rowToPayload> }
+  | { ok: false; error: "forbidden" }
+  | { ok: true; log: ReturnType<typeof rowToPayload>; keptServer?: boolean }
 > {
   if (!(await verifyChildOwner(childId, userId))) {
     return { ok: false, error: "forbidden" };
@@ -104,6 +106,29 @@ export async function saveDailyScore(
 
   const sanitized = sanitizeChecklist(checklist);
   const { score, minDayMet } = computeScoreFromChecklist(sanitized);
+
+  if (
+    typeof clientUpdatedAtMs === "number" &&
+    Number.isFinite(clientUpdatedAtMs) &&
+    clientUpdatedAtMs > 0
+  ) {
+    const existing = await db
+      .select()
+      .from(nutritionDailyLogTable)
+      .where(
+        and(
+          eq(nutritionDailyLogTable.childId, childId),
+          eq(nutritionDailyLogTable.dateKey, dateKey),
+        ),
+      )
+      .limit(1);
+
+    const row = existing[0];
+    if (row && row.updatedAt.getTime() > clientUpdatedAtMs) {
+      // Stale offline flush / migration must not overwrite a newer multi-device write.
+      return { ok: true, log: rowToPayload(row), keptServer: true };
+    }
+  }
 
   const [row] = await db
     .insert(nutritionDailyLogTable)

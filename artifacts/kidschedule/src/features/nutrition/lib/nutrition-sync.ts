@@ -82,27 +82,88 @@ export function configureNutritionSync(fetcher: AuthFetchFn): void {
   globalFetch = fetcher;
   if (typeof window === "undefined") return;
   if (!onlineListenerAttached) {
+    // Hydrate first so reconnect applies LWW before any queued PUT can
+    // overwrite a newer multi-device server write.
     window.addEventListener("online", () => {
-      for (const id of hydrated) void flushNutritionSync(id);
+      for (const id of hydrated) void hydrateNutritionScore(id);
     });
     onlineListenerAttached = true;
   }
 }
 
+type PutDailyScoreResult = "applied" | "kept_server" | "failed";
+
 async function putDailyScore(
   childId: number,
   dateKey: string,
   checklist: Record<string, boolean>,
-): Promise<boolean> {
+  clientUpdatedAtMs: number,
+): Promise<PutDailyScoreResult> {
   const fetcher = globalFetch;
-  if (!fetcher) return false;
+  if (!fetcher) return "failed";
 
   const res = await fetcher(getApiUrl("/api/nutrition/daily-score"), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ childId, dateKey, checklist }),
+    body: JSON.stringify({
+      childId,
+      dateKey,
+      checklist,
+      clientUpdatedAt: clientUpdatedAtMs > 0 ? clientUpdatedAtMs : Date.now(),
+    }),
   });
-  return res.ok;
+  if (!res.ok) return "failed";
+
+  try {
+    const json = await parseApiJson<{
+      keptServer?: boolean;
+      log?: {
+        dateKey: string;
+        checklist: Record<string, boolean>;
+        updatedAt?: string;
+      };
+    }>(res);
+    if (json.keptServer && json.log?.checklist) {
+      const serverTs = json.log.updatedAt ? Date.parse(json.log.updatedAt) : Date.now();
+      mergeServerDay(
+        childId,
+        json.log.dateKey,
+        sanitizeChecklist(json.log.checklist),
+        serverTs || Date.now(),
+      );
+      return "kept_server";
+    }
+  } catch {
+    /* response body optional for legacy OK */
+  }
+  return "applied";
+}
+
+async function fetchServerDayForLww(
+  childId: number,
+  dateKey: string,
+): Promise<{ checklist: Record<string, boolean>; updatedAtMs: number } | null> {
+  const fetcher = globalFetch;
+  if (!fetcher) return null;
+  try {
+    const res = await fetcher(
+      getApiUrl(`/api/nutrition/daily-score?childId=${childId}&date=${dateKey}`),
+    );
+    if (!res.ok) return null;
+    const json = await parseApiJson<{
+      log?: {
+        checklist?: Record<string, boolean>;
+        updatedAt?: string;
+      } | null;
+    }>(res);
+    if (!json.log?.checklist) return { checklist: {}, updatedAtMs: 0 };
+    return {
+      checklist: sanitizeChecklist(json.log.checklist),
+      updatedAtMs: json.log.updatedAt ? Date.parse(json.log.updatedAt) : 0,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function migrateLocalHistoryToServer(childId: number): Promise<boolean> {
@@ -126,8 +187,18 @@ async function migrateLocalHistoryToServer(childId: number): Promise<boolean> {
 
   let allOk = true;
   for (const [dateKey, checklist] of daysToUpload) {
-    const ok = await putDailyScore(childId, dateKey, checklist);
-    if (!ok) allOk = false;
+    const localTs = getDayUpdatedAt(childId, dateKey) || Date.now();
+    const server = await fetchServerDayForLww(childId, dateKey);
+    if (
+      server &&
+      Object.keys(server.checklist).length > 0 &&
+      !shouldPushLocalToServer(localTs, server.updatedAtMs, true)
+    ) {
+      mergeServerDay(childId, dateKey, server.checklist, server.updatedAtMs || Date.now());
+      continue;
+    }
+    const result = await putDailyScore(childId, dateKey, checklist, localTs);
+    if (result === "failed") allOk = false;
   }
 
   if (!allOk) return false;
@@ -181,7 +252,7 @@ export async function hydrateNutritionScore(
             Object.keys(localChecklist).length > 0,
           )
         ) {
-          await putDailyScore(childId, today, localChecklist);
+          await putDailyScore(childId, today, localChecklist, localDayTs || Date.now());
         } else {
           mergeServerDay(childId, json.log.dateKey, serverChecklist, serverTs || Date.now());
         }
@@ -250,8 +321,29 @@ export async function flushNutritionSync(childId: number): Promise<boolean> {
       if (Object.keys(checklist).length === 0) {
         continue;
       }
-      const ok = await putDailyScore(childId, entry.dateKey, checklist);
-      if (!ok) {
+
+      const localTs = getDayUpdatedAt(childId, entry.dateKey) || entry.enqueuedAt || Date.now();
+      const server = await fetchServerDayForLww(childId, entry.dateKey);
+      if (server && Object.keys(server.checklist).length > 0) {
+        if (
+          !shouldPushLocalToServer(
+            localTs,
+            server.updatedAtMs,
+            Object.keys(checklist).length > 0,
+          )
+        ) {
+          mergeServerDay(
+            childId,
+            entry.dateKey,
+            server.checklist,
+            server.updatedAtMs || Date.now(),
+          );
+          continue;
+        }
+      }
+
+      const result = await putDailyScore(childId, entry.dateKey, checklist, localTs);
+      if (result === "failed") {
         remaining.push(entry);
       }
     }
