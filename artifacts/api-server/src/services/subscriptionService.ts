@@ -505,6 +505,11 @@ export async function extendBonusPremium(
   days: number,
   dbExec: DbExec = db,
 ): Promise<Date> {
+  // Writes must target the canonical owner — getOrCreateSubscription already
+  // reads via resolveSubscriptionOwnerUserId, but a raw WHERE userId would
+  // update an orphan Firebase uid row (or 0 rows) while entitlements still
+  // resolve to the alias owner.
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId, dbExec);
   const sub = await getOrCreateSubscription(userId, dbExec);
   const now = Date.now();
   const base = Math.max(now, sub.bonusExpiresAt ? sub.bonusExpiresAt.getTime() : 0);
@@ -512,7 +517,7 @@ export async function extendBonusPremium(
   await dbExec
     .update(subscriptionsTable)
     .set({ bonusExpiresAt: next, updatedAt: new Date() })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
   return next;
 }
 
@@ -982,6 +987,11 @@ export async function activateSubscription(
   } = {},
   dbExec: DbExec = db,
 ): Promise<Subscription> {
+  // Canonicalize before write. getOrCreateSubscription already reads the
+  // alias owner, but UPDATE must use the same id — otherwise Razorpay notes
+  // stamped with a recovered Firebase uid activate an orphan row (or 0 rows)
+  // while getEntitlements still reads the aliased owner as FREE.
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId, dbExec);
   const existing = await getOrCreateSubscription(userId, dbExec);
   // Idempotency: if the subscription is already active on the same plan and
   // the same provider subscription id, and the period_end is not moving
@@ -1042,7 +1052,7 @@ export async function activateSubscription(
       currentPeriodEnd: opts.periodEnd ?? null,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
     .returning();
 
   // Referral system hook: mark this user's referral row as paid (no-op if
@@ -1058,5 +1068,5 @@ export async function activateSubscription(
     // best-effort
   }
 
-  return updated;
+  return updated ?? existing;
 }
