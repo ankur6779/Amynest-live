@@ -12,6 +12,7 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import {
   getOrCreateSubscription,
   isPremiumNow,
+  isPremiumSubscriberNow,
   extendBonusPremium,
 } from "./subscriptionService";
 import { createGiftToken } from "./giftTokenService";
@@ -372,7 +373,11 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
   const toGrant = earned - already;
   if (toGrant <= 0) return 0;
 
-  const isPaid = isPremiumNow(sub);
+  // Gift tokens are for store-paid subscribers only. Bonus / trial / manual
+  // premium must keep stacking personal bonus days — isPremiumNow is wrong here
+  // because bonusExpiresAt makes free referrers look "paid", so later milestones
+  // become self-owned gifts that self_redeem blocks from personal use.
+  const isPaidSubscriber = isPremiumSubscriberNow(sub);
 
   const granted = await db.transaction(async (tx) => {
     const updated = await tx
@@ -390,20 +395,20 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
       .returning({ id: subscriptionsTable.id });
     if (updated.length === 0) return 0;
 
-    if (!isPaid) {
+    if (!isPaidSubscriber) {
       await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
     }
     return toGrant;
   });
 
-  if (granted > 0 && isPaid) {
+  if (granted > 0 && isPaidSubscriber) {
     for (let i = 0; i < granted; i++) {
       await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS);
     }
   }
 
   if (granted > 0) {
-    await notifyReferralRewardUnlocked(referrerUserId, granted, already + granted, isPaid);
+    await notifyReferralRewardUnlocked(referrerUserId, granted, already + granted, isPaidSubscriber);
   }
 
   return granted;
