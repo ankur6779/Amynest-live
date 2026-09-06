@@ -191,7 +191,16 @@ async function resolveLearningHubContext(
   };
 }
 
-/** Merge smart-study + speech + life-skills snapshots into section progress on read. */
+/**
+ * Merge smart-study + speech + life-skills snapshots into section progress on READ only.
+ *
+ * Must never be applied before a learning_progress write: Smart Study
+ * `currentLevel` (adaptive 1–6 difficulty) and rolling `accuracyRecent` (≤20)
+ * are a different domain than Learning Progress section `level` / counters.
+ * Blind replace permanently regresses mastery unlocks (see completeLearningActivity).
+ *
+ * Enrichment is monotonic (Math.max) so a read overlay cannot understate stored progress.
+ */
 async function enrichSectionProgress(
   userId: string,
   childId: number,
@@ -219,11 +228,12 @@ async function enrichSectionProgress(
     const subject = String(r.subject ?? "");
     if (subject === "math" || subject === "english") {
       const key: SectionKey = subject === "math" ? "math" : "phonics";
+      const prev = out[key];
       out[key] = {
-        level: r.currentLevel ?? 1,
-        masteryPct: Math.max(out[key]?.masteryPct ?? 0, pct),
-        activitiesCompleted: attempts.length,
-        lastActivityId: null,
+        level: Math.max(prev?.level ?? 1, r.currentLevel ?? 1),
+        masteryPct: Math.max(prev?.masteryPct ?? 0, pct),
+        activitiesCompleted: Math.max(prev?.activitiesCompleted ?? 0, attempts.length),
+        lastActivityId: prev?.lastActivityId ?? null,
       };
     }
   }
@@ -244,11 +254,13 @@ async function enrichSectionProgress(
       scored.length > 0
         ? scored.reduce((s, l) => s + (l.clarityScore ?? 0), 0) / scored.length
         : 40;
+    const prev = out.speech;
+    const derivedLevel = Math.min(7, Math.floor(avg / 15) + 1);
     out.speech = {
-      level: Math.min(7, Math.floor(avg / 15) + 1),
-      masteryPct: Math.min(100, Math.round(avg)),
-      activitiesCompleted: speechLogs.length,
-      lastActivityId: null,
+      level: Math.max(prev?.level ?? 1, derivedLevel),
+      masteryPct: Math.max(prev?.masteryPct ?? 0, Math.min(100, Math.round(avg))),
+      activitiesCompleted: Math.max(prev?.activitiesCompleted ?? 0, speechLogs.length),
+      lastActivityId: prev?.lastActivityId ?? null,
     };
   }
 
@@ -266,11 +278,13 @@ async function enrichSectionProgress(
     if (Array.isArray(r.completedDates)) lsCount += r.completedDates.length;
   }
   if (lsCount > 0) {
+    const prev = out.lifeSkills;
+    const derivedLevel = Math.min(10, Math.floor(lsCount / 5) + 1);
     out.lifeSkills = {
-      level: Math.min(10, Math.floor(lsCount / 5) + 1),
-      masteryPct: Math.min(100, lsCount * 3),
-      activitiesCompleted: lsCount,
-      lastActivityId: null,
+      level: Math.max(prev?.level ?? 1, derivedLevel),
+      masteryPct: Math.max(prev?.masteryPct ?? 0, Math.min(100, lsCount * 3)),
+      activitiesCompleted: Math.max(prev?.activitiesCompleted ?? 0, lsCount),
+      lastActivityId: prev?.lastActivityId ?? null,
     };
   }
 
@@ -367,11 +381,9 @@ export async function completeLearningActivity(
   const row = await ensureLearningProgressRow(userId, childId);
   const prevProfile = buildLearningProfile(childId, rowToProfile(row), child.age);
   prevProfile.journeyDay = hubStatus.journeyDay;
-  prevProfile.sectionProgress = await enrichSectionProgress(
-    userId,
-    childId,
-    prevProfile.sectionProgress,
-  );
+  // Do NOT enrichSectionProgress here — that overlay is read-only. Persisting
+  // Smart Study / speech / life-skills snapshots used to permanently regress
+  // section level + activitiesCompleted (and derived mastery/unlocks).
 
   // Phase 6 anti-spam — gate credit using a server-side recent activity log
   // derived from the canonical `completedActivities` list. We treat the last
