@@ -66,8 +66,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg python3-pil python3-pip
-          python3 -c "from PIL import Image, ImageDraw, ImageFont, ImageFilter; print('pillow-ok')"
+          sudo apt-get install -y -qq ffmpeg python3-pil python3-numpy python3-pip
+          python3 -c "from PIL import Image, ImageDraw, ImageFont, ImageFilter; import numpy as np; print('pillow-numpy-ok', np.__version__)"
           ffmpeg -version | head -1
 
       # Repo historically tracked a laptop-absolute symlink for .amynest-assets.
