@@ -88,10 +88,14 @@ export function peekNextGolden(state: GoldenQueueState): {
       n += 1;
       continue;
     }
+    // FAILED stays on the same golden (do not skip ahead). Retry is allowed.
     if (prior?.status === "FAILED") {
-      throw new Error(
-        `Queue blocked on FAILED ${id}: ${prior.note ?? "fix production — do not skip; resume/fix before advancing"}`,
-      );
+      const seed = allGoldenSeeds()[n - 1];
+      if (!seed) {
+        throw new Error(`No golden seed for number ${n}`);
+      }
+      const script = buildGoldenScript(seed, n);
+      return { goldenNum: n, goldenScriptId: id, script };
     }
     const inFlight = prior && !["QUEUED", "PUBLISHED", "FAILED"].includes(prior.status);
     if (inFlight) {
