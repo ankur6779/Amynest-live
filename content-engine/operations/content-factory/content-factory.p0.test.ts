@@ -15,8 +15,10 @@ import {
 import {
   buildIdempotencyKey,
   evaluateAtIstWallClock,
+  evaluateFactorySchedule,
   listUpcomingOccurrences,
 } from "./schedule.js";
+import { DEFAULT_FACTORY_SCHEDULE } from "./types.js";
 import { runFactoryDryValidation } from "./runner.js";
 
 describe("Content Factory schedule (IST every 3 days)", () => {
@@ -47,6 +49,24 @@ describe("Content Factory schedule (IST every 3 days)", () => {
     assert.ok(list[0]?.includes("2026-09-02"));
     assert.ok(list[1]?.includes("2026-09-05"));
     assert.ok(list[2]?.includes("2026-09-08"));
+  });
+
+  it("cloudTolerant allows delayed GH wake on interval day", () => {
+    const utc = Date.UTC(2026, 8, 5, 15, 0, 0); // ~20:30 IST
+    const d = evaluateFactorySchedule(new Date(utc), DEFAULT_FACTORY_SCHEDULE, {
+      cloudTolerant: true,
+    });
+    assert.equal(d.shouldRun, true);
+    assert.equal(d.occurrenceDateKey, "2026-09-05");
+  });
+
+  it("cloudTolerant catch-up on Sep 7 uses latest due Sep 5", () => {
+    const utc = Date.UTC(2026, 8, 7, 16, 30, 0); // ~22:00 IST
+    const d = evaluateFactorySchedule(new Date(utc), DEFAULT_FACTORY_SCHEDULE, {
+      cloudTolerant: true,
+    });
+    assert.equal(d.shouldRun, true);
+    assert.equal(d.occurrenceDateKey, "2026-09-05");
   });
 });
 
@@ -81,7 +101,11 @@ describe("Content Factory dry-run", () => {
       assert.equal(report.kieVideoCalls, 0);
       assert.equal(report.kieVideoCredits, 0);
       assert.equal(report.nextGolden, "golden-014");
-      assert.equal(report.overall, "PASS", JSON.stringify(report.checks.filter((c) => !c.ok)));
+      assert.equal(
+        report.overall,
+        "PASS",
+        JSON.stringify(report.checks.filter((c) => !c.ok)),
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

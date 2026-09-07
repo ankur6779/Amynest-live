@@ -272,7 +272,9 @@ export async function runContentFactory(options: FactoryRunOptions = {}): Promis
   }
 
   const now = options.now ?? new Date();
-  const sched = evaluateFactorySchedule(now);
+  const sched = evaluateFactorySchedule(now, DEFAULT_FACTORY_SCHEDULE, {
+    cloudTolerant: true,
+  });
   if (!options.ignoreScheduleGate && !sched.shouldRun) {
     return {
       mode: "skipped",
@@ -284,7 +286,7 @@ export async function runContentFactory(options: FactoryRunOptions = {}): Promis
   const queuePath = defaultQueuePath(dataDir);
   const queue = loadQueue(queuePath);
   const next = peekNextGolden(queue);
-  const dateKey = productionDateKey(now);
+  const dateKey = sched.occurrenceDateKey ?? productionDateKey(now);
   const idempotencyKey = buildIdempotencyKey(next.goldenScriptId, dateKey);
   const existing = findProductionByIdempotency(queue, idempotencyKey);
   if (existing && (existing.status === "PUBLISHED" || existing.status === "RENDERING")) {

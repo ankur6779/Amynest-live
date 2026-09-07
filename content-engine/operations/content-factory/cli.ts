@@ -41,9 +41,11 @@ async function main(): Promise<void> {
 
   if (command === "tick") {
     // Scheduled wake-up: dry unless LIVE=1
+    const force = process.env.AMYNEST_CONTENT_FACTORY_IGNORE_SCHEDULE === "1";
     const result = await runContentFactory({
       dryRun: process.env.AMYNEST_CONTENT_FACTORY_LIVE !== "1",
       allowLiveSpend: process.env.AMYNEST_CONTENT_FACTORY_LIVE === "1",
+      ignoreScheduleGate: force,
     });
     console.log(result.message);
     if (result.report) console.log(formatDryRunConsole(result.report));

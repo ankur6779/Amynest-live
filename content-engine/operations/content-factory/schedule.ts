@@ -12,9 +12,20 @@ export interface ScheduleDecision {
   shouldRun: boolean;
   reason: string;
   occurrenceLocal: string | null;
+  /** YYYY-MM-DD of the due occurrence (for idempotency). */
+  occurrenceDateKey: string | null;
   nextOccurrenceLocal: string;
   dtstartLocal: string;
   daysSinceStart: number | null;
+}
+
+export interface ScheduleEvalOptions {
+  /**
+   * GitHub Actions cron is often delayed by minutes–hours.
+   * When true: run on/after localTime on an interval day, and catch up the
+   * latest due occurrence if earlier slots were missed.
+   */
+  cloudTolerant?: boolean;
 }
 
 function zonedYmdHm(date: Date, timeZone: string): {
@@ -131,12 +142,13 @@ export function listUpcomingOccurrences(
 
 /**
  * Decide whether a factory wake-up at `now` should produce.
- * Window: exact local hour:minute match (±0 minutes by default; allow same minute).
- * Interval: days since DTSTART divisible by intervalDays, and not before DTSTART.
+ * Default: exact local HH:mm on an INTERVAL day (offline dry-run proofs).
+ * cloudTolerant: allow delayed wakes + catch-up of the latest due occurrence.
  */
 export function evaluateFactorySchedule(
   now: Date = new Date(),
   config: FactoryScheduleConfig = DEFAULT_FACTORY_SCHEDULE,
+  options: ScheduleEvalOptions = {},
 ): ScheduleDecision {
   const start = parseLocalDate(config.dtstartDate);
   const startN = civilDayNumber(start.y, start.m, start.d);
@@ -145,12 +157,16 @@ export function evaluateFactorySchedule(
   const dtstartLocal = formatLocal(start.y, start.m, start.d, config.localTime);
   const upcoming = listUpcomingOccurrences(1, config, now);
   const nextOccurrenceLocal = upcoming[0] ?? dtstartLocal;
+  const [hh, mm] = config.localTime.split(":").map(Number);
+  const pastLocalTime =
+    z.hour > hh! || (z.hour === hh && z.minute >= mm!);
 
   if (nowN < startN) {
     return {
       shouldRun: false,
       reason: `Before DTSTART (${dtstartLocal}) — first production is ${nextOccurrenceLocal}`,
       occurrenceLocal: null,
+      occurrenceDateKey: null,
       nextOccurrenceLocal,
       dtstartLocal,
       daysSinceStart: null,
@@ -158,17 +174,64 @@ export function evaluateFactorySchedule(
   }
 
   const daysSinceStart = nowN - startN;
-  const onInterval = daysSinceStart % config.intervalDays === 0;
-  const [hh, mm] = config.localTime.split(":").map(Number);
-  const timeMatch = z.hour === hh && z.minute === mm;
 
+  if (options.cloudTolerant) {
+    // Latest occurrence day <= today; if today before localTime, use previous occurrence.
+    let dueN = startN;
+    while (dueN + config.intervalDays <= nowN) {
+      dueN += config.intervalDays;
+    }
+    if (dueN === nowN && !pastLocalTime) {
+      if (dueN === startN) {
+        return {
+          shouldRun: false,
+          reason: `Cloud gate: before first slot ${dtstartLocal}`,
+          occurrenceLocal: null,
+          occurrenceDateKey: null,
+          nextOccurrenceLocal,
+          dtstartLocal,
+          daysSinceStart,
+        };
+      }
+      dueN -= config.intervalDays;
+    }
+    const due = fromCivilDayNumber(dueN);
+    const dueKey = `${due.y}-${String(due.m).padStart(2, "0")}-${String(due.d).padStart(2, "0")}`;
+    const occurrenceLocal = formatLocal(due.y, due.m, due.d, config.localTime);
+    const dueElapsed = nowN > dueN || (nowN === dueN && pastLocalTime);
+    if (!dueElapsed) {
+      return {
+        shouldRun: false,
+        reason: `Cloud gate: waiting for ${occurrenceLocal}`,
+        occurrenceLocal,
+        occurrenceDateKey: dueKey,
+        nextOccurrenceLocal,
+        dtstartLocal,
+        daysSinceStart,
+      };
+    }
+    return {
+      shouldRun: true,
+      reason: `Cloud schedule due: ${occurrenceLocal} (tolerant wake; INTERVAL=${config.intervalDays})`,
+      occurrenceLocal,
+      occurrenceDateKey: dueKey,
+      nextOccurrenceLocal: listUpcomingOccurrences(1, config, now)[0] ?? nextOccurrenceLocal,
+      dtstartLocal,
+      daysSinceStart,
+    };
+  }
+
+  const onInterval = daysSinceStart % config.intervalDays === 0;
+  const timeMatch = z.hour === hh && z.minute === mm;
   const occurrenceLocal = formatLocal(z.year, z.month, z.day, config.localTime);
+  const occurrenceDateKey = `${z.year}-${String(z.month).padStart(2, "0")}-${String(z.day).padStart(2, "0")}`;
 
   if (!onInterval) {
     return {
       shouldRun: false,
       reason: `Not an INTERVAL=${config.intervalDays} day (daysSinceStart=${daysSinceStart})`,
       occurrenceLocal: null,
+      occurrenceDateKey: null,
       nextOccurrenceLocal,
       dtstartLocal,
       daysSinceStart,
@@ -180,7 +243,8 @@ export function evaluateFactorySchedule(
       shouldRun: false,
       reason: `On schedule day but wall clock ${String(z.hour).padStart(2, "0")}:${String(z.minute).padStart(2, "0")} ≠ ${config.localTime} ${config.timezone}`,
       occurrenceLocal,
-      nextOccurrenceLocal: timeMatch ? nextOccurrenceLocal : occurrenceLocal,
+      occurrenceDateKey,
+      nextOccurrenceLocal,
       dtstartLocal,
       daysSinceStart,
     };
@@ -190,7 +254,10 @@ export function evaluateFactorySchedule(
     shouldRun: true,
     reason: `Schedule match: ${occurrenceLocal} (RRULE FREQ=DAILY;INTERVAL=${config.intervalDays})`,
     occurrenceLocal,
-    nextOccurrenceLocal: listUpcomingOccurrences(1, config, new Date(now.getTime() + 60_000))[0] ?? nextOccurrenceLocal,
+    occurrenceDateKey,
+    nextOccurrenceLocal:
+      listUpcomingOccurrences(1, config, new Date(now.getTime() + 60_000))[0] ??
+      nextOccurrenceLocal,
     dtstartLocal,
     daysSinceStart,
   };
