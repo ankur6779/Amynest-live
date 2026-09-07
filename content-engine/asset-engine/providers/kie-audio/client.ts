@@ -72,11 +72,24 @@ async function downloadToFile(
   outputPath: string,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "AmyNestKieAudio/1.0" },
-    signal,
-  });
-  if (!res.ok) throw new Error(`KIE audio download ${res.status}`);
+  const headers: Record<string, string> = {
+    "User-Agent":
+      "Mozilla/5.0 (compatible; AmyNestKieAudio/1.1; +https://www.amynest.in)",
+    Accept: "*/*",
+    Referer: "https://kie.ai/",
+  };
+  const res = await fetch(url, { headers, signal });
+  if (!res.ok) {
+    throw new Error(
+      `KIE audio download ${res.status} host=${(() => {
+        try {
+          return new URL(url).host;
+        } catch {
+          return "unknown";
+        }
+      })()}`,
+    );
+  }
   writeFileSync(outputPath, Buffer.from(await res.arrayBuffer()));
 }
 
@@ -310,19 +323,32 @@ export async function kieGenerateMusic(
     );
   }
 
-  const pickAudioUrl = (track: any): string | undefined => {
+  const pickFinalAudioUrl = (track: any): string | undefined => {
     if (!track || typeof track !== "object") return undefined;
-    const candidates = [
+    // Prefer completed file hosts; audiostream.kie.ai often 403s from Actions IPs.
+    const finalCandidates = [
       track.audioUrl,
       track.audio_url,
       track.sourceAudioUrl,
       track.source_audio_url,
+    ];
+    for (const c of finalCandidates) {
+      if (typeof c === "string" && c.trim() && !c.includes("audiostream.kie.ai")) {
+        return c.trim();
+      }
+    }
+    return undefined;
+  };
+
+  const pickStreamAudioUrl = (track: any): string | undefined => {
+    if (!track || typeof track !== "object") return undefined;
+    const streamCandidates = [
       track.streamAudioUrl,
       track.stream_audio_url,
       track.sourceStreamAudioUrl,
       track.source_stream_audio_url,
     ];
-    for (const c of candidates) {
+    for (const c of streamCandidates) {
       if (typeof c === "string" && c.trim()) return c.trim();
     }
     return undefined;
@@ -338,19 +364,20 @@ export async function kieGenerateMusic(
       { key: options.apiKey, signal: options.signal },
     );
     const status = String(poll.json?.data?.status || "");
-    // TEXT_SUCCESS / FIRST_SUCCESS often expose stream URL before final audioUrl.
+    // Wait for a final (non-stream) URL. TEXT_SUCCESS often only has stream CDN.
     if (
       status === "SUCCESS" ||
       status === "FIRST_SUCCESS" ||
       status === "TEXT_SUCCESS"
     ) {
       const tracks = poll.json?.data?.response?.sunoData;
-      const audioUrl = Array.isArray(tracks) ? pickAudioUrl(tracks[0]) : undefined;
+      const track = Array.isArray(tracks) ? tracks[0] : undefined;
+      const audioUrl =
+        pickFinalAudioUrl(track) ||
+        (status === "SUCCESS" ? pickStreamAudioUrl(track) : undefined);
       if (!audioUrl) {
-        if (status === "FIRST_SUCCESS" || status === "TEXT_SUCCESS") continue;
-        throw new Error(
-          `KIE Suno success without audio URL: ${JSON.stringify(poll.json).slice(0, 500)}`,
-        );
+        // Keep polling until tempfile / final audio URL appears.
+        continue;
       }
       const rawPath = join(
         dirname(options.outputPath),
