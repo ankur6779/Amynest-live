@@ -770,7 +770,7 @@ export async function runGoogleProduction(): Promise<RunState> {
   process.env.AMYNEST_KIE_VEO_MODEL =
     process.env.AMYNEST_KIE_VEO_MODEL || "veo3_fast";
   process.env.AMYNEST_KIE_VEO_RESOLUTION =
-    process.env.AMYNEST_KIE_VEO_RESOLUTION || "1080p";
+    process.env.AMYNEST_KIE_VEO_RESOLUTION || "720p";
   process.env.AMYNEST_KIE_KLING_MODE =
     process.env.AMYNEST_KIE_KLING_MODE || "std";
   // Strip unused third-party media keys (keep KIE_API_KEY).
