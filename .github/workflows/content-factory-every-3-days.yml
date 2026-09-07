@@ -88,6 +88,9 @@ jobs:
           AMYNEST_CONTENT_FACTORY_LIVE: ${{ vars.AMYNEST_CONTENT_FACTORY_LIVE || '0' }}
           # Cost control: keep Veo at 720p unless explicitly overridden via vars
           AMYNEST_KIE_VEO_RESOLUTION: ${{ vars.AMYNEST_KIE_VEO_RESOLUTION || '720p' }}
+          # Factory must use KIE only — Google Veo fallback masks KIE errors and often 400s on long prompts/images
+          AMYNEST_VIDEO_FALLBACK_GOOGLE: "0"
+          AMYNEST_VIDEO_PROVIDER: kie
           KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
