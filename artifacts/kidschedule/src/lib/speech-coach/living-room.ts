@@ -149,6 +149,69 @@ export function livingSpeechStartLiveLabel(): string {
   return "Begin gently";
 }
 
+/** Landing primary CTA — existing live-session route, not a second engine. */
+export function livingSpeechLivePracticeLabel(): string {
+  return "Start live practice";
+}
+
+export function livingSpeechLivePracticePurpose(): string {
+  return "Speak with Amy together";
+}
+
+export function livingSpeechLivePracticeHref(
+  childId?: number | null,
+  preset = "quick",
+): string {
+  const params = new URLSearchParams({ preset });
+  if (childId != null && Number.isFinite(childId) && childId > 0) {
+    params.set("childId", String(childId));
+  }
+  return `/speech-coach/live-session?${params.toString()}`;
+}
+
+export function livingSpeechTalkLandingLabel(): string {
+  return "Talk with Amy";
+}
+
+export function livingSpeechTalkLandingPurpose(): string {
+  return "A calm conversation together";
+}
+
+export function livingSpeechTalkHref(childId?: number | null): string {
+  if (childId != null && Number.isFinite(childId) && childId > 0) {
+    return `/speech-coach/talk?childId=${childId}`;
+  }
+  return "/speech-coach/talk";
+}
+
+export function isSpeechCoachModulePath(path: string | null | undefined): boolean {
+  if (!path) return false;
+  const base = path.split(/[?#]/)[0] ?? path;
+  return base === "/speech-coach" || base.startsWith("/speech-coach/");
+}
+
+export function parseSpeechCoachChildIdParam(
+  raw: string | null | undefined,
+): number | null {
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Prefer explicit selection, then URL, then stored hub child, then first eligible. */
+export function resolveSpeechCoachChildId(opts: {
+  eligibleIds: readonly number[];
+  selectedId?: number | null;
+  urlChildId?: number | null;
+  storedChildId?: number | null;
+}): number | null {
+  const preferred = [opts.selectedId, opts.urlChildId, opts.storedChildId];
+  for (const id of preferred) {
+    if (id != null && opts.eligibleIds.includes(id)) return id;
+  }
+  return opts.eligibleIds[0] ?? null;
+}
+
 export function livingSpeechStartTalkLabel(): string {
   return "Begin talking";
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
 import { useTranslation } from "react-i18next";
@@ -126,11 +126,22 @@ import { ParentHubQuietModuleProvider } from "@/lib/parent-hub/quiet-module-cont
 import {
   isSpeechCoachLivingV1Enabled,
   isSpeechCoachQuietId,
+  livingSpeechLivePracticeHref,
+  livingSpeechLivePracticeLabel,
+  livingSpeechLivePracticePurpose,
+  livingSpeechTalkHref,
+  livingSpeechTalkLandingLabel,
+  livingSpeechTalkLandingPurpose,
+  parseSpeechCoachChildIdParam,
   recommendSpeechCoachAction,
+  resolveSpeechCoachChildId,
   SPEECH_COACH_MORE_SESSIONS,
   SPEECH_COACH_QUIET_PATHS,
   type SpeechCoachQuietId,
 } from "@/lib/speech-coach/living-room";
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
+import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
+import { trackSpeechCoachLandingEntry } from "@/lib/speech-coach/entry-analytics";
 import "@/pages/first-experience-material.css";
 import "@/components/speech-coach/speech-coach-living-room.css";
 
@@ -1254,13 +1265,12 @@ function GuidanceSection() {
       description={t("screens.speech_coach.subtitle")}
       icon={<GraduationCap className="h-5 w-5" />}
     >
-      {({ onAction }) => (
+      {() => (
       <ul className="space-y-2">
         {PARENT_GUIDANCE_CARDS.map((g) => (
           <li
             key={g.id}
-            className="rounded-2xl border border-border bg-card p-3 cursor-pointer hover:border-primary/50 transition-colors"
-            onClick={onAction}
+            className="rounded-2xl border border-border bg-card p-3"
             data-testid={`guidance-${g.id}`}
           >
             <p className="font-bold text-sm text-foreground">
@@ -1556,6 +1566,7 @@ export default function SpeechCoachPage() {
   const authFetch = useAuthFetch();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const living = isSpeechCoachLivingV1Enabled();
   const [viewMode, setViewMode] = useState<SpeechViewMode>(() =>
     getSpeechViewMode(),
@@ -1567,14 +1578,25 @@ export default function SpeechCoachPage() {
   const eligible = childList.filter((c) =>
     isSpeechCoachEligibleAgeMonths(totalMonths(c)),
   );
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const urlChildId = parseSpeechCoachChildIdParam(
+    new URLSearchParams(search).get("childId"),
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => urlChildId ?? readStoredActiveChildId(),
+  );
   const [v2Enabled, setV2Enabled] = useState(isSpeechCoachV2Enabled());
   const [, setRemoteConfigTick] = useState(0);
   const showLegacyCards = showSpeechCoachLegacyCards(
     getSpeechCoachV2RemoteConfig().speechCoachLegacyVisible,
   );
+  const resolvedChildId = resolveSpeechCoachChildId({
+    eligibleIds: eligible.map((c) => c.id),
+    selectedId,
+    urlChildId,
+    storedChildId: readStoredActiveChildId(),
+  });
   const child =
-    eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+    eligible.find((c) => c.id === resolvedChildId) ?? eligible[0] ?? null;
   const v2DailyAllowance = useSpeechCoachV2DailyAllowance(
     authFetch,
     child?.id,
@@ -1602,6 +1624,18 @@ export default function SpeechCoachPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (resolvedChildId != null) writeStoredActiveChildId(resolvedChildId);
+  }, [resolvedChildId]);
+
+  useEffect(() => {
+    if (childrenQuery.isLoading) return;
+    trackSpeechCoachLandingEntry({
+      childId: resolvedChildId,
+      living,
+    });
+  }, [childrenQuery.isLoading, living, resolvedChildId]);
+
   const deepenPath = useCallback((sectionId: string) => {
     if (isSpeechCoachQuietId(sectionId)) {
       setActivePath(sectionId);
@@ -1618,16 +1652,28 @@ export default function SpeechCoachPage() {
         deepenPath(action.anchor);
         return;
       }
-      setLocation(`/speech-coach/live-session?preset=${action.preset}`, {
+      setLocation(livingSpeechLivePracticeHref(child?.id, action.preset), {
         replace: false,
       });
     },
-    [deepenPath, setLocation],
+    [child?.id, deepenPath, setLocation],
   );
 
   const onRecommend = useCallback(() => {
     deepenPath(recommend.sectionId);
   }, [deepenPath, recommend.sectionId]);
+
+  const startLivePractice = useCallback(() => {
+    if (child?.id != null) writeStoredActiveChildId(child.id);
+    setLocation(livingSpeechLivePracticeHref(child?.id, "quick"), {
+      replace: false,
+    });
+  }, [child?.id, setLocation]);
+
+  const startTalkWithAmy = useCallback(() => {
+    if (child?.id != null) writeStoredActiveChildId(child.id);
+    setLocation(livingSpeechTalkHref(child?.id), { replace: false });
+  }, [child?.id, setLocation]);
 
   const livingDeepen = child && activePath ? (
     <div
@@ -1727,7 +1773,10 @@ export default function SpeechCoachPage() {
                     className="sc-child-chip"
                     data-active={c.id === child.id ? "true" : "false"}
                     data-testid={`speech-child-${c.id}`}
-                    onClick={() => setSelectedId(c.id)}
+                    onClick={() => {
+                      setSelectedId(c.id);
+                      writeStoredActiveChildId(c.id);
+                    }}
                     aria-pressed={c.id === child.id}
                   >
                     {c.name}
@@ -1782,6 +1831,34 @@ export default function SpeechCoachPage() {
                         </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      className="sc-live-primary-link"
+                      data-testid="speech-coach-live-primary"
+                      onClick={startLivePractice}
+                    >
+                      <span className="sc-live-primary">
+                        <span className="sc-live-primary-label">
+                          {livingSpeechLivePracticeLabel()}
+                        </span>
+                        <span className="sc-live-primary-purpose">
+                          {livingSpeechLivePracticePurpose()}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="sc-talk-entry"
+                      data-testid="speech-coach-talk-entry"
+                      onClick={startTalkWithAmy}
+                    >
+                      <span className="sc-talk-entry-label">
+                        {livingSpeechTalkLandingLabel()}
+                      </span>
+                      <span className="sc-talk-entry-purpose">
+                        {livingSpeechTalkLandingPurpose()}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       className="sc-recommend-btn"
@@ -1993,7 +2070,10 @@ export default function SpeechCoachPage() {
         <ChildPicker
           eligible={eligible}
           activeId={child.id}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            writeStoredActiveChildId(id);
+          }}
         />
       )}
 

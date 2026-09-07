@@ -96,9 +96,12 @@ import {
   DASHBOARD_CHIP_SELECTED,
   DASHBOARD_TINTS,
 } from "@/lib/dashboard-premium";
+import { TodayCarePaths } from "@/components/today-home/today-care-paths";
 import { TodayHomeHero } from "@/components/today-home/today-home-hero";
 import { TodayHomeShell } from "@/components/today-home/today-home-shell";
 import { TodayProgressStrip } from "@/components/today-home/today-progress-strip";
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
+import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
 import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
 import { resolveTodayNrt } from "@/lib/today-home/resolve-today-nrt";
 import {
@@ -1074,7 +1077,13 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const onboardingData = queryClient.getQueryData(["onboarding-status"]);
   const [profileName, setProfileName] = useState<string | null>(null);
-  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(
+    () => readStoredActiveChildId(),
+  );
+  const handleSelectChild = useCallback((id: number | null) => {
+    setSelectedChildId(id);
+    if (id != null) writeStoredActiveChildId(id);
+  }, []);
   const [, setLocation] = useLocation();
   const {
     isPremium,
@@ -1569,7 +1578,7 @@ export default function Dashboard() {
                   living
                   children={childrenSafe as ChildRow[]}
                   selectedChildId={selectedChildId}
-                  onSelectChild={setSelectedChildId}
+                  onSelectChild={handleSelectChild}
                 />
                 <TodayHomeHero
                   decision={todayNrtDecision}
@@ -1580,6 +1589,7 @@ export default function Dashboard() {
                   done={todayProgress.done}
                   total={todayProgress.total}
                 />
+                <TodayCarePaths childId={selectedChildId} />
               </TodayHomeShell>
             ) : (
               <SmartHeroSection
@@ -1648,7 +1658,7 @@ export default function Dashboard() {
               <ChildrenChipBar
                 children={childrenSafe as ChildRow[]}
                 selectedChildId={selectedChildId}
-                onSelectChild={setSelectedChildId}
+                onSelectChild={handleSelectChild}
               />
             </ContentReveal.Item>
             ) : null}

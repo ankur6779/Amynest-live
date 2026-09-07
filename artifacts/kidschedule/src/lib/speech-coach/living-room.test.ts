@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   isSpeechCoachLivingV1Enabled,
   isSpeechCoachQuietId,
+  isSpeechCoachModulePath,
+  livingSpeechLivePracticeHref,
+  livingSpeechLivePracticeLabel,
+  livingSpeechTalkHref,
+  livingSpeechTalkLandingLabel,
+  parseSpeechCoachChildIdParam,
   recommendSpeechCoachAction,
+  resolveSpeechCoachChildId,
   SPEECH_COACH_MORE_SESSIONS,
   SPEECH_COACH_QUIET_DESTINATIONS,
   SPEECH_COACH_QUIET_PATHS,
@@ -59,5 +66,52 @@ describe("speech-coach living-room", () => {
 
   it("living flag defaults ON", () => {
     expect(isSpeechCoachLivingV1Enabled()).toBe(true);
+  });
+
+  it("primary live practice reuses the existing live-session route", () => {
+    expect(livingSpeechLivePracticeLabel()).toBe("Start live practice");
+    expect(livingSpeechLivePracticeHref(7)).toBe(
+      "/speech-coach/live-session?preset=quick&childId=7",
+    );
+    expect(livingSpeechLivePracticeHref(null, "bedtime")).toBe(
+      "/speech-coach/live-session?preset=bedtime",
+    );
+  });
+
+  it("preserves an explicit child over URL and stored fallbacks", () => {
+    expect(
+      resolveSpeechCoachChildId({
+        eligibleIds: [1, 2, 3],
+        selectedId: 2,
+        urlChildId: 1,
+        storedChildId: 3,
+      }),
+    ).toBe(2);
+    expect(
+      resolveSpeechCoachChildId({
+        eligibleIds: [1, 2, 3],
+        selectedId: null,
+        urlChildId: 3,
+        storedChildId: 1,
+      }),
+    ).toBe(3);
+    expect(
+      resolveSpeechCoachChildId({
+        eligibleIds: [1, 2],
+        selectedId: 9,
+        urlChildId: 9,
+        storedChildId: 2,
+      }),
+    ).toBe(2);
+    expect(parseSpeechCoachChildIdParam("3")).toBe(3);
+    expect(parseSpeechCoachChildIdParam("nope")).toBeNull();
+  });
+
+  it("reuses the existing Talk with Amy route", () => {
+    expect(livingSpeechTalkLandingLabel()).toBe("Talk with Amy");
+    expect(livingSpeechTalkHref(4)).toBe("/speech-coach/talk?childId=4");
+    expect(livingSpeechTalkHref(null)).toBe("/speech-coach/talk");
+    expect(isSpeechCoachModulePath("/speech-coach/talk")).toBe(true);
+    expect(isSpeechCoachModulePath("/dashboard")).toBe(false);
   });
 });

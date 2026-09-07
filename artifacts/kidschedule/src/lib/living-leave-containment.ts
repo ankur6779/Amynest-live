@@ -22,6 +22,9 @@ export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number]
  * Direct-URL containment. Routes stay registered for rollback.
  * Grow leave destinations (/phonics, /abacus, /spelling, …) are NOT listed —
  * those keep their living shells.
+ *
+ * Speech Coach live/talk are first-party interiors of `/speech-coach`,
+ * not leftover catalogue products — they stay reachable in living.
  */
 export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
   "/games": "/dashboard",
@@ -31,10 +34,6 @@ export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
   "/kids-control-center": "/dashboard",
   "/worksheet": "/parenting-hub",
   "/teacher-os": "/parenting-hub",
-  "/speech-coach/live": "/speech-coach",
-  "/speech-coach/live-session": "/speech-coach",
-  "/speech-coach/talk": "/speech-coach",
-  "/parenting-hub/speech-coach/live": "/speech-coach",
 };
 
 export function isLivingNavContainedHref(href: string): boolean {

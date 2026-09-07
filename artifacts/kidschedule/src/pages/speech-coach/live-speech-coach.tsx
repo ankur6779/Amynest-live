@@ -49,7 +49,11 @@ import {
   livingSpeechLiveEyebrow,
   livingSpeechSessionCompleteBody,
   livingSpeechStartLiveLabel,
+  parseSpeechCoachChildIdParam,
+  resolveSpeechCoachChildId,
 } from "@/lib/speech-coach/living-room";
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
+import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import "@/components/speech-coach/speech-coach-living-deep.css";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -1188,14 +1192,30 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
 export default function LiveSpeechCoachPage() {
   usePrimeIosMicrophone();
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) =>
     isSpeechCoachEligibleAgeMonths(totalMonths(c)),
   );
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const urlChildId = parseSpeechCoachChildIdParam(
+    new URLSearchParams(search).get("childId"),
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => urlChildId ?? readStoredActiveChildId(),
+  );
+  const resolvedChildId = resolveSpeechCoachChildId({
+    eligibleIds: eligible.map((c) => c.id),
+    selectedId,
+    urlChildId,
+    storedChildId: readStoredActiveChildId(),
+  });
   const child =
-    eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+    eligible.find((c) => c.id === resolvedChildId) ?? eligible[0] ?? null;
+
+  useEffect(() => {
+    if (resolvedChildId != null) writeStoredActiveChildId(resolvedChildId);
+  }, [resolvedChildId]);
 
   if (childrenQuery.isError) {
     return (
@@ -1241,7 +1261,10 @@ export default function LiveSpeechCoachPage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedId(c.id)}
+              onClick={() => {
+                setSelectedId(c.id);
+                writeStoredActiveChildId(c.id);
+              }}
               aria-pressed={child.id === c.id}
               aria-label={`Practice with ${c.name}`}
               className={[

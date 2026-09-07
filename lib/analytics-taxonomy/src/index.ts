@@ -435,6 +435,13 @@ const EVENT_PROP_SCHEMAS = {
     android_api_level: z.number().int().optional(),
   }),
 
+  // ── Speech Coach landing entry (discoverability) ───────────────────────
+  speech_coach_entry: z.object({
+    source: z.string().max(64).optional(),
+    child_id: z.number().int().optional(),
+    living: z.boolean().optional(),
+  }),
+
   // ── Speech Coach V2 (Realtime) ─────────────────────────────────────────
   speech_coach_v2_session_start: z.object({
     childId: z.number().int().optional(),
@@ -590,6 +597,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   pre_signup_campaign_blocked: "growth",
   pre_signup_campaign_eligible: "growth",
   pre_signup_native_schedule_result: "growth",
+  speech_coach_entry: "navigation",
   speech_coach_v2_session_start: "session",
   speech_coach_v2_session_complete: "session",
   speech_coach_v2_daily_limit: "session",

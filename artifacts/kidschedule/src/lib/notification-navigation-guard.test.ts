@@ -53,6 +53,18 @@ describe("evaluateNotificationNavigation", () => {
     expect(decision.resolvedPath).toBe("/parenting-hub");
   });
 
+  it("routes a phonics notification tap to Speech Coach without a campaign send", () => {
+    const decision = evaluateNotificationNavigation({
+      deepLink: "",
+      category: "phonics",
+      userInteraction: true,
+      notificationId: "canary-phonics-1",
+      tappedAt: Date.now(),
+    });
+    expect(decision.allow).toBe(true);
+    expect(decision.resolvedPath).toBe("/speech-coach");
+  });
+
   it("deduplicates repeated notification ids", () => {
     const req = {
       deepLink: "/routines",

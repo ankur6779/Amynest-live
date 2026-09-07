@@ -45,8 +45,9 @@ describe("living leave-path containment", () => {
     expect(livingDirectUrlContainment("/games")).toBe("/dashboard");
     expect(livingDirectUrlContainment("/rewards")).toBe("/dashboard");
     expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
-    expect(livingDirectUrlContainment("/speech-coach/live-session")).toBe("/speech-coach");
-    expect(livingDirectUrlContainment("/speech-coach/talk")).toBe("/speech-coach");
+    expect(livingDirectUrlContainment("/speech-coach/live-session")).toBeNull();
+    expect(livingDirectUrlContainment("/speech-coach/talk")).toBeNull();
+    expect(livingDirectUrlContainment("/speech-coach/live")).toBeNull();
     expect(livingDirectUrlContainment("/phonics")).toBeNull();
     expect(livingDirectUrlContainment("/study")).toBeNull();
     expect(shouldShowLegacyMobileTabBar(true)).toBe(false);

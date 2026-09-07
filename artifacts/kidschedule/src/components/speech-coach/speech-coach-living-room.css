@@ -184,11 +184,122 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+.sc-live-primary-link {
+  position: relative;
+  z-index: 5;
+  display: block;
+  margin: -0.55rem 0.75rem 0.55rem;
+  width: calc(100% - 1.5rem);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sc-live-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  border: 0;
+  background: linear-gradient(180deg, #fbf6ee 0%, #f3eadc 48%, #e6d8c4 100%);
+  color: #1a120c;
+  text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 2px rgba(120, 90, 60, 0.14),
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    0 0 22px rgba(232, 212, 184, 0.16);
+}
+
+.sc-live-primary-link:hover .sc-live-primary,
+.sc-live-primary-link:focus-visible .sc-live-primary {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(120, 90, 60, 0.12),
+    0 18px 36px rgba(0, 0, 0, 0.3),
+    0 0 28px rgba(232, 212, 184, 0.22);
+}
+
+.sc-live-primary-link:focus-visible {
+  outline: 2px solid rgba(232, 212, 184, 0.55);
+  outline-offset: 2px;
+}
+
+.sc-live-primary-label {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1a120c;
+}
+
+.sc-live-primary-purpose {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.8rem;
+  font-weight: 550;
+  line-height: 1.3;
+  color: rgba(26, 18, 12, 0.72);
+}
+
+.sc-talk-entry {
+  position: relative;
+  z-index: 4;
+  display: block;
+  margin: 0 0.75rem 0.5rem;
+  width: calc(100% - 1.5rem);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: left;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(232, 212, 184, 0.22);
+  background: rgba(8, 6, 12, 0.58);
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.sc-talk-entry:hover,
+.sc-talk-entry:focus-visible {
+  border-color: rgba(232, 212, 184, 0.38);
+  background: rgba(12, 9, 16, 0.72);
+  outline: none;
+}
+
+.sc-talk-entry-label {
+  display: block;
+  font-family: Quicksand, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: rgba(255, 252, 248, 0.96);
+}
+
+.sc-talk-entry-purpose {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(244, 238, 230, 0.76);
+}
+
 .sc-recommend-btn {
   position: relative;
   z-index: 4;
   display: block;
-  margin: -0.55rem 0.75rem 0.75rem;
+  margin: 0 0.75rem 0.75rem;
   width: calc(100% - 1.5rem);
   text-align: left;
   border-radius: 1.05rem;
@@ -485,6 +596,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sc-recommend-btn,
+  .sc-talk-entry,
+  .sc-live-primary-link .sc-live-primary,
   .sc-quiet-path,
   .sc-more-session {
     transition: none;

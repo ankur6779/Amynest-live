@@ -1,7 +1,7 @@
 import { parseApiJson, safeJsonResponse } from "@/lib/safe-json-response";
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, ArrowRight, Loader2, Mic, PhoneOff, Sparkles, Star, Trophy, Volume2 } from "lucide-react";
 import { AppLink } from "@/components/app-link";
 import { AddChildLink } from "@/components/add-child-link";
@@ -60,7 +60,11 @@ import {
   livingSpeechTalkEndedTitle,
   livingSpeechTalkEyebrow,
   livingSpeechTalkTitle,
+  parseSpeechCoachChildIdParam,
+  resolveSpeechCoachChildId,
 } from "@/lib/speech-coach/living-room";
+import { readStoredActiveChildId } from "@/lib/coach-age-nav";
+import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import "@/components/speech-coach/speech-coach-living-deep.css";
@@ -1156,11 +1160,27 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
 export default function ConversationCoachPage() {
   usePrimeIosMicrophone();
+  const search = useSearch();
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) => isSpeechCoachEligibleAgeMonths(totalMonths(c)));
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const child = eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+  const urlChildId = parseSpeechCoachChildIdParam(
+    new URLSearchParams(search).get("childId"),
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => urlChildId ?? readStoredActiveChildId(),
+  );
+  const resolvedChildId = resolveSpeechCoachChildId({
+    eligibleIds: eligible.map((c) => c.id),
+    selectedId,
+    urlChildId,
+    storedChildId: readStoredActiveChildId(),
+  });
+  const child = eligible.find((c) => c.id === resolvedChildId) ?? eligible[0] ?? null;
+
+  useEffect(() => {
+    if (resolvedChildId != null) writeStoredActiveChildId(resolvedChildId);
+  }, [resolvedChildId]);
 
   if (childrenQuery.isLoading) {
     return (
@@ -1198,7 +1218,10 @@ export default function ConversationCoachPage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedId(c.id)}
+              onClick={() => {
+                setSelectedId(c.id);
+                writeStoredActiveChildId(c.id);
+              }}
               className={[
                 "rounded-full px-3 py-1 text-xs font-black transition-colors",
                 child.id === c.id ? "bg-white text-slate-950" : "text-white/70 hover:bg-white/10",

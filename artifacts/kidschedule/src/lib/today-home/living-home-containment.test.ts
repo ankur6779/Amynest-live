@@ -73,4 +73,20 @@ describe("living Home dashboard containment", () => {
     expect(page).toContain("livingDashboardEmptyTitle()");
     expect(page).toContain("livingDashboardFamilyHint()");
   });
+
+  it("exposes a compact existing-module launchpad on living Home", () => {
+    const page = readFileSync(resolve(srcDir, "pages/dashboard.tsx"), "utf8");
+    expect(page).toContain("TodayCarePaths");
+    expect(page).toContain("handleSelectChild");
+    const care = readFileSync(
+      resolve(srcDir, "lib/today-home/care-paths.ts"),
+      "utf8",
+    );
+    expect(care).toContain('"/routines"');
+    expect(care).toContain('"/speech-coach"');
+    expect(care).toContain('"/assistant"');
+    expect(care).toContain('"/parenting-hub"');
+    expect(care).not.toContain("/games");
+    expect(care).not.toContain("/pricing");
+  });
 });
