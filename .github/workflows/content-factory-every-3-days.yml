@@ -40,10 +40,9 @@ jobs:
           ref: ${{ vars.AMYNEST_CONTENT_FACTORY_REF || github.ref_name }}
 
       # pnpm MUST be installed before setup-node cache: pnpm
+      # version comes from package.json packageManager (do not also set "version:")
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
