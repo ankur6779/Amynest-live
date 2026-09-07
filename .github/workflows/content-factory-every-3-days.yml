@@ -33,8 +33,6 @@ jobs:
     defaults:
       run:
         working-directory: content-engine
-    env:
-      AMYNEST_DATA_DIR: ${{ runner.temp }}/amynest-factory-data
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,7 +54,7 @@ jobs:
       - name: Restore factory queue cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.AMYNEST_DATA_DIR }}
+          path: /tmp/amynest-factory-data
           key: amynest-content-factory-queue-v1
           restore-keys: |
             amynest-content-factory-queue-
@@ -67,8 +65,8 @@ jobs:
 
       - name: Content factory dry-run / tick
         env:
+          AMYNEST_DATA_DIR: /tmp/amynest-factory-data
           AMYNEST_CONTENT_FACTORY_LIVE: ${{ vars.AMYNEST_CONTENT_FACTORY_LIVE || '0' }}
-          AMYNEST_CONTENT_FACTORY_FORCE: ${{ github.event.inputs.mode == 'force-live' && '1' || '0' }}
           KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
