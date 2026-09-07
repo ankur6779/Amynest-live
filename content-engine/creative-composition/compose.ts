@@ -77,7 +77,15 @@ for line in lines:
     y += th + 18
 img.save(${JSON.stringify(path)})
 `;
-  execFileSync("python3", ["-c", script], { stdio: ["ignore", "pipe", "pipe"] });
+  try {
+    execFileSync("python3", ["-c", script], {
+      stdio: ["ignore", "pipe", "pipe"],
+      encoding: "utf8",
+    });
+  } catch (e: any) {
+    const detail = String(e?.stderr || e?.message || e).slice(0, 800);
+    throw new Error(`Caption PNG failed: ${detail}`);
+  }
 }
 
 function burnCaption(options: {
