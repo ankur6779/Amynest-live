@@ -62,6 +62,18 @@ jobs:
         working-directory: .
         run: pnpm install --frozen-lockfile
 
+      # Repo historically tracked a laptop-absolute symlink for .amynest-assets.
+      # On Actions that target does not exist → mkdir ENOENT. Use a real dir.
+      - name: Ensure writable .amynest-assets
+        working-directory: .
+        run: |
+          set -euo pipefail
+          if [ -L .amynest-assets ]; then
+            echo "Replacing broken laptop symlink: $(readlink .amynest-assets)"
+            rm -f .amynest-assets
+          fi
+          mkdir -p .amynest-assets
+
       - name: Content factory dry-run / tick
         env:
           AMYNEST_DATA_DIR: /tmp/amynest-factory-data
