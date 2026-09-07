@@ -636,19 +636,27 @@ export async function healStaleSubscriptionRecord(
 
   const now = new Date();
   const wasTrial = sub.status === "trialing" || sub.subscriptionState === "TRIAL";
+  // Migration 0043 CHECKs require a complete terminal shape: FREE must clear
+  // providerSubscriptionId; EXPIRED must set expiredAt and cancelAtPeriodEnd=0.
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
-      status: "free",
+      status: wasTrial ? "canceled" : "free",
       plan: "free",
       subscriptionState: wasTrial ? "EXPIRED" : "FREE",
       provider: "none",
+      providerCustomerId: null,
+      providerSubscriptionId: null,
       // Preserve trialEndsAt on natural expiry so Trial Ended evidence survives.
       // Wiping it made aged heal false-positives indistinguishable from real trials.
       trialEndsAt: wasTrial ? sub.trialEndsAt : null,
-      currentPeriodEnd: null,
+      currentPeriodEnd: wasTrial ? (sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() <= now.getTime() ? sub.currentPeriodEnd : now) : null,
+      expiresAt: wasTrial ? (sub.expiresAt && sub.expiresAt.getTime() <= now.getTime() ? sub.expiresAt : now) : null,
+      gracePeriodExpiresAt: null,
       cancelAtPeriodEnd: 0,
-      expiredAt: wasTrial ? now : sub.expiredAt,
+      cancelledAt: null,
+      expiredAt: wasTrial ? now : null,
+      autoRenewStatus: false,
       updatedAt: now,
     })
     .where(eq(subscriptionsTable.userId, sub.userId))
@@ -677,9 +685,16 @@ export async function repairFalseExpiredInternalTrial(
       plan: "free",
       subscriptionState: "FREE",
       provider: "none",
+      providerCustomerId: null,
+      providerSubscriptionId: null,
       expiredAt: null,
       trialEndsAt: null,
       currentPeriodEnd: null,
+      expiresAt: null,
+      gracePeriodExpiresAt: null,
+      cancelAtPeriodEnd: 0,
+      cancelledAt: null,
+      autoRenewStatus: false,
       updatedAt: now,
     })
     .where(eq(subscriptionsTable.userId, sub.userId))
@@ -938,7 +953,7 @@ export async function maybeAutoGrantPremium(
       cancelAtPeriodEnd: 0,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, sub.userId));
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {
