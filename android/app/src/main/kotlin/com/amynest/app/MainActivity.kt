@@ -28,6 +28,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -203,6 +204,7 @@ class MainActivity : AppCompatActivity() {
             configureWebView(wv)
         }
         setContentView(webView)
+        installPredictiveBackHandler()
 
         // Push bridge must register document-start scripts before navigation begins.
         pushBridge = PushBridge(
@@ -371,28 +373,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (!::webView.isInitialized) {
-            super.onBackPressed()
-            return
-        }
-        if (forceUpdateActive) {
-            Log.d(TAG, "Hardware back ignored during force update")
-            return
-        }
-        webView.evaluateJavascript(
-            "(function(){try{return typeof window.__amynestGoBack==='function'&&" +
-                "window.__amynestGoBack()?'true':'false';}catch(e){return 'false';}})();",
-        ) { result ->
-            val handled = result == "\"true\"" || result == "true"
-            if (handled) return@evaluateJavascript
-            if (webView.canGoBack()) {
-                webView.goBack()
-            } else {
-                super.onBackPressed()
-            }
-        }
+    /**
+     * Android 16 (targetSdk 36) no longer dispatches [onBackPressed]. Keep SPA /
+     * WebView back working via the OnBackPressedDispatcher.
+     */
+    private fun installPredictiveBackHandler() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (forceUpdateActive) {
+                        Log.d(TAG, "Hardware back ignored during force update")
+                        return
+                    }
+                    if (!::webView.isInitialized) {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                        return
+                    }
+                    webView.evaluateJavascript(
+                        "(function(){try{return typeof window.__amynestGoBack==='function'&&" +
+                            "window.__amynestGoBack()?'true':'false';}catch(e){return 'false';}})();",
+                    ) { result ->
+                        val handled = result == "\"true\"" || result == "true"
+                        if (handled) return@evaluateJavascript
+                        if (webView.canGoBack()) {
+                            webView.goBack()
+                        } else {
+                            isEnabled = false
+                            onBackPressedDispatcher.onBackPressed()
+                            isEnabled = true
+                        }
+                    }
+                }
+            },
+        )
     }
 
     override fun onDestroy() {

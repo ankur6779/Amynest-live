@@ -39,14 +39,14 @@ val revenueCatApiKey =
 
 android {
     namespace = "com.amynest.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.amynest.app"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 102
-        versionName = "1.4.59"
+        targetSdk = 36
+        versionCode = 103
+        versionName = "1.4.60"
         resValue(
             "string",
             "facebook_client_token",
@@ -206,10 +206,11 @@ dependencies {
     // WebView (for AmyNestPushNative + AmyNestBillingNative message listeners)
     implementation("androidx.webkit:webkit:1.12.1")
 
-    // Google Play Billing via RevenueCat. Handles purchase verification and
-    // subscription state through the backend RevenueCat webhook.
-    implementation("com.revenuecat.purchases:purchases:8.20.0")
-    implementation("com.revenuecat.purchases:purchases-ui:8.20.0")
+    // Google Play Billing via RevenueCat. SDK 9.x ships Play Billing Library 8.x
+    // (Play Console requires billingclient >= 8.0.0). Do not add a direct
+    // com.android.billingclient dependency — RevenueCat owns that version.
+    implementation("com.revenuecat.purchases:purchases:9.29.1")
+    implementation("com.revenuecat.purchases:purchases-ui:9.29.1")
 
     // Firebase BOM — keeps all Firebase versions aligned
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
