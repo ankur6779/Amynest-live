@@ -1572,6 +1572,7 @@ function ParentingHubPage() {
           >
             <NutritionHubParentContent
               childAgeMonths={totalAgeMonths}
+              childName={effectiveChild.name}
               isFreeJourneyPeriod={hubJourney.isFreeJourneyPeriod}
               isPremium={hubUsage.isPremium}
               onOpenHub={() => markHubUsed("hub_nutrition")}
@@ -2038,7 +2039,7 @@ function ParentingHubPage() {
             onOpen={() => markHubUsed("hub_speech")}
           >
             {speechCoachPreview ? (
-              <div className="space-y-3">
+              <div className="space-y-3" data-testid="speech-coach-preview" data-speech-mode="preview">
                 <p className="text-sm font-semibold text-foreground">
                   {t("screens.speech_coach.preview.title")}
                 </p>
@@ -2055,7 +2056,7 @@ function ParentingHubPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3" data-testid="speech-coach-full" data-speech-mode="full">
                 <p className="text-sm text-muted-foreground">
                   {t("screens.speech_coach.subtitle")}
                 </p>
@@ -2354,6 +2355,7 @@ function ParentingHubPage() {
                         isInfant || hubSurface.current === "previous";
                       return (
                         <GuidanceLivingStream
+                          key={effectiveChild.id}
                           childName={effectiveChild.name}
                           ageGroup={ageGroup}
                           childAgeMonths={totalAgeMonths}

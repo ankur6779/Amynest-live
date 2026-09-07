@@ -97,13 +97,14 @@ test.describe("Rooms living fixture", () => {
     await expect(page.getByTestId("dest-infant-hub")).toBeVisible();
     await page.getByTestId("care-quiet-nutrition").click();
     await expect(page.getByTestId("dest-nutrition")).toHaveAttribute(
-      "data-nutrition-band",
-      "infant_6_12",
-    );
-    await expect(page.getByTestId("dest-nutrition")).toHaveAttribute(
       "data-child-id",
       "1",
     );
+    await expect(page.getByTestId("nutrition-hub-parent-content")).toHaveAttribute(
+      "data-nutrition-band",
+      "infant_6_12",
+    );
+    await expect(page.getByTestId("nutrition-today-meal")).toBeVisible();
     await page.screenshot({
       path: `${ARTIFACTS}/rooms_care_nutrition_infant.png`,
       fullPage: true,
@@ -140,10 +141,11 @@ test.describe("Rooms living fixture", () => {
       "data-child-id",
       "2",
     );
-    await expect(page.getByTestId("dest-nutrition")).toHaveAttribute(
+    await expect(page.getByTestId("nutrition-hub-parent-content")).toHaveAttribute(
       "data-nutrition-band",
       "preschool_3_6",
     );
+    await expect(page.getByTestId("nutrition-today-meal")).toBeVisible();
     await page.screenshot({
       path: `${ARTIFACTS}/rooms_care_nutrition_preschool.png`,
       fullPage: true,
@@ -190,13 +192,14 @@ test.describe("Rooms living fixture", () => {
       "data-child-id",
       "3",
     );
-    await expect(page.getByTestId("dest-nutrition")).toHaveAttribute(
+    await expect(page.getByTestId("nutrition-hub-parent-content")).toHaveAttribute(
       "data-nutrition-band",
       "school_6_10",
     );
-    await expect(page.getByTestId("dest-nutrition")).toContainText(
+    await expect(page.getByTestId("nutrition-hub-parent-content")).toContainText(
       "Kai Montgomery-Anastasia",
     );
+    await expect(page.getByTestId("nutrition-today-meal")).toBeVisible();
     await page.screenshot({
       path: `${ARTIFACTS}/rooms_care_nutrition_school_long_name.png`,
       fullPage: true,

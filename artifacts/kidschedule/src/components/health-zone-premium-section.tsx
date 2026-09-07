@@ -14,6 +14,7 @@ import {
   type HealthZoneCardId,
 } from "@/lib/health-zone-card-config";
 import { HUB_EXPANDED_CONTENT, HUB_FEATURE_TILE_PREVIEW } from "@/lib/parent-hub-premium";
+import { useQuietDestinationDefaultOpen } from "@/lib/parent-hub/quiet-destination";
 import { cn } from "@/lib/utils";
 
 type HealthZonePremiumSectionProps = {
@@ -62,7 +63,7 @@ export function HealthZonePremiumSection({
 }: HealthZonePremiumSectionProps) {
   const discoveryPreview = useInfantDiscoveryPreview();
   const awardSectionPoints = useHubSectionPoints();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(useQuietDestinationDefaultOpen(defaultOpen));
   const cardKey = HEALTH_ZONE_HUB_SECTION_MAP[id] as Exclude<HealthZoneCardId, "section-header"> | undefined;
   const visual = cardKey ? HEALTH_ZONE_CARD_VISUALS[cardKey] : undefined;
 
