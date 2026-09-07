@@ -1,6 +1,8 @@
 import type { AdaptiveMood } from "@workspace/family-routine";
 import { ageBandForLifeSkills, L, pickDailyLifeSkillTasks } from "@workspace/life-skills";
-import { STORAGE_KEY_DRAFT, STAGE_LABELS, type PtmSession } from "@workspace/ptm-prep";
+import { STAGE_LABELS } from "@workspace/ptm-prep";
+import { loadPtmPrepLocal } from "@/lib/ptm-prep-storage";
+import { readStoredSessionUid } from "@/lib/user-session-cache";
 
 export const SUPPORT_TILE_ORDER = [
   "articles",
@@ -89,12 +91,13 @@ export function getLifeSkillPreviewText(
   return first ? L(first.title, "en") : null;
 }
 
-export function getPtmPreviewText(): string | null {
+export function getPtmPreviewText(userId?: string | null): string | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY_DRAFT);
-    if (!raw) return null;
-    const session = JSON.parse(raw) as PtmSession;
+    const uid = userId ?? readStoredSessionUid();
+    const draft = loadPtmPrepLocal(uid).draft;
+    if (!draft) return null;
+    const session = draft;
     const stage = STAGE_LABELS[session.stage]?.title ?? session.stage;
     const selected = session.questions.filter(q => q.selected).length;
     if (session.stage === "prepare" && selected > 0) {
