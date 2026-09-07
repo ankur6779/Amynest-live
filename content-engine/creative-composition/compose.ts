@@ -488,15 +488,25 @@ export async function composeCinematicVisuals(
           Boolean(input.geminiApiKey) &&
           process.env.AMYNEST_VIDEO_FALLBACK_GOOGLE !== "0";
         if (!canFallbackGoogle) throw primaryErr;
+        const primaryMsg =
+          primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
         console.warn(
-          `[creative-composition] KIE failed for ${shot.id} — falling back to Google Veo: ${
-            primaryErr instanceof Error ? primaryErr.message : String(primaryErr)
-          }`,
+          `[creative-composition] KIE failed for ${shot.id} — falling back to Google Veo: ${primaryMsg}`,
         );
-        const generated = await googleVeo.generateVideo(genArgs);
-        modelUsed = generated.metadata.model;
-        imageToVideo = Boolean(generated.metadata.imageToVideo);
-        shotProvider = "google-veo";
+        try {
+          const generated = await googleVeo.generateVideo(genArgs);
+          modelUsed = generated.metadata.model;
+          imageToVideo = Boolean(generated.metadata.imageToVideo);
+          shotProvider = "google-veo";
+        } catch (fallbackErr) {
+          const fallbackMsg =
+            fallbackErr instanceof Error
+              ? fallbackErr.message
+              : String(fallbackErr);
+          throw new Error(
+            `KIE primary failed: ${primaryMsg.slice(0, 800)} | Google fallback failed: ${fallbackMsg.slice(0, 800)}`,
+          );
+        }
       }
     }
 
