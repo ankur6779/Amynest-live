@@ -7,7 +7,7 @@
 
 import { resolvePortfolioLivingFlag } from "@/lib/amynest-living-universe";
 
-export type MomentsPathId = "presence" | "story" | "make" | "talking-amy";
+export type MomentsPathId = "presence" | "story" | "make" | "games" | "talking-amy";
 
 export type MomentsRecommend = {
   id: "together";
@@ -50,6 +50,12 @@ export const MOMENTS_QUIET_PATHS: readonly MomentsQuietPath[] = [
     tileId: "worksheets",
     title: "Make together",
     purpose: "Create something side by side",
+  },
+  {
+    id: "games",
+    tileId: "gaming-rewards",
+    title: "Games",
+    purpose: "Play and earn together",
   },
   {
     id: "talking-amy",
@@ -123,6 +129,8 @@ export function momentsPathForTile(tileId: string): MomentsPathId | null {
     case "coloring-books":
     case "fun-sheets":
       return "make";
+    case "gaming-rewards":
+      return "games";
     case "talking-amy":
       return "talking-amy";
     default:
@@ -135,6 +143,17 @@ export function tileIdForMomentsPath(pathId: MomentsPathId): string {
   const path = MOMENTS_QUIET_PATHS.find((p) => p.id === pathId);
   return path?.tileId ?? "activities";
 }
+
+/** Pack 3 destination id for a Moments living path — never fall through to Presence. */
+export function destinationIdForMomentsPath(pathId: MomentsPathId | null): string {
+  if (pathId === "story") return "story";
+  if (pathId === "make") return "make";
+  if (pathId === "games") return "games";
+  return "presence";
+}
+
+/** Canonical Games product route — never /routines or /dashboard. */
+export const GAMES_MODULE_HREF = "/games" as const;
 
 /** Quiet deepen cue for a legacy Hub tile — never four-product language. */
 export function momentsDeepenCueForTile(tileId: string): {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  GAMES_MODULE_HREF,
   MOMENTS_QUIET_PATHS,
   MOMENTS_STREAM_TILE_ID,
+  destinationIdForMomentsPath,
   isMomentsLivingV1Enabled,
   momentsDeepenCueForTile,
   momentsPathForTile,
@@ -15,6 +17,7 @@ describe("moments living-room", () => {
       "presence",
       "story",
       "make",
+      "games",
       "talking-amy",
     ]);
     expect(MOMENTS_QUIET_PATHS[0]?.id).toBe("presence");
@@ -46,6 +49,7 @@ describe("moments living-room", () => {
     expect(momentsPathForTile("activities")).toBe("presence");
     expect(momentsPathForTile("story-hub")).toBe("story");
     expect(momentsPathForTile("coloring-books")).toBe("make");
+    expect(momentsPathForTile("gaming-rewards")).toBe("games");
     expect(momentsPathForTile("talking-amy")).toBe("talking-amy");
     expect(momentsPathForTile("amy-ai")).toBeNull();
   });
@@ -53,6 +57,16 @@ describe("moments living-room", () => {
   it("resolves primary tile per path", () => {
     expect(tileIdForMomentsPath("story")).toBe("story-hub");
     expect(tileIdForMomentsPath("make")).toBe("worksheets");
+    expect(tileIdForMomentsPath("games")).toBe("gaming-rewards");
+  });
+
+  it("maps Games to its own destination — never Presence/Routine", () => {
+    expect(destinationIdForMomentsPath("games")).toBe("games");
+    expect(destinationIdForMomentsPath("story")).toBe("story");
+    expect(destinationIdForMomentsPath("make")).toBe("make");
+    expect(destinationIdForMomentsPath("presence")).toBe("presence");
+    expect(destinationIdForMomentsPath("talking-amy")).toBe("presence");
+    expect(GAMES_MODULE_HREF).toBe("/games");
   });
 
   it("living flag defaults ON", () => {

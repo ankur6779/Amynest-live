@@ -324,6 +324,17 @@ export function startNotificationCron(): void {
     }
   });
 
+  // Signed-in re-engagement selector (dry-run by default; live requires env).
+  schedule("reengagement_tick", "* * * * *", async () => {
+    const { runReengagementTick } = await import(
+      "../services/reengagementNotificationService.js"
+    );
+    const r = await runReengagementTick();
+    if (r.evaluated > 0) {
+      logger.info({ ...r, job: "reengagement_tick" }, "Re-engagement tick summary");
+    }
+  });
+
   // ── Per-task routine reminders — every minute (already user-TZ aware) ──
   schedule("routine_item_sweep", "* * * * *", async () => {
     const r = await dispatchPerItemReminders();

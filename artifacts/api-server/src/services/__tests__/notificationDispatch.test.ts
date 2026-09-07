@@ -9,6 +9,7 @@ import {
   pruneStaleTokens,
   dispatchNotification,
   getOrCreatePreferences,
+  getPreferencesIfExists,
   isFcmApnsConfigurationError,
   isFcmInvalidTokenError,
 } from "../notificationDispatchService";
@@ -223,7 +224,7 @@ dbTest("daily cap blocks non-timebound dispatch once reached", async () => {
   for (let i = 0; i < 3; i++) {
     await db.insert(notificationLogTable).values({
       userId: uid,
-      category: "routine",
+      category: "infant_care",
       title: `earlier-${i}`,
       body: "earlier",
       status: "sent",
@@ -314,3 +315,49 @@ dbTest("category disabled blocks dispatch with throttled status", async () => {
   assert.equal(result.reason, "category_disabled");
   await cleanup(userId);
 });
+
+dbTest("L: getPreferencesIfExists does not insert a preferences row", async () => {
+  const uid = `ro-prefs-${Date.now()}`;
+  await cleanup(uid);
+  const found = await getPreferencesIfExists(uid);
+  assert.equal(found, null);
+  const rows = await db
+    .select({ userId: notificationPreferencesTable.userId })
+    .from(notificationPreferencesTable)
+    .where(eq(notificationPreferencesTable.userId, uid));
+  assert.equal(rows.length, 0);
+});
+
+dbTest("A: existing proactive send blocks a different category via global daily cap", async () => {
+  const uid = `global-cap-${Date.now()}`;
+  await cleanup(uid);
+  await getOrCreatePreferences(uid);
+  await db
+    .update(notificationPreferencesTable)
+    .set({ quietHoursStart: "00:00", quietHoursEnd: "00:00" })
+    .where(eq(notificationPreferencesTable.userId, uid));
+  await db.insert(notificationLogTable).values({
+    userId: uid,
+    category: "routine",
+    title: "morning",
+    body: "plan",
+    status: "sent",
+    platform: "web",
+  });
+  await db.insert(pushTokensTable).values({
+    userId: uid,
+    token: `global_${Math.random()}`,
+    platform: "web",
+  });
+  const result = await dispatchNotification({
+    userId: uid,
+    category: "engagement",
+    title: "Come back",
+    body: "Your next step is ready",
+    dedupKey: `eng:${Date.now()}`,
+  });
+  assert.equal(result.status, "throttled");
+  assert.equal(result.reason, "global_daily_cap");
+  await cleanup(uid);
+});
+

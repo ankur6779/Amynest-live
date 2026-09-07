@@ -3,8 +3,10 @@ import { Redirect } from "wouter";
 import { livingDirectUrlContainment } from "@/lib/living-leave-containment";
 
 /**
- * Living production: send leftover product URLs home.
- * Legacy / mixed: render the original protected page.
+ * Living production: apply documented route aliases only.
+ * Never wrap an active module (`/games`, `/progress`, `/insights`, `/study`,
+ * `/rewards`) — those pages must render even if a containment map is wrong.
+ * Legacy / mixed: livingDirectUrlContainment returns null, so Legacy renders.
  */
 export function LivingLeaveRedirect({
   path,

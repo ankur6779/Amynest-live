@@ -94,7 +94,10 @@ export async function loadUserContentHistory(
   };
 }
 
-export async function recordNotificationOpened(userId: string): Promise<void> {
+export async function recordNotificationOpened(
+  userId: string,
+  opts: { fingerprint?: string | null; notificationId?: string | null } = {},
+): Promise<void> {
   const now = new Date();
   const [prefs] = await db
     .select({ timezone: notificationPreferencesTable.timezone })
@@ -104,19 +107,39 @@ export async function recordNotificationOpened(userId: string): Promise<void> {
 
   const tz = prefs?.timezone ?? "UTC";
   const localHour = getLocalDateTimeParts(tz, now).hour;
+  const fingerprint = (opts.fingerprint ?? opts.notificationId ?? "").trim();
 
-  await db.execute(sql`
-    UPDATE notification_log
-    SET opened_at = ${now}
-    WHERE id = (
-      SELECT id FROM notification_log
-      WHERE user_id = ${userId}
-        AND status = 'sent'
-        AND opened_at IS NULL
-      ORDER BY sent_at DESC
-      LIMIT 1
-    )
-  `);
+  if (fingerprint.length > 0) {
+    await db.execute(sql`
+      UPDATE notification_log
+      SET opened_at = ${now}
+      WHERE id = (
+        SELECT id FROM notification_log
+        WHERE user_id = ${userId}
+          AND status = 'sent'
+          AND opened_at IS NULL
+          AND (
+            dedup_key = ${fingerprint}
+            OR provider_message_id = ${fingerprint}
+          )
+        ORDER BY sent_at DESC
+        LIMIT 1
+      )
+    `);
+  } else {
+    await db.execute(sql`
+      UPDATE notification_log
+      SET opened_at = ${now}
+      WHERE id = (
+        SELECT id FROM notification_log
+        WHERE user_id = ${userId}
+          AND status = 'sent'
+          AND opened_at IS NULL
+        ORDER BY sent_at DESC
+        LIMIT 1
+      )
+    `);
+  }
 
   await db
     .insert(notificationFatigueStateTable)

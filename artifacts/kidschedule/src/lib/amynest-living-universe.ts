@@ -145,6 +145,28 @@ export function isAmynestLivingUniverseEnabled(): boolean {
   return resolveAmynestLivingUniverseMode() === "living";
 }
 
+/** Document class that gates living global chrome (header / tab bar) styles. */
+export const AMYNEST_LIVING_UNIVERSE_DOC_CLASS = "amynest-living-universe";
+
+/**
+ * Sync FA-02 living face onto `<html>` / `<body>` so shared chrome CSS can
+ * inherit sanctuary tokens. No-op when living OFF (legacy rollback).
+ */
+export function syncAmynestLivingUniverseDocumentClass(): void {
+  if (typeof document === "undefined") return;
+  const on = isAmynestLivingUniverseEnabled();
+  document.documentElement.classList.toggle(AMYNEST_LIVING_UNIVERSE_DOC_CLASS, on);
+  if (document.body) {
+    document.body.classList.toggle(AMYNEST_LIVING_UNIVERSE_DOC_CLASS, on);
+  }
+  const themeMeta = document.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  );
+  if (themeMeta) {
+    themeMeta.setAttribute("content", on ? "#100d16" : "#0b0b0b");
+  }
+}
+
 /** True when emergency coherent legacy face is active. */
 export function isAmynestLegacyUniverseEnabled(): boolean {
   return resolveAmynestLivingUniverseMode() === "legacy";

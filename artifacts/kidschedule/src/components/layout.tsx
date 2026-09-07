@@ -29,6 +29,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
 import { isRoutineLivingV1Enabled } from "@/lib/routine-generation/living-entry";
+import { syncAmynestLivingUniverseDocumentClass } from "@/lib/amynest-living-universe";
 
 export function Layout({
   children
@@ -84,6 +85,10 @@ export function Layout({
   }, [location]);
 
   useEffect(() => {
+    syncAmynestLivingUniverseDocumentClass();
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle("has-tabbar", showMobileTabBar);
     document.body.classList.toggle("no-tabbar", !showMobileTabBar);
     return () => {
@@ -106,11 +111,11 @@ export function Layout({
     });
   };
   return (
-    <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
+    <div className="app-shell main-container relative w-full max-w-full min-w-0 overflow-x-clip box-border">
       {showMobileHeader ? (
         <header
           ref={headerRef}
-          className="app-header header w-full max-w-full min-w-0 shrink-0 border-b border-border/80 lg:hidden shadow-sm"
+          className="app-header header w-full max-w-full min-w-0 shrink-0 lg:hidden"
         >
           <div className="app-header__bar">
             <div className="flex min-w-0 flex-1 items-center gap-1.5">

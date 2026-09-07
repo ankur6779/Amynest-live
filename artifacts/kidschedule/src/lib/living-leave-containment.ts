@@ -1,40 +1,63 @@
 /**
- * P1 leave-path containment — living production must not open a second product.
- * Presentation / routing only. Engines, entitlements, and FA-02 are untouched.
+ * P1 leave-path containment — living production must not open a second product
+ * *by accident*. Valid modules keep their routes. Only documented aliases redirect.
  *
- * Living universe ON  → hide catalogue nav + redirect leftover product URLs.
+ * Living universe ON  → hide unfinished catalogue from More.
+ * Direct URLs         → redirect only when the destination is an intentional alias.
  * Legacy / mixed      → preserve existing routes (rollback + tests).
+ *
+ * Never dump a valid module (`/games`, `/study`, `/progress`, `/insights`,
+ * `/routines`, …) onto `/dashboard`. That pattern caused Games → Routine.
  */
 import { isAmynestLivingUniverseEnabled } from "@/lib/amynest-living-universe";
 
-/** More / drawer hrefs that open a leftover catalogue or dashboard. */
-export const LIVING_NAV_CONTAINED_HREFS = [
-  "/games",
-  "/study",
-  "/insights",
-  "/progress",
-  "/kids-control-center",
-] as const;
+/**
+ * More / drawer hrefs that are unfinished waitlist surfaces — hide, do not dump.
+ * Active modules (`/games`, `/study`, `/progress`, `/insights`) stay visible.
+ */
+export const LIVING_NAV_CONTAINED_HREFS = ["/kids-control-center"] as const;
 
 export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number];
 
 /**
- * Direct-URL containment. Routes stay registered for rollback.
- * Grow leave destinations (/phonics, /abacus, /spelling, …) are NOT listed —
- * those keep their living shells.
+ * Direct-URL aliases only. Every entry must be a superseded/canonical path,
+ * never a working product page sent to Home.
  *
- * Speech Coach live/talk are first-party interiors of `/speech-coach`,
- * not leftover catalogue products — they stay reachable in living.
+ * Grow leave destinations (/phonics, /abacus, /spelling, …) keep their shells.
+ * Speech Coach live/talk are first-party interiors of `/speech-coach` and
+ * stay reachable in living — they are not leftover catalogue products.
+ *
+ * - /worksheet, /teacher-os → Rooms (Make / hub, not Home)
  */
 export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
-  "/games": "/dashboard",
-  "/rewards": "/dashboard",
-  "/insights": "/dashboard",
-  "/progress": "/dashboard",
-  "/kids-control-center": "/dashboard",
   "/worksheet": "/parenting-hub",
   "/teacher-os": "/parenting-hub",
 };
+
+/** Product pages that must never be generically redirected to Home. */
+export const LIVING_ACTIVE_MODULE_HREFS = [
+  "/games",
+  "/routines",
+  "/study",
+  "/progress",
+  "/insights",
+  "/rewards",
+  "/dashboard",
+  "/parenting-hub",
+  "/assistant",
+  "/amy-coach",
+  "/nutrition",
+  "/speech-coach",
+] as const;
+
+/**
+ * Pages that may be hidden from More (unfinished waitlist) but must still
+ * render when opened by URL. Never dump these onto Home.
+ */
+export const LIVING_NEVER_DUMP_HREFS = [
+  ...LIVING_ACTIVE_MODULE_HREFS,
+  "/kids-control-center",
+] as const;
 
 export function isLivingNavContainedHref(href: string): boolean {
   const path = href.split("#")[0] ?? href;

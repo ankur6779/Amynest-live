@@ -33,7 +33,7 @@ describe("Pack 3 destinations", () => {
     );
 
     const moments = ROOM_DESTINATIONS.moments;
-    expect(moments.map((d) => d.id)).toEqual(["presence", "story", "make"]);
+    expect(moments.map((d) => d.id)).toEqual(["presence", "story", "make", "games"]);
     expect(moments.find((d) => d.id === "presence")?.tileIds).toEqual(
       expect.arrayContaining([
         "activities",
@@ -67,6 +67,7 @@ describe("Pack 3 destinations", () => {
     expect(destinationIdForTile("worksheets")).toBe("make");
     expect(destinationIdForTile("activities")).toBe("presence");
     expect(destinationIdForTile("talking-amy")).toBe("presence");
+    expect(destinationIdForTile("gaming-rewards")).toBe("games");
     expect(destinationIdForTile("amy-ai")).toBe("ask-amy");
   });
 
@@ -80,6 +81,7 @@ describe("Pack 3 destinations", () => {
       "Grow",
       "Presence",
       "Make",
+      "Games",
       "Infant Care",
       "Story",
     ]) {
@@ -88,8 +90,8 @@ describe("Pack 3 destinations", () => {
     // No product-mall residue as primary names
     expect(names).not.toContain("Smart Math Tricks");
     expect(names).not.toContain("Daily Tips");
-    // Pack 4 — Moments root ceiling
-    expect(ROOM_DESTINATIONS.moments).toHaveLength(3);
+    // Pack 4 — Moments root ceiling (Games restored under Moments)
+    expect(ROOM_DESTINATIONS.moments).toHaveLength(4);
     expect(names).not.toContain("Discovery Worlds");
   });
 });

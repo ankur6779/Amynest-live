@@ -2,7 +2,12 @@ import { getApiUrl } from "@/lib/api";
 import { getFirebaseAuth } from "@/lib/firebase";
 
 /** Best-effort: tell the API a notification was opened (adaptive engine + fatigue). */
-export function recordNotificationOpened(): void {
+export function recordNotificationOpened(meta?: {
+  fingerprint?: string;
+  notificationId?: string;
+  category?: string;
+  destination?: string;
+}): void {
   void (async () => {
     try {
       const user = getFirebaseAuth().currentUser;
@@ -14,7 +19,12 @@ export function recordNotificationOpened(): void {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: "{}",
+        body: JSON.stringify({
+          fingerprint: meta?.fingerprint ?? meta?.notificationId ?? undefined,
+          notificationId: meta?.notificationId ?? undefined,
+          category: meta?.category ?? undefined,
+          destination: meta?.destination ?? undefined,
+        }),
       });
     } catch {
       /* ignore */

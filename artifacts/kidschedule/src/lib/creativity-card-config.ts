@@ -63,7 +63,7 @@ export const CREATIVITY_CARD_VISUALS: Record<Exclude<CreativityCardId, "section-
     glyphColor: "text-fuchsia-100/80",
     floatingGlyphs: ["A", "★", "+"],
     chips: [
-      { icon: Puzzle, labelKey: "parent_hub.creativity_cards.activities.chip_1", defaultLabel: "Games" },
+      { icon: Puzzle, labelKey: "parent_hub.creativity_cards.activities.chip_1", defaultLabel: "Play" },
       { icon: Star, labelKey: "parent_hub.creativity_cards.activities.chip_2", defaultLabel: "Skills" },
     ],
   },

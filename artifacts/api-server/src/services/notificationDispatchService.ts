@@ -14,6 +14,8 @@ import {
   resolveFingerprint,
   stableNotificationId,
   canDeliverPush,
+  isTransactionalNotificationCategory,
+  isStalePushToken,
 } from "@workspace/notification-engine";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { getMessaging } from "firebase-admin/messaging";
@@ -153,11 +155,7 @@ export interface DispatchResult {
 }
 
 export async function getOrCreatePreferences(userId: string) {
-  const [existing] = await db
-    .select()
-    .from(notificationPreferencesTable)
-    .where(eq(notificationPreferencesTable.userId, userId))
-    .limit(1);
+  const existing = await getPreferencesIfExists(userId);
   if (existing) return existing;
 
   const [created] = await db
@@ -167,13 +165,59 @@ export async function getOrCreatePreferences(userId: string) {
     .returning();
   if (created) return created;
 
-  const [retry] = await db
+  const retry = await getPreferencesIfExists(userId);
+  if (!retry) throw new Error("Failed to create notification preferences");
+  return retry;
+}
+
+/** SELECT-only. Never inserts. Used by production dry-run. */
+export async function getPreferencesIfExists(userId: string) {
+  const [existing] = await db
     .select()
     .from(notificationPreferencesTable)
     .where(eq(notificationPreferencesTable.userId, userId))
     .limit(1);
-  if (!retry) throw new Error("Failed to create notification preferences");
-  return retry;
+  return existing ?? null;
+}
+
+/** In-memory schema defaults — no database write. */
+export function dryRunDefaultPreferences(
+  userId: string,
+): Awaited<ReturnType<typeof getOrCreatePreferences>> {
+  const now = new Date(0);
+  return {
+    id: 0,
+    userId,
+    routineEnabled: true,
+    routineItemEnabled: true,
+    nutritionEnabled: true,
+    insightsEnabled: true,
+    weeklyEnabled: true,
+    engagementEnabled: true,
+    goodNightEnabled: true,
+    parentingTipsEnabled: true,
+    storyTimeEnabled: true,
+    phonicsEnabled: true,
+    learningActivityEnabled: true,
+    milestoneEnabled: true,
+    infantCareEnabled: true,
+    timezone: "Asia/Kolkata",
+    quietHoursStart: "22:00",
+    quietHoursEnd: "07:00",
+    dailyCap: 10,
+    notificationIntensity: "balanced",
+    engagementScore: 50,
+    locale: "en-US",
+    countryCode: null,
+    pushConsentAt: null,
+    pushConsentVersion: null,
+    marketingOptIn: false,
+    preferredEngagementHour: null,
+    smartDeliveryEnabled: true,
+    pushSoundsEnabled: true,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 async function resolveChildAgeYears(userId: string): Promise<number | null> {
@@ -470,6 +514,8 @@ async function sendFcmWebPush(
       body: input.body,
       category: input.category,
       deepLink: input.deepLink ?? "",
+      fingerprint: input.dedupKey ?? "",
+      notificationId: input.dedupKey ?? "",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
@@ -550,6 +596,8 @@ async function sendFcmIosPush(
     data: {
       category: input.category,
       deepLink: input.deepLink ?? "",
+      fingerprint: input.dedupKey ?? "",
+      notificationId: input.dedupKey ?? "",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
@@ -604,7 +652,11 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   }
 
   let tokens = await db
-    .select({ token: pushTokensTable.token, platform: pushTokensTable.platform })
+    .select({
+      token: pushTokensTable.token,
+      platform: pushTokensTable.platform,
+      lastSeenAt: pushTokensTable.lastSeenAt,
+    })
     .from(pushTokensTable)
     .where(eq(pushTokensTable.userId, input.userId));
 
@@ -638,6 +690,28 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
 
+  const now = new Date();
+  const lastAppOpenAt = tokens.reduce<Date | null>((acc, t) => {
+    if (!t.lastSeenAt) return acc;
+    if (!acc || t.lastSeenAt > acc) return t.lastSeenAt;
+    return acc;
+  }, null);
+  const allTokensStale =
+    tokens.length > 0 && tokens.every((t) => isStalePushToken(t.lastSeenAt, now));
+  if (allTokensStale && input.bypassDailyCap !== true) {
+    logger.info(
+      {
+        evt: "notification_suppressed",
+        reason: "stale_token",
+        userId: input.userId,
+        category: input.category,
+      },
+      "Notification suppressed because every push token is stale",
+    );
+    await logNonDeliveryEvent(input, "no_tokens", "stale_token");
+    return { status: "no_tokens", reason: "stale_token" };
+  }
+
   if (!input.bypassQuietHours && inQuietHours(prefs)) {
     await logNonDeliveryEvent(input, "throttled", "quiet_hours");
     return { status: "throttled", reason: "quiet_hours" };
@@ -647,6 +721,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   // reminders that expire immediately. They bypass the intensity daily cap so
   // static cron notifications filling the cap don't silence scheduled tasks.
   const isTimebound = input.category === "routine_item";
+  const skipGlobal =
+    input.bypassDailyCap === true || isTransactionalNotificationCategory(input.category);
 
   let claimId: number | null = null;
   if (input.dedupKey) {
@@ -655,6 +731,9 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       timezone: prefs.timezone,
       intensityDailyCap: effectiveDailyCap(prefs),
       skipIntensityCap: input.bypassDailyCap === true || isTimebound,
+      skipGlobalProactiveFatigue: skipGlobal,
+      lastAppOpenAt,
+      now,
     });
     if (!slot.ok) {
       if (slot.status === "rate_limited") {

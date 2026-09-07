@@ -1070,9 +1070,7 @@ function AppRoutes() {
           <Route path="/learn-with-amy">
             <Redirect to="/parenting-hub" replace />
           </Route>
-          <Route path="/progress">
-            <LivingLeaveRedirect path="/progress" Legacy={ProgressRoute} />
-          </Route>
+          <Route path="/progress" component={ProgressRoute} />
           <Route path="/parenting-hub" component={ParentingHubRoute} />
           <Route path="/parent-growth" component={ParentGrowthRoute} />
           {import.meta.env.PROD ? (
@@ -1123,12 +1121,7 @@ function AppRoutes() {
           <Route path="/parenting-hub/talking-amy">
             <Redirect to="/talking-amy" replace />
           </Route>
-          <Route path="/kids-control-center">
-            <LivingLeaveRedirect
-              path="/kids-control-center"
-              Legacy={KidsControlCenterRoute}
-            />
-          </Route>
+          <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />
           <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
           {/* Legacy deep link — keep old URLs working without a hard break. */}
@@ -1166,9 +1159,7 @@ function AppRoutes() {
           <Route path="/nutrition" component={NutritionHubRoute} />
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/rhymes" component={RhymesRoute} />
-          <Route path="/games">
-            <LivingLeaveRedirect path="/games" Legacy={GamesRoute} />
-          </Route>
+          <Route path="/games" component={GamesRoute} />
           <Route path="/animal-world" component={AnimalWorldRoute} />
           <Route path="/discovery-worlds" component={DiscoveryWorldsHubRoute} />
           <Route path="/answer-to-kids-how" component={AnswerToKidsHowRoute} />
@@ -1180,12 +1171,8 @@ function AppRoutes() {
           <Route path="/pricing" component={PricingRoute} />
           <Route path="/referral/:code" component={ReferralDeepLinkRoute} />
           <Route path="/referrals" component={ReferralsRoute} />
-          <Route path="/insights">
-            <LivingLeaveRedirect path="/insights" Legacy={InsightsRoute} />
-          </Route>
-          <Route path="/rewards">
-            <LivingLeaveRedirect path="/rewards" Legacy={RewardsRoute} />
-          </Route>
+          <Route path="/insights" component={InsightsRoute} />
+          <Route path="/rewards" component={RewardsRoute} />
           {import.meta.env.PROD ? (
             <>
               <Route path="/debug-parity" component={DevRouteRedirect} />

@@ -302,6 +302,13 @@ export async function runGlobalScheduleTick(now = new Date()): Promise<{
     }
 
     for (const job of SCHEDULED_NOTIFICATION_JOBS) {
+      if (
+        job.jobId === "engagement_sweep" &&
+        (process.env["NOTIF_REENGAGEMENT_MODE"] ?? "").trim().toLowerCase() === "live"
+      ) {
+        continue;
+      }
+
       const gate = shouldDeliverScheduledJob(job, local, {
         userId: user.userId,
         timezone: tz,

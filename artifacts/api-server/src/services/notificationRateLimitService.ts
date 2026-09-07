@@ -2,11 +2,13 @@
  * Atomic notification slot acquisition — serializes per-user dispatch so rate
  * limits remain correct under concurrent workers (advisory xact lock + recount).
  */
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db, notificationLogTable } from "@workspace/db";
 import {
   evaluateDeliveryGuard,
+  evaluateGlobalProactiveFatigue,
   parseFingerprintChildId,
+  PROACTIVE_NOTIFICATION_CATEGORIES,
   type DeliveryHistoryRow,
 } from "@workspace/notification-engine";
 import {
@@ -26,6 +28,45 @@ export type AtomicSlotResult =
       reason: string;
       logEvent?: string;
     };
+
+async function loadProactiveStatsTx(
+  tx: Tx,
+  userId: string,
+  timezone: string,
+  now: Date,
+): Promise<{ sentToday: number; sentWeek: number; lastAt: Date | null }> {
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const localDate = fmt.format(now);
+  const rows = await tx
+    .select({
+      sentAt: notificationLogTable.sentAt,
+      status: notificationLogTable.status,
+    })
+    .from(notificationLogTable)
+    .where(
+      and(
+        eq(notificationLogTable.userId, userId),
+        inArray(notificationLogTable.status, ["sent", "pending"]),
+        inArray(notificationLogTable.category, [...PROACTIVE_NOTIFICATION_CATEGORIES]),
+        gte(notificationLogTable.sentAt, weekAgo),
+      ),
+    )
+    .orderBy(desc(notificationLogTable.sentAt));
+
+  let sentToday = 0;
+  let lastAt: Date | null = null;
+  for (const row of rows) {
+    if (!lastAt || row.sentAt > lastAt) lastAt = row.sentAt;
+    if (fmt.format(row.sentAt) === localDate) sentToday++;
+  }
+  return { sentToday, sentWeek: rows.length, lastAt };
+}
 
 async function countActiveToday(
   tx: Tx,
@@ -262,6 +303,11 @@ export type AtomicAcquireInput = ClaimInput & {
   intensityDailyCap?: number;
   /** When true, skip intensity cap (routine_item, test sends). */
   skipIntensityCap?: boolean;
+  /** Skip the shared 1/day, 4/week, 90-minute proactive gate. */
+  skipGlobalProactiveFatigue?: boolean;
+  /** Best-effort last app/token seen (existing push_tokens.lastSeenAt). */
+  lastAppOpenAt?: Date | null;
+  now?: Date;
 };
 
 /**
@@ -282,15 +328,18 @@ export async function atomicAcquireDeliverySlot(
     `);
 
     await clearStalePendingClaims(input.userId, fingerprint, tx);
+    const now = input.now ?? new Date();
     const childId = parseFingerprintChildId(fingerprint);
-    const [history, accountSentToday, accountSentLastHour, childSentToday] = await Promise.all([
-      loadDeliveryHistoryTx(tx, input.userId, fingerprint),
-      countActiveToday(tx, input.userId, input.timezone),
-      countActiveLastHour(tx, input.userId),
-      childId != null
-        ? countActiveTodayForChild(tx, input.userId, childId, input.timezone)
-        : Promise.resolve(0),
-    ]);
+    const [history, accountSentToday, accountSentLastHour, childSentToday, proactive] =
+      await Promise.all([
+        loadDeliveryHistoryTx(tx, input.userId, fingerprint),
+        countActiveToday(tx, input.userId, input.timezone),
+        countActiveLastHour(tx, input.userId),
+        childId != null
+          ? countActiveTodayForChild(tx, input.userId, childId, input.timezone)
+          : Promise.resolve(0),
+        loadProactiveStatsTx(tx, input.userId, input.timezone, now),
+      ]);
 
     const decision = evaluateDeliveryGuard({
       fingerprint,
@@ -324,6 +373,29 @@ export async function atomicAcquireDeliverySlot(
         reason: decision.reason,
         logEvent: decision.logEvent,
       };
+    }
+
+    const fatigue = evaluateGlobalProactiveFatigue({
+      category: input.category,
+      skip: input.skipGlobalProactiveFatigue === true,
+      sentProactiveToday: proactive.sentToday,
+      sentProactiveThisWeek: proactive.sentWeek,
+      lastProactiveAt: proactive.lastAt,
+      lastAppOpenAt: input.lastAppOpenAt ?? null,
+      now,
+    });
+    if (!fatigue.allow) {
+      await insertOutcomeLogTx(tx, input, "throttled", fatigue.reason);
+      logger.info(
+        {
+          evt: "notification_suppressed",
+          reason: fatigue.reason,
+          userId: input.userId,
+          category: input.category,
+        },
+        "Proactive notification suppressed by global fatigue gate",
+      );
+      return { ok: false, status: "throttled", reason: fatigue.reason };
     }
 
     if (

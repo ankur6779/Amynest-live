@@ -6,11 +6,13 @@ import { ArrowRight, Salad, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HUB_EXPANDED_CONTENT_STACK, HUB_BODY } from "@/lib/parent-hub-premium";
 import { isHealthZoneJourneyEligible } from "@/lib/hub-visibility";
+import { roomsNutritionPreview } from "@/features/nutrition/lib/rooms-nutrition-preview";
 
 type NutritionHubParentContentProps = {
   childAgeMonths: number;
   isFreeJourneyPeriod: boolean;
   isPremium: boolean;
+  childName?: string;
   onOpenHub?: () => void;
 };
 
@@ -18,18 +20,33 @@ export function NutritionHubParentContent({
   childAgeMonths,
   isFreeJourneyPeriod,
   isPremium,
+  childName,
   onOpenHub,
 }: NutritionHubParentContentProps) {
   const { t } = useTranslation();
   const tags = t("parent_hub.nutrition_tags", { returnObjects: true }) as string[];
+  const preview = roomsNutritionPreview(childAgeMonths);
 
   return (
-    <div className={HUB_EXPANDED_CONTENT_STACK}>
+    <div
+      className={HUB_EXPANDED_CONTENT_STACK}
+      data-testid="nutrition-hub-parent-content"
+      data-nutrition-band={preview.ageGroupId}
+      data-age-months={String(childAgeMonths)}
+      data-child-name={childName}
+    >
       <p className={cn(HUB_BODY, "text-xs text-muted-foreground")}>
         {t("parent_hub.web_tiles.nutrition.intro")}
       </p>
 
       <div className="flex flex-wrap gap-1.5">
+        <Badge
+          variant="secondary"
+          className="text-[10px]"
+          data-testid="nutrition-age-band"
+        >
+          {preview.label}
+        </Badge>
         <Badge variant="secondary" className="text-[10px]">
           {t("parent_hub.web_tiles.nutrition.ages_all")}
         </Badge>
@@ -38,6 +55,39 @@ export function NutritionHubParentContent({
             {tag}
           </Badge>
         ))}
+      </div>
+
+      <div
+        className="space-y-2 rounded-xl border border-white/[0.08] bg-card/40 p-3"
+        data-testid="nutrition-age-preview"
+        data-has-meal={preview.hasMeal ? "true" : "false"}
+      >
+        <p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground">
+          {childName
+            ? `Today for ${childName}`
+            : t("parent_hub.web_tiles.nutrition.access_title")}
+        </p>
+        <p className="text-xs text-foreground/90">{preview.description}</p>
+        {preview.focus ? (
+          <p className="text-xs text-foreground/80">Focus: {preview.focus}</p>
+        ) : null}
+        {preview.hasMeal ? (
+          <div data-testid="nutrition-today-meal" className="space-y-1">
+            {preview.dayLabel ? (
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {preview.dayLabel}
+              </p>
+            ) : null}
+            <p className="text-sm font-medium text-foreground">{preview.lunch}</p>
+            {preview.snack ? (
+              <p className="text-xs text-muted-foreground">Snack: {preview.snack}</p>
+            ) : null}
+          </div>
+        ) : (
+          <p data-testid="nutrition-preview-guidance" className="text-xs text-foreground/90">
+            {preview.description}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2 rounded-xl border border-white/[0.08] bg-card/40 p-3">

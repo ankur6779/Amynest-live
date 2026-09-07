@@ -69,7 +69,12 @@ function handleNotificationTap(
     ) {
       consumeNotificationNavigation(req);
       if (req.userInteraction === true) {
-        recordNotificationOpened();
+        recordNotificationOpened({
+          fingerprint: payload.data?.fingerprint ?? payload.notificationId,
+          notificationId: payload.notificationId,
+          category: payload.category,
+          destination: decision.resolvedPath,
+        });
       }
       toast({
         description: "Opened from notification",
@@ -89,7 +94,12 @@ function handleNotificationTap(
 
   consumeNotificationNavigation(req);
   if (req.userInteraction === true) {
-    recordNotificationOpened();
+    recordNotificationOpened({
+      fingerprint: payload.data?.fingerprint ?? payload.notificationId,
+      notificationId: payload.notificationId,
+      category: payload.category,
+      destination: decision.resolvedPath,
+    });
     if (payload.category === "infant_care") {
       recordInfantNotificationOutcomeFireAndForget({
         action: "opened",

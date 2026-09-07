@@ -1,0 +1,129 @@
+# Automated AmyNest Content Factory — every 3 days @ 17:00 IST
+#
+# Wake daily at 11:30 UTC (= 17:00 Asia/Kolkata). In-process cloud-tolerant
+# gate accepts delayed wakes and catch-up of the latest due occurrence.
+#
+# LIVE spend: repo variable AMYNEST_CONTENT_FACTORY_LIVE=1
+# Code ref: AMYNEST_CONTENT_FACTORY_REF (e.g. fix/p0-production-integrity)
+
+name: content-factory-every-3-days
+
+on:
+  schedule:
+    # 17:00 Asia/Kolkata == 11:30 UTC (IST is UTC+5:30, no DST)
+    - cron: "30 11 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run | tick | force-live (catch-up now)"
+        required: false
+        default: "tick"
+
+concurrency:
+  group: amynest-content-factory
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: content-engine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ vars.AMYNEST_CONTENT_FACTORY_REF || github.ref_name }}
+
+      # pnpm MUST be installed before setup-node cache: pnpm
+      # version comes from package.json packageManager (do not also set "version:")
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Restore factory queue cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/amynest-factory-data
+          key: amynest-content-factory-queue-v1
+          restore-keys: |
+            amynest-content-factory-queue-
+
+      - name: Install
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Install ffmpeg
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg python3-pil python3-numpy python3-pip
+          python3 -c "from PIL import Image, ImageDraw, ImageFont, ImageFilter; import numpy as np; print('pillow-numpy-ok', np.__version__)"
+          ffmpeg -version | head -1
+
+      # Repo historically tracked a laptop-absolute symlink for .amynest-assets.
+      # On Actions that target does not exist → mkdir ENOENT. Use a real dir.
+      - name: Ensure writable .amynest-assets
+        working-directory: .
+        run: |
+          set -euo pipefail
+          if [ -L .amynest-assets ]; then
+            echo "Replacing broken laptop symlink: $(readlink .amynest-assets)"
+            rm -f .amynest-assets
+          fi
+          mkdir -p .amynest-assets
+
+      - name: Content factory dry-run / tick
+        env:
+          AMYNEST_DATA_DIR: /tmp/amynest-factory-data
+          AMYNEST_CONTENT_FACTORY_LIVE: ${{ vars.AMYNEST_CONTENT_FACTORY_LIVE || '0' }}
+          # Cost control: keep Veo at 720p unless explicitly overridden via vars
+          AMYNEST_KIE_VEO_RESOLUTION: ${{ vars.AMYNEST_KIE_VEO_RESOLUTION || '720p' }}
+          # Factory must use KIE only — Google Veo fallback masks KIE errors and often 400s on long prompts/images
+          AMYNEST_VIDEO_FALLBACK_GOOGLE: "0"
+          AMYNEST_VIDEO_PROVIDER: kie
+          KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_ACCESS_TOKEN: ${{ secrets.YOUTUBE_ACCESS_TOKEN }}
+          YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$AMYNEST_DATA_DIR"
+          MODE="${{ github.event.inputs.mode || 'tick' }}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${MODE}" = "dry-run" ]; then
+            node --import tsx/esm ./operations/content-factory/cli.ts dry-run
+          elif [ "${MODE}" = "force-live" ]; then
+            # Catch-up: ignore wall-clock minute; still requires LIVE=1
+            export AMYNEST_CONTENT_FACTORY_IGNORE_SCHEDULE=1
+            node --import tsx/esm ./operations/content-factory/cli.ts tick
+          else
+            node --import tsx/esm ./operations/content-factory/cli.ts tick
+          fi
+
+      - name: Upload factory artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-factory-${{ github.run_id }}
+          path: |
+            content-engine/docs/operations/*PRODUCTION*
+            content-engine/docs/operations/*FACTORY*
+            content-engine/docs/operations/*LAUNCH*
+            content-engine/docs/operations/GOOGLE_PRODUCTION_RUN_REPORT.md
+            .amynest-assets/factory-*/**/*
+            /tmp/amynest-factory-data/**
+          if-no-files-found: warn
+          retention-days: 14

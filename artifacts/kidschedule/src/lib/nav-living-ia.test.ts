@@ -89,6 +89,11 @@ describe("living home navigation IA", () => {
       "/parenting-hub",
     );
     expect(more).toContain("/nutrition");
+    expect(more).toContain("/games");
+    expect(more).toContain("/study");
+    expect(more).toContain("/progress");
+    expect(more).toContain("/insights");
+    expect(more).not.toContain("/kids-control-center");
   });
 
   it("uses companion wording for Amy, not assistant SaaS copy", () => {

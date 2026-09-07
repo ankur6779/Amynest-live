@@ -31,6 +31,28 @@ export type GrowQuietPath = {
   purpose: string;
   /** Competitive / later energy — never lead Grow */
   demoted?: boolean;
+  /** False = visible with explanation; do not open. Default true. */
+  enabled?: boolean;
+  disabledReason?: string;
+};
+
+/** Content floors — core Grow paths stay listed; challenge is excluded until 72m. */
+export const GROW_PATH_MIN_AGE_MONTHS: Record<GrowPathId, number> = {
+  sounds: 12,
+  numbers: 24,
+  beads: 24,
+  spelling: 36,
+  study: 48,
+  challenge: 72,
+};
+
+export const GROW_PATH_COMING_REASON: Record<GrowPathId, string> = {
+  sounds: "Sounds & letters begins around age 1.",
+  numbers: "Quiet number play is ready from age 2.",
+  beads: "Beads & counting is ready from age 2.",
+  spelling: "Spelling calmly is ready from age 3.",
+  study: "Quiet study is ready from age 4.",
+  challenge: "When they are ready — never forced.",
 };
 
 /**
@@ -107,39 +129,62 @@ export function growDeepenCueForTile(tileId: string): {
 /**
  * One recommended Understand practice act.
  * Younger children → sounds; older → numbers. Never olympiad first.
+ * If the preferred path is below its content floor, use the first enabled
+ * path — or disable the recommend rather than opening a blank module.
  */
 export function recommendGrowAction(
   childName = "your child",
   ageMonths = 60,
 ): GrowRecommend {
-  if (ageMonths < 54) {
+  const preferred: GrowPathId = ageMonths < 54 ? "sounds" : "numbers";
+  const paths = growPathsForAge(ageMonths);
+  const enabled = paths.filter((path) => path.enabled !== false);
+  const pick =
+    enabled.find((path) => path.id === preferred) ?? enabled[0] ?? null;
+
+  if (!pick) {
     return {
       id: "practice",
       pathId: "sounds",
       tileId: "phonics",
       label: "Start here",
       title: `Today's practice with ${childName}`,
-      purpose: "One calm learning moment — no pressure",
+      purpose: GROW_PATH_COMING_REASON.sounds,
     };
   }
+
   return {
     id: "practice",
-    pathId: "numbers",
-    tileId: "smart-math-tricks",
+    pathId: pick.id,
+    tileId: pick.tileId,
     label: "Start here",
     title: `Today's practice with ${childName}`,
     purpose: "One calm learning moment — no pressure",
   };
 }
 
-/** Paths visible for this age season — olympiad only when older. */
+export function isGrowRecommendEnabled(ageMonths: number): boolean {
+  return growPathsForAge(ageMonths).some((path) => path.enabled !== false);
+}
+
+/**
+ * Grow paths for this child.
+ * Core paths stay visible for every profile. Below the content floor they
+ * render disabled with an explanation instead of disappearing.
+ * Challenge (Olympiad) is an intentional exclusion until 72 months.
+ */
 export function growPathsForAge(ageMonths: number): GrowQuietPath[] {
-  return GROW_QUIET_PATHS.filter((path) => {
-    if (path.id === "challenge") return ageMonths >= 72;
-    if (path.id === "study") return ageMonths >= 48;
-    if (path.id === "spelling") return ageMonths >= 36;
-    if (path.id === "beads" || path.id === "numbers") return ageMonths >= 24;
-    return true; // sounds always when Grow is shown
+  return GROW_QUIET_PATHS.flatMap((path) => {
+    const min = GROW_PATH_MIN_AGE_MONTHS[path.id];
+    if (path.id === "challenge" && ageMonths < min) return [];
+    if (ageMonths >= min) return [path];
+    return [
+      {
+        ...path,
+        enabled: false,
+        disabledReason: GROW_PATH_COMING_REASON[path.id],
+      },
+    ];
   });
 }
 

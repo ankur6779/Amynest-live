@@ -5,9 +5,11 @@
  */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { AppLink } from "@/components/app-link";
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
+  GAMES_MODULE_HREF,
   MOMENTS_MAKE_SOFT,
   MOMENTS_PRESENCE_SOFT,
   MOMENTS_QUIET_PATHS,
@@ -112,6 +114,26 @@ export function MomentsLivingStream({
         <div className="mo-quiet-list" data-testid="moments-quiet-paths">
           {MOMENTS_QUIET_PATHS.map((path) => {
             const active = activePath === path.id;
+            const pathBody = (
+              <>
+                <span className="mo-quiet-path-title">{path.title}</span>
+                <span className="mo-quiet-path-purpose">{path.purpose}</span>
+              </>
+            );
+            if (path.id === "games") {
+              return (
+                <AppLink
+                  key={path.id}
+                  href={GAMES_MODULE_HREF}
+                  source="moments-games"
+                  className="mo-quiet-path"
+                  data-testid={`moments-quiet-${path.id}`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {pathBody}
+                </AppLink>
+              );
+            }
             return (
               <button
                 key={path.id}
@@ -123,8 +145,7 @@ export function MomentsLivingStream({
                 aria-current={active ? "true" : undefined}
                 onClick={() => onSelectTile(path.tileId)}
               >
-                <span className="mo-quiet-path-title">{path.title}</span>
-                <span className="mo-quiet-path-purpose">{path.purpose}</span>
+                {pathBody}
               </button>
             );
           })}

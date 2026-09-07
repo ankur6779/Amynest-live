@@ -30,7 +30,7 @@ export const FIX_CANDIDATES: FixCandidate[] = [
       "buildChildHydrationKey uses childId:dob:parentCountry (stable)",
     ],
     proposedFix:
-      "Early-return when childHydrationKeyRef matches hydrationKey before any setValue/reset. Use country-only patch path (lines 427-444) when only parentCountry changed.",
+      "Early-return when childHydrationKeyRef matches hydrationKey before any setValue/reset. Use country-only patch path (lines 419-444) when only parentCountry changed.",
     confidence: 90,
     risk: "Low",
     minimalDiffHint: "if (childHydrationKeyRef.current === hydrationKey) return;",
