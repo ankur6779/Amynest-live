@@ -1671,6 +1671,13 @@ if (isMain) {
         console.log(`Video ID: ${state.videoId}`);
       }
       if (state.rootCause) console.error(state.rootCause);
+      if (state.errors.length) {
+        console.error(`Detail: ${state.errors.join(" | ")}`);
+      }
+      const lastFail = [...state.timeline].reverse().find((t) => !t.ok);
+      if (lastFail) {
+        console.error(`Failed step ${lastFail.name}: ${lastFail.detail}`);
+      }
       process.exit(state.status === "SUCCESS" ? 0 : 1);
     })
     .catch((e) => {

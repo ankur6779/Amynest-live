@@ -106,3 +106,17 @@ jobs:
           else
             node --import tsx/esm ./operations/content-factory/cli.ts tick
           fi
+
+      - name: Upload factory artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-factory-${{ github.run_id }}
+          path: |
+            content-engine/docs/operations/*PRODUCTION*
+            content-engine/docs/operations/*FACTORY*
+            content-engine/docs/operations/*LAUNCH*
+            .amynest-assets/factory-*/**/*
+            /tmp/amynest-factory-data/**
+          if-no-files-found: warn
+          retention-days: 14

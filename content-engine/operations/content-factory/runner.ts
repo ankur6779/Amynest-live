@@ -298,17 +298,23 @@ export async function runContentFactory(options: FactoryRunOptions = {}): Promis
     };
   }
 
-  const runId = `cfr_${dateKey}_${next.goldenScriptId}_${randomUUID().slice(0, 8)}`;
+  const priorAttempt =
+    existing?.status === "FAILED" ? Math.max(1, existing.productionAttempt || 1) : 0;
+  const runId =
+    existing?.status === "FAILED" && existing.runId
+      ? existing.runId
+      : `cfr_${dateKey}_${next.goldenScriptId}_${randomUUID().slice(0, 8)}`;
   const record: FactoryProductionRecord = {
     runId,
     idempotencyKey,
     goldenScriptId: next.goldenScriptId,
     goldenNum: next.goldenNum,
     status: "PLANNING",
-    productionAttempt: 1,
+    productionAttempt: priorAttempt + 1,
     scheduledFor: sched.occurrenceLocal ?? `${dateKey} 17:00 Asia/Kolkata`,
     startedAt: new Date().toISOString(),
     dryRun: false,
+    failureReason: undefined,
   };
   upsertProduction(queue, record);
   saveQueue(queuePath, queue);
@@ -342,7 +348,14 @@ export async function runContentFactory(options: FactoryRunOptions = {}): Promis
 
   if (child.status !== 0) {
     record.status = "FAILED";
-    record.failureReason = (child.stderr || child.stdout || "production failed").slice(0, 2000);
+    const combined = `${child.stderr || ""}\n${child.stdout || ""}`.trim();
+    const detailLine =
+      combined
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("Detail:") || l.startsWith("Failed step"))
+        .join(" | ") || combined;
+    record.failureReason = (detailLine || "production failed").slice(0, 2000);
     record.completedAt = new Date().toISOString();
     upsertProduction(queue, record);
     saveQueue(queuePath, queue);

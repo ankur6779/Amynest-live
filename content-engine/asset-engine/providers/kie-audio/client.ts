@@ -303,11 +303,30 @@ export async function kieGenerateMusic(
   });
 
   const taskId = create.json?.data?.taskId as string | undefined;
-  if (!create.ok || !taskId) {
+  const createCode = Number(create.json?.code);
+  if (!create.ok || (Number.isFinite(createCode) && createCode !== 200) || !taskId) {
     throw new Error(
       `KIE Suno create failed (${create.status}): ${JSON.stringify(create.json).slice(0, 600)}`,
     );
   }
+
+  const pickAudioUrl = (track: any): string | undefined => {
+    if (!track || typeof track !== "object") return undefined;
+    const candidates = [
+      track.audioUrl,
+      track.audio_url,
+      track.sourceAudioUrl,
+      track.source_audio_url,
+      track.streamAudioUrl,
+      track.stream_audio_url,
+      track.sourceStreamAudioUrl,
+      track.source_stream_audio_url,
+    ];
+    for (const c of candidates) {
+      if (typeof c === "string" && c.trim()) return c.trim();
+    }
+    return undefined;
+  };
 
   const pollIntervalMs = options.pollIntervalMs ?? 4_000;
   const maxPollAttempts = options.maxPollAttempts ?? 90;
@@ -319,13 +338,16 @@ export async function kieGenerateMusic(
       { key: options.apiKey, signal: options.signal },
     );
     const status = String(poll.json?.data?.status || "");
-    if (status === "SUCCESS" || status === "FIRST_SUCCESS") {
+    // TEXT_SUCCESS / FIRST_SUCCESS often expose stream URL before final audioUrl.
+    if (
+      status === "SUCCESS" ||
+      status === "FIRST_SUCCESS" ||
+      status === "TEXT_SUCCESS"
+    ) {
       const tracks = poll.json?.data?.response?.sunoData;
-      const audioUrl =
-        (Array.isArray(tracks) && tracks[0]?.audioUrl) ||
-        (Array.isArray(tracks) && tracks[0]?.streamAudioUrl);
+      const audioUrl = Array.isArray(tracks) ? pickAudioUrl(tracks[0]) : undefined;
       if (!audioUrl) {
-        if (status === "FIRST_SUCCESS") continue;
+        if (status === "FIRST_SUCCESS" || status === "TEXT_SUCCESS") continue;
         throw new Error(
           `KIE Suno success without audio URL: ${JSON.stringify(poll.json).slice(0, 500)}`,
         );
@@ -339,10 +361,12 @@ export async function kieGenerateMusic(
       return { audioPath: options.outputPath, taskId, model: `kie-suno/${model}` };
     }
     if (
-      status.includes("FAIL") ||
       status === "SENSITIVE_WORD_ERROR" ||
       status === "CREATE_TASK_FAILED" ||
-      status === "GENERATE_AUDIO_FAILED"
+      status === "GENERATE_AUDIO_FAILED" ||
+      status.endsWith("_FAILED") ||
+      status === "FAILED" ||
+      status === "FAIL"
     ) {
       throw new Error(
         `KIE Suno failed (${status}): ${JSON.stringify(poll.json).slice(0, 500)}`,
