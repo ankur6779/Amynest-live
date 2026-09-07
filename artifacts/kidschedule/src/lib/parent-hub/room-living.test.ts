@@ -44,6 +44,9 @@ describe("P0-6 room living (Moments law for Help/Understand/Care)", () => {
       recommendPathForRoom("care", { isInfant: false, childName: "Arla" })
         .destinationId,
     ).toBe("nutrition");
+    expect(
+      recommendPathForRoom("care", { isInfant: false, childName: "Arla" }).title,
+    ).toMatch(/nutrition/i);
   });
 
   it("quiet paths never compete as equal peer shelves", () => {
@@ -55,8 +58,11 @@ describe("P0-6 room living (Moments law for Help/Understand/Care)", () => {
     expect(understand.map((p) => p.id)).not.toContain("guidance");
     expect(understand.every((p) => p.id !== "guidance")).toBe(true);
 
-    const care = quietPathsForRoom("care", { isInfant: false });
-    expect(care.map((p) => p.id)).not.toContain("nutrition");
+    const careInfant = quietPathsForRoom("care", { isInfant: true });
+    const careOlder = quietPathsForRoom("care", { isInfant: false });
+    expect(careInfant.map((p) => p.id)).toEqual(["nutrition", "health-lab"]);
+    expect(careOlder.map((p) => p.id)).toEqual(["nutrition", "health-lab"]);
+    expect(careOlder.map((p) => p.id)).not.toContain("infant-care");
   });
 
   it("purposes stay companionship — not browse language", () => {

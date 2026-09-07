@@ -32,6 +32,7 @@ export function ParentHubDestinationRow({
       data-room-tile={tileId}
       data-recommended={recommendLabel ? "true" : undefined}
       aria-pressed={active}
+      aria-label={hint ? `${title}. ${hint}` : title}
       onClick={onSelect}
       className={cn(
         "ph-dest-row",

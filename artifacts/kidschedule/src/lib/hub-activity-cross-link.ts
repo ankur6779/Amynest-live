@@ -1,3 +1,4 @@
+import { isUrlSafeRoomTileId } from "@/lib/parent-hub/eligibility";
 import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/rooms";
 
 /** Deep links from routines → Parent Hub activity tiles. */
@@ -147,6 +148,67 @@ export function applyParentingHubDeepLink(
   if (!target) return false;
   navigate(target.group, target.tileId, target.sectionId);
   return true;
+}
+
+/** Canonical Rooms hash — room doors (`#care`) or a tile (`#tile-nutrition`). */
+export function parentingHubHashForRoom(roomId: string): string {
+  return `#${roomId}`;
+}
+
+export function parentingHubHashForTile(tileId: string): string {
+  return `#tile-${tileId}`;
+}
+
+/** Room doors hash, or a real tile hash — never a synthetic stream id. */
+export function resolveRoomsDeepLinkHash(args: {
+  room: ParentHubRoomId | null;
+  tileId: string | null | undefined;
+}): string {
+  if (args.tileId && isUrlSafeRoomTileId(args.tileId)) {
+    return parentingHubHashForTile(args.tileId);
+  }
+  if (args.room) return parentingHubHashForRoom(args.room);
+  return "";
+}
+
+/**
+ * Child switch must not keep a previous child's module hash.
+ * Returns the replacement hash, or null when the URL should stay as-is.
+ */
+export function roomsHashAfterChildSwitch(args: {
+  activeRoom: ParentHubRoomId | null;
+  currentHash?: string;
+}): string | null {
+  const parsed = parseParentingHubDeepLink(args.currentHash);
+  if (!parsed?.tileId) return null;
+  return args.activeRoom ? parentingHubHashForRoom(args.activeRoom) : "";
+}
+
+function parentingHubUrlWithHash(hash: string): string {
+  if (typeof window === "undefined") return hash;
+  const normalized =
+    hash === "" || hash === "#"
+      ? ""
+      : hash.startsWith("#")
+        ? hash
+        : `#${hash}`;
+  return `${window.location.pathname}${window.location.search}${normalized}`;
+}
+
+export function replaceParentingHubLocationHash(hash: string): void {
+  if (typeof window === "undefined") return;
+  const url = parentingHubUrlWithHash(hash);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (current === url) return;
+  window.history.replaceState(null, "", url);
+}
+
+export function pushParentingHubLocationHash(hash: string): void {
+  if (typeof window === "undefined") return;
+  const url = parentingHubUrlWithHash(hash);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (current === url) return;
+  window.history.pushState(null, "", url);
 }
 
 export function dispatchInfantHubOpenSection(sectionId: string): void {

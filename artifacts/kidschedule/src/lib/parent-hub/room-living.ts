@@ -44,6 +44,7 @@ export function quietPathsForRoom(
   room: RoomLivingPeerRoom,
   opts: { isInfant: boolean },
 ): readonly RoomLivingPath[] {
+  void opts;
   switch (room) {
     case "help":
       return [
@@ -97,36 +98,23 @@ export function quietPathsForRoom(
         },
       ];
     case "care":
-      return opts.isInfant
-        ? [
-            {
-              id: "nutrition",
-              tileId: "nutrition",
-              title: "Nutrition",
-              purpose: "Meals for this body",
-            },
-            {
-              id: "health-lab",
-              tileId: "health-lab",
-              title: "Health",
-              purpose: "Wellness to tend today",
-            },
-          ]
-        : [
-            {
-              id: "infant-care",
-              tileId: "infant-hub",
-              title: "Infant Care",
-              purpose: "Baby care when you need it",
-              demoted: true,
-            },
-            {
-              id: "health-lab",
-              tileId: "health-lab",
-              title: "Health",
-              purpose: "Wellness to tend today",
-            },
-          ];
+      // Nutrition + Health are universal Care modules (Grow-style named paths).
+      // Infant Care is the infant recommend only — never a broken quiet card
+      // for older children (intentional exclusion: 0–24 months).
+      return [
+        {
+          id: "nutrition",
+          tileId: "nutrition",
+          title: "Nutrition",
+          purpose: "Meals for this body.",
+        },
+        {
+          id: "health-lab",
+          tileId: "health-lab",
+          title: "Health",
+          purpose: "Wellness to tend today.",
+        },
+      ];
   }
 }
 
@@ -165,8 +153,8 @@ export function recommendPathForRoom(
             destinationId: "nutrition",
             tileId: "nutrition",
             label: base.labelFallback,
-            title: `Today's care for ${opts.childName}`,
-            purpose: "Meals and care for this body today",
+            title: `Today's nutrition for ${opts.childName}`,
+            purpose: "Meals for this body today",
           };
   }
 }

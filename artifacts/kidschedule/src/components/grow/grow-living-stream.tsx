@@ -11,6 +11,7 @@ import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
   growPathForTile,
   growPathsForAge,
+  isGrowRecommendEnabled,
   recommendGrowAction,
 } from "@/lib/grow/living-room";
 import "@/pages/first-experience-material.css";
@@ -38,7 +39,8 @@ export function GrowLivingStream({
   );
   const paths = useMemo(() => growPathsForAge(ageMonths), [ageMonths]);
   const activePath = activeTileId ? growPathForTile(activeTileId) : null;
-  const recommendActive = activeTileId === recommend.tileId;
+  const recommendEnabled = isGrowRecommendEnabled(ageMonths);
+  const recommendActive = activeTileId === recommend.tileId && recommendEnabled;
 
   return (
     <div
@@ -94,7 +96,14 @@ export function GrowLivingStream({
         className="gw-recommend-btn"
         data-testid="grow-recommend"
         data-active={recommendActive ? "true" : "false"}
-        onClick={() => onSelectTile(recommend.tileId)}
+        data-enabled={recommendEnabled ? "true" : "false"}
+        aria-label={`${recommend.title}. ${recommend.purpose}`}
+        aria-disabled={recommendEnabled ? undefined : "true"}
+        disabled={!recommendEnabled}
+        onClick={() => {
+          if (!recommendEnabled) return;
+          onSelectTile(recommend.tileId);
+        }}
       >
         <span className="gw-recommend-cue">{recommend.label}</span>
         <span className="gw-recommend-title">{recommend.title}</span>
@@ -108,21 +117,34 @@ export function GrowLivingStream({
           })}
         </p>
         <div className="gw-quiet-list" data-testid="grow-quiet-paths">
-          {paths.map((path) => (
-            <button
-              key={path.id}
-              type="button"
-              className="gw-quiet-path"
-              data-testid={`grow-quiet-${path.id}`}
-              data-active={activePath === path.id ? "true" : "false"}
-              data-demoted={path.demoted ? "true" : "false"}
-              aria-current={activePath === path.id ? "true" : undefined}
-              onClick={() => onSelectTile(path.tileId)}
-            >
-              <span className="gw-quiet-path-title">{path.title}</span>
-              <span className="gw-quiet-path-purpose">{path.purpose}</span>
-            </button>
-          ))}
+          {paths.map((path) => {
+            const enabled = path.enabled !== false;
+            const active = activePath === path.id;
+            return (
+              <button
+                key={path.id}
+                type="button"
+                className="gw-quiet-path"
+                data-testid={`grow-quiet-${path.id}`}
+                data-active={active ? "true" : "false"}
+                data-demoted={path.demoted ? "true" : "false"}
+                data-enabled={enabled ? "true" : "false"}
+                aria-label={`${path.title}. ${enabled ? path.purpose : path.disabledReason ?? path.purpose}`}
+                aria-current={active ? "true" : undefined}
+                aria-disabled={enabled ? undefined : "true"}
+                disabled={!enabled}
+                onClick={() => {
+                  if (!enabled) return;
+                  onSelectTile(path.tileId);
+                }}
+              >
+                <span className="gw-quiet-path-title">{path.title}</span>
+                <span className="gw-quiet-path-purpose">
+                  {enabled ? path.purpose : path.disabledReason ?? path.purpose}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
