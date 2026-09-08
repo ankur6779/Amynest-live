@@ -121,6 +121,20 @@ export function mergeProfiles(
   return { profile: server, winner: "server" };
 }
 
+/**
+ * Watermark after a sync merge. Rejecting a stale client must NOT rewind
+ * clientUpdatedAt — otherwise a medium-timestamp sync can overwrite the
+ * fresher profile that just "won".
+ */
+export function resolveSyncWatermarkMs(
+  winner: "client" | "server" | "merge",
+  serverTs: number,
+  clientTs: number,
+): number {
+  if (winner === "server") return serverTs;
+  return Math.max(serverTs, clientTs);
+}
+
 async function loadRow(childId: number): Promise<HealthLabProgressRow | null> {
   const rows = await db
     .select()
@@ -149,16 +163,27 @@ export async function syncHealthLabProfile(
   const existing = await loadRow(childId);
   const serverProfile = (existing?.profile as Record<string, unknown>) ?? null;
   const serverTs = existing?.clientUpdatedAt.getTime() ?? 0;
-  const { profile } = mergeProfiles(serverProfile, clientProfile, serverTs, clientUpdatedAt);
+  const { profile, winner } = mergeProfiles(
+    serverProfile,
+    clientProfile,
+    serverTs,
+    clientUpdatedAt,
+  );
 
-  const clientDate = new Date(clientUpdatedAt);
+  // Stale client lost the merge — keep the stored profile + watermark intact.
+  if (existing && winner === "server") {
+    return existing;
+  }
+
+  const watermarkMs = resolveSyncWatermarkMs(winner, serverTs, clientUpdatedAt);
+  const watermarkDate = new Date(watermarkMs);
 
   if (existing) {
     const [updated] = await db
       .update(healthLabProgressTable)
       .set({
         profile,
-        clientUpdatedAt: clientDate,
+        clientUpdatedAt: watermarkDate,
         updatedAt: new Date(),
       })
       .where(eq(healthLabProgressTable.childId, childId))
@@ -172,7 +197,7 @@ export async function syncHealthLabProfile(
       childId,
       userId,
       profile,
-      clientUpdatedAt: clientDate,
+      clientUpdatedAt: watermarkDate,
     })
     .returning();
   return created;
