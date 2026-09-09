@@ -33,6 +33,7 @@ import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/room
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import type { MobileNavItem } from "@/lib/mobile-menu-config";
 import { filterLivingNavCatalogueItems } from "@/lib/living-leave-containment";
+import { isDay0SecondaryHref, shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
 
 export type LivingNavGroupId = "home" | "care" | "beside_you" | "rooms" | "more";
 
@@ -56,7 +57,7 @@ export type LivingNavSection = {
 };
 
 /** Approved identity supporting line — Visual Identity locked promise. */
-export const LIVING_NAV_HOME_LINE = "Today's next right thing";
+export const LIVING_NAV_HOME_LINE = "Today's plan";
 
 export const LIVING_NAV_BRAND = "AmyNest";
 
@@ -65,7 +66,7 @@ export function parentingHubRoomHref(room: ParentHubRoomId): string {
 }
 
 function livingHomeDescription(): string {
-  return "Today's next right thing";
+  return "Today's plan";
 }
 
 function livingRoutinesDescription(): string {
@@ -194,7 +195,10 @@ function take(byHref: Map<string, MobileNavItem>, href: string): MobileNavItem |
  * Living home hierarchy. Every incoming href is placed in exactly one section.
  * Rooms V1 doors are added as presentation rows over /parenting-hub — same route.
  */
-export function buildLivingNavSections(items: MobileNavItem[]): LivingNavSection[] {
+export function buildLivingNavSections(
+  items: MobileNavItem[],
+  opts?: { revealSecondary?: boolean },
+): LivingNavSection[] {
   const byHref = new Map(items.map((item) => [item.href, item]));
   const sections: LivingNavSection[] = [];
 
@@ -257,7 +261,17 @@ export function buildLivingNavSections(items: MobileNavItem[]): LivingNavSection
     sections.push({ id: "more", label: "More", items: leftover });
   }
 
-  return sections.filter((section) => section.items.length > 0);
+  const reveal = opts?.revealSecondary ?? shouldShowDay0SecondarySurfaces();
+  const visible = reveal
+    ? sections
+    : sections
+        .filter((section) => section.id !== "rooms")
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => !isDay0SecondaryHref(item.href)),
+        }));
+
+  return visible.filter((section) => section.items.length > 0);
 }
 
 /**
@@ -265,7 +279,7 @@ export function buildLivingNavSections(items: MobileNavItem[]): LivingNavSection
  * Living universe may omit catalogue leave-paths (routes still exist for rollback).
  */
 export function preservedLivingNavHrefs(items: MobileNavItem[]): string[] {
-  const sections = buildLivingNavSections(items);
+  const sections = buildLivingNavSections(items, { revealSecondary: true });
   const hrefs = new Set<string>();
   for (const section of sections) {
     for (const row of section.items) {

@@ -143,6 +143,17 @@ export function emitPurchaseSuccessFanOut(payload: SubscriptionAnalyticsPayload)
       ...(txId ? { transaction_id: txId } : {}),
     });
   });
+  void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+    trackConversionFunnel("purchase_success", {
+      plan: payload.plan,
+      source: payload.source,
+      transaction_id: txId,
+    });
+    trackConversionFunnel("subscription_active", {
+      plan: payload.plan,
+      source: payload.source,
+    });
+  });
 
   getAnalyticsService().trackFunnel("subscription", "purchase_completed", {
     reason: payload.reason,
@@ -216,6 +227,12 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     import("@/lib/analytics").then(({ track }) => {
       track("premium_paywall_viewed", { source: payload.source });
     });
+    void import("@/lib/conversion-funnel").then(({ trackPaywallViewCanonical }) => {
+      trackPaywallViewCanonical(
+        typeof payload.reason === "string" ? payload.reason : undefined,
+        payload.source,
+      );
+    });
   }
 
   if (payload.event === "restore_purchase") {
@@ -225,6 +242,47 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
       country,
       platform,
       ...payload.extra,
+    });
+    void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+      trackConversionFunnel("restore_purchase", { source: payload.source, restored: true });
+    });
+  }
+
+  if (payload.event === "paywall_close") {
+    void import("@/lib/conversion-funnel").then(({ trackPaywallDismissCanonical }) => {
+      trackPaywallDismissCanonical(
+        typeof payload.reason === "string" ? payload.reason : undefined,
+        payload.source,
+      );
+    });
+  }
+
+  if (payload.event === "subscribe_clicked") {
+    void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+      trackConversionFunnel("subscribe_clicked", {
+        plan: payload.plan,
+        source: payload.source,
+        reason: typeof payload.reason === "string" ? payload.reason : undefined,
+      });
+    });
+  }
+
+  if (payload.event === "checkout_started") {
+    void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+      trackConversionFunnel("checkout_started", {
+        plan: payload.plan,
+        source: payload.source,
+      });
+    });
+  }
+
+  if (payload.event === "purchase_failed") {
+    void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+      trackConversionFunnel("purchase_failed", {
+        plan: payload.plan,
+        source: payload.source,
+        error_class: typeof payload.extra?.error_class === "string" ? payload.extra.error_class : undefined,
+      });
     });
   }
 

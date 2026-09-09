@@ -1,3 +1,4 @@
+/** @vitest-environment node */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -36,7 +37,8 @@ describe("routine living dashboard copy", () => {
   });
 
   it("empty state is companionship, not a database widget", () => {
-    expect(livingDashboardEmptyTitle().toLowerCase()).toContain("no plan");
+    expect(livingDashboardEmptyTitle().toLowerCase()).toContain("today's plan");
+    expect(livingDashboardEmptyTitle().toLowerCase()).not.toContain("no plan until you generate");
     expect(livingDashboardEmptyBody("Leo").toLowerCase()).toContain("leo");
     expect(livingDashboardEmptyBody("Leo").toLowerCase()).not.toMatch(/generate with ai|personalized schedule/);
   });

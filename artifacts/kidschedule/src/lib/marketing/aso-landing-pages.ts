@@ -23,15 +23,15 @@ export const ASO_LANDING_PAGES: AsOLandingPageConfig[] = [
   {
     slug: "amy",
     path: "/amy",
-    title: "Meet AMY — Your AI Parenting Coach | AmyNest AI",
+    title: "Your child's plan for today | AmyNest",
     metaDescription:
-      "Meet AMY, your 24/7 AI parenting coach. Get personalized advice on routines, sleep, nutrition, speech, and learning — free on Google Play.",
+      "Get your child's personalized plan for today in two minutes. See what to do next, then do it together.",
     keywords:
-      "AI parenting coach, AMY parenting assistant, smart parenting app, AI child development, parenting chatbot, global parenting app",
-    headline: "Meet AMY — Your",
-    headlineAccent: "AI Parenting Coach",
+      "child daily plan, today's plan for kids, parenting routine app, AmyNest",
+    headline: "Get your child's",
+    headlineAccent: "plan for today",
     subheadline:
-      "Ask anything about routines, sleep, picky eating, speech, or school prep. AMY learns your family and gives practical answers — not generic blog posts.",
+      "Answer a few questions. AmyNest builds a personalized daily plan you can start together — no feature tour required.",
     heroImage: "/promo/get-app/screenshots/amy-coach.png",
     heroImageAlt: "AmyNest AMY AI parenting coach chat interface",
     screenshotHeadline: "24/7 parenting guidance tailored to your child",

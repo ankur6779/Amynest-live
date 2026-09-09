@@ -19,6 +19,7 @@ import {
   captureCampaignAttribution,
   capturePlayInstallReferrer,
   getInstallAttribution,
+  getInstallSourceLabel,
 } from "./install-attribution";
 
 describe("install-attribution gbraid/wbraid", () => {
@@ -64,5 +65,16 @@ describe("install-attribution gbraid/wbraid", () => {
     expect(attr?.gclid).toBe("g1");
     expect(attr?.gbraid).toBe("gb-test");
     expect(attr?.wbraid).toBe("wb-test");
+  });
+
+  it("keeps fbclid through localStorage and labels Meta ads", () => {
+    window.history.replaceState({}, "", "/?fbclid=meta-click-1&utm_source=facebook&utm_campaign=plan-today");
+    captureCampaignAttribution();
+    const attr = getInstallAttribution();
+    expect(attr?.fbclid).toBe("meta-click-1");
+    expect(attr?.utmCampaign).toBe("plan-today");
+    expect(getInstallSourceLabel(attr)).toBe("meta_ads");
+    const again = getInstallAttribution();
+    expect(again?.fbclid).toBe("meta-click-1");
   });
 });

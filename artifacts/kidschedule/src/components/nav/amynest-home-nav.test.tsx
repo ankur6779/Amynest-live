@@ -73,7 +73,7 @@ describe("AmyNest home navigation chrome", () => {
   it("does not render a PRIMARY catalogue or equal-weight product tiles", () => {
     wrap(
       <HomeNavSections
-        sections={buildLivingNavSections(NAV_ITEMS)}
+        sections={buildLivingNavSections(NAV_ITEMS, { revealSecondary: true })}
         location="/dashboard"
       />,
     );
@@ -101,7 +101,7 @@ describe("AmyNest home navigation chrome", () => {
   it("opens More when the current destination is a secondary route", () => {
     wrap(
       <HomeNavSections
-        sections={buildLivingNavSections(NAV_ITEMS)}
+        sections={buildLivingNavSections(NAV_ITEMS, { revealSecondary: true })}
         location="/nutrition"
       />,
     );

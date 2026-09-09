@@ -17,11 +17,11 @@ describe("living home navigation IA", () => {
   });
   it("keeps the approved home line rather than a new slogan", () => {
     expect(LIVING_NAV_BRAND).toBe("AmyNest");
-    expect(LIVING_NAV_HOME_LINE).toBe("Today's next right thing");
+    expect(LIVING_NAV_HOME_LINE).toBe("Today's plan");
   });
 
   it("prioritizes Home, Today's plan, and companion surfaces", () => {
-    const sections = buildLivingNavSections(NAV_ITEMS);
+    const sections = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true });
     const flat = sections.flatMap((s) => s.items.map((i) => `${s.id}:${i.href}:${i.label}`));
     expect(flat[0]).toBe("home:/dashboard:Home");
     expect(flat.some((row) => row === "care:/routines:Today's plan")).toBe(true);
@@ -30,7 +30,7 @@ describe("living home navigation IA", () => {
   });
 
   it("treats Rooms as Help / Understand / Care / Moments over the hub route", () => {
-    const rooms = buildLivingNavSections(NAV_ITEMS).find((s) => s.id === "rooms");
+    const rooms = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true }).find((s) => s.id === "rooms");
     expect(rooms?.items.map((i) => i.roomId)).toEqual([...PARENT_HUB_ROOM_IDS]);
     expect(rooms?.items.map((i) => i.href)).toEqual(
       PARENT_HUB_ROOM_IDS.map((room) => parentingHubRoomHref(room)),
@@ -45,7 +45,7 @@ describe("living home navigation IA", () => {
   });
 
   it("does not use catalogue group labels on primary destinations", () => {
-    const sections = buildLivingNavSections(NAV_ITEMS);
+    const sections = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true });
     expect(sections.find((s) => s.id === "home")?.label).toBeNull();
     expect(sections.find((s) => s.id === "care")?.label).toBeNull();
     expect(sections.find((s) => s.id === "beside_you")?.label).toBeNull();
@@ -54,7 +54,7 @@ describe("living home navigation IA", () => {
   });
 
   it("does not present Birth Sky or Nutrition as equal primary products", () => {
-    const sections = buildLivingNavSections(NAV_ITEMS);
+    const sections = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true });
     const primary = sections
       .filter((s) => s.id !== "more")
       .flatMap((s) => s.items.map((i) => i.href));
@@ -79,7 +79,7 @@ describe("living home navigation IA", () => {
     vi.resetModules();
     const { buildLivingNavSections: build } = await import("./nav-living-ia");
     const { NAV_ITEMS: items } = await import("./mobile-menu-config");
-    const sections = build(items);
+    const sections = build(items, { revealSecondary: true });
     const more = sections.find((s) => s.id === "more")?.items.map((i) => i.href) ?? [];
     for (const href of LIVING_NAV_CONTAINED_HREFS) {
       expect(more).not.toContain(href);
@@ -96,8 +96,19 @@ describe("living home navigation IA", () => {
     expect(more).not.toContain("/kids-control-center");
   });
 
+  it("hides Rooms and secondary discovery until first plan value", () => {
+    const day0 = buildLivingNavSections(NAV_ITEMS, { revealSecondary: false });
+    expect(day0.find((s) => s.id === "rooms")).toBeUndefined();
+    const hrefs = day0.flatMap((s) => s.items.map((i) => i.href.split("#")[0]));
+    expect(hrefs).toContain("/dashboard");
+    expect(hrefs).toContain("/routines");
+    expect(hrefs).not.toContain("/parenting-hub");
+    expect(hrefs).not.toContain("/games");
+    expect(hrefs).not.toContain("/birth-sky");
+  });
+
   it("uses companion wording for Amy, not assistant SaaS copy", () => {
-    const amy = buildLivingNavSections(NAV_ITEMS)
+    const amy = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true })
       .flatMap((s) => s.items)
       .find((i) => i.href === "/assistant");
     expect(amy?.label).toBe("Amy");

@@ -18,14 +18,14 @@ export function TodayHomeHero({ decision, insight, onBegin }: Props) {
 
   return (
     <section
-      aria-label="Today’s next right thing"
+      aria-label="Today’s plan"
       data-testid="today-home-hero"
       className="th-hero-card"
     >
       <div className="th-hero-body">
         <div className="min-w-0">
           <p className="th-hero-kicker" data-testid="today-home-kicker">
-            Today’s next right thing
+            Today’s plan
           </p>
           {decision.childName && decision.childName !== "your child" ? (
             <p className="th-hero-child" data-testid="today-home-child">

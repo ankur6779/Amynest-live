@@ -24,10 +24,13 @@ import {
 } from "@/lib/setup-status";
 
 function mockResponse(body: unknown, ok = true, status = 200): Response {
+  const raw = JSON.stringify(body);
   return {
     ok,
     status,
     json: async () => body,
+    text: async () => raw,
+    headers: new Headers({ "content-type": "application/json" }),
   } as Response;
 }
 
@@ -141,12 +144,15 @@ describe("runOnboardingFinishTransaction", () => {
       if (url === "/api/onboarding") {
         return mockResponse({ onboardingComplete: true, profileComplete: true });
       }
+      if (url === "/api/children") {
+        return mockResponse([{ id: 9, name: "Ava" }]);
+      }
       throw new Error(`unexpected ${url}`);
     });
 
     const result = await runOnboardingFinishTransaction(authFetch, payload);
     expect(result.alreadyCompleted).toBe(true);
-    expect(authFetch).toHaveBeenCalledTimes(1);
+    expect(result.childId).toBe(9);
   });
 
   it("Scenario C: performs single write path on fresh account", async () => {

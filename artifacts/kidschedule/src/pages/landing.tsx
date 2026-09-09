@@ -1,11 +1,12 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { applySeoMeta } from "@/lib/marketing/canonical-seo";
 import { trackMarketingEvent, type MarketingFunnelEvent } from "@/lib/marketing/ga4-analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
-import { useTranslation } from "react-i18next";
+import { childPlanCta } from "@/lib/product-promise";
 
 function trackHome(
   event: MarketingFunnelEvent | string,
@@ -197,7 +198,7 @@ export default function LandingPage() {
           </p>
 
           <h1 className="v3-fade-1 font-quicksand font-black text-[2rem] sm:text-4xl leading-[1.12] tracking-tight text-white mb-4">
-            Know what your child
+            Get your child's
             <br />
             <span
               style={{
@@ -207,12 +208,12 @@ export default function LandingPage() {
                 color: "transparent",
               }}
             >
-              needs most today
+              plan for today
             </span>
           </h1>
 
           <p className="v3-fade-2 text-white/65 text-base sm:text-lg leading-relaxed max-w-md mx-auto mb-8">
-            AmyNest helps you see the next right thing for your child — clear, calm, and personal.
+            In two minutes, see what your child should do next today — then do it together.
           </p>
 
           <div className="v3-fade-3 flex flex-col items-center gap-3 mb-6">
@@ -223,7 +224,7 @@ export default function LandingPage() {
                 data-testid="button-hero-cta"
                 onClick={() => trackHome("hero_cta", { location: "hero_primary" })}
               >
-                Continue
+                {childPlanCta()}
                 <ArrowRight className="h-5 w-5" />
               </button>
             </Link>
@@ -233,11 +234,11 @@ export default function LandingPage() {
                 className="v3-ghost w-full inline-flex items-center justify-center text-sm font-semibold px-7 py-3 rounded-2xl text-white/85 min-h-[48px]"
                 data-testid="welcome-enter-begin"
               >
-                Begin with today
+                See today's plan
               </button>
             </Link>
             <p className="text-[12px] text-white/40">
-              Free to start · Private · The AmyNest home is Begin with today
+              Free to start · Private · See today's plan before you create an account
             </p>
           </div>
 

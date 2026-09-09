@@ -9,7 +9,6 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { useSubscription } from "@/hooks/use-subscription";
 import {
   readFirebaseUserId,
   readOAuthParentNameHint,
@@ -17,7 +16,6 @@ import {
 import {
   loadFirstExperienceContinuity,
   peekFirstExperienceOnboardingSeed,
-  shouldDeferMonetizationForFirstExperience,
 } from "@/lib/first-experience/continuity";
 import type { FirstExperienceTodayContext } from "@/lib/first-experience/types";
 import { detectCountryFromIp } from "@/lib/onboarding-location";
@@ -33,26 +31,22 @@ import {
 import { resetOnboardingAnalyticsOnceFlags } from "@/lib/onboarding-analytics-once";
 import { trackOnboardingFunnel } from "@/lib/onboarding-analytics";
 import {
-  applySetupStatusUpdate,
-  isSetupComplete,
   persistOnboardingCache,
-  readOnboardingCache,
-  resolveSetupStatus,
-  type SetupStatus,
 } from "@/lib/setup-status";
 import {
   navigateAfterOnboardingComplete,
-  POST_ONBOARDING_ACTIVATION_PATH,
 } from "@/lib/onboarding-navigation";
-import { FF_POST_ONBOARDING_TRIAL } from "@/lib/subscription-feature-flags";
-import { wasOnboardingTrialSeen } from "@/lib/subscription-funnel-storage";
-import { shouldRouteToPostOnboardingFreeTrial } from "@/lib/trial-paywall-variant";
-import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
-import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import {
-  forceSyncAuthFromCurrentUser,
-  hasUsableAuthSession,
-} from "@/lib/firebase-auth-listener";
+  childPlanCta,
+  childPlanHeadline,
+  childPlanRetryCta,
+} from "@/lib/product-promise";
+import {
+  activateFirstPlan,
+  FIRST_PLAN_RETRY_PATH,
+} from "@/lib/first-plan-activation";
+import { trackConversionFunnel } from "@/lib/conversion-funnel";
+import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import { waitForIdToken } from "@/lib/auth-token";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { DiscoveryNrtPreviewCard } from "@/components/child-discovery/nrt-preview-card";
@@ -100,14 +94,13 @@ function nextAfterAge(
 ): DiscoveryBeat {
   if (shouldAskTodayWorld(todayContext)) return "today-world";
   if (shouldAskInfantCare(years, months)) return "infant-feeding";
-  return "rhythm";
+  return "focus";
 }
 
 export default function ChildDiscoveryFilm() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
-  const { isLoaded: authLoaded, isSignedIn, getToken } = useAuth();
-  const { entitlements } = useSubscription();
+  const { isLoaded: authLoaded, getToken } = useAuth();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
 
@@ -133,6 +126,7 @@ export default function ChildDiscoveryFilm() {
   const [busy, setBusy] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const completionOnceRef = useRef(false);
+  const firstChildIdRef = useRef<number | null>(null);
   const runIdRef = useRef<string | null>(null);
   const justFinishedRef = useRef(false);
   const viewedRef = useRef<Set<string>>(new Set());
@@ -232,11 +226,12 @@ export default function ChildDiscoveryFilm() {
           "Sign-in session is not ready yet. Wait a moment and try again.",
         );
       }
-      await runOnboardingFinishTransaction(authFetch, {
+      const finish = await runOnboardingFinishTransaction(authFetch, {
         ...payload,
         userId: user?.id ?? readFirebaseUserId(),
         onboardingRunId: runIdRef.current ?? undefined,
       });
+      firstChildIdRef.current = finish.childId ?? null;
 
       const completeStatus = { onboardingComplete: true, profileComplete: true };
       justFinishedRef.current = true;
@@ -257,12 +252,36 @@ export default function ChildDiscoveryFilm() {
         step: "done",
         extra: { discovery_film: true },
       });
+      trackConversionFunnel("onboarding_completed", {
+        discovery_film: true,
+        child_id: finish.childId ?? undefined,
+      }, { onceKey: "session" });
+      if (finish.childId) {
+        trackConversionFunnel("child_created", { child_id: finish.childId }, { onceKey: String(finish.childId) });
+      }
       void import("@/lib/startup-funnel").then(({ trackStartupFunnel }) => {
         trackStartupFunnel("onboarding_complete");
       });
       void import("@/lib/retention-engine").then(({ trackOnboardingMilestone }) => {
         trackOnboardingMilestone("signup_completed");
       });
+
+      const plan = await activateFirstPlan({
+        authFetch,
+        childId: finish.childId,
+        childName: name,
+        source: "discovery_film",
+      });
+      if (plan.status === "ready") {
+        navigateAfterOnboardingComplete(plan.path);
+        setLocation(plan.path);
+        return;
+      }
+      setFinishError(
+        plan.reason === "network"
+          ? "Today’s plan paused — retry when you’re ready."
+          : "Today’s plan needs another try.",
+      );
       setBeat("done");
     } catch (e) {
       trackOnboardingFunnel({
@@ -290,52 +309,24 @@ export default function ChildDiscoveryFilm() {
   async function goNext() {
     if (navigating) return;
     setNavigating(true);
-    if (justFinishedRef.current) {
-      const completeStatus = { onboardingComplete: true, profileComplete: true };
-      persistOnboardingCache(completeStatus);
-      queryClient.setQueryData(["onboarding-status"], completeStatus);
-      justFinishedRef.current = false;
-      const offerFreeTrial = shouldRouteToPostOnboardingFreeTrial({
-        featureEnabled: FF_POST_ONBOARDING_TRIAL,
-        alreadySeen: wasOnboardingTrialSeen(),
-        isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
-        deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
-        hasFirstRoutine: hasFirstRoutineActivationProgress(),
-      });
-      const path = offerFreeTrial ? "/subscription-trial" : POST_ONBOARDING_ACTIVATION_PATH;
-      navigateAfterOnboardingComplete(path);
-      setLocation(path);
-      setNavigating(false);
-      return;
-    }
-    forceSyncAuthFromCurrentUser();
-    await ensureAuthContextSynced().catch(() => forceSyncAuthFromCurrentUser());
-    const cachedComplete = isSetupComplete(readOnboardingCache());
-    if (!isSignedIn && !hasUsableAuthSession() && !cachedComplete) {
-      setLocation("/sign-in");
-      setNavigating(false);
-      return;
-    }
-    try {
-      await queryClient.invalidateQueries({ queryKey: ["children"] });
-      const status = await resolveSetupStatus(authFetch);
-      const merged = applySetupStatusUpdate(readOnboardingCache(), status);
-      if (isSetupComplete(merged)) persistOnboardingCache(merged);
-      queryClient.setQueryData(["onboarding-status"], merged as SetupStatus);
-    } catch {
-      /* keep cache */
-    }
-    navigateAfterOnboardingComplete(POST_ONBOARDING_ACTIVATION_PATH);
-    setLocation(POST_ONBOARDING_ACTIVATION_PATH);
+    const plan = await activateFirstPlan({
+      authFetch,
+      childId: firstChildIdRef.current,
+      childName: name,
+      source: "discovery_film_retry",
+    });
+    const path = plan.status === "ready" ? plan.path : FIRST_PLAN_RETRY_PATH;
+    justFinishedRef.current = false;
+    persistOnboardingCache({ onboardingComplete: true, profileComplete: true });
+    navigateAfterOnboardingComplete(path);
+    setLocation(path);
     setNavigating(false);
   }
 
   const titleForBeat = (): string => {
     switch (beat) {
       case "arrival":
-        return name
-          ? `Amy is already beginning to understand ${name}`
-          : "Amy is ready to understand your child";
+        return name ? childPlanHeadline(name) : childPlanHeadline();
       case "place":
         return "Where should Amy personalize from?";
       case "child-name":
@@ -353,11 +344,11 @@ export default function ChildDiscoveryFilm() {
       case "focus":
         return "What would help most right now?";
       case "earned":
-        return "Today’s next right thing";
+        return childPlanHeadline(name);
       case "saving":
-        return "Keeping this understanding safely…";
+        return `Building ${name || "your child"}’s plan for today…`;
       case "done":
-        return "Amy understands enough to begin today";
+        return "Today’s plan is ready";
       default:
         return "";
     }
@@ -366,7 +357,7 @@ export default function ChildDiscoveryFilm() {
   const subtitleForBeat = (): string => {
     switch (beat) {
       case "arrival":
-        return "This is not a form. It’s how Amy earns the right to recommend today’s next step.";
+        return "Answer a few questions. In two minutes you’ll see what to do with your child today.";
       case "place":
         return "One gentle confirm — education and language fit follow from here.";
       case "child-name":
@@ -388,9 +379,9 @@ export default function ChildDiscoveryFilm() {
       case "focus":
         return "Optional. One focus is enough — skip if you’re unsure.";
       case "earned":
-        return "Nothing is unlocked. AmyNest has earned today’s recommendation.";
+        return "Nothing to buy yet. This is today’s plan — then you do the first step together.";
       case "done":
-        return nrt?.title ?? "Your child’s next step is ready.";
+        return nrt?.title ?? "Your child’s plan for today is ready.";
       default:
         return "";
     }
@@ -478,7 +469,7 @@ export default function ChildDiscoveryFilm() {
                   setBeat(name.trim() ? "child-age" : "child-name");
                 }}
               >
-                Continue
+                {childPlanCta(name)}
               </button>
             </>
           ) : null}
@@ -605,7 +596,7 @@ export default function ChildDiscoveryFilm() {
                     );
                     trackBeat("step_completed", "today-world", { today: opt.id });
                     setBeat(
-                      shouldAskInfantCare(years, months) ? "infant-feeding" : "rhythm",
+                      shouldAskInfantCare(years, months) ? "infant-feeding" : "focus",
                     );
                   }}
                 >
@@ -656,7 +647,7 @@ export default function ChildDiscoveryFilm() {
                     setSleepPattern(opt.id);
                     setAdaptationNote("Sleep pattern reshapes today’s calm cue.");
                     trackBeat("step_completed", "infant-sleep");
-                    setBeat("rhythm");
+                    setBeat("focus");
                   }}
                 >
                   {opt.label}
@@ -734,14 +725,14 @@ export default function ChildDiscoveryFilm() {
                 disabled={busy || !profile}
                 onClick={() => void finishDiscovery()}
               >
-                Begin with this today
+                {childPlanCta(name)}
               </button>
             </>
           ) : null}
 
           {beat === "saving" ? (
             <p className="fe-body" role="status" aria-live="polite">
-              Keeping this understanding safely…
+              Building {name || "your child"}’s plan for today…
             </p>
           ) : null}
 
@@ -759,7 +750,7 @@ export default function ChildDiscoveryFilm() {
                 disabled={navigating}
                 onClick={() => void goNext()}
               >
-                Continue
+                {finishError ? childPlanRetryCta() : childPlanCta(name)}
               </button>
             </>
           ) : null}

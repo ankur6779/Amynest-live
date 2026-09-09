@@ -1020,3 +1020,35 @@
     transform: none !important;
   }
 }
+
+.fe-plan-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.fe-plan-block {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--fe-radius);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--fe-inset-hi), var(--fe-inset-depth);
+}
+.fe-plan-block-label {
+  font-size: var(--type-body-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 238, 230, 0.45);
+}
+.fe-plan-block-title {
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: rgba(244, 238, 230, 0.92);
+}
+.fe-plan-block-detail,
+.fe-plan-block-mins {
+  font-size: var(--type-body-sm);
+  color: rgba(244, 238, 230, 0.55);
+}

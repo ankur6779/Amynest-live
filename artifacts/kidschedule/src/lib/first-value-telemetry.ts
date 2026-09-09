@@ -100,6 +100,14 @@ export function trackRoutineGenerationCompleted(input: {
 
   if (isFirst) {
     markFirstRoutineActivated();
+    void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+      trackConversionFunnel("first_plan_generated", {
+        routine_id: input.routineId,
+        child_id: input.childId,
+        item_count: input.itemCount,
+        source: input.source ?? "routine_generate",
+      }, { onceKey: `plan-${input.routineId ?? "x"}` });
+    });
     trackFirstValueAchieved({
       routineId: input.routineId,
       childId: input.childId,

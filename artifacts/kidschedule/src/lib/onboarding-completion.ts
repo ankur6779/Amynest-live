@@ -196,19 +196,23 @@ export class OnboardingFinishError extends Error {
 async function fetchExistingChildren(
   authFetch: AuthFetchFn,
 ): Promise<Array<{ id: number; name: string | null }>> {
-  const res = await authFetch("/api/children");
-  if (!res.ok) return [];
-  const body = (await parseApiJson<unknown>(res));
-  if (!Array.isArray(body)) return [];
-  return body
-    .map((row) => {
-      const r = row as Record<string, unknown>;
-      return {
-        id: typeof r.id === "number" ? r.id : 0,
-        name: typeof r.name === "string" ? r.name : null,
-      };
-    })
-    .filter((c) => c.id > 0);
+  try {
+    const res = await authFetch("/api/children");
+    if (!res.ok) return [];
+    const body = await parseApiJson<unknown>(res);
+    if (!Array.isArray(body)) return [];
+    return body
+      .map((row) => {
+        const r = row as Record<string, unknown>;
+        return {
+          id: typeof r.id === "number" ? r.id : 0,
+          name: typeof r.name === "string" ? r.name : null,
+        };
+      })
+      .filter((c) => c.id > 0);
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -218,7 +222,7 @@ async function fetchExistingChildren(
 export async function runOnboardingFinishTransaction(
   authFetch: AuthFetchFn,
   payload: OnboardingFinishPayload,
-): Promise<{ alreadyCompleted?: boolean }> {
+): Promise<{ alreadyCompleted?: boolean; childId?: number | null }> {
   const telemetryOpts = {
     userId: payload.userId ?? null,
     step: "saving",
@@ -247,7 +251,12 @@ export async function runOnboardingFinishTransaction(
         { alreadyCompleted: true, skippedWrites: true },
         telemetryOpts,
       );
-      return { alreadyCompleted: true };
+      try {
+        const existing = await fetchExistingChildren(authFetch);
+        return { alreadyCompleted: true, childId: existing[0]?.id ?? null };
+      } catch {
+        return { alreadyCompleted: true, childId: null };
+      }
     }
 
     const parentRes = await authFetch("/api/parent-profile", {
@@ -279,6 +288,7 @@ export async function runOnboardingFinishTransaction(
 
     const existingChildren = await fetchExistingChildren(authFetch);
     let savedChildCount = existingChildren.length;
+    let lastChildId: number | null = existingChildren[0]?.id ?? null;
 
     for (const child of payload.children) {
       const childName = typeof child.name === "string" ? child.name : "";
@@ -325,6 +335,7 @@ export async function runOnboardingFinishTransaction(
         savedChildCount += 1;
         childId = typeof body.id === "number" ? body.id : null;
       }
+      if (childId) lastChildId = childId;
 
       if (childId && payload.selectedParentGoals.length > 0) {
         const goalsRes = await authFetch(`/api/child-intelligence/${childId}/goals`, {
@@ -419,6 +430,7 @@ export async function runOnboardingFinishTransaction(
     );
     return {
       alreadyCompleted: onboardingBody.alreadyCompleted === true,
+      childId: lastChildId,
     };
   } catch (err) {
     if (err instanceof OnboardingFinishError) {

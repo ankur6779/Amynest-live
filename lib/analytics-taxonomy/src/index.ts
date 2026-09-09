@@ -17,6 +17,10 @@ import {
   ABACUS_EVENT_CATEGORY,
   ABACUS_EVENT_PROP_SCHEMAS,
 } from "./abacus-events.js";
+import {
+  CONVERSION_FUNNEL_EVENT_CATEGORY,
+  CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS,
+} from "./conversion-funnel-events.js";
 
 export {
   ANALYTICS_EVENT_VERSION,
@@ -534,6 +538,7 @@ const EVENT_PROP_SCHEMAS = {
   ...PHASE1_EVENT_PROP_SCHEMAS,
   ...FIRST_VALUE_EVENT_PROP_SCHEMAS,
   ...ABACUS_EVENT_PROP_SCHEMAS,
+  ...CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS,
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -617,6 +622,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   ...PHASE1_EVENT_CATEGORY,
   ...FIRST_VALUE_EVENT_CATEGORY,
   ...ABACUS_EVENT_CATEGORY,
+  ...CONVERSION_FUNNEL_EVENT_CATEGORY,
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(
@@ -695,6 +701,11 @@ export {
   type StartupFunnelEventPayload,
 } from "./startup-funnel-events.js";
 export type { FirstValueEventName } from "./first-value-events.js";
+export {
+  CANONICAL_FUNNEL_EVENTS,
+  type CanonicalFunnelEvent,
+  type ConversionFunnelEventName,
+} from "./conversion-funnel-events.js";
 export {
   CHILD_JOURNEY_EVENT_NAMES,
   CHILD_JOURNEY_STEP_VIEW_EVENT,

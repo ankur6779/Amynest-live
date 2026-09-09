@@ -14,10 +14,13 @@ import {
 } from "@/lib/first-experience/storage";
 import type {
   FirstExperienceAgeBand,
+  FirstExperiencePlanBlock,
   FirstExperienceState,
   FirstExperienceTodayContext,
 } from "@/lib/first-experience/types";
 import { trackMarketingEvent } from "@/lib/marketing/ga4-analytics";
+import { childPlanCta, childPlanHeadline, keepTomorrowCta } from "@/lib/product-promise";
+import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import "./first-experience-material.css";
 
 const AGE_OPTIONS: { id: FirstExperienceAgeBand; label: string }[] = [
@@ -49,7 +52,8 @@ type FeRoom =
   | "doing"
   | "done"
   | "memory"
-  | "keep";
+  | "keep"
+  | "plan-home";
 
 type FeShot = "arrival" | "relationship" | "growing" | "transition" | "reflection";
 
@@ -205,12 +209,28 @@ function Shell({
   );
 }
 
+function PlanBlocks({ blocks }: { blocks: FirstExperiencePlanBlock[] }) {
+  return (
+    <ol className="fe-plan-list" data-testid="fe-plan-blocks">
+      {blocks.map((b, idx) => (
+        <li key={b.id} className="fe-plan-block" data-testid={`fe-plan-block-${idx}`}>
+          <span className="fe-plan-block-label">
+            {idx + 1}. {b.label}
+          </span>
+          <strong className="fe-plan-block-title">{b.title}</strong>
+          <span className="fe-plan-block-detail">{b.detail}</span>
+          <span className="fe-plan-block-mins">About {b.minutes} min</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export default function FirstExperiencePage() {
   const [, setLocation] = useLocation();
   const [state, setState] = useState<FirstExperienceState>(() => loadFirstExperienceState());
   const [workingIndex, setWorkingIndex] = useState(0);
   const [nameDraft, setNameDraft] = useState(state.childName);
-  const [keptLocalNote, setKeptLocalNote] = useState(false);
 
   useEffect(() => {
     saveFirstExperienceState(state);
@@ -223,6 +243,25 @@ export default function FirstExperiencePage() {
   useEffect(() => {
     trackFtue(state.step);
   }, [state.step]);
+
+  useEffect(() => {
+    if (state.step === "welcome") {
+      trackConversionFunnel("onboarding_started", { source: "first_experience" }, { onceKey: "session" });
+    }
+    if (
+      state.nextThing &&
+      (state.step === "next-thing" ||
+        state.step === "plan-home" ||
+        state.step === "doing" ||
+        state.step === "done")
+    ) {
+      trackConversionFunnel(
+        "first_value_achieved",
+        { source: "first_experience" },
+        { onceKey: "guest-value" },
+      );
+    }
+  }, [state.step, state.nextThing]);
 
   /* Invisible engineering — decode ahead so cuts never wait */
   useEffect(() => {
@@ -267,6 +306,11 @@ export default function FirstExperiencePage() {
           todayContext: state.todayContext!,
         });
         window.setTimeout(() => {
+          trackConversionFunnel("first_plan_generated", {
+            mode: "guest",
+            item_count: nextThing.blocks.length,
+            source: "first_experience",
+          }, { onceKey: "guest-plan" });
           patch({ step: "next-thing", nextThing });
         }, 380);
       }
@@ -283,8 +327,10 @@ export default function FirstExperiencePage() {
           <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
             ·
           </p>
-          <h1 className="fe-title">Begin with today</h1>
-          <p className="fe-body">One next right thing — formed only from what you share.</p>
+          <h1 className="fe-title">{childPlanHeadline()}</h1>
+          <p className="fe-body">
+            In two minutes, see what your child should do next today — then do it together.
+          </p>
           <div className="fe-actions">
             <button
               type="button"
@@ -292,7 +338,7 @@ export default function FirstExperiencePage() {
               data-testid="fe-welcome-continue"
               onClick={() => patch({ step: "discovery-name" })}
             >
-              Continue
+              {childPlanCta()}
             </button>
             <button
               type="button"
@@ -431,7 +477,7 @@ export default function FirstExperiencePage() {
               data-testid="fe-today-continue"
               onClick={() => patch({ step: "working" })}
             >
-              See today’s next step
+              See today’s plan
             </button>
           </div>
         </div>
@@ -446,7 +492,7 @@ export default function FirstExperiencePage() {
           <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
             ·
           </p>
-          <h1 className="fe-title fe-title-section">Noticing today’s next right thing</h1>
+          <h1 className="fe-title fe-title-section">Building {state.childName || "your child"}’s plan</h1>
           <ul className="fe-signal-list">
             {workingSignals.map((line, idx) => {
               if (idx >= workingIndex) return null;
@@ -467,6 +513,7 @@ export default function FirstExperiencePage() {
   }
 
   if (state.step === "next-thing" && state.nextThing) {
+    const lead = state.nextThing.blocks[0];
     return (
       <Shell room="reveal">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
@@ -475,27 +522,21 @@ export default function FirstExperiencePage() {
           </p>
           <h1 className="fe-title fe-reveal">{state.nextThing.title}</h1>
           <p className="fe-body fe-reveal-delay">{state.nextThing.detail}</p>
-          <p className="fe-body fe-body-sm" style={{ marginBottom: "var(--space-8)" }}>
-            About {state.nextThing.minutes} minutes
-          </p>
-          <div className="fe-panel" style={{ marginBottom: "var(--space-8)" }}>
-            <p className="fe-kicker fe-kicker-whisper" style={{ marginBottom: "var(--space-2)" }} aria-hidden="true">
-              ·
-            </p>
-            <ul style={{ display: "grid", gap: "var(--space-2)", fontSize: "var(--type-body-sm)", color: "rgba(244,238,230,0.55)" }}>
-              {state.nextThing.basedOn.map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="fe-actions">
+          <PlanBlocks blocks={state.nextThing.blocks} />
+          <div className="fe-actions" style={{ marginTop: "var(--space-6)" }}>
             <button
               type="button"
               className="fe-btn fe-btn-primary"
               data-testid="fe-start-action"
-              onClick={() => patch({ step: "doing" })}
+              onClick={() => {
+                trackConversionFunnel("first_plan_action_started", {
+                  block_id: lead?.id,
+                  source: "first_experience",
+                }, { onceKey: "guest-action" });
+                patch({ step: "doing", activeBlockIndex: 0, valueEarned: true });
+              }}
             >
-              Do this now
+              {lead ? `Start: ${lead.label}` : "Do this now"}
             </button>
             <button
               type="button"
@@ -504,14 +545,14 @@ export default function FirstExperiencePage() {
               data-testid="fe-reveal-later"
               onClick={() =>
                 patch({
-                  step: "memory",
+                  step: "plan-home",
                   valueEarned: true,
                   completionKind: "later",
                   completedAt: null,
                 })
               }
             >
-              Later
+              Keep this plan on this device
             </button>
           </div>
         </div>
@@ -520,27 +561,33 @@ export default function FirstExperiencePage() {
   }
 
   if (state.step === "doing" && state.nextThing) {
+    const idx = state.activeBlockIndex ?? 0;
+    const active = state.nextThing.blocks[idx] ?? state.nextThing.blocks[0];
     return (
       <Shell room="doing">
         <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
           <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
             ·
           </p>
-          <h1 className="fe-title fe-title-section">{state.nextThing.title}</h1>
-          <p className="fe-body">{state.nextThing.detail}</p>
+          <h1 className="fe-title fe-title-section">{active?.title ?? state.nextThing.title}</h1>
+          <p className="fe-body">{active?.detail ?? state.nextThing.detail}</p>
           <div className="fe-actions">
             <button
               type="button"
               className="fe-btn fe-btn-primary"
               data-testid="fe-mark-done"
-              onClick={() =>
+              onClick={() => {
+                trackConversionFunnel("first_plan_action_completed", {
+                  block_id: active?.id,
+                  source: "first_experience",
+                }, { onceKey: "guest-action-done" });
                 patch({
                   step: "done",
                   completedAt: new Date().toISOString(),
                   valueEarned: true,
                   completionKind: "done",
-                })
-              }
+                });
+              }}
             >
               Mark as done
             </button>
@@ -549,14 +596,18 @@ export default function FirstExperiencePage() {
               className="fe-btn fe-btn-quiet"
               style={{ marginTop: "var(--space-3)" }}
               data-testid="fe-did-similar"
-              onClick={() =>
+              onClick={() => {
+                trackConversionFunnel("first_plan_action_completed", {
+                  block_id: active?.id,
+                  source: "first_experience",
+                }, { onceKey: "guest-action-done" });
                 patch({
                   step: "done",
                   completedAt: new Date().toISOString(),
                   valueEarned: true,
                   completionKind: "similar",
-                })
-              }
+                });
+              }}
             >
               I already did something similar
             </button>
@@ -567,7 +618,7 @@ export default function FirstExperiencePage() {
               data-testid="fe-doing-later"
               onClick={() =>
                 patch({
-                  step: "memory",
+                  step: "plan-home",
                   valueEarned: true,
                   completionKind: "later",
                   completedAt: null,
@@ -585,21 +636,63 @@ export default function FirstExperiencePage() {
   if (state.step === "done") {
     const doneBody =
       state.completionKind === "similar"
-        ? `That counts. AmyNest will remember this moment for ${state.childName || "your child"}.`
-        : `You completed today’s next right thing for ${state.childName || "your child"}.`;
+        ? `That counts. ${state.childName || "Your child"}’s plan is still here for the rest of today.`
+        : `You completed the first step for ${state.childName || "your child"}. The rest of today’s plan is ready.`;
     return (
       <Shell room="done">
         <div className="fe-copy fe-exhale" style={{ justifyContent: "center", textAlign: "center" }}>
-          <h1 className="fe-title fe-title-section">Done for this moment</h1>
+          <h1 className="fe-title fe-title-section">A real win for today</h1>
           <p className="fe-body">{doneBody}</p>
           <div className="fe-actions">
             <button
               type="button"
               className="fe-btn fe-btn-primary"
               data-testid="fe-done-continue"
-              onClick={() => patch({ step: "memory" })}
+              onClick={() => patch({ step: "plan-home" })}
             >
-              Continue
+              See the rest of today’s plan
+            </button>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (state.step === "plan-home" && state.nextThing) {
+    return (
+      <Shell room="plan-home">
+        <div className="fe-copy fe-in" style={{ justifyContent: "center" }}>
+          <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
+            ·
+          </p>
+          <h1 className="fe-title fe-title-section">{state.nextThing.title}</h1>
+          <p className="fe-body">
+            This plan stays on this device. An account is only needed to save it for tomorrow.
+          </p>
+          <PlanBlocks blocks={state.nextThing.blocks} />
+          <div className="fe-actions" style={{ marginTop: "var(--space-6)" }}>
+            <button
+              type="button"
+              className="fe-btn fe-btn-primary"
+              data-testid="fe-plan-start"
+              onClick={() => {
+                trackConversionFunnel("first_plan_action_started", {
+                  block_id: state.nextThing?.blocks[0]?.id,
+                  source: "first_experience_plan_home",
+                }, { onceKey: "guest-action" });
+                patch({ step: "doing", activeBlockIndex: 0, valueEarned: true });
+              }}
+            >
+              Start the first step
+            </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-plan-keep"
+              onClick={() => patch({ step: "keep" })}
+            >
+              {keepTomorrowCta(state.childName)}
             </button>
           </div>
         </div>
@@ -616,8 +709,8 @@ export default function FirstExperiencePage() {
           </p>
           <h1 className="fe-title fe-title-section">Tomorrow can start from here</h1>
           <p className="fe-body">
-            Today stays with {state.childName || "your child"} on this device. An account keeps the story
-            with you — so tomorrow continues naturally, never restarts.
+            Today stays with {state.childName || "your child"} on this device. An account keeps tomorrow’s
+            plan with you — it does not unlock what you already have.
           </p>
           <div className="fe-actions">
             <button
@@ -627,6 +720,15 @@ export default function FirstExperiencePage() {
               onClick={() => patch({ step: "keep" })}
             >
               Continue
+            </button>
+            <button
+              type="button"
+              className="fe-btn fe-btn-quiet"
+              style={{ marginTop: "var(--space-3)" }}
+              data-testid="fe-memory-plan"
+              onClick={() => patch({ step: "plan-home" })}
+            >
+              Back to today’s plan
             </button>
           </div>
         </div>
@@ -640,13 +742,13 @@ export default function FirstExperiencePage() {
         <p className="fe-kicker fe-kicker-whisper" aria-hidden="true">
           ·
         </p>
-        <h1 className="fe-title fe-title-section">Keep today’s progress</h1>
+        <h1 className="fe-title fe-title-section">{keepTomorrowCta(state.childName)}</h1>
         <p className="fe-body">
-          Create an account to keep today’s progress, tomorrow’s plan, and{" "}
-          {state.childName || "your child"}’s growing understanding.
+          Today’s plan is already here. An account saves tomorrow’s plan for{" "}
+          {state.childName || "your child"} — it does not unlock what you already have.
         </p>
         <p className="fe-body fe-body-sm" style={{ marginBottom: "var(--space-8)" }}>
-          Identity protects value. It does not unlock what you already did.
+          You can keep using today’s plan on this device without an account.
         </p>
         <div className="fe-actions">
           <button
@@ -667,20 +769,11 @@ export default function FirstExperiencePage() {
             data-testid="fe-keep-later"
             onClick={() => {
               trackFtue("keep_later");
-              setKeptLocalNote(true);
+              patch({ step: "plan-home", valueEarned: true });
             }}
           >
-            Not now
+            Not now — stay with today’s plan
           </button>
-          {keptLocalNote ? (
-            <p
-              className="fe-body-sm"
-              style={{ marginTop: "var(--space-4)", textAlign: "center", color: "rgba(244,238,230,0.5)" }}
-              data-testid="fe-kept-local"
-            >
-              Today stays on this device. You can keep going here whenever you are ready.
-            </p>
-          ) : null}
           <p
             className="fe-body-sm"
             style={{ marginTop: "var(--space-6)", textAlign: "center", color: "rgba(244,238,230,0.35)" }}
