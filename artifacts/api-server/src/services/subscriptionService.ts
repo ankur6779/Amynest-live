@@ -599,6 +599,35 @@ export async function incrementFeatureUsage(
   return result[0]?.count ?? Math.max(0, by);
 }
 
+/**
+ * Async AI jobs that debit a free-tier feature gate *before* enqueue, then
+ * respond 202. HTTP 2xx skips the featureGate res.end refund, so a later
+ * worker failure would permanently burn one-shot / lifetime free uses unless
+ * we refund here (same pattern as learning load-more).
+ */
+export const FEATURE_GATE_REFUND_ON_AI_JOB_FAILURE: Partial<
+  Record<string, FeatureKey>
+> = {
+  "infant.sleep_coach": "infant_sleep_coach",
+  "infant.feeding_plan": "infant_feeding_plan",
+  "meals.week_plan": "nutrition_week_plan",
+  "meals.family_portions": "nutrition_family_ai",
+};
+
+export function featureKeyForFailedAiJob(type: string): FeatureKey | null {
+  return FEATURE_GATE_REFUND_ON_AI_JOB_FAILURE[type] ?? null;
+}
+
+/** Refund one reserved free-tier use when an async AI job never completes. */
+export async function refundFeatureGateUsageFromFailedJob(job: {
+  type: string;
+  userId: string;
+}): Promise<void> {
+  const feature = featureKeyForFailedAiJob(job.type);
+  if (!feature || !job.userId || job.userId === "anonymous") return;
+  await incrementFeatureUsage(job.userId, feature, -1);
+}
+
 // Backwards-compat aliases (existing call sites use these names).
 export async function getAiUsageToday(userId: string): Promise<number> {
   return getFeatureUsage(userId, "ai_query");
