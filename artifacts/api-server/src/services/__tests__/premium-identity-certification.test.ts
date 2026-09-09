@@ -60,4 +60,19 @@ describe("premium identity certification guardrails", () => {
     assert.match(script, /aliasesSkipped/);
     assert.match(script, /failures/);
   });
+
+  it("Champion6779 Play-certification reset runs on boot and subscription read, and blocks stale RC restore", () => {
+    const reset = readRepoFile("artifacts/api-server/src/services/certificationPremiumReset.ts");
+    const grant = readRepoFile("artifacts/api-server/src/services/subscriptionService.ts");
+    const apply = readRepoFile("artifacts/api-server/src/services/subscriptionStateService.ts");
+    const boot = readRepoFile("artifacts/api-server/src/index.ts");
+
+    assert.match(reset, /champion6779@gmail\.com/);
+    assert.match(reset, /CERTIFICATION_RESET_JOB_ID/);
+    assert.match(grant, /isCertificationForceFreeEmail\(email\)/);
+    assert.match(grant, /applyCertificationPremiumReset\(\{ userId, email \}\)/);
+    assert.match(apply, /shouldBlockStaleCertificationRevenueCatWriteForUser/);
+    assert.match(apply, /reason: "certification_reset"/);
+    assert.match(boot, /applyCertificationPremiumReset/);
+  });
 });

@@ -17,6 +17,10 @@ import {
   shouldPreserveActiveTrial,
 } from "./subscription-premium-gate.js";
 import {
+  applyCertificationPremiumReset,
+  isCertificationForceFreeEmail,
+} from "./certificationPremiumReset.js";
+import {
   computeInternalTrialExpiredFlag,
   isFalselyExpiredInternalTrial,
 } from "./subscription-trial-expiry.js";
@@ -893,6 +897,11 @@ export async function maybeAutoGrantPremium(
   email: string | null,
   phoneNumber?: string | null,
 ): Promise<void> {
+  if (isCertificationForceFreeEmail(email)) {
+    await applyCertificationPremiumReset({ userId, email });
+    return;
+  }
+
   let plan: Exclude<Plan, "free"> = "yearly";
 
   if (isEnvGranted(userId, email, phoneNumber)) {
