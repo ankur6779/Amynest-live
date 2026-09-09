@@ -549,7 +549,7 @@ function PremiumRoutePreview({ meta }: { meta: PremiumRouteMeta }) {
           {meta.cta}
         </button>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Cancel anytime · Secure purchase · Restore purchases anytime
+          Cancel in the store · Secure purchase · Restore purchases anytime
         </p>
       </div>
     </main>

@@ -37,7 +37,7 @@ const base: Entitlements = {
     infantAiQueriesPerDay: 3,
     childrenMax: 1,
     devicesMax: 1,
-    routinesMax: 2,
+    routinesMax: 3,
     hubArticlesMax: 5,
     trialDays: 3,
   },

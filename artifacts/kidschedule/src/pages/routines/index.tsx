@@ -253,7 +253,7 @@ export default function RoutinesList() {
   const allRoutines = (routines ?? []) as Routine[];
   const childrenList = (childrenData ?? []) as Array<{ id: number; name: string }>;
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
-  const routinesMax = entitlements?.limits.routinesMax ?? 2;
+  const routinesMax = entitlements?.limits.routinesMax ?? 3;
   const generateLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
 

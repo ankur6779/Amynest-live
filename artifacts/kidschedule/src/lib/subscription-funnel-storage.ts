@@ -9,6 +9,7 @@ const TRIAL_ENDED_DISMISSED_KEY = "amynest:sub:trial_ended_dismissed_at";
 const PAYWALL_DEFER_COUNT_KEY = "amynest:sub:paywall_defer_count";
 const FIRST_OPEN_TS_KEY = "amynest:sub:first_open_ts";
 const FIRST_ROUTINE_ACTIVATED_KEY = "amynest:sub:first_routine_activated";
+const FIRST_PLAN_ACTION_KEY = "amynest:sub:first_plan_action";
 
 export function getPaywallVisitCount(): number {
   try {
@@ -198,6 +199,22 @@ export function markFirstRoutineActivated(): void {
 export function hasFirstRoutineActivatedFlag(): boolean {
   try {
     return localStorage.getItem(FIRST_ROUTINE_ACTIVATED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markFirstPlanActionStarted(): void {
+  try {
+    localStorage.setItem(FIRST_PLAN_ACTION_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasFirstPlanActionStarted(): boolean {
+  try {
+    return localStorage.getItem(FIRST_PLAN_ACTION_KEY) === "1";
   } catch {
     return false;
   }
