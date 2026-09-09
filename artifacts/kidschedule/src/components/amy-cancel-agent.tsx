@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowUp, MoreVertical, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,9 @@ import { AmyIcon } from "@/components/amy-icon";
 import { FF_CANCEL_ANNUAL_SAVE } from "@/lib/subscription-feature-flags";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 import { cn } from "@/lib/utils";
+
+/** Above `.app-footer` (1000) and `#amy-fab-floating` (2001) so cancel actions stay tappable. */
+export const AMY_CANCEL_AGENT_OVERLAY_Z_CLASS = "z-[4000]";
 
 export type CancelReasonId =
   | "too_expensive"
@@ -81,6 +85,168 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
+type FooterProps = {
+  step: Step;
+  billingMode: BillingMode;
+  storeTarget: "apple" | "google" | "both";
+  showAnnualSave: boolean;
+  cancelling: boolean;
+  feedback: string;
+  onFeedbackChange: (value: string) => void;
+  onSelectReason: (reason: CancelReasonId) => void;
+  onKeepPlan: () => void;
+  onSwitchAnnual: () => void;
+  onStillCancel: () => void;
+  onSubmitFeedback: () => void;
+  onOpenStoreAndClose: (store: "apple" | "google") => void;
+  onConfirmRazorpayCancel: () => void;
+};
+
+export function AmyCancelAgentFooter({
+  step,
+  billingMode,
+  storeTarget,
+  showAnnualSave,
+  cancelling,
+  feedback,
+  onFeedbackChange,
+  onSelectReason,
+  onKeepPlan,
+  onSwitchAnnual,
+  onStillCancel,
+  onSubmitFeedback,
+  onOpenStoreAndClose,
+  onConfirmRazorpayCancel,
+}: FooterProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="shrink-0 border-t bg-background px-4 pt-3 pb-3">
+      {step === "ask_reason" && (
+        <div className="flex flex-wrap gap-2">
+          {REASON_IDS.map((reason) => (
+            <Button
+              key={reason}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-auto rounded-full px-3 py-1.5 text-xs font-medium"
+              onClick={() => onSelectReason(reason)}
+            >
+              {t(`pages.pricing.amy_cancel_agent.reasons.${reason}`)}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {step === "retention" && (
+        <div className="flex flex-col gap-2">
+          <Button type="button" className="w-full min-h-11 font-semibold" onClick={onKeepPlan}>
+            {t("pages.pricing.keep_premium")}
+          </Button>
+          {showAnnualSave ? (
+            <Button type="button" variant="secondary" className="w-full min-h-11" onClick={onSwitchAnnual}>
+              {t("pages.pricing.amy_cancel_agent.switch_to_growth_year")}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full min-h-11 font-medium text-foreground"
+            onClick={onStillCancel}
+            data-testid="amy-cancel-continue"
+          >
+            {t("pages.pricing.amy_cancel_agent.continue_cancellation")}
+          </Button>
+        </div>
+      )}
+
+      {step === "ask_feedback" && (
+        <div className="space-y-2">
+          <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2">
+            <Textarea
+              value={feedback}
+              onChange={(e) => onFeedbackChange(e.target.value)}
+              placeholder={t("pages.pricing.amy_cancel_agent.feedback_placeholder")}
+              className="min-h-[44px] max-h-[100px] flex-1 resize-none border-none bg-transparent p-2 text-sm shadow-none focus-visible:ring-0"
+              rows={1}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onSubmitFeedback();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="icon"
+              className="h-9 w-9 shrink-0 rounded-full"
+              onClick={onSubmitFeedback}
+              aria-label={t("pages.pricing.amy_cancel_agent.send")}
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full min-h-10 text-sm font-medium text-foreground"
+            onClick={onSubmitFeedback}
+            data-testid="amy-cancel-skip-feedback"
+          >
+            {t("pages.pricing.amy_cancel_agent.skip_feedback")}
+          </Button>
+        </div>
+      )}
+
+      {step === "final" && billingMode === "store" && (
+        <div className="flex flex-col gap-2">
+          {(storeTarget === "apple" || storeTarget === "both") && (
+            <Button
+              type="button"
+              className="w-full min-h-11 font-semibold"
+              disabled={cancelling}
+              onClick={() => onOpenStoreAndClose("apple")}
+              data-testid="amy-agent-cancel-app-store"
+            >
+              {t("pages.pricing.cancel_in_app_store")}
+            </Button>
+          )}
+          {(storeTarget === "google" || storeTarget === "both") && (
+            <Button
+              type="button"
+              variant={storeTarget === "both" ? "outline" : "default"}
+              className="w-full min-h-11 font-semibold"
+              disabled={cancelling}
+              onClick={() => onOpenStoreAndClose("google")}
+              data-testid="amy-agent-cancel-google-play"
+            >
+              {t("pages.pricing.cancel_in_google_play")}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {step === "final" && billingMode === "razorpay" && (
+        <div className="flex flex-col gap-2">
+          <Button type="button" variant="outline" className="w-full" onClick={onKeepPlan}>
+            {t("pages.pricing.keep_premium")}
+          </Button>
+          <Button
+            type="button"
+            className={cn("w-full bg-destructive text-white hover:bg-destructive/90")}
+            disabled={cancelling}
+            onClick={onConfirmRazorpayCancel}
+            data-testid="amy-agent-confirm-cancel"
+          >
+            {cancelling ? t("pricing.cancelling") : t("pages.pricing.yes_cancel")}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AmyCancelAgent({
   open,
   onClose,
@@ -127,6 +293,15 @@ export function AmyCancelAgent({
     setSelectedReason(null);
     setFeedback("");
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -265,10 +440,16 @@ export function AmyCancelAgent({
   const showAnnualSave = FF_CANCEL_ANNUAL_SAVE && selectedReason === "too_expensive";
   const lastAmyIndex = messages.map((m) => m.role).lastIndexOf("amy");
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+  const overlay = (
+    <div
+      data-testid="amy-cancel-agent-overlay"
+      className={cn(
+        "fixed inset-0 flex items-stretch justify-center bg-black/50 p-0 sm:items-center sm:p-4",
+        AMY_CANCEL_AGENT_OVERLAY_Z_CLASS,
+      )}
+    >
       <div
-        className="flex h-[min(640px,92dvh)] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-background shadow-2xl sm:rounded-3xl"
+        className="flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-background shadow-2xl sm:h-[min(640px,92dvh)] sm:rounded-3xl"
         role="dialog"
         aria-labelledby="amy-cancel-agent-title"
         aria-modal="true"
@@ -310,135 +491,32 @@ export function AmyCancelAgent({
           )}
         </div>
 
-        <div className="shrink-0 border-t bg-background px-4 py-3">
-          {step === "ask_reason" && (
-            <div className="flex flex-wrap gap-2">
-              {REASON_IDS.map((reason) => (
-                <Button
-                  key={reason}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-auto rounded-full px-3 py-1.5 text-xs font-medium"
-                  onClick={() => onSelectReason(reason)}
-                >
-                  {t(`pages.pricing.amy_cancel_agent.reasons.${reason}`)}
-                </Button>
-              ))}
-            </div>
-          )}
+        <AmyCancelAgentFooter
+          step={step}
+          billingMode={billingMode}
+          storeTarget={storeTarget}
+          showAnnualSave={showAnnualSave}
+          cancelling={cancelling}
+          feedback={feedback}
+          onFeedbackChange={setFeedback}
+          onSelectReason={onSelectReason}
+          onKeepPlan={onKeepPlan}
+          onSwitchAnnual={onSwitchAnnual}
+          onStillCancel={onStillCancel}
+          onSubmitFeedback={onSubmitFeedback}
+          onOpenStoreAndClose={onOpenStoreAndClose}
+          onConfirmRazorpayCancel={onConfirmRazorpayCancel}
+        />
 
-          {step === "retention" && (
-            <div className="flex flex-col gap-2">
-              <Button type="button" className="w-full font-semibold" onClick={onKeepPlan}>
-                {t("pages.pricing.keep_premium")}
-              </Button>
-              {showAnnualSave ? (
-                <Button type="button" variant="secondary" className="w-full" onClick={onSwitchAnnual}>
-                  {t("pages.pricing.amy_cancel_agent.switch_to_growth_year")}
-                </Button>
-              ) : null}
-              <Button type="button" variant="ghost" className="w-full text-muted-foreground" onClick={onStillCancel}>
-                {t("pages.pricing.amy_cancel_agent.continue_cancellation")}
-              </Button>
-            </div>
-          )}
-
-          {step === "ask_feedback" && (
-            <div className="space-y-2">
-              <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2">
-                <Textarea
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder={t("pages.pricing.amy_cancel_agent.feedback_placeholder")}
-                  className="min-h-[44px] max-h-[100px] flex-1 resize-none border-none bg-transparent p-2 text-sm shadow-none focus-visible:ring-0"
-                  rows={1}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      onSubmitFeedback();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  className="h-9 w-9 shrink-0 rounded-full"
-                  onClick={onSubmitFeedback}
-                  aria-label={t("pages.pricing.amy_cancel_agent.send")}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs text-muted-foreground"
-                onClick={onSubmitFeedback}
-              >
-                {t("pages.pricing.amy_cancel_agent.skip_feedback")}
-              </Button>
-            </div>
-          )}
-
-          {step === "final" && billingMode === "store" && (
-            <div className="flex flex-col gap-2">
-              {(storeTarget === "apple" || storeTarget === "both") && (
-                <Button
-                  type="button"
-                  className="w-full font-semibold"
-                  disabled={cancelling}
-                  onClick={() => onOpenStoreAndClose("apple")}
-                  data-testid="amy-agent-cancel-app-store"
-                >
-                  {t("pages.pricing.cancel_in_app_store")}
-                </Button>
-              )}
-              {(storeTarget === "google" || storeTarget === "both") && (
-                <Button
-                  type="button"
-                  variant={storeTarget === "both" ? "outline" : "default"}
-                  className="w-full font-semibold"
-                  disabled={cancelling}
-                  onClick={() => onOpenStoreAndClose("google")}
-                  data-testid="amy-agent-cancel-google-play"
-                >
-                  {t("pages.pricing.cancel_in_google_play")}
-                </Button>
-              )}
-            </div>
-          )}
-
-          {step === "final" && billingMode === "razorpay" && (
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={onKeepPlan}
-              >
-                {t("pages.pricing.keep_premium")}
-              </Button>
-              <Button
-                type="button"
-                className={cn("w-full bg-destructive text-white hover:bg-destructive/90")}
-                disabled={cancelling}
-                onClick={onConfirmRazorpayCancel}
-                data-testid="amy-agent-confirm-cancel"
-              >
-                {cancelling
-                  ? t("pricing.cancelling")
-                  : t("pages.pricing.yes_cancel")}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <p className="shrink-0 pb-3 text-center text-[10px] text-muted-foreground">
+        <p className="shrink-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-[10px] text-muted-foreground">
           {t("pages.pricing.amy_cancel_agent.powered_by")}
         </p>
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined" && document.body && !import.meta.env.VITEST) {
+    return createPortal(overlay, document.body);
+  }
+  return overlay;
 }

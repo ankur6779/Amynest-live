@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AmyCancelAgent } from "./amy-cancel-agent";
+import {
+  AMY_CANCEL_AGENT_OVERLAY_Z_CLASS,
+  AmyCancelAgent,
+  AmyCancelAgentFooter,
+} from "./amy-cancel-agent";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -32,6 +36,17 @@ const baseProps = {
   cancelling: false,
 };
 
+const footerHandlers = {
+  onFeedbackChange: vi.fn(),
+  onSelectReason: vi.fn(),
+  onKeepPlan: vi.fn(),
+  onSwitchAnnual: vi.fn(),
+  onStillCancel: vi.fn(),
+  onSubmitFeedback: vi.fn(),
+  onOpenStoreAndClose: vi.fn(),
+  onConfirmRazorpayCancel: vi.fn(),
+};
+
 describe("AmyCancelAgent static rendering", () => {
   it("renders nothing when closed", () => {
     const html = renderToStaticMarkup(
@@ -40,19 +55,53 @@ describe("AmyCancelAgent static rendering", () => {
     expect(html).toBe("");
   });
 
-  it("renders the cancel dialog shell", () => {
-    const html = renderToStaticMarkup(
-      <AmyCancelAgent {...baseProps} billingMode="razorpay" />,
-    );
-    expect(html).toContain("role=\"dialog\"");
-    expect(html).toContain("pages.pricing.amy_cancel_agent.title");
-    expect(html).toContain("pages.pricing.amy_cancel_agent.powered_by");
-  });
-
-  it("renders store-managed dialog shell without throwing", () => {
+  it("renders the cancel dialog above the tab bar stacking context", () => {
     const html = renderToStaticMarkup(
       <AmyCancelAgent {...baseProps} billingMode="store" storeTarget="google" />,
     );
-    expect(html).toContain("pages.pricing.amy_cancel_agent.title");
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('data-testid="amy-cancel-agent-overlay"');
+    expect(html).toContain(AMY_CANCEL_AGENT_OVERLAY_Z_CLASS);
+    expect(html).toContain("pages.pricing.amy_cancel_agent.powered_by");
+  });
+});
+
+describe("AmyCancelAgentFooter cancel visibility", () => {
+  it("renders Continue cancellation as a full-width outline control, not muted ghost text", () => {
+    const html = renderToStaticMarkup(
+      <AmyCancelAgentFooter
+        {...footerHandlers}
+        step="retention"
+        billingMode="store"
+        storeTarget="google"
+        showAnnualSave
+        cancelling={false}
+        feedback=""
+      />,
+    );
+    expect(html).toContain('data-testid="amy-cancel-continue"');
+    expect(html).toContain("pages.pricing.amy_cancel_agent.continue_cancellation");
+    expect(html).toContain("min-h-11");
+    expect(html).toContain("text-foreground");
+    expect(html).not.toContain("text-muted-foreground");
+    expect(html).toContain("pages.pricing.keep_premium");
+    expect(html).toContain("pages.pricing.amy_cancel_agent.switch_to_growth_year");
+  });
+
+  it("renders Cancel in Google Play as a full-width store action", () => {
+    const html = renderToStaticMarkup(
+      <AmyCancelAgentFooter
+        {...footerHandlers}
+        step="final"
+        billingMode="store"
+        storeTarget="google"
+        showAnnualSave={false}
+        cancelling={false}
+        feedback=""
+      />,
+    );
+    expect(html).toContain('data-testid="amy-agent-cancel-google-play"');
+    expect(html).toContain("pages.pricing.cancel_in_google_play");
+    expect(html).toContain("min-h-11");
   });
 });

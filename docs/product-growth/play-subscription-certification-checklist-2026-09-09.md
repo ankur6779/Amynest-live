@@ -188,6 +188,12 @@ Also required inside AmyNest:
 
 License testers still go through real Play Billing (often auto-refunded later). That **is** the certification path.
 
+**If this tester Gmail already has an active monthly Play subscription:** do **not** buy monthly again on the same Google account (Play will refuse or change the existing sub). Cancel in-app → **Cancel in Google Play**, then:
+
+- Premium stays until period end — that is correct.
+- Restore can still be certified on this account.
+- A fresh `INITIAL_PURCHASE` needs a **second** license-tester Gmail, or wait until the Play period expires.
+
 ---
 
 ## 6. Exactly what to do on the physical Android device
