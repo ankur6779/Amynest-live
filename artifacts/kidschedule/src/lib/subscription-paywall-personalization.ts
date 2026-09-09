@@ -6,6 +6,7 @@ import {
   PAYWALL_REASON_COPY,
   PRODUCT_AGE_RANGE,
 } from "@workspace/subscription-marketing";
+import { paywallOutcomeHeadline, paywallOutcomeSubtitle } from "@/lib/product-promise";
 
 const CHILD_NAME_PLACEHOLDER = /\{childName\}/g;
 
@@ -181,13 +182,11 @@ export function resolvePaywallCopy(
     };
   }
 
-  if (source?.includes("dashboard") || source?.includes("banner")) {
+  if (source?.includes("dashboard") || source?.includes("banner") || source?.includes("value_bridge") || source?.includes("routine")) {
     return {
-      title: personalize
-        ? `Keep growing with ${personalize}`
-        : "Keep growing with your child",
-      subtitle: "Premium can support unlimited AI, learning, Health Lab, and weekly reports whenever you're ready.",
-      cta: "Continue with Premium",
+      title: paywallOutcomeHeadline(personalize),
+      subtitle: paywallOutcomeSubtitle(personalize),
+      cta: "Keep tomorrow's plan",
     };
   }
 

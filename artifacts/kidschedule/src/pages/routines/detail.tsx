@@ -1159,6 +1159,20 @@ export default function RoutineDetail() {
           activityKey: feedbackActivityKey(trackedItem?.activity) ?? undefined,
           category: trackedItem?.category ?? undefined,
         });
+        void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
+          trackConversionFunnel("first_plan_action_started", {
+            routine_id: routine?.id,
+            child_id: routine?.childId,
+            source: "routine_detail",
+          }, { onceKey: "routine-action" });
+          if (status === "completed") {
+            trackConversionFunnel("first_plan_action_completed", {
+              routine_id: routine?.id,
+              child_id: routine?.childId,
+              source: "routine_detail",
+            }, { onceKey: "routine-action-done" });
+          }
+        });
         if (status === "completed") {
           const nextItems = prev.map((item, i) => (i === index ? { ...item, status } : item));
           const allDone = nextItems.every((item) => item.status === "completed" || item.status === "skipped");

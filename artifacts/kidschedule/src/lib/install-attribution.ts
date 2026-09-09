@@ -131,14 +131,23 @@ function mergePlayReferrer(existing: InstallAttribution, play: PlayInstallReferr
   };
 }
 
-function resolveInstallSource(attr: InstallAttribution): string {
+function resolveInstallSource(attr: InstallAttribution | null | undefined): string {
+  if (!attr) return "unknown";
   if (attr.gclid) return "google_ads";
+  if (attr.fbclid) return "meta_ads";
   const utm = attr.utmSource?.toLowerCase() ?? "";
   if (utm.includes("google")) return "google_ads";
+  if (utm.includes("facebook") || utm.includes("meta") || utm.includes("ig") || utm.includes("instagram")) {
+    return "meta_ads";
+  }
   if (attr.utmSource) return attr.utmSource;
   if (attr.ref) return "referral";
   if (attr.playReferrer) return "play_referrer";
   return "organic";
+}
+
+export function getInstallSourceLabel(attr?: InstallAttribution | null): string {
+  return resolveInstallSource(attr ?? readAttribution());
 }
 
 function buildInstallSourcePayload(attr: InstallAttribution) {
@@ -149,6 +158,7 @@ function buildInstallSourcePayload(attr: InstallAttribution) {
     utm_medium: attr.utmMedium,
     utm_campaign: attr.utmCampaign,
     gclid: attr.gclid,
+    fbclid: attr.fbclid,
     gbraid: attr.gbraid,
     wbraid: attr.wbraid,
     ref: attr.ref,

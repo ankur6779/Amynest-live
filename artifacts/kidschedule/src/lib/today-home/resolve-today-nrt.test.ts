@@ -13,6 +13,7 @@ const continuity = {
     detail: "Five minutes, no screens.",
     minutes: 5,
     basedOn: ["It’s Monday.", "Aria is in the 2-4 stage."],
+    blocks: [],
   },
   completedAt: null,
   valueEarned: true,

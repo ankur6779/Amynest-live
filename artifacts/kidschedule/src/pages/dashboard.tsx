@@ -58,11 +58,12 @@ import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { computeRoutineStreak } from "@/lib/routine-streak";
-import { shouldBypassRoutineGeneratePaywall } from "@/lib/activation-gate";
+import { shouldBypassRoutineGeneratePaywall, hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import { ActivationResumeBanner } from "@/components/activation-resume-banner";
 import { readActivationResume } from "@/lib/activation-resume";
 import { RetentionHubSection } from "@/components/retention/retention-hub";
 import { FeatureDiscoveryStrip } from "@/components/feature-discovery-strip";
+import { FirstValueHeroCard } from "@/components/first-value-hero-card";
 import { FF_DASHBOARD_PRIORITY_ORDER } from "@/lib/dashboard-feature-flags";
 import {
   FF_FIRST_VALUE_HERO,
@@ -72,7 +73,9 @@ import {
   trackDashboardView,
   trackRoutineCtaClicked,
 } from "@/lib/first-value-telemetry";
-import { FirstValueHeroCard } from "@/components/first-value-hero-card";
+import { shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
+import { activateFirstPlan } from "@/lib/first-plan-activation";
+import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import {
   resolveDashboardUserState,
   shouldShowActivationResumeBanner,
@@ -1095,6 +1098,7 @@ export default function Dashboard() {
     openPaywall
   } = usePaywall();
   const profileFetchedRef = useRef(false);
+  const firstPlanAttemptRef = useRef(false);
   const displayName =
     profileName ||
     user?.firstName ||
@@ -1277,16 +1281,47 @@ export default function Dashboard() {
     localActivationResume,
     !retentionLoading && !retentionError && retentionData != null,
   );
-  const showFeatureDiscovery = shouldShowFeatureDiscovery(
-    dashboardPriorityEnabled,
-    dashboardUserState,
-  );
+  const showFeatureDiscovery =
+    shouldShowFeatureDiscovery(dashboardPriorityEnabled, dashboardUserState) &&
+    shouldShowDay0SecondarySurfaces(allRoutinesSafe.length);
   const timelineOrderClass = timelineFlexOrderClass(dashboardPriorityEnabled);
   const showFirstValueHero =
     !TODAY_HOME_V1 &&
     FF_FIRST_VALUE_HERO &&
     dashboardUserState === "no_routine" &&
     !journeyHandlesGenerate;
+
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    if (allRoutines === undefined) return;
+    if (hasTodayRoutine) return;
+    if (firstPlanAttemptRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const forced = params.get("firstPlan") === "retry" || params.get("firstPlan") === "building";
+    const day0 = !hasFirstRoutineActivationProgress(allRoutinesSafe.length);
+    if (!forced && !day0) return;
+    const childId = selectedChildId ?? childrenSafe[0]?.id ?? null;
+    if (!childId) return;
+    firstPlanAttemptRef.current = true;
+    void activateFirstPlan({
+      authFetch,
+      childId,
+      childName: childrenSafe.find((c) => c.id === childId)?.name,
+      source: forced ? "dashboard_retry" : "dashboard_safety_net",
+    }).then((plan) => {
+      if (plan.status === "ready") setLocation(plan.path);
+    });
+  }, [
+    isSignedIn,
+    user,
+    allRoutines,
+    hasTodayRoutine,
+    selectedChildId,
+    childrenSafe,
+    allRoutinesSafe.length,
+    authFetch,
+    setLocation,
+  ]);
 
   const todayNrtItems = useMemo(() => {
     const todayList = filteredRoutines.filter((r) => routineDateKey(r) === todayKey);
@@ -1502,6 +1537,20 @@ export default function Dashboard() {
       !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
     ) {
       openPaywall("routines_limit");
+    } else if (!hasFirstRoutineActivationProgress(allRoutinesSafe.length)) {
+      void activateFirstPlan({
+        authFetch,
+        childId: selectedChildId,
+        source,
+      }).then((plan) => {
+        if (plan.status === "ready") {
+          setLocation(plan.path);
+          return;
+        }
+        const childQuery =
+          selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
+        setLocation(`/routines/generate${childQuery}`);
+      });
     } else {
       const childQuery =
         selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
@@ -1518,16 +1567,37 @@ export default function Dashboard() {
       userState: dashboardUserState,
     });
     if (todayNrtDecision.cta.kind === "begin_routine" && todayNrtDecision.cta.routineId != null) {
+      trackConversionFunnel("first_plan_action_started", {
+        routine_id: todayNrtDecision.cta.routineId,
+        child_id: todayNrtDecision.childId,
+        source: "today_home_begin",
+      }, { onceKey: "today-home-begin" });
       setLocation(`/routines/${todayNrtDecision.cta.routineId}`);
       return;
     }
     if (todayNrtDecision.cta.kind === "generate") {
-      // trackTodayNrtCta already emitted routine_cta_clicked — navigate only.
       if (
         generateRoutineLocked &&
         !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
       ) {
         openPaywall("routines_limit");
+      } else if (!hasFirstRoutineActivationProgress(allRoutinesSafe.length)) {
+        void activateFirstPlan({
+          authFetch,
+          childId: selectedChildId ?? todayNrtDecision.childId,
+          childName: todayNrtDecision.childName,
+          source: "today_nrt_hero",
+        }).then((plan) => {
+          if (plan.status === "ready") setLocation(plan.path);
+          else {
+            const source = "today_nrt_hero";
+            const childQuery =
+              selectedChildId != null
+                ? `?childId=${selectedChildId}&source=${source}`
+                : `?source=${source}`;
+            setLocation(`/routines/generate${childQuery}`);
+          }
+        });
       } else {
         const source = "today_nrt_hero";
         const childQuery =

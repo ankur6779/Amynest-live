@@ -84,7 +84,6 @@ export function buildBeatOrder(ctx: DiscoveryContext): DiscoveryBeat[] {
     if (!ctx.feedingType) beats.push("infant-feeding");
     if (!ctx.sleepPattern) beats.push("infant-sleep");
   }
-  if (!ctx.rhythmConfirmed) beats.push("rhythm");
   if (!ctx.focusResolved) beats.push("focus");
   beats.push("earned", "saving", "done");
   return beats;

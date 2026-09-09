@@ -85,7 +85,7 @@ export function shouldShowFeatureDiscovery(
   state: DashboardUserState,
 ): boolean {
   if (!priorityEnabled) return true;
-  if (state === "no_routine") return true;
+  if (state === "no_routine") return false;
   if (state === "inactive_parent") return true;
   return false;
 }

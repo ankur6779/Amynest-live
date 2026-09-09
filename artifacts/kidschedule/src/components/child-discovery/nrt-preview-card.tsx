@@ -20,7 +20,7 @@ export function DiscoveryNrtPreviewCard({ nrt, childName, adaptationNote }: Prop
       role="status"
       aria-live="polite"
     >
-      <p className="cd-nrt-kicker">Today’s next right thing</p>
+      <p className="cd-nrt-kicker">Today’s plan</p>
 
       {nrt ? (
         <>
@@ -28,6 +28,15 @@ export function DiscoveryNrtPreviewCard({ nrt, childName, adaptationNote }: Prop
             {nrt.title}
           </p>
           <p className="cd-nrt-body">{nrt.detail}</p>
+          {nrt.blocks?.length ? (
+            <ol className="cd-nrt-blocks">
+              {nrt.blocks.map((b) => (
+                <li key={b.id}>
+                  <strong>{b.label}:</strong> {b.title}
+                </li>
+              ))}
+            </ol>
+          ) : null}
           {adaptationNote ? (
             <p className="cd-nrt-note" data-testid="discovery-nrt-adaptation">
               {adaptationNote}

@@ -20,9 +20,9 @@ export const FF_ANNUAL_FIRST_PLAN_ORDER =
 export const FF_PAYWALL_MODAL_FOR_LOCKS =
   envFlag("VITE_FF_SUB_PAYWALL_MODAL_LOCKS", true);
 
-/** Post-onboarding /subscription-trial screen. */
+/** Post-onboarding /subscription-trial screen. Default OFF — value before payment. */
 export const FF_POST_ONBOARDING_TRIAL =
-  envFlag("VITE_FF_SUB_POST_ONBOARDING_TRIAL", true);
+  envFlag("VITE_FF_SUB_POST_ONBOARDING_TRIAL", false);
 
 /** Trial countdown banner + header chip. */
 export const FF_TRIAL_STATUS_UI = envFlag("VITE_FF_SUB_TRIAL_STATUS_UI", true);

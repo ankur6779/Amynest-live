@@ -3,6 +3,7 @@ import { hasOnboardingMilestone } from "@/lib/retention-engine";
 import {
   ensureFirstOpenTimestamp,
   getPaywallDeferCount,
+  hasFirstPlanActionStarted,
   hasFirstRoutineActivatedFlag,
 } from "@/lib/subscription-funnel-storage";
 
@@ -54,9 +55,9 @@ export function hasExceededPaywallDeferBudget(): boolean {
 
 export function shouldDeferPaywallForActivation(
   reason: PaywallReason,
-  routineCount = 0,
+  _routineCount = 0,
 ): boolean {
-  if (hasFirstRoutineActivationProgress(routineCount)) return false;
+  if (hasFirstPlanActionStarted()) return false;
   if (!PRE_ACTIVATION_DEFER_REASONS.has(reason)) return false;
   if (hasExceededPaywallDeferBudget()) return false;
   return true;

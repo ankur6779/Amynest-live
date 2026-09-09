@@ -6,12 +6,13 @@
  * Usage (production): DATABASE_URL=<prod-url> pnpm --filter @workspace/api-server exec tsx scripts/grantPremium.ts
  *
  * To add more accounts, edit EMAILS_TO_GRANT / PHONES_TO_GRANT below and re-run.
+ * To remove a grant, use `scripts/revokePremium.ts` and delete the email here
+ * so a later grant run does not restore it.
  */
 import { db, adminPremiumGrantsTable } from "@workspace/db";
 
 const EMAILS_TO_GRANT: string[] = [
   "tajkolli07@gmail.com",
-  "champion6779@gmail.com",
   "akinom098@gmail.com",
 ];
 

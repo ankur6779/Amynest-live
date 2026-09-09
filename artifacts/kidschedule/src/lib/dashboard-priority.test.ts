@@ -43,7 +43,7 @@ describe("dashboard-priority", () => {
     expect(
       shouldShowFeatureDiscovery(true, "has_routine_incomplete"),
     ).toBe(false);
-    expect(shouldShowFeatureDiscovery(true, "no_routine")).toBe(true);
+    expect(shouldShowFeatureDiscovery(true, "no_routine")).toBe(false);
   });
 
   it("resolves routine_completed_today state", () => {

@@ -45,32 +45,7 @@ export function buildDiscoveryNrtPreview(
     ageBand: yearsToFirstExperienceAgeBand(input.ageYears, input.ageMonths ?? 0),
     todayContext: input.todayContext,
     now: input.now,
+    focusGoal: input.focusGoal,
   };
-  const base = decideFirstExperienceNextThing(decideInput);
-
-  if (!input.focusGoal) return base;
-
-  const focusLine = focusObservation(input.focusGoal, name);
-  return {
-    ...base,
-    basedOn: [...base.basedOn.slice(0, 3), focusLine],
-    detail: `${base.detail} ${focusLine}`,
-  };
-}
-
-function focusObservation(goal: string, name: string): string {
-  switch (goal) {
-    case "improve_sleep":
-      return `Tonight’s calm matters for ${name}.`;
-    case "reduce_tantrums":
-      return `A smaller next step steadies ${name}.`;
-    case "improve_focus":
-      return `One short focus win helps ${name} today.`;
-    case "reduce_screen_time":
-      return `A real-world beat replaces one screen loop.`;
-    case "increase_independence":
-      return `${name} can own one small step today.`;
-    default:
-      return "Today’s focus is held gently.";
-  }
+  return decideFirstExperienceNextThing(decideInput);
 }

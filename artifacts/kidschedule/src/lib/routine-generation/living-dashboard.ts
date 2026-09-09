@@ -22,11 +22,11 @@ export function livingDashboardOpen(childName = "your child") {
 }
 
 export function livingDashboardEmptyTitle(): string {
-  return "No plan for today yet.";
+  return "We're getting today's plan ready.";
 }
 
 export function livingDashboardEmptyBody(childName = "your child"): string {
-  return `Amy can shape one around ${childName} and this day.`;
+  return `Amy is shaping a clear day around ${childName}. Retry if the plan did not appear.`;
 }
 
 export function livingDashboardBuildCta(): string {

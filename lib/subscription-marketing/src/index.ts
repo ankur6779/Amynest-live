@@ -75,7 +75,7 @@ export const PLAN_MARKETING: Record<
     tagline: "Full ecosystem. One month. Zero lock-in.",
     valueAnchor: "Less than a single tutoring session—entire platform included.",
     positioning:
-      "Frictionless entry: every part of AmyNest—AI, Coach, Speech Coach, learning, Hub, routines—for one month. Cancel anytime. Ideal when you want proof before a longer commitment.",
+      "Frictionless entry: every part of AmyNest—AI, Coach, Speech Coach, learning, Hub, routines—for one month. Cancel in the store or account before renewal. Ideal when you want proof before a longer commitment.",
     description:
       "No stripped-down trial. The same system annual members use, priced so starting feels easy.",
     features: [
@@ -133,7 +133,7 @@ export const PURCHASE_CTAS = {
   successBody:
     "Amy AI, Coach, Speech Coach, learning, routines, and Hub—active for your child. Start with today's routine or ask Amy anything.",
   restorePurchases: "Restore Purchases",
-  trustLine: `Cancel anytime · Billed clearly · ${PRODUCT_AGE_LABEL}`,
+  trustLine: `Cancel in the store · Billed clearly · Restore purchases · ${PRODUCT_AGE_LABEL}`,
 } as const;
 
 export const PURCHASE_SCREEN = PURCHASE_CTAS;
@@ -177,7 +177,7 @@ export const REVENUECAT_PAYWALL = {
 export const TRUST_SECTION = {
   title: "Straightforward for parents",
   items: [
-    { label: "Cancel anytime", detail: "Manage in App Store, Play Store, or your account." },
+    { label: "Cancel in the store", detail: "App Store and Google Play manage cancellation for store purchases. Web billing is cancelled from your AmyNest account. Access continues until the end of the paid period." },
     { label: PRODUCT_AGE_LABEL, detail: "Content and coaching calibrated to childhood—not adults." },
     { label: "Secure checkout", detail: "App Store · Google Play · Razorpay" },
     { label: "Your data, your family", detail: "Profiles and progress stay tied to your household." },
@@ -186,26 +186,31 @@ export const TRUST_SECTION = {
 } as const;
 
 export const UPGRADE_MODAL = {
-  title: "Continue your child's journey",
+  title: "Keep your child's days this clear.",
   subtitle:
-    "You've already started with AmyNest. Premium keeps AI guidance, routines, learning, and reports working together every day.",
-  cta: "Start Growing Together",
-  dismiss: "Maybe later",
+    "You already have today's plan. Premium keeps Amy building tomorrow's plan, helping through difficult moments, and showing progress over time.",
+  cta: "Keep tomorrow's plan",
+  dismiss: "Not now",
 } as const;
 
-/** Shared Premium benefit checklist — used on paywalls (no fake stats). */
+/** Shared Premium benefit checklist — outcomes the parent just experienced. */
 export const PAYWALL_CORE_BENEFITS = [
-  "Unlimited AI guidance",
-  "Unlimited personalized routines",
-  "Weekly family reports",
-  "Health Lab",
-  "Complete learning journeys",
-  "Educational games library",
-  "Birth Sky stories",
-  "Priority AI responses",
+  "Tomorrow's personalized plan, ready when you open the app",
+  "Help through difficult moments — the next right step, not a lecture",
+  "A day the parent and child can actually finish together",
+  "Progress you can see across days, not another feature list",
+  "Amy stays with the same child story after today",
 ] as const;
 
-/** Honest Free vs Premium matrix for conversion UI. */
+/** Outcome comparison — not a feature catalog. Free saved-plan cap is 3. */
+export const PAYWALL_OUTCOME_COMPARE = [
+  { label: "Today's personalized plan", free: "Included", premium: "Included" },
+  { label: "Tomorrow's plan waiting", free: "3 saved plans", premium: "Keeps building" },
+  { label: "Help in a hard moment", free: "Daily Amy limit", premium: "Amy stays with you" },
+  { label: "Progress you can see", free: "Today", premium: "Across days" },
+] as const;
+
+/** Honest Free vs Premium matrix for settings/docs — keep numbers consistent with FREE_LIMITS. */
 export const FREE_VS_PREMIUM_MATRIX = [
   { label: "Daily tracking & milestones", free: "Included", premium: "Included" },
   { label: "Amy AI guidance", free: "Daily limit", premium: "Unlimited" },
@@ -218,9 +223,9 @@ export const FREE_VS_PREMIUM_MATRIX = [
 ] as const;
 
 export const PAYWALL_SOCIAL_PROOF = [
-  "Parents use AmyNest every day to build healthy routines.",
-  "Designed to grow with your child.",
-  "Trusted parenting guidance powered by AI.",
+  "Built so a parent can see today's plan in about two minutes.",
+  "Designed around one job: the next right thing for this child today.",
+  "Premium continues the plan you already used — it does not invent a new product.",
 ] as const;
 
 export const PAYWALL_AI = {

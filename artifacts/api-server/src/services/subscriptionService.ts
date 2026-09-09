@@ -101,7 +101,7 @@ export const FREE_LIMITS = {
   infantAiQueriesPerDay: INFANT_AI_DAILY_LIMIT,
   childrenMax: 1,
   devicesMax: 1,
-  routinesMax: 2,
+  routinesMax: 3,
   hubArticlesMax: 3,
   trialDays: 3,
 };

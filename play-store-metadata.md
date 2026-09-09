@@ -10,18 +10,18 @@
 ## App Title (30 characters max)
 
 ```
-AmyNest AI: Parenting Coach
+AmyNest: Today's Child Plan
 ```
 
 *Character count: 27*  
-*Primary keywords: AI parenting coach, parenting app*
+*Primary keywords: child's daily plan, parenting app*
 
 ---
 
 ## Short Description (80 characters max)
 
 ```
-AI parenting coach: routines, speech practice, nutrition & infant care for kids.
+Get your child's personalized plan for today in two minutes. Do it together.
 ```
 
 *Character count: 79*  
@@ -31,12 +31,22 @@ AI parenting coach: routines, speech practice, nutrition & infant care for kids.
 
 ## Long Description
 
-**AmyNest AI — Your Smart Parenting Coach**
+**AmyNest — Your child's plan for today**
 
-Turn parenting chaos into calm daily wins with AMY, your AI parenting coach built for families worldwide. From newborn feeds to school mornings, AmyNest combines personalized routines, speech practice, nutrition planning, and learning — in one app parents actually use every day.
+Get a personalized daily plan for your child in about two minutes. See what to do next today, then do it together.
 
-**Meet AMY — Your 24/7 Parenting Coach**  
-Ask anything about sleep, picky eating, tantrums, speech development, or school prep. AMY learns your child's age and routines to give practical advice — not generic blog posts.
+AmyNest is not a feature catalog and not generic parenting tips. It builds today's plan from your child's age and day, then guides the next right step.
+
+**Today's plan**  
+Morning, play or learning, movement, connection, help if it gets hard, and bedtime — only using tools that already exist in the app.
+
+**Amy when it gets hard**  
+Ask Amy for the next step on tantrums, screens, sleep, or a stuck homework moment — matched to this child's age.
+
+**Speech, learning, and meals — after the first plan**  
+Those rooms stay available. First-time parents see today's plan first.
+
+Cancel in Google Play. Restore purchases anytime. Refunds follow Google Play policy and applicable law.
 
 **Smart Daily Routines**  
 AI-generated schedules that adapt when you mark what worked. Wake windows, meals, play, learning blocks, and bedtime — personalized by age from infant to school-age.

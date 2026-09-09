@@ -28,7 +28,9 @@ import {
 } from "@/lib/firebase-auth-listener";
 import { waitForIdToken } from "@/lib/auth-token";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { navigateAfterOnboardingComplete, POST_ONBOARDING_ACTIVATION_PATH } from "@/lib/onboarding-navigation";
+import { navigateAfterOnboardingComplete } from "@/lib/onboarding-navigation";
+import { activateFirstPlan, FIRST_PLAN_RETRY_PATH } from "@/lib/first-plan-activation";
+import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import {
   readFirebaseUserId,
   readOAuthParentNameHint,
@@ -36,13 +38,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
-import {
-  FF_POST_ONBOARDING_TRIAL,
-} from "@/lib/subscription-feature-flags";
-import {
-  wasOnboardingTrialSeen,
-} from "@/lib/subscription-funnel-storage";
-import { shouldRouteToPostOnboardingFreeTrial } from "@/lib/trial-paywall-variant";
 import { logOnboardingState } from "@/lib/onboarding-debug";
 import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
 import {
@@ -72,9 +67,7 @@ import {
 } from "@/lib/onboarding-first-question";
 import {
   peekFirstExperienceOnboardingSeed,
-  shouldDeferMonetizationForFirstExperience,
 } from "@/lib/first-experience/continuity";
-import { hasFirstRoutineActivationProgress } from "@/lib/activation-gate";
 import {
   claimOnboardingEventOnce,
   getOrCreateOnboardingAnalyticsRunKey,
@@ -649,6 +642,7 @@ function LegacyOnboardingChatPage() {
   const completionOnceRef = useRef(false);
   const pendingSaveAllergiesRef = useRef<string | undefined>(undefined);
   const onboardingJustFinishedRef = useRef(false);
+  const firstChildIdRef = useRef<number | null>(null);
   const prevStepRef = useRef<Step>(freshBoot.step);
   const [savingProgressIdx, setSavingProgressIdx] = useState(0);
   const [donePhase, setDonePhase] = useState<"summary" | "generating">("summary");
@@ -1349,7 +1343,7 @@ function LegacyOnboardingChatPage() {
           "Sign-in session is not ready yet. Wait a moment and tap finish again.",
         );
       }
-      await runOnboardingFinishTransaction(authFetch, {
+      const finish = await runOnboardingFinishTransaction(authFetch, {
         parent: parentBody,
         children: childPayloads,
         selectedParentGoals,
@@ -1370,6 +1364,11 @@ function LegacyOnboardingChatPage() {
           priorityGoal: selectedParentGoals[0] ?? "balanced-routine",
         },
       });
+      firstChildIdRef.current = finish.childId ?? null;
+      if (finish.childId) {
+        trackConversionFunnel("child_created", { child_id: finish.childId }, { onceKey: String(finish.childId) });
+      }
+      trackConversionFunnel("onboarding_completed", { child_id: finish.childId ?? undefined, source: "onboarding_chat" }, { onceKey: "session" });
 
       await logOnboardingPipelineSnapshot("save-everything-after-transaction", authFetch, {
         userId: user?.id ?? readFirebaseUserId(),
@@ -1492,25 +1491,21 @@ function LegacyOnboardingChatPage() {
       persistOnboardingCache(completeStatus);
       queryClient.setQueryData(["onboarding-status"], completeStatus);
       onboardingJustFinishedRef.current = false;
-      const offerFreeTrial = shouldRouteToPostOnboardingFreeTrial({
-        featureEnabled: FF_POST_ONBOARDING_TRIAL,
-        alreadySeen: wasOnboardingTrialSeen(),
-        isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
-        deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
-        hasFirstRoutine: hasFirstRoutineActivationProgress(),
+      const plan = await activateFirstPlan({
+        authFetch,
+        childId: firstChildIdRef.current,
+        source: "onboarding_chat",
       });
-      const trialPath = offerFreeTrial
-        ? "/subscription-trial"
-        : POST_ONBOARDING_ACTIVATION_PATH;
+      const trialPath = plan.status === "ready" ? plan.path : FIRST_PLAN_RETRY_PATH;
       navigateAfterOnboardingComplete(trialPath);
-      // Use Wouter setLocation as a direct fallback in case PopStateEvent is ignored.
       setLocation(trialPath);
       await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
         userId: user?.id ?? readFirebaseUserId(),
         extra: {
           trialPath,
           fastPath: true,
-          offerFreeTrial,
+          offerFreeTrial: false,
+          firstPlanStatus: plan.status,
           isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
         },
       });
@@ -1552,25 +1547,21 @@ function LegacyOnboardingChatPage() {
       setStep("parent-allergies");
       return;
     }
-    const offerFreeTrial = shouldRouteToPostOnboardingFreeTrial({
-      featureEnabled: FF_POST_ONBOARDING_TRIAL,
-      alreadySeen: wasOnboardingTrialSeen(),
-      isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
-      deferForFirstExperience: shouldDeferMonetizationForFirstExperience(),
-      hasFirstRoutine: hasFirstRoutineActivationProgress(),
+    const plan = await activateFirstPlan({
+      authFetch,
+      childId: firstChildIdRef.current,
+      source: "onboarding_chat",
     });
-    const trialPath = offerFreeTrial
-      ? "/subscription-trial"
-      : POST_ONBOARDING_ACTIVATION_PATH;
+    const trialPath = plan.status === "ready" ? plan.path : FIRST_PLAN_RETRY_PATH;
     navigateAfterOnboardingComplete(trialPath);
-    // Direct Wouter navigation as a belt-and-suspenders fallback.
     setLocation(trialPath);
     await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
       userId: user?.id ?? readFirebaseUserId(),
       extra: {
         trialPath,
         fastPath: false,
-        offerFreeTrial,
+        offerFreeTrial: false,
+        firstPlanStatus: plan.status,
         isPremiumSubscriber: entitlements?.isPremiumSubscriber === true,
       },
     });

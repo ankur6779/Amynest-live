@@ -16,6 +16,54 @@ import type { AuthFetchFn, QueuedAnalyticsEvent } from "./constants";
 
 export type AnalyticsServiceConfig = Partial<AnalyticsRuntimeContext>;
 
+function detectAuthState(): "authenticated" | "guest" | "unknown" {
+  if (typeof localStorage === "undefined") return "unknown";
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith("firebase:authUser")) continue;
+      const raw = localStorage.getItem(key);
+      if (raw && raw !== "null") return "authenticated";
+    }
+  } catch {
+    return "unknown";
+  }
+  return "guest";
+}
+
+function attachInstallAttribution(props: Record<string, unknown>): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const raw = localStorage.getItem("amynest:install_attribution");
+    const attr = raw
+      ? (JSON.parse(raw) as {
+          utmSource?: string;
+          utmMedium?: string;
+          utmCampaign?: string;
+          gclid?: string;
+          fbclid?: string;
+          ref?: string;
+          playReferrer?: string;
+        })
+      : null;
+    if (!props.install_source) {
+      if (attr?.gclid) props.install_source = "google_ads";
+      else if (attr?.fbclid) props.install_source = "meta_ads";
+      else if (attr?.utmSource) props.install_source = attr.utmSource;
+      else if (attr?.ref) props.install_source = "referral";
+      else if (attr?.playReferrer) props.install_source = "play_referrer";
+      else props.install_source = attr ? "organic" : "unknown";
+    }
+    if (attr?.utmSource && !props.utm_source) props.utm_source = attr.utmSource;
+    if (attr?.utmMedium && !props.utm_medium) props.utm_medium = attr.utmMedium;
+    if (attr?.utmCampaign && !props.utm_campaign) props.utm_campaign = attr.utmCampaign;
+    if (attr?.gclid && !props.gclid) props.gclid = attr.gclid;
+    if (attr?.fbclid && !props.fbclid) props.fbclid = attr.fbclid;
+  } catch {
+    if (!props.install_source) props.install_source = "unknown";
+  }
+}
+
 /**
  * Single analytics entry point for the entire app.
  * All product telemetry flows through this service.
@@ -128,6 +176,10 @@ export class AnalyticsService {
     if (ctx.subscriptionState) props.subscription_state = ctx.subscriptionState;
     if (ctx.childAgeBand) props.child_age_band = ctx.childAgeBand;
     if (ctx.country) props.country = ctx.country;
+    attachInstallAttribution(props);
+    if (!props.auth_state) {
+      props.auth_state = detectAuthState();
+    }
 
     const event: QueuedAnalyticsEvent = {
       name,

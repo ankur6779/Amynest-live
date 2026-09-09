@@ -30,7 +30,7 @@ const faqs = [
   },
   {
     q: "Can I get a refund if I cancel mid-period?",
-    a: "Subscription fees are generally non-refundable for the current billing period, as stated in our Terms of Service. However, we review every request on a case-by-case basis. Contact support@amynest.in and we will do our best to help.",
+    a: "Store purchases (App Store and Google Play) follow that store's refund policy and applicable law. Web purchases billed by AmyNest can be cancelled before the next renewal; the current paid period stays available until it ends. We do not promise refunds beyond what the store or applicable law requires. Contact support@amynest.in and we will review your request.",
   },
   {
     q: "What if I was charged twice for the same period?",

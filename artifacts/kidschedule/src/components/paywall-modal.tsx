@@ -38,7 +38,7 @@ import { track } from "@/lib/analytics";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useTranslation } from "react-i18next";
 import {
-  FREE_VS_PREMIUM_MATRIX,
+  PAYWALL_OUTCOME_COMPARE,
   PAYWALL_CORE_BENEFITS,
   PAYWALL_REASON_COPY,
   PAYWALL_SOCIAL_PROOF,
@@ -622,7 +622,7 @@ export function PaywallModal() {
               <span>Free</span>
               <span className="text-primary">Premium</span>
             </div>
-            {FREE_VS_PREMIUM_MATRIX.map((row) => (
+            {PAYWALL_OUTCOME_COMPARE.map((row) => (
               <div
                 key={row.label}
                 className="grid grid-cols-[1.2fr_1fr_1fr] gap-2 border-b border-white/5 px-3 py-2 text-[11px] last:border-b-0"
@@ -740,7 +740,7 @@ export function PaywallModal() {
             {isAndroid
               ? t("components.paywall_modal.secure_play_family", {
                   defaultValue:
-                    "Secure payment via Google Play · Family friendly · Cancel anytime",
+                    "Billed via Google Play · Cancel in Play subscriptions · Restore anytime",
                 })
               : PURCHASE_SCREEN.trustLine}
           </p>

@@ -91,8 +91,9 @@ const FUNNEL_STAGES: Array<{
     key: "onboarding_completed",
     label: "Onboarding Completed",
     condition: sql`(
-      (event_name = 'onboarding_funnel_event' AND props->>'step' = 'finish_clicked')
-      OR (event_name = 'onboarding_milestone' AND props->>'milestone' = 'completed')
+      event_name = 'onboarding_completed'
+      OR (event_name = 'onboarding_funnel_event' AND props->>'step' IN ('finish_clicked', 'onboarding_completed', 'done'))
+      OR (event_name = 'onboarding_milestone' AND props->>'milestone' IN ('completed', 'signup_completed'))
     )`,
   },
   {
@@ -117,7 +118,7 @@ const FUNNEL_STAGES: Array<{
     key: "routine_completed",
     label: "Routine Generated",
     condition: sql`(
-      event_name IN ('routine_generated', 'routine_generation_completed')
+      event_name IN ('first_plan_generated', 'routine_generated', 'routine_generation_completed')
     )`,
   },
   {
@@ -142,7 +143,7 @@ const FUNNEL_STAGES: Array<{
     key: "purchase",
     label: "Purchase",
     condition: sql`(
-      event_name = 'upgrade_completed'
+      event_name IN ('purchase_success', 'upgrade_completed')
       OR (event_name = 'subscription_funnel_event' AND props->>'step' = 'purchase_success')
     )`,
   },
