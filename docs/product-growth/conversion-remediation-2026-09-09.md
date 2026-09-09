@@ -221,7 +221,7 @@ Log: `/opt/cursor/artifacts/conversion_remediation_vitest.log`
 
 **P0 still open**
 
-- **P0-12 purchase verification** — no live purchase, cancel, fail, restore, reinstall, or &lt;30s unlock evidence.
+- **P0-12 purchase verification** — no live purchase, cancel, fail, restore, reinstall, or &lt;30s unlock evidence. Operator runbook: `docs/product-growth/play-subscription-certification-checklist-2026-09-09.md`. **Do not mark P0-12 PASS until a real Play purchase on a physical device is verified through the webhook → `subscriptions` → `isPremiumSubscriber` chain.**
 - **P0-10/11 cohort measurement** — canonical events exist; no production install→purchase cohort yet.
 - Chat onboarding still exists as a longer authenticated path; Discovery Film is the shorter authenticated path. Both now auto-generate.
 
