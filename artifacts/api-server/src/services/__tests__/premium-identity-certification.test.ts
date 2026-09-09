@@ -61,6 +61,23 @@ describe("premium identity certification guardrails", () => {
     assert.match(script, /failures/);
   });
 
+  it("startTrial writes trialing onto the resolved subscription owner, not raw Firebase uid", () => {
+    const service = readRepoFile("artifacts/api-server/src/services/subscriptionService.ts");
+    const fnStart = service.indexOf("export async function startTrial");
+    assert.ok(fnStart >= 0, "startTrial should exist");
+    const nextExport = service.indexOf("\nexport async function", fnStart + 1);
+    const slice = service.slice(fnStart, nextExport > fnStart ? nextExport : undefined);
+    assert.match(slice, /resolveSubscriptionOwnerUserId\(userId/);
+    assert.match(
+      slice,
+      /\.where\(eq\(subscriptionsTable\.userId,\s*subscriptionOwnerUserId\)\)/,
+    );
+    assert.doesNotMatch(
+      slice,
+      /\.where\(eq\(subscriptionsTable\.userId,\s*userId\)\)/,
+    );
+  });
+
   it("Champion6779 Play-certification reset runs on boot and subscription read, and blocks stale RC restore", () => {
     const reset = readRepoFile("artifacts/api-server/src/services/certificationPremiumReset.ts");
     const grant = readRepoFile("artifacts/api-server/src/services/subscriptionService.ts");
