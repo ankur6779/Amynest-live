@@ -324,6 +324,23 @@ async function startServer(): Promise<void> {
       );
       await assertNotificationDedupIndexAtStartup();
       await verifyDatabaseAtStartup();
+      try {
+        const { applyCertificationPremiumReset } = await import(
+          "./services/certificationPremiumReset.js"
+        );
+        const reset = await applyCertificationPremiumReset();
+        if (reset.applied) {
+          logger.info(
+            { evt: "billing.certification_reset", userIds: reset.userIds.length },
+            "Play certification tester premium reset applied",
+          );
+        }
+      } catch (resetErr) {
+        logger.warn(
+          { evt: "billing.certification_reset_failed", err: resetErr },
+          "Play certification tester premium reset skipped",
+        );
+      }
     } else {
       logger.warn(
         { evt: "boot.skip", module: "db" },

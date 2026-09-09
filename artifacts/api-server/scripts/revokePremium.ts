@@ -1,13 +1,14 @@
 /**
  * Remove a manual backend premium grant so the account can go through a real
- * store purchase. Deletes `admin_premium_grants` and resets `provider=manual`
- * subscription rows. Does not cancel Google Play / App Store subscriptions.
+ * store purchase. Champion6779 is also force-cleared from mirrored Play/RevenueCat
+ * rows via `applyCertificationPremiumReset` on API boot / next subscription read.
  *
  * Usage: DATABASE_URL=<prod-url> pnpm --filter @workspace/api-server exec tsx scripts/revokePremium.ts
  *
  * Optional: pass emails as args.
  *   pnpm --filter @workspace/api-server exec tsx scripts/revokePremium.ts champion6779@gmail.com
  */
+import { applyCertificationPremiumReset, isCertificationForceFreeEmail } from "../src/services/certificationPremiumReset.js";
 import { db, adminPremiumGrantsTable, subscriptionsTable, userIdentityAliasesTable } from "@workspace/db";
 import { eq, or } from "drizzle-orm";
 
@@ -25,7 +26,6 @@ async function resetManualSubscription(userId: string): Promise<string> {
       provider: subscriptionsTable.provider,
       status: subscriptionsTable.status,
       plan: subscriptionsTable.plan,
-      subscriptionState: subscriptionsTable.subscriptionState,
     })
     .from(subscriptionsTable)
     .where(eq(subscriptionsTable.userId, userId))
@@ -33,7 +33,7 @@ async function resetManualSubscription(userId: string): Promise<string> {
 
   if (!sub) return "no_subscription_row";
   if (sub.provider === "revenuecat" || sub.provider === "razorpay") {
-    return `left_${sub.provider}_${sub.status}_${sub.plan} (store-managed — cancel in Play/App Store, do not wipe)`;
+    return `left_${sub.provider}_${sub.status}_${sub.plan} (store-managed — use certification reset for testers)`;
   }
   if (sub.provider !== "manual") {
     return `left_${sub.provider}_${sub.status}_${sub.plan}`;
@@ -74,7 +74,19 @@ async function revokePremium() {
   console.log("=== Revoke Premium Script ===\n");
   console.log("Emails:", emails.join(", "));
 
+  if (emails.some((email) => isCertificationForceFreeEmail(email))) {
+    const reset = await applyCertificationPremiumReset();
+    console.log(
+      reset.applied
+        ? `  certification reset applied for ${reset.userIds.length} user id(s)`
+        : "  certification reset already applied (idempotent)",
+    );
+  }
+
   for (const email of emails) {
+    if (isCertificationForceFreeEmail(email)) {
+      continue;
+    }
     console.log(`\nProcessing: ${email}`);
 
     const deleted = await db

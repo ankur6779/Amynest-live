@@ -154,6 +154,27 @@ export async function applyRevenueCatSnapshot(
   });
   const fromState = ((existing?.subscriptionState as SubscriptionState | undefined) ?? "FREE");
   const { state, reason, premiumUntil } = deriveStateFromRevenueCatSnapshot(snapshot);
+  const { shouldBlockStaleCertificationRevenueCatWriteForUser } = await import(
+    "./certificationPremiumReset.js"
+  );
+  if (
+    await shouldBlockStaleCertificationRevenueCatWriteForUser(userId, {
+      eventType: snapshot.eventType,
+      source: opts.source,
+      grantsPremium: PAID_STATES.has(state),
+    })
+  ) {
+    return {
+      userId,
+      fromState,
+      toState: fromState,
+      plan: ((existing?.plan as Plan | undefined) ?? "free"),
+      status: ((existing?.status as Status | undefined) ?? "free"),
+      isPremium: false,
+      expiresAt: existing?.expiresAt ?? null,
+      reason: "certification_reset",
+    };
+  }
   const plan = state === "FREE" || state === "EXPIRED" ? "free" : productIdToPlan(snapshot.productId) ?? "monthly";
   const status = mapStateToLegacyStatus(state);
   const now = new Date();
