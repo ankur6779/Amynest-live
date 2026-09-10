@@ -39,6 +39,7 @@ import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
 } from "../services/userIdentityService.js";
+import { shouldPersistRazorpayVerifyProviderLinkage } from "../lib/razorpay-verify-linkage.js";
 
 function isRevenueCatAnonymousId(id: string | null | undefined): boolean {
   return typeof id === "string" && id.startsWith("$RCAnonymousID:");
@@ -959,13 +960,12 @@ router.post(
  *
  * Verifies the Checkout HMAC signature, then enforces ownership
  * (sub.notes.userId === auth user) and plan binding against the
- * Razorpay subscription record. On success it persists ONLY the
- * provider linkage (provider, providerSubscriptionId) — it does NOT
- * flip status to "active". Activation happens exclusively in the
- * webhook handler when `subscription.activated` / `.charged` /
- * `.resumed` arrives, which is the canonical confirmation that the
- * first charge actually succeeded. The client should poll
- * `/api/subscription` (or refresh on the
+ * Razorpay subscription record. On success it may persist provider
+ * linkage for non-FREE rows — it does NOT flip status to "active".
+ * Activation happens exclusively in the webhook handler when
+ * `subscription.activated` / `.charged` / `.resumed` arrives, which is
+ * the canonical confirmation that the first charge actually succeeded.
+ * The client should poll `/api/subscription` (or refresh on the
  * `amynest:refresh-subscription` event) until the webhook lands.
  */
 router.post(
@@ -1032,23 +1032,23 @@ router.post(
     }
     const planCode = planFromSub;
 
-    // Persist provider linkage ONLY (intent). We do NOT flip status to
-    // "active" here — the webhook (`subscription.activated` /
-    // `subscription.charged`) is the canonical source of truth for the
-    // first successful charge. The client should poll `/api/subscription`
-    // (or refresh on the `amynest:refresh-subscription` event) until the
-    // webhook lands, which usually takes a few seconds.
+    // Persist provider linkage ONLY on non-FREE rows (intent). FREE rows
+    // cannot take provider=razorpay + providerSubscriptionId without
+    // violating subscriptions_free_provider_link_chk — skip and await the
+    // webhook, which writes ACTIVE + provider + periodEnd together.
     const { db, subscriptionsTable } = await import("@workspace/db");
-    await getOrCreateSubscription(userId);
-    await db
-      .update(subscriptionsTable)
-      .set({
-        provider: "razorpay",
-        providerCustomerId: userId,
-        providerSubscriptionId: subscriptionId,
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptionsTable.userId, userId));
+    const existing = await getOrCreateSubscription(userId);
+    if (shouldPersistRazorpayVerifyProviderLinkage(existing.subscriptionState)) {
+      await db
+        .update(subscriptionsTable)
+        .set({
+          provider: "razorpay",
+          providerCustomerId: existing.userId,
+          providerSubscriptionId: subscriptionId,
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptionsTable.userId, existing.userId));
+    }
 
     const ent = await getEntitlements(userId);
     res.json({
