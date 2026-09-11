@@ -915,19 +915,28 @@ export default function RoutineGenerate() {
     if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current);
     checkDebounceRef.current = setTimeout(() => {
       authFetch(getApiUrl(`/api/routines/check?childId=${selectedChild}&date=${date}`)).then(async (r) => {
-        if (!r.ok) return null;
+        if (!r.ok) {
+          // Fail closed: keep prior gate state. Clearing to null hid the
+          // "already exists" warning and let save auto-wipe on 409.
+          return;
+        }
         return parseApiJson<{ exists: boolean; routineId?: number }>(r);
       }).then((data) => {
-        setExistingRoutine(data ?? null);
-        if (data?.exists) {
+        if (!data) return;
+        setExistingRoutine(data);
+        if (data.exists) {
           if (autoOverrideRef.current) {
             setOverrideMode(true);
             autoOverrideRef.current = false;
           } else {
             setOverrideMode(false);
           }
+        } else {
+          setOverrideMode(false);
         }
-      }).catch(() => setExistingRoutine(null));
+      }).catch(() => {
+        /* network error — preserve existingRoutine / overrideMode */
+      });
     }, 400);
     return () => {
       if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current);
@@ -1113,12 +1122,22 @@ export default function RoutineGenerate() {
           errObj.status === 409 &&
           errObj.data?.error === "routine_exists";
         if (isConflict) {
-          setOverrideMode(true);
+          // Never silent-override on 409. A failed/stale /routines/check can
+          // leave existingRoutine null while a customized plan already exists —
+          // auto-retry with override:true permanently wiped parent edits.
+          setOverrideMode(false);
           setExistingRoutine({
             exists: true,
             routineId: errObj.data?.routineId,
           });
-          saveGeneratedRoutine(data, true, false);
+          toast({
+            title: t("pages.routines.generate.existing_routine_block_title", {
+              defaultValue: "Routine already exists for this date",
+            }),
+            description: t("pages.routines.generate.existing_routine_block_desc", {
+              defaultValue: "Tap Override & Regenerate above, or view the existing routine.",
+            }),
+          });
           return;
         }
         const isLimit =
@@ -1713,31 +1732,51 @@ export default function RoutineGenerate() {
     // Family-mode existing-routine override gate (parity with single-mode).
     // Check each selected child for an existing routine on the chosen date,
     // then ask the parent once before regenerating + replacing them all.
+    let checkFailed = false;
     try {
       const checks = await Promise.all(selectedChildren.map(async c => {
         try {
           const r = await authFetch(getApiUrl(`/api/routines/check?childId=${c.id}&date=${familyDate}`));
-          if (!r.ok) return null;
+          if (!r.ok) {
+            checkFailed = true;
+            return null;
+          }
           const data = await parseApiJson(r) as { exists?: boolean };
           return data?.exists ? c : null;
         } catch {
+          checkFailed = true;
           return null;
         }
       }));
-      const conflicts = checks.filter((c): c is ChildType => !!c);
-      if (conflicts.length > 0) {
-        const names = conflicts.map(c => c.name).join(", ");
-        const confirmMsg = t("toasts.routines_generate.family_existing_confirm", {
-          names,
-          date: familyDate,
-          defaultValue: `${names} already have a routine for ${familyDate}. Replace?`
-        });
+      if (checkFailed) {
         // eslint-disable-next-line no-alert
-        if (!window.confirm(confirmMsg)) return;
+        if (!window.confirm(
+          t("toasts.routines_generate.family_check_failed_confirm", {
+            date: familyDate,
+            defaultValue: `Could not verify existing routines for ${familyDate}. Continue and replace any that already exist?`,
+          }),
+        )) return;
+      } else {
+        const conflicts = checks.filter((c): c is ChildType => !!c);
+        if (conflicts.length > 0) {
+          const names = conflicts.map(c => c.name).join(", ");
+          const confirmMsg = t("toasts.routines_generate.family_existing_confirm", {
+            names,
+            date: familyDate,
+            defaultValue: `${names} already have a routine for ${familyDate}. Replace?`
+          });
+          // eslint-disable-next-line no-alert
+          if (!window.confirm(confirmMsg)) return;
+        }
       }
     } catch {
-      // If the check itself fails we don't block generation — the save-all
-      // step uses override:true so any stale routine will still be replaced.
+      // eslint-disable-next-line no-alert
+      if (!window.confirm(
+        t("toasts.routines_generate.family_check_failed_confirm", {
+          date: familyDate,
+          defaultValue: `Could not verify existing routines for ${familyDate}. Continue and replace any that already exist?`,
+        }),
+      )) return;
     }
 
     setFamilyResults(null);
