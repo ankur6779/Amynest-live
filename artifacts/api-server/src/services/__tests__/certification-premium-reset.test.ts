@@ -5,6 +5,7 @@ import {
   freeSubscriptionResetValues,
   isCertificationForceFreeEmail,
   shouldBlockStaleCertificationRevenueCatWrite,
+  shouldKeepPostResetPurchase,
 } from "../certificationPremiumReset.js";
 
 test("Champion6779 is the force-free certification tester", () => {
@@ -78,6 +79,67 @@ test("a new Play purchase after reset is allowed to grant premium", () => {
       lastPaidEventAt: new Date("2026-09-09T11:00:00.000Z"),
       grantsPremium: true,
     }),
+    false,
+  );
+});
+
+test("post-reset RENEWAL lastPaidEventAt keeps subsequent renewals unblocked", () => {
+  const resetAppliedAt = new Date("2026-09-09T10:00:00.000Z");
+  // After INITIAL_PURCHASE, lastEventType becomes RENEWAL — lastPaidEventAt must
+  // still count so the next RENEWAL is not treated as a stale pre-reset mirror.
+  assert.equal(
+    shouldBlockStaleCertificationRevenueCatWrite({
+      forceFree: true,
+      resetAppliedAt,
+      eventType: "RENEWAL",
+      source: "webhook",
+      lastPaidEventAt: new Date("2026-09-10T12:00:00.000Z"),
+      grantsPremium: true,
+    }),
+    false,
+  );
+});
+
+test("shouldKeepPostResetPurchase preserves RENEWAL and PRODUCT_CHANGE grants", () => {
+  const resetAppliedAt = new Date("2026-09-09T10:00:00.000Z");
+  assert.equal(
+    shouldKeepPostResetPurchase(
+      resetAppliedAt,
+      "INITIAL_PURCHASE",
+      new Date("2026-09-09T11:00:00.000Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    shouldKeepPostResetPurchase(
+      resetAppliedAt,
+      "RENEWAL",
+      new Date("2026-09-10T11:00:00.000Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    shouldKeepPostResetPurchase(
+      resetAppliedAt,
+      "PRODUCT_CHANGE",
+      new Date("2026-09-10T11:00:00.000Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    shouldKeepPostResetPurchase(
+      resetAppliedAt,
+      "certification_reset",
+      new Date("2026-09-09T10:00:00.000Z"),
+    ),
+    false,
+  );
+  assert.equal(
+    shouldKeepPostResetPurchase(
+      resetAppliedAt,
+      "RENEWAL",
+      new Date("2026-09-09T09:00:00.000Z"),
+    ),
     false,
   );
 });

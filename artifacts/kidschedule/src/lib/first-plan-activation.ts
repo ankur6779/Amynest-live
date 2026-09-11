@@ -185,7 +185,11 @@ async function findTodayRoutine(
       return list.find((r) => r.childId === childId && r.date === date)?.id ?? null;
     }
     const list = parseRoutines(await res.json());
-    return list.find((r) => !r.childId || r.childId === childId)?.id ?? list[0]?.id ?? null;
+    // API list ignores `date` query — always filter client-side.
+    return (
+      list.find((r) => r.date === date && (!r.childId || r.childId === childId))?.id ??
+      null
+    );
   } catch {
     return null;
   }
@@ -294,31 +298,24 @@ export async function activateFirstPlan(input: {
     });
 
     if ("conflictId" in saved) {
-      saved = await persistRoutine(input.authFetch, {
+      // Reuse the existing same-day plan — never override:true. Auto-override
+      // permanently wiped customized items when findTodayRoutine missed
+      // (date-ignorant list race / transient GET failure) then POST hit 409.
+      writeCached({ routineId: saved.conflictId, date, childId });
+      markFirstRoutineActivated();
+      emitFirstPlanReady({
         childId,
-        date,
-        title: generated.title,
-        items,
-        adaptations: generated.adaptations ?? undefined,
-        override: true,
+        routineId: saved.conflictId,
+        reused: true,
+        itemCount: items.length,
+        source: input.source,
       });
-      if ("conflictId" in saved) {
-        writeCached({ routineId: saved.conflictId, date, childId });
-        markFirstRoutineActivated();
-        emitFirstPlanReady({
-          childId,
-          routineId: saved.conflictId,
-          reused: true,
-          itemCount: items.length,
-          source: input.source,
-        });
-        return {
-          status: "ready",
-          routineId: saved.conflictId,
-          path: `/routines/${saved.conflictId}?reveal=1`,
-          reused: true,
-        };
-      }
+      return {
+        status: "ready",
+        routineId: saved.conflictId,
+        path: `/routines/${saved.conflictId}?reveal=1`,
+        reused: true,
+      };
     }
 
     if ("paywall" in saved) {

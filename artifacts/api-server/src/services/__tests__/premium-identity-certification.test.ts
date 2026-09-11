@@ -69,10 +69,17 @@ describe("premium identity certification guardrails", () => {
 
     assert.match(reset, /champion6779@gmail\.com/);
     assert.match(reset, /CERTIFICATION_RESET_JOB_ID/);
+    assert.match(reset, /POST_RESET_PAID_EVENT_TYPES/);
+    assert.match(reset, /shouldKeepPostResetPurchase/);
     assert.match(grant, /isCertificationForceFreeEmail\(email\)/);
     assert.match(grant, /applyCertificationPremiumReset\(\{ userId, email \}\)/);
     assert.match(apply, /shouldBlockStaleCertificationRevenueCatWriteForUser/);
     assert.match(apply, /reason: "certification_reset"/);
     assert.match(boot, /applyCertificationPremiumReset/);
+    // Must not sticky-force-free solely from lastEventType (wrong-user risk).
+    assert.doesNotMatch(
+      reset,
+      /forceFree =\s*emails\.some\([^\)]*\)\s*\|\|\s*sub\?\.lastEventType === "certification_reset"/,
+    );
   });
 });
