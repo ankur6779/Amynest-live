@@ -31,16 +31,48 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       const { getOpenAiClient } = await import("../ai-runtime.js");
       const { db, routinesTable } = await import("@workspace/db");
       const { eq } = await import("drizzle-orm");
+      const {
+        mealEnrichmentNotesChanged,
+        mergeOptionsNotesOntoLiveItems,
+      } = await import("./enrich-meals-live.js");
       const p = input as {
         routineId: number;
         items: ScheduleItem[];
         ctx: import("../../routes/routines.js").EnrichCtx;
       };
+      // Always enrich from the live row — the enqueue snapshot can be minutes stale
+      // while the parent completes/edits items. Blindly writing `enriched` from
+      // `p.items` would wipe those concurrent updates.
+      const [liveRow] = await db
+        .select({ items: routinesTable.items })
+        .from(routinesTable)
+        .where(eq(routinesTable.id, p.routineId))
+        .limit(1);
+      if (!liveRow) {
+        return { routineId: p.routineId, changed: false, skipped: "missing" };
+      }
+      const liveItems = liveRow.items as ScheduleItem[];
       const openai = await getOpenAiClient();
-      const enriched = await enrichMealOptionsWithAi(p.items, p.ctx, openai);
-      const changed = enriched.some((it, i) => it.notes !== (p.items[i] as { notes?: string })?.notes);
+      const enriched = await enrichMealOptionsWithAi(liveItems, p.ctx, openai);
+
+      // Re-read after the AI call — completions often land during the wait — and
+      // merge Options notes only onto slots that still need them.
+      const [freshRow] = await db
+        .select({ items: routinesTable.items })
+        .from(routinesTable)
+        .where(eq(routinesTable.id, p.routineId))
+        .limit(1);
+      if (!freshRow) {
+        return { routineId: p.routineId, changed: false, skipped: "missing" };
+      }
+      const freshItems = freshRow.items as ScheduleItem[];
+      const merged = mergeOptionsNotesOntoLiveItems(freshItems, enriched);
+      const changed = mealEnrichmentNotesChanged(freshItems, merged);
       if (changed) {
-        await db.update(routinesTable).set({ items: enriched }).where(eq(routinesTable.id, p.routineId));
+        await db
+          .update(routinesTable)
+          .set({ items: merged })
+          .where(eq(routinesTable.id, p.routineId));
       }
       return { routineId: p.routineId, changed };
     }
