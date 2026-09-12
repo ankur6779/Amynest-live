@@ -227,7 +227,7 @@ Results: see §12.
 | `pnpm run typecheck:libs` | **PASS** |
 | API `pnpm --filter @workspace/api-server run build` | **PASS** |
 | Kidschedule Vite live web build (`--mode` live, 8GB heap) | **PASS** (`✓ built in 26.79s`) |
-| Kidschedule `tsc --noEmit` | **NOT COMPLETE** — heap OOM in this VM (use Vite build as the ship check) |
+| Kidschedule `tsc --noEmit` | **PASS** with `NODE_OPTIONS=--max-old-space-size=8192` |
 | Android Gradle | **NOT RUN** — no Android SDK |
 | iOS Xcode | **NOT RUN** — no `xcodebuild` |
 
