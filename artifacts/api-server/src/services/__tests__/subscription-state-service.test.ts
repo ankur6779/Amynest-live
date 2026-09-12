@@ -12,6 +12,7 @@ const past = new Date("2025-12-01T00:00:00.000Z");
 
 test("productIdToPlan maps AmyNest store products", () => {
   assert.equal(productIdToPlan("amynest_monthly_premium"), "monthly");
+  assert.equal(productIdToPlan("amynest_monthly:monthly"), "monthly");
   assert.equal(productIdToPlan("amynest_6month_premium"), "six_month");
   assert.equal(productIdToPlan("amynest_yearly_premium"), "yearly");
   assert.equal(productIdToPlan("unknown"), null);

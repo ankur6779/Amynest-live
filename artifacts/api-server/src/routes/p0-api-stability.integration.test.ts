@@ -168,7 +168,7 @@ describe("P0 analytics ingestion", { skip: !dbIntegrationOk }, () => {
 });
 
 describe("P0 billing rc-sync validation", { skip: !dbIntegrationOk }, () => {
-  it("POST /subscription/rc-sync rejects non-restore without 500", async () => {
+  it("POST /subscription/rc-sync rejects unknown purpose without 500", async () => {
     const res = await fetch(`${baseUrl}/subscription/rc-sync`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -185,6 +185,18 @@ describe("P0 billing rc-sync validation", { skip: !dbIntegrationOk }, () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ purpose: "restore" }),
     });
+    assert.notEqual(res.status, 500, await res.text());
+    const body = (await res.json()) as { ok: boolean; reason?: string };
+    assert.equal(typeof body.ok, "boolean");
+  });
+
+  it("POST /subscription/rc-sync purchase_finalize is accepted (no 409)", async () => {
+    const res = await fetch(`${baseUrl}/subscription/rc-sync`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ purpose: "purchase_finalize" }),
+    });
+    assert.notEqual(res.status, 409, await res.text());
     assert.notEqual(res.status, 500, await res.text());
     const body = (await res.json()) as { ok: boolean; reason?: string };
     assert.equal(typeof body.ok, "boolean");
