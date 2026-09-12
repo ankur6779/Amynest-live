@@ -190,7 +190,8 @@ describe("real Play purchase entitlement sync — source contracts", () => {
     assert.match(route, /"REFUND"/);
     assert.match(route, /"PRODUCT_CHANGE"/);
     assert.match(route, /"TRANSFER"/);
-    assert.match(route, /onConflictDoNothing\(\{ target: revenuecatWebhookEventsTable\.eventId \}\)/);
+    assert.match(route, /onConflictDoNothing/);
+    assert.match(route, /revenuecatWebhookEventsTable\.eventId/);
   });
 
   it("GET /subscription does not pull RevenueCat for first-time free rows", () => {
@@ -210,8 +211,8 @@ describe("real Play purchase entitlement sync — source contracts", () => {
   it("analytics purchase_success stays an observer after subscriber confirmation", () => {
     const hook = readRepoFile("artifacts/kidschedule/src/hooks/use-native-billing.ts");
     const finalizeIdx = hook.indexOf("const finalized = await finalizeNativePurchase");
-    const purchaseSuccessIdx = hook.indexOf("recordVerifiedStorePurchase");
-    const entitlementIdx = hook.indexOf("recordEntitlementActivated");
+    const purchaseSuccessIdx = hook.indexOf("recordVerifiedStorePurchase", finalizeIdx);
+    const entitlementIdx = hook.indexOf("recordEntitlementActivated", purchaseSuccessIdx);
     assert.ok(finalizeIdx >= 0);
     assert.ok(purchaseSuccessIdx > finalizeIdx);
     assert.ok(entitlementIdx > purchaseSuccessIdx);

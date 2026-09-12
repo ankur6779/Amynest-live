@@ -210,20 +210,26 @@ Added / extended:
 - `artifacts/api-server/src/routes/p0-api-stability.integration.test.ts` — `purchase_finalize` accepted; unknown purpose still 409
 - `artifacts/kidschedule/src/lib/native-purchase-finalize.test.ts` — client posts `purchase_finalize`; failed sync stays FREE
 
-Results: see §12 (filled after the test run).
+Results: see §12.
 
 ---
 
 ## 12. Build results
 
-Filled after the verification run in this agent.
-
 | Check | Status |
 |---|---|
-| Webhook / entitlement / rc-sync / finalize / analytics / identity tests | PENDING |
-| `pnpm run typecheck:libs` | PENDING |
-| Live web build | PENDING |
-| API build | PENDING |
+| Real-purchase resolver + source contracts | **PASS** (41/41 in the entitlement suite; DB writer **SKIPPED** — no local Postgres) |
+| Premium gate / RC snapshot / certification reset / identity | **PASS** |
+| Kidschedule finalize + purchase coordinator + analytics + funnel | **PASS** (9 tests / 4 files) |
+| `pricing-living-source.test.ts` | **FAIL (pre-existing)** Vite `node:` resolution; not caused by this change |
+| `subscription-cancel.test.ts` | **FAIL (pre-existing)** mock missing `trackServerSubscriptionFunnel` export |
+| One P0 infant/coach route-guard assertion | **FAIL (pre-existing)** `ai-coach/next-win` wiring; unrelated to billing |
+| `pnpm run typecheck:libs` | **PASS** |
+| API `pnpm --filter @workspace/api-server run build` | **PASS** |
+| Kidschedule Vite live web build (`--mode` live, 8GB heap) | **PASS** (`✓ built in 26.79s`) |
+| Kidschedule `tsc --noEmit` | **NOT COMPLETE** — heap OOM in this VM (use Vite build as the ship check) |
+| Android Gradle | **NOT RUN** — no Android SDK |
+| iOS Xcode | **NOT RUN** — no `xcodebuild` |
 
 ---
 
