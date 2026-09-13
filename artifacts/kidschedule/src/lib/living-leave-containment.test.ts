@@ -14,12 +14,17 @@ describe("living leave-path containment", () => {
       shouldShowLegacyMobileTabBar,
     } = await import("./living-leave-containment");
     expect(
-      filterLivingNavCatalogueItems([{ href: "/games" }, { href: "/nutrition" }]).map(
-        (i) => i.href,
-      ),
+      filterLivingNavCatalogueItems([
+        { href: "/games" },
+        { href: "/nutrition" },
+        { href: "/worksheet" },
+        { href: "/teacher-os" },
+      ]).map((i) => i.href),
     ).toEqual(["/games", "/nutrition"]);
     expect(livingDirectUrlContainment("/games")).toBeNull();
     expect(livingDirectUrlContainment("/speech-coach/talk")).toBeNull();
+    expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
+    expect(livingDirectUrlContainment("/teacher-os")).toBe("/parenting-hub");
     expect(shouldShowLegacyMobileTabBar(true)).toBe(true);
   });
 
@@ -50,7 +55,11 @@ describe("living leave-path containment", () => {
       "/nutrition",
       "/dashboard",
     ]);
-    expect([...LIVING_NAV_CONTAINED_HREFS]).toEqual(["/kids-control-center"]);
+    expect([...LIVING_NAV_CONTAINED_HREFS]).toEqual([
+      "/kids-control-center",
+      "/worksheet",
+      "/teacher-os",
+    ]);
     expect([...LIVING_NAV_CONTAINED_HREFS]).not.toContain("/games");
     expect(livingDirectUrlContainment("/games")).toBeNull();
     expect(livingDirectUrlContainment("/progress")).toBeNull();
@@ -58,7 +67,7 @@ describe("living leave-path containment", () => {
     expect(livingDirectUrlContainment("/study")).toBeNull();
     expect(livingDirectUrlContainment("/rewards")).toBeNull();
     expect(livingDirectUrlContainment("/kids-control-center")).toBeNull();
-    expect(livingDirectUrlContainment("/worksheet")).toBeNull();
+    expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
     expect(livingDirectUrlContainment("/teacher-os")).toBe("/parenting-hub");
     expect(livingDirectUrlContainment("/speech-coach/live-session")).toBeNull();
     expect(livingDirectUrlContainment("/speech-coach/talk")).toBeNull();
@@ -81,6 +90,8 @@ describe("living leave-path containment", () => {
       "./living-leave-containment"
     );
     expect(livingDirectUrlContainment("/games")).toBeNull();
+    expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
+    expect(livingDirectUrlContainment("/teacher-os")).toBe("/parenting-hub");
     expect(shouldShowLegacyMobileTabBar(true)).toBe(true);
   });
 });

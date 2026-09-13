@@ -497,15 +497,15 @@ export const DISCOVERY_MODULES: readonly DiscoveryModule[] = [
     href: "/worksheet",
     title: "Make",
     category: "moments",
-    classification: "discovery",
+    classification: "internal",
     audience: "both",
     entitlement: "premium",
     age: months(COLORING?.min),
     preferredAgeGroups: ["preschool", "early_school"],
     firstSessionEligible: false,
     postFirstValueEligible: false,
-    afterFirstActionEligible: true,
-    evidence: "Shipped /worksheet; coloring/fun-sheets min 24m",
+    afterFirstActionEligible: false,
+    evidence: "Hidden from parent product; living URL aliases to Rooms",
   },
   {
     id: "audio-lessons",
@@ -625,7 +625,7 @@ export const DISCOVERY_MODULES: readonly DiscoveryModule[] = [
     firstSessionEligible: false,
     postFirstValueEligible: false,
     afterFirstActionEligible: false,
-    evidence: "Not consumer-facing; living URL aliases to Rooms",
+    evidence: "Hidden from parent product; living URL aliases to Rooms",
   },
   {
     id: "kids-control",
@@ -743,7 +743,9 @@ export function isMoreHrefVisibleForAge(
 ): boolean {
   if (totalMonths == null) return true;
   const mod = discoveryModuleForHref(href);
-  if (!mod || mod.age.unfiltered) return true;
+  if (!mod) return true;
+  if (mod.classification === "internal" || mod.classification === "deprecated") return false;
+  if (mod.age.unfiltered) return true;
   return isAgeEligible(mod.age, totalMonths);
 }
 
