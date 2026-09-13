@@ -51,13 +51,18 @@ describe("discovery registry", () => {
     expect(hl?.afterFirstActionEligible).toBe(true);
   });
 
-  it("classifies Teacher OS and Kids Control as non-discoverable", () => {
+  it("classifies Teacher OS, Worksheet Studio, and Kids Control as non-discoverable", () => {
     const teacher = DISCOVERY_MODULES.find((m) => m.id === "teacher-os");
+    const worksheets = DISCOVERY_MODULES.find((m) => m.id === "worksheets");
     const kids = DISCOVERY_MODULES.find((m) => m.id === "kids-control");
     expect(teacher?.classification).toBe("internal");
+    expect(worksheets?.classification).toBe("internal");
     expect(kids?.classification).toBe("deprecated");
     expect(teacher?.afterFirstActionEligible).toBe(false);
+    expect(worksheets?.afterFirstActionEligible).toBe(false);
     expect(kids?.afterFirstActionEligible).toBe(false);
+    expect(isMoreHrefVisibleForAge("/teacher-os", 84)).toBe(false);
+    expect(isMoreHrefVisibleForAge("/worksheet", 84)).toBe(false);
   });
 
   it("builds the age × module matrix from coded bounds", () => {

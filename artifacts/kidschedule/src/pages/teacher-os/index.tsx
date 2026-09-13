@@ -1,6 +1,6 @@
 import { Redirect } from "wouter";
 
-/** Teacher OS shell removed from product — legacy URL forwards to Worksheet Studio. */
+/** Teacher OS is hidden from the parent product. */
 export default function TeacherOsPage() {
-  return <Redirect to="/worksheet" />;
+  return <Redirect to="/parenting-hub" />;
 }

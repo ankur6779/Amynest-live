@@ -15,7 +15,11 @@ import { isAmynestLivingUniverseEnabled } from "@/lib/amynest-living-universe";
  * More / drawer hrefs that are unfinished waitlist surfaces — hide, do not dump.
  * Active modules (`/games`, `/study`, `/progress`, `/insights`) stay visible.
  */
-export const LIVING_NAV_CONTAINED_HREFS = ["/kids-control-center"] as const;
+export const LIVING_NAV_CONTAINED_HREFS = [
+  "/kids-control-center",
+  "/worksheet",
+  "/teacher-os",
+] as const;
 
 export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number];
 
@@ -27,11 +31,20 @@ export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number]
  * Speech Coach live/talk are first-party interiors of `/speech-coach` and
  * stay reachable in living — they are not leftover catalogue products.
  *
- * /worksheet is a shipped Make studio — do not dump it.
- * /teacher-os is INTERNAL (not consumer nav) — alias to Rooms, not Home.
+ * Hidden from the parent product in every universe flag.
+ * Direct URLs alias to Rooms — not Home.
+ */
+export const HIDDEN_MODULE_REDIRECTS: Record<string, string> = {
+  "/teacher-os": "/parenting-hub",
+  "/worksheet": "/parenting-hub",
+};
+
+/**
+ * Living-only aliases. Hidden modules are listed here too so existing
+ * containment tests can treat them as documented redirects.
  */
 export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
-  "/teacher-os": "/parenting-hub",
+  ...HIDDEN_MODULE_REDIRECTS,
 };
 
 /** Product pages that must never be generically redirected to Home. */
@@ -65,8 +78,10 @@ export function isLivingNavContainedHref(href: string): boolean {
 }
 
 export function livingDirectUrlContainment(path: string): string | null {
-  if (!isAmynestLivingUniverseEnabled()) return null;
   const normalized = path.split("?")[0] ?? path;
+  const hidden = HIDDEN_MODULE_REDIRECTS[normalized];
+  if (hidden) return hidden;
+  if (!isAmynestLivingUniverseEnabled()) return null;
   return LIVING_DIRECT_URL_CONTAINMENT[normalized] ?? null;
 }
 
@@ -78,6 +93,10 @@ export function shouldShowLegacyMobileTabBar(showDashboardChrome: boolean): bool
 export function filterLivingNavCatalogueItems<T extends { href: string }>(
   items: readonly T[],
 ): T[] {
-  if (!isAmynestLivingUniverseEnabled()) return [...items];
-  return items.filter((item) => !isLivingNavContainedHref(item.href));
+  const withoutHidden = items.filter((item) => {
+    const path = item.href.split("?")[0]?.split("#")[0] ?? item.href;
+    return path !== "/worksheet" && path !== "/teacher-os";
+  });
+  if (!isAmynestLivingUniverseEnabled()) return [...withoutHidden];
+  return withoutHidden.filter((item) => !isLivingNavContainedHref(item.href));
 }
