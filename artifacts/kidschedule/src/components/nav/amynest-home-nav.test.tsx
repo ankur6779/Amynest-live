@@ -22,7 +22,7 @@ describe("AmyNest home navigation chrome", () => {
   it("uses the quiet home identity instead of the legacy product header", () => {
     wrap(<HomeNavHeader onClose={() => undefined} />);
     expect(screen.getByText("AmyNest")).toBeTruthy();
-    expect(screen.getByText("Today's next right thing")).toBeTruthy();
+    expect(screen.getByText("Today's plan")).toBeTruthy();
     expect(screen.queryByText("AmyNest AI")).toBeNull();
     expect(screen.queryByText("AI for Smart Parenting")).toBeNull();
     expect(screen.getByRole("button", { name: "Close menu" })).toBeTruthy();

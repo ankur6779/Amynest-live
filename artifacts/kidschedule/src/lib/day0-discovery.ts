@@ -76,16 +76,16 @@ export function resolveDiscoveryStage(routineCount = rememberedRoutineCount): Di
  * Rooms tab + limited discovery. True once a plan is visible
  * (generated, activated, or guest plan with real blocks).
  */
-export function shouldShowDay0SecondarySurfaces(routineCount = 0): boolean {
+export function shouldShowDay0SecondarySurfaces(routineCount?: number): boolean {
   return resolveDiscoveryStage(routineCount) !== "before_plan";
 }
 
 /** Alias — Rooms CTA and Rooms tab share this rule. */
-export function shouldShowRoomsNavigation(routineCount = 0): boolean {
+export function shouldShowRoomsNavigation(routineCount?: number): boolean {
   return shouldShowDay0SecondarySurfaces(routineCount);
 }
 
-export function shouldShowFullDiscoverySurfaces(routineCount = 0): boolean {
+export function shouldShowFullDiscoverySurfaces(routineCount?: number): boolean {
   return resolveDiscoveryStage(routineCount) === "first_action";
 }
 
