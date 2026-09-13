@@ -1,4 +1,5 @@
-/** List `/routines` date contract — persisted local YYYY-MM-DD only. */
+/** List `/routines` date contract — persisted local YYYY-MM-DD only.
+ *  Applied from GET /routines (list). Does not change generation timing. */
 
 export const ROUTINE_LOCAL_DATE_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
