@@ -3,11 +3,15 @@ export { STORIES_BY_GROUP } from "@workspace/parent-hub-speak";
 // Used across the app to determine child mode, activities, and routine style
 
 export type AgeGroup =
-  | "infant"        // 0–11 months
+  | "infant"        // 0–11 months — canonical group for routines / stories / coach
   | "toddler"       // 12–35 months (1–3 years)
   | "preschool"     // 36–59 months (3–5 years)
   | "early_school"  // 60–119 months (5–10 years)
   | "pre_teen";     // 120–179 months (10–15 years)
+
+// Hub Infant Care uses childAgeMonths < 24 (see hub-visibility.ts). That is
+// intentional: 12–23 month toddlers keep sleep/feed logging. Discovery Care
+// follows the Hub window. Do not silently collapse the two definitions.
 
 export type AgeGroupInfo = {
   group: AgeGroup;

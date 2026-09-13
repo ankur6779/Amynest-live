@@ -27,10 +27,10 @@ export type LivingNavContainedHref = (typeof LIVING_NAV_CONTAINED_HREFS)[number]
  * Speech Coach live/talk are first-party interiors of `/speech-coach` and
  * stay reachable in living — they are not leftover catalogue products.
  *
- * - /worksheet, /teacher-os → Rooms (Make / hub, not Home)
+ * /worksheet is a shipped Make studio — do not dump it.
+ * /teacher-os is INTERNAL (not consumer nav) — alias to Rooms, not Home.
  */
 export const LIVING_DIRECT_URL_CONTAINMENT: Record<string, string> = {
-  "/worksheet": "/parenting-hub",
   "/teacher-os": "/parenting-hub",
 };
 

@@ -58,7 +58,8 @@ describe("living leave-path containment", () => {
     expect(livingDirectUrlContainment("/study")).toBeNull();
     expect(livingDirectUrlContainment("/rewards")).toBeNull();
     expect(livingDirectUrlContainment("/kids-control-center")).toBeNull();
-    expect(livingDirectUrlContainment("/worksheet")).toBe("/parenting-hub");
+    expect(livingDirectUrlContainment("/worksheet")).toBeNull();
+    expect(livingDirectUrlContainment("/teacher-os")).toBe("/parenting-hub");
     expect(livingDirectUrlContainment("/speech-coach/live-session")).toBeNull();
     expect(livingDirectUrlContainment("/speech-coach/talk")).toBeNull();
     expect(livingDirectUrlContainment("/speech-coach/live")).toBeNull();

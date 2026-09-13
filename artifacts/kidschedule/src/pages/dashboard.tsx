@@ -73,7 +73,10 @@ import {
   trackDashboardView,
   trackRoutineCtaClicked,
 } from "@/lib/first-value-telemetry";
-import { shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
+import {
+  rememberDiscoveryRoutineCount,
+  shouldShowDay0SecondarySurfaces,
+} from "@/lib/day0-discovery";
 import { activateFirstPlan } from "@/lib/first-plan-activation";
 import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import {
@@ -1284,6 +1287,10 @@ export default function Dashboard() {
   const showFeatureDiscovery =
     shouldShowFeatureDiscovery(dashboardPriorityEnabled, dashboardUserState) &&
     shouldShowDay0SecondarySurfaces(allRoutinesSafe.length);
+
+  useEffect(() => {
+    rememberDiscoveryRoutineCount(allRoutinesSafe.length);
+  }, [allRoutinesSafe.length]);
   const timelineOrderClass = timelineFlexOrderClass(dashboardPriorityEnabled);
   const showFirstValueHero =
     !TODAY_HOME_V1 &&
@@ -1659,7 +1666,12 @@ export default function Dashboard() {
                   done={todayProgress.done}
                   total={todayProgress.total}
                 />
-                <TodayCarePaths childId={selectedChildId} />
+                <TodayCarePaths
+                  childId={selectedChildId}
+                  ageYears={selectedChild?.age}
+                  ageMonths={selectedChild?.ageMonths ?? 0}
+                  routineCount={allRoutinesSafe.length}
+                />
               </TodayHomeShell>
             ) : (
               <SmartHeroSection

@@ -86,7 +86,7 @@ describe("living Home dashboard containment", () => {
     expect(care).toContain('"/speech-coach"');
     expect(care).toContain('"/assistant"');
     expect(care).toContain('"/parenting-hub"');
-    expect(care).not.toContain("/games");
+    expect(care).toContain('"/games"');
     expect(care).not.toContain("/pricing");
   });
 });

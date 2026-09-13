@@ -17,7 +17,7 @@ import {
   livingNavHubLabel,
   livingNavRoutinesLabel,
 } from "@/lib/portfolio-nav-labels";
-import { shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
+import { shouldShowRoomsNavigation } from "@/lib/day0-discovery";
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home, center: false },
@@ -60,7 +60,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
         <LayoutGroup id="bottom-tab-bar">
           <div className="relative flex h-[72px] w-full items-end justify-around px-2 pb-2">
             {BOTTOM_NAV_ITEMS.filter((item) => {
-              if (item.href === "/parenting-hub" && !shouldShowDay0SecondarySurfaces()) {
+              if (item.href === "/parenting-hub" && !shouldShowRoomsNavigation()) {
                 return false;
               }
               return true;

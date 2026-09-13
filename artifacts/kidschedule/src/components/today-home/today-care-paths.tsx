@@ -4,14 +4,38 @@
  */
 import { AppLink } from "@/components/app-link";
 import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
-import { buildTodayCarePaths } from "@/lib/today-home/care-paths";
+import { buildTodayCarePaths, type TodayCarePathInput } from "@/lib/today-home/care-paths";
 
-type Props = {
-  childId?: number | null;
-};
+function applyRoomHash(href: string) {
+  const hash = href.split("#")[1];
+  if (!hash || typeof window === "undefined") return;
+  window.setTimeout(() => {
+    if (window.location.hash !== `#${hash}`) {
+      window.location.hash = hash;
+    } else {
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
+  }, 0);
+}
 
-export function TodayCarePaths({ childId }: Props) {
-  const paths = buildTodayCarePaths(childId);
+type Props = TodayCarePathInput;
+
+export function TodayCarePaths({
+  childId,
+  ageYears,
+  ageMonths,
+  routineCount,
+  stage,
+}: Props) {
+  const paths = buildTodayCarePaths({
+    childId,
+    ageYears,
+    ageMonths,
+    routineCount,
+    stage,
+  });
+
+  if (paths.length === 0) return null;
 
   return (
     <nav
@@ -30,6 +54,7 @@ export function TodayCarePaths({ childId }: Props) {
               data-testid={`today-care-${path.id}`}
               onClick={() => {
                 if (childId != null) writeStoredActiveChildId(childId);
+                applyRoomHash(path.href);
               }}
             >
               <span className="th-care-path-title">{path.title}</span>

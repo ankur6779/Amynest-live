@@ -19,6 +19,8 @@ import {
 } from "@/lib/safe-user-display";
 import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
+import { resolveChildTotalMonths } from "@/lib/discovery/registry";
+import { useActiveChildId } from "@/hooks/use-active-child-id";
 import {
   HomeNavFamilyRow,
   HomeNavHeader,
@@ -65,7 +67,13 @@ export function LayoutMobileMenuSheet({
     setPortalReady(true);
   }, []);
 
-  const safeChildren = (childList ?? []) as Array<{ name?: string | null }>;
+  const activeChildId = useActiveChildId();
+  const safeChildren = (childList ?? []) as Array<{
+    id?: number | null;
+    name?: string | null;
+    age?: number | null;
+    ageMonths?: number | null;
+  }>;
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
   let drawerItems = safeMenu.some((item) => item.href === "/study")
     ? safeMenu
@@ -86,7 +94,9 @@ export function LayoutMobileMenuSheet({
   } else if (!amyAstroEnabled) {
     drawerItems = drawerItems.filter((item) => item.href !== "/birth-sky");
   }
-  const livingSections = buildLivingNavSections(drawerItems);
+  const livingSections = buildLivingNavSections(drawerItems, {
+    ageMonths: resolveChildTotalMonths(safeChildren, activeChildId),
+  });
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
 
