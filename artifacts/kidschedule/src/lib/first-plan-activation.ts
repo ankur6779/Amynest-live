@@ -7,6 +7,7 @@ import {
   fetchRoutineWithResilience,
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
+import { localCalendarDateKey } from "@/lib/calendar-date";
 import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import { markFirstRoutineActivated } from "@/lib/subscription-funnel-storage";
 
@@ -45,26 +46,26 @@ type CachedResult = {
 };
 
 function todayKey(): string {
-  const now = new Date();
-  return [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("-");
+  return localCalendarDateKey();
 }
 
-function readLock(): boolean {
+function lockStorageKey(childId?: number | null): string {
+  return childId != null ? `${LOCK_KEY}:${childId}` : LOCK_KEY;
+}
+
+function readLock(childId?: number | null): boolean {
   try {
-    return sessionStorage.getItem(LOCK_KEY) === "1";
+    return sessionStorage.getItem(lockStorageKey(childId)) === "1";
   } catch {
     return false;
   }
 }
 
-function writeLock(on: boolean): void {
+function writeLock(on: boolean, childId?: number | null): void {
   try {
-    if (on) sessionStorage.setItem(LOCK_KEY, "1");
-    else sessionStorage.removeItem(LOCK_KEY);
+    const key = lockStorageKey(childId);
+    if (on) sessionStorage.setItem(key, "1");
+    else sessionStorage.removeItem(key);
   } catch {
     /* ignore */
   }
@@ -109,15 +110,6 @@ function emitFirstPlanReady(input: {
       source: input.source ?? "first_plan_activation",
     },
     { onceKey: `plan-${input.routineId}` },
-  );
-  trackConversionFunnel(
-    "first_value_achieved",
-    {
-      child_id: input.childId,
-      routine_id: input.routineId,
-      source: input.source ?? "first_plan_activation",
-    },
-    { onceKey: "auth-plan" },
   );
 }
 
@@ -238,10 +230,10 @@ export async function activateFirstPlan(input: {
       reused: true,
     };
   }
-  if (readLock()) {
+  if (readLock(input.childId)) {
     return { status: "failed", reason: "in_flight", retryable: true, path: FIRST_PLAN_BUILDING_PATH };
   }
-  writeLock(true);
+  writeLock(true, input.childId);
 
   try {
     let childId = input.childId ?? null;
@@ -368,7 +360,8 @@ export async function activateFirstPlan(input: {
     }
     return { status: "failed", reason: "network", retryable: true, path: FIRST_PLAN_RETRY_PATH };
   } finally {
-    writeLock(false);
+    writeLock(false, input.childId);
+    if (input.childId == null) writeLock(false);
   }
 }
 

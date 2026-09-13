@@ -78,6 +78,9 @@ export function trackConversionFunnel(
   track(event as AnalyticsEventName, payload as never);
   if (event === "first_plan_action_started") {
     markFirstPlanActionStarted();
+    trackConversionFunnel("first_value_achieved", props, {
+      onceKey: opts?.onceKey ?? "action-value",
+    });
   }
 }
 

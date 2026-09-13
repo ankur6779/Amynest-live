@@ -1,6 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { CANONICAL_FUNNEL_EVENTS } from "@workspace/analytics-taxonomy";
-import { FUNNEL_LEGACY_ALIASES } from "./conversion-funnel";
+import { FUNNEL_LEGACY_ALIASES, resetConversionFunnelOnceForTests, trackConversionFunnel } from "./conversion-funnel";
+
+vi.mock("@/lib/analytics", () => ({
+  track: vi.fn(),
+}));
+
+vi.mock("@/lib/subscription-funnel-storage", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/subscription-funnel-storage")>(
+    "@/lib/subscription-funnel-storage",
+  );
+  return {
+    ...actual,
+    markFirstPlanActionStarted: vi.fn(),
+  };
+});
+
+import { track } from "@/lib/analytics";
 
 describe("canonical conversion funnel", () => {
   it("has one name per required funnel step", () => {
@@ -28,5 +44,18 @@ describe("canonical conversion funnel", () => {
     expect(FUNNEL_LEGACY_ALIASES.paywall_view).toContain("premium_paywall_viewed");
     expect(FUNNEL_LEGACY_ALIASES.purchase_success).toContain("upgrade_completed");
     expect(FUNNEL_LEGACY_ALIASES.first_open).toContain("first_open");
+  });
+
+  it("treats first parent action as first value, not plan-ready", () => {
+    resetConversionFunnelOnceForTests();
+    vi.mocked(track).mockClear();
+    trackConversionFunnel("first_plan_generated", { routine_id: 1 }, { onceKey: "plan-1" });
+    expect(vi.mocked(track).mock.calls.map((c) => c[0])).toEqual(["first_plan_generated"]);
+    trackConversionFunnel("first_plan_action_started", { routine_id: 1 }, { onceKey: "act" });
+    expect(vi.mocked(track).mock.calls.map((c) => c[0])).toEqual([
+      "first_plan_generated",
+      "first_plan_action_started",
+      "first_value_achieved",
+    ]);
   });
 });

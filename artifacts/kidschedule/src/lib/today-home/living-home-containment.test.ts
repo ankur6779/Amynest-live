@@ -71,6 +71,8 @@ describe("living Home dashboard containment", () => {
     const page = readFileSync(resolve(srcDir, "pages/dashboard.tsx"), "utf8");
     expect(page).toContain("TODAY_HOME_V1\n                    ? undefined");
     expect(page).toContain("livingDashboardEmptyTitle()");
+    expect(page).toContain("livingDashboardBuildingTitle()");
+    expect(page).toContain("shouldAutoBuildTodayPlan");
     expect(page).toContain("livingDashboardFamilyHint()");
   });
 
