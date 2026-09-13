@@ -18,13 +18,18 @@ type RcSyncResult = {
   reason?: string;
 };
 
-/** POST /rc-sync for restore-only recovery and return the parsed result. */
-async function postRestoreSync(authFetch: AuthFetch): Promise<RcSyncResult | null> {
+type RcSyncPurpose = "restore" | "purchase_finalize";
+
+/** POST /rc-sync and return the parsed result. Never treats HTTP failure as premium. */
+async function postRevenueCatSync(
+  authFetch: AuthFetch,
+  purpose: RcSyncPurpose,
+): Promise<RcSyncResult | null> {
   try {
     const res = await authFetch(getApiUrl("/api/subscription/rc-sync"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ purpose: "restore" }),
+      body: JSON.stringify({ purpose }),
     });
     if (!res.ok) return null;
     return (await parseApiJson<RcSyncResult>(res));
@@ -51,15 +56,24 @@ function latestSubscriptionData(qc: QueryClient): SubscriptionResponse | undefin
 }
 
 /**
- * After a native store purchase, poll `/api/subscription` until RevenueCat
- * has granted a *paid* subscriber entitlement — not an internal trial
- * (`isPremium` alone is true during server-granted trials).
+ * After a native store purchase, pull RevenueCat into AmyNest (same writer as
+ * the webhook), then poll `/api/subscription` until a *paid* subscriber
+ * entitlement is visible — not an internal trial.
+ *
+ * GET /api/subscription does not pull RevenueCat for first-time buyers, so
+ * waiting on the webhook alone can leave a just-paid user FREE.
  */
 export async function finalizeNativePurchase(
   authFetch: AuthFetch,
   qc: QueryClient,
 ): Promise<{ ok: boolean; isPremium: boolean; isPremiumSubscriber: boolean }> {
+  await postRevenueCatSync(authFetch, "purchase_finalize");
   await refreshSubscriptionViews(qc);
+
+  const immediate = latestSubscriptionData(qc);
+  if (immediate?.entitlements.isPremiumSubscriber) {
+    return { ok: true, isPremium: true, isPremiumSubscriber: true };
+  }
 
   for (let i = 0; i < POLL_DELAYS_MS.length; i++) {
     await new Promise((r) => setTimeout(r, POLL_DELAYS_MS[i]));
@@ -90,7 +104,7 @@ export async function finalizeNativeRestore(
   authFetch: AuthFetch,
   qc: QueryClient,
 ): Promise<{ ok: boolean; isPremium: boolean; isPremiumSubscriber: boolean }> {
-  const restored = await postRestoreSync(authFetch);
+  const restored = await postRevenueCatSync(authFetch, "restore");
   await refreshSubscriptionViews(qc);
   if (restored?.apiPremium || restored?.isPremium) {
     await qc.invalidateQueries({ queryKey: SUBSCRIPTION_KEY });

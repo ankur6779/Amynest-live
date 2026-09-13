@@ -122,6 +122,9 @@ async function refreshRevenueCatBeforeSubscriptionRead(userId: string): Promise<
     where: eq(subscriptionsTable.userId, userId),
   });
   if (!row) return;
+  // First Play/App Store purchases have no AmyNest RC identity yet.
+  // Ordinary GET must not fan out to RevenueCat for every free user.
+  // Unlock paths: webhook, POST /rc-sync (purchase_finalize | restore).
   if (
     row.provider !== "revenuecat" &&
     !row.revenuecatAppUserId &&
@@ -251,12 +254,18 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
 });
 
 /**
- * POST /subscription/rc-sync — restore-only RevenueCat recovery.
- * New purchases must unlock through RevenueCat webhook delivery. This endpoint
- * is retained for Restore Purchase flows where no fresh webhook is expected.
+ * POST /subscription/rc-sync — authenticated RevenueCat V2 pull.
+ *
+ * `restore` — Restore Purchase when no fresh webhook is expected.
+ * `purchase_finalize` — native Play/App Store checkout succeeded in-app.
+ * Both purposes pull the same RevenueCat V2 customer and apply the same
+ * snapshot writer as the webhook. The client cannot grant premium: only a
+ * verified RevenueCat entitlement for this Firebase UID becomes ACTIVE.
+ *
+ * The webhook remains the path when the app is killed after store payment.
  */
 const RcSyncBody = z.object({
-  purpose: z.literal("restore"),
+  purpose: z.enum(["restore", "purchase_finalize"]),
 });
 
 router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): Promise<void> => {
@@ -280,7 +289,7 @@ router.post("/subscription/rc-sync", requireAuth, asyncRoute(async (req, res): P
     provider: signInProvider,
   });
   const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
-  const result = await syncRevenueCatSubscription(appUserId, { source: "restore" });
+  const result = await syncRevenueCatSubscription(appUserId, { source: parsed.data.purpose });
   const ent = await getEntitlements(userId, email, {
     emailVerified,
     provider: signInProvider,
