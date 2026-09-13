@@ -36,6 +36,7 @@ import {
   listChildrenForUser,
 } from "../lib/children-db.js";
 import { checkRoutineGenerationRateLimitAsync } from "../lib/routine-rate-limit.js";
+import { parseRoutineListDate } from "../lib/list-routines-query.js";
 import {
   getCachedRoutine,
   routineCacheKey,
@@ -2314,15 +2315,20 @@ router.get("/routines", async (req, res): Promise<void> => {
   const childMap = new Map(children.map((c) => [c.id, c.name]));
   const childIds = children.map((c) => c.id);
 
+  const dateFilter = parseRoutineListDate(queryParams.data.date ?? req.query.date);
   let results: Array<typeof routinesTable.$inferSelect> = [];
   if (queryParams.data.childId) {
     if (!childIds.includes(queryParams.data.childId)) {
       res.json(ListRoutinesResponse.parse([]));
       return;
     }
-    results = await db.select().from(routinesTable).where(eq(routinesTable.childId, queryParams.data.childId)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
+    const filters = [eq(routinesTable.childId, queryParams.data.childId)];
+    if (dateFilter) filters.push(eq(routinesTable.date, dateFilter));
+    results = await db.select().from(routinesTable).where(and(...filters)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
   } else if (childIds.length > 0) {
-    results = await db.select().from(routinesTable).where(inArray(routinesTable.childId, childIds)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
+    const filters = [inArray(routinesTable.childId, childIds)];
+    if (dateFilter) filters.push(eq(routinesTable.date, dateFilter));
+    results = await db.select().from(routinesTable).where(and(...filters)).orderBy(desc(routinesTable.createdAt)).limit(ROUTINES_LIST_MAX);
   } else {
     results = [];
   }

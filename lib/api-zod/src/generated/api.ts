@@ -307,8 +307,12 @@ export const DeleteChildParams = zod.object({
 /**
  * @summary List routines
  */
+export const listRoutinesQueryDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
 export const ListRoutinesQueryParams = zod.object({
-  "childId": zod.coerce.number().optional()
+  "childId": zod.coerce.number().optional(),
+  "date": zod.coerce.string().regex(listRoutinesQueryDateRegExp).optional().describe('When set, return only routines whose persisted local calendar date equals this YYYY-MM-DD. Omit to list the child\'s (or household) routine history. Never remaps an older routine onto this date.\n')
 })
 
 export const ListRoutinesResponseItem = zod.object({

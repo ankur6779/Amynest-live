@@ -1360,7 +1360,6 @@ export default function Dashboard() {
         source,
       }).then((plan) => {
         if (plan.status === "ready") {
-          setTodayPlanPhase("ready");
           refreshTodayPlanQueries();
           return;
         }

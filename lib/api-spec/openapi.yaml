@@ -146,6 +146,16 @@ paths:
           required: false
           schema:
             type: integer
+        - name: date
+          in: query
+          required: false
+          description: >
+            When set, return only routines whose persisted local calendar date
+            equals this YYYY-MM-DD. Omit to list the child's (or household)
+            routine history. Never remaps an older routine onto this date.
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
       responses:
         "200":
           description: List of routines
