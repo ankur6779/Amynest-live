@@ -1923,6 +1923,12 @@ export interface FeatureLockedError {
 
 export type ListRoutinesParams = {
 childId?: number;
+/**
+ * When set, return only routines whose persisted local calendar date equals this YYYY-MM-DD. Omit to list the child's (or household) routine history. Never remaps an older routine onto this date.
+
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+date?: string;
 };
 
 export type GetHouseholdConflictsParams = {

@@ -10,12 +10,19 @@ import {
 import { localCalendarDateKey } from "@/lib/calendar-date";
 import { trackConversionFunnel } from "@/lib/conversion-funnel";
 import { markFirstRoutineActivated } from "@/lib/subscription-funnel-storage";
+import {
+  isExactChildDateRoutine,
+  isExecutableTodayRoutine,
+  persistedRoutineLocalDate,
+} from "@/lib/today-home/today-plan";
 
 export const FIRST_PLAN_RETRY_PATH = "/dashboard?firstPlan=retry";
 export const FIRST_PLAN_BUILDING_PATH = "/dashboard?firstPlan=building";
 
 const LOCK_KEY = "amynest_first_plan_lock_v1";
-const RESULT_KEY = "amynest_first_plan_result_v1";
+/** Scoped as todayPlan:{childId}:{localDate}. Legacy unscoped v1 is ignored. */
+export const FIRST_PLAN_RESULT_KEY_PREFIX = "amynest_first_plan_result_v2";
+const LEGACY_RESULT_KEY = "amynest_first_plan_result_v1";
 
 type AuthFetchFn = (
   input: RequestInfo | URL,
@@ -39,7 +46,7 @@ export type FirstPlanActivationFail = {
 
 export type FirstPlanActivationResult = FirstPlanActivationOk | FirstPlanActivationFail;
 
-type CachedResult = {
+export type CachedFirstPlanResult = {
   routineId: number;
   date: string;
   childId: number;
@@ -47,6 +54,10 @@ type CachedResult = {
 
 function todayKey(): string {
   return localCalendarDateKey();
+}
+
+export function firstPlanResultStorageKey(childId: number, date: string): string {
+  return `${FIRST_PLAN_RESULT_KEY_PREFIX}:${childId}:${date}`;
 }
 
 function lockStorageKey(childId?: number | null): string {
@@ -71,21 +82,41 @@ function writeLock(on: boolean, childId?: number | null): void {
   }
 }
 
-function readCached(): CachedResult | null {
+export function readFirstPlanCache(
+  childId: number,
+  date: string,
+): CachedFirstPlanResult | null {
   try {
-    const raw = sessionStorage.getItem(RESULT_KEY);
+    const raw = sessionStorage.getItem(firstPlanResultStorageKey(childId, date));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedResult;
-    if (parsed?.date !== todayKey() || !parsed.routineId) return null;
+    const parsed = JSON.parse(raw) as CachedFirstPlanResult;
+    if (parsed?.childId !== childId || parsed?.date !== date || !parsed.routineId) {
+      sessionStorage.removeItem(firstPlanResultStorageKey(childId, date));
+      return null;
+    }
     return parsed;
   } catch {
     return null;
   }
 }
 
-function writeCached(result: CachedResult): void {
+export function writeFirstPlanCache(result: CachedFirstPlanResult): void {
+  if (result.childId <= 0 || !result.date || !result.routineId) return;
   try {
-    sessionStorage.setItem(RESULT_KEY, JSON.stringify(result));
+    sessionStorage.setItem(
+      firstPlanResultStorageKey(result.childId, result.date),
+      JSON.stringify(result),
+    );
+    sessionStorage.removeItem(LEGACY_RESULT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearFirstPlanCache(childId: number, date: string): void {
+  try {
+    sessionStorage.removeItem(firstPlanResultStorageKey(childId, date));
+    sessionStorage.removeItem(LEGACY_RESULT_KEY);
   } catch {
     /* ignore */
   }
@@ -139,45 +170,83 @@ function parseChildren(body: unknown): Array<{ id: number; name?: string | null;
     .filter((c) => c.id > 0);
 }
 
-function parseRoutines(body: unknown): Array<{ id: number; childId?: number; date?: string }> {
+function parseRoutineRow(row: Record<string, unknown>): {
+  id: number;
+  childId?: number;
+  date: string;
+  items?: unknown[] | null;
+} {
+  const date = persistedRoutineLocalDate({
+    date: typeof row.date === "string" ? row.date : null,
+    routineDate: typeof row.routineDate === "string" ? row.routineDate : null,
+  });
+  return {
+    id: typeof row.id === "number" ? row.id : 0,
+    childId: typeof row.childId === "number" ? row.childId : undefined,
+    date,
+    items: Array.isArray(row.items) ? row.items : null,
+  };
+}
+
+export function parseRoutines(body: unknown): Array<{
+  id: number;
+  childId?: number;
+  date: string;
+  items?: unknown[] | null;
+}> {
   const rows = Array.isArray(body)
     ? body
     : body && typeof body === "object" && Array.isArray((body as { routines?: unknown }).routines)
       ? (body as { routines: unknown[] }).routines
       : [];
   return rows
-    .map((row) => {
-      const r = row as Record<string, unknown>;
-      const date =
-        typeof r.date === "string"
-          ? r.date.slice(0, 10)
-          : typeof r.routineDate === "string"
-            ? r.routineDate.slice(0, 10)
-            : "";
-      return {
-        id: typeof r.id === "number" ? r.id : 0,
-        childId: typeof r.childId === "number" ? r.childId : undefined,
-        date,
-      };
-    })
+    .map((row) => parseRoutineRow(row as Record<string, unknown>))
     .filter((r) => r.id > 0);
 }
 
-async function findTodayRoutine(
+export function pickExactTodayRoutine(
+  routines: Array<{ id: number; childId?: number; date?: string; items?: unknown[] | null }>,
+  childId: number,
+  date: string,
+): number | null {
+  const match = routines.find((routine) => isExecutableTodayRoutine(routine, childId, date));
+  return match?.id ?? null;
+}
+
+export async function findTodayRoutine(
   authFetch: AuthFetchFn,
   childId: number,
   date: string,
 ): Promise<number | null> {
   try {
     const res = await authFetch(`/api/routines?childId=${childId}&date=${date}`);
-    if (!res.ok) {
-      const all = await authFetch("/api/routines");
-      if (!all.ok) return null;
-      const list = parseRoutines(await all.json());
-      return list.find((r) => r.childId === childId && r.date === date)?.id ?? null;
+    if (res.ok) {
+      const exact = pickExactTodayRoutine(parseRoutines(await res.json()), childId, date);
+      if (exact) return exact;
     }
-    const list = parseRoutines(await res.json());
-    return list.find((r) => !r.childId || r.childId === childId)?.id ?? list[0]?.id ?? null;
+    const all = await authFetch("/api/routines");
+    if (!all.ok) return null;
+    return pickExactTodayRoutine(parseRoutines(await all.json()), childId, date);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchVerifiedRoutine(
+  authFetch: AuthFetchFn,
+  routineId: number,
+  childId: number,
+  date: string,
+): Promise<{ id: number; itemCount?: number } | null> {
+  try {
+    const res = await authFetch(`/api/routines/${routineId}`);
+    if (!res.ok) return null;
+    const row = parseRoutineRow(await readJson(res));
+    if (!isExecutableTodayRoutine(row, childId, date)) return null;
+    return {
+      id: row.id,
+      itemCount: Array.isArray(row.items) ? row.items.length : undefined,
+    };
   } catch {
     return null;
   }
@@ -209,9 +278,55 @@ async function persistRoutine(
   if (!res.ok) {
     return { error: typeof body.error === "string" ? body.error : `http_${res.status}` };
   }
+  const created = parseRoutineRow(body);
+  if (isExactChildDateRoutine(created, payload.childId, payload.date)) {
+    return { id: created.id };
+  }
   const id = typeof body.id === "number" ? body.id : 0;
   if (!id) return { error: "missing_id" };
   return { id };
+}
+
+async function acceptVerifiedTodayRoutine(input: {
+  authFetch: AuthFetchFn;
+  routineId: number;
+  childId: number;
+  date: string;
+  reused: boolean;
+  source?: string;
+  itemCount?: number;
+  mode?: "ai" | "rule" | "fallback";
+}): Promise<FirstPlanActivationResult> {
+  const verified = await fetchVerifiedRoutine(
+    input.authFetch,
+    input.routineId,
+    input.childId,
+    input.date,
+  );
+  if (!verified) {
+    clearFirstPlanCache(input.childId, input.date);
+    return { status: "failed", reason: "unknown", retryable: true, path: FIRST_PLAN_RETRY_PATH };
+  }
+  writeFirstPlanCache({
+    routineId: verified.id,
+    date: input.date,
+    childId: input.childId,
+  });
+  markFirstRoutineActivated();
+  emitFirstPlanReady({
+    childId: input.childId,
+    routineId: verified.id,
+    reused: input.reused,
+    itemCount: input.itemCount ?? verified.itemCount,
+    mode: input.mode,
+    source: input.source,
+  });
+  return {
+    status: "ready",
+    routineId: verified.id,
+    path: `/routines/${verified.id}?reveal=1`,
+    reused: input.reused,
+  };
 }
 
 export async function activateFirstPlan(input: {
@@ -221,15 +336,6 @@ export async function activateFirstPlan(input: {
   source?: string;
 }): Promise<FirstPlanActivationResult> {
   const date = todayKey();
-  const cached = readCached();
-  if (cached && (!input.childId || cached.childId === input.childId)) {
-    return {
-      status: "ready",
-      routineId: cached.routineId,
-      path: `/routines/${cached.routineId}?reveal=1`,
-      reused: true,
-    };
-  }
   if (readLock(input.childId)) {
     return { status: "failed", reason: "in_flight", retryable: true, path: FIRST_PLAN_BUILDING_PATH };
   }
@@ -251,22 +357,33 @@ export async function activateFirstPlan(input: {
       return { status: "failed", reason: "no_child", retryable: false, path: FIRST_PLAN_RETRY_PATH };
     }
 
+    const cached = readFirstPlanCache(childId, date);
+    if (cached) {
+      const verifiedCache = await fetchVerifiedRoutine(input.authFetch, cached.routineId, childId, date);
+      if (verifiedCache) {
+        return acceptVerifiedTodayRoutine({
+          authFetch: input.authFetch,
+          routineId: verifiedCache.id,
+          childId,
+          date,
+          reused: true,
+          source: input.source,
+          itemCount: verifiedCache.itemCount,
+        });
+      }
+      clearFirstPlanCache(childId, date);
+    }
+
     const existing = await findTodayRoutine(input.authFetch, childId, date);
     if (existing) {
-      writeCached({ routineId: existing, date, childId });
-      markFirstRoutineActivated();
-      emitFirstPlanReady({
-        childId,
+      return acceptVerifiedTodayRoutine({
+        authFetch: input.authFetch,
         routineId: existing,
+        childId,
+        date,
         reused: true,
         source: input.source,
       });
-      return {
-        status: "ready",
-        routineId: existing,
-        path: `/routines/${existing}?reveal=1`,
-        reused: true,
-      };
     }
 
     const generated = await fetchRoutineWithResilience(
@@ -276,6 +393,10 @@ export async function activateFirstPlan(input: {
     );
 
     const items = Array.isArray(generated.items) ? generated.items : [];
+    if (items.length === 0) {
+      return { status: "failed", reason: "unknown", retryable: true, path: FIRST_PLAN_RETRY_PATH };
+    }
+
     let saved = await persistRoutine(input.authFetch, {
       childId,
       date,
@@ -286,6 +407,16 @@ export async function activateFirstPlan(input: {
     });
 
     if ("conflictId" in saved) {
+      const conflict = await acceptVerifiedTodayRoutine({
+        authFetch: input.authFetch,
+        routineId: saved.conflictId,
+        childId,
+        date,
+        reused: true,
+        itemCount: items.length,
+        source: input.source,
+      });
+      if (conflict.status === "ready") return conflict;
       saved = await persistRoutine(input.authFetch, {
         childId,
         date,
@@ -294,42 +425,19 @@ export async function activateFirstPlan(input: {
         adaptations: generated.adaptations ?? undefined,
         override: true,
       });
-      if ("conflictId" in saved) {
-        writeCached({ routineId: saved.conflictId, date, childId });
-        markFirstRoutineActivated();
-        emitFirstPlanReady({
-          childId,
-          routineId: saved.conflictId,
-          reused: true,
-          itemCount: items.length,
-          source: input.source,
-        });
-        return {
-          status: "ready",
-          routineId: saved.conflictId,
-          path: `/routines/${saved.conflictId}?reveal=1`,
-          reused: true,
-        };
-      }
     }
 
     if ("paywall" in saved) {
       const again = await findTodayRoutine(input.authFetch, childId, date);
       if (again) {
-        writeCached({ routineId: again, date, childId });
-        markFirstRoutineActivated();
-        emitFirstPlanReady({
-          childId,
+        return acceptVerifiedTodayRoutine({
+          authFetch: input.authFetch,
           routineId: again,
+          childId,
+          date,
           reused: true,
           source: input.source,
         });
-        return {
-          status: "ready",
-          routineId: again,
-          path: `/routines/${again}?reveal=1`,
-          reused: true,
-        };
       }
       return { status: "failed", reason: "paywall", retryable: false, path: FIRST_PLAN_RETRY_PATH };
     }
@@ -338,22 +446,20 @@ export async function activateFirstPlan(input: {
       return { status: "failed", reason: "unknown", retryable: true, path: FIRST_PLAN_RETRY_PATH };
     }
 
-    writeCached({ routineId: saved.id, date, childId });
-    markFirstRoutineActivated();
-    emitFirstPlanReady({
-      childId,
+    if ("conflictId" in saved) {
+      return { status: "failed", reason: "unknown", retryable: true, path: FIRST_PLAN_RETRY_PATH };
+    }
+
+    return acceptVerifiedTodayRoutine({
+      authFetch: input.authFetch,
       routineId: saved.id,
+      childId,
+      date,
       reused: false,
       itemCount: items.length,
       mode: generated.fallback ? "fallback" : "rule",
       source: input.source,
     });
-    return {
-      status: "ready",
-      routineId: saved.id,
-      path: `/routines/${saved.id}?reveal=1`,
-      reused: false,
-    };
   } catch (err) {
     if (err instanceof RoutineGenerationPaywallError) {
       return { status: "failed", reason: "paywall", retryable: false, path: FIRST_PLAN_RETRY_PATH };
@@ -365,7 +471,8 @@ export async function activateFirstPlan(input: {
   }
 }
 
-export function peekFirstPlanPath(): string | null {
-  const cached = readCached();
+export function peekFirstPlanPath(childId?: number | null, date = todayKey()): string | null {
+  if (childId == null) return null;
+  const cached = readFirstPlanCache(childId, date);
   return cached ? `/routines/${cached.routineId}?reveal=1` : null;
 }

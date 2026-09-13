@@ -125,6 +125,12 @@ describe("P0-2 routine uniqueness", () => {
     assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS routines_child_date_uq/);
   });
 
+  it("GET /routines applies an exact local-date filter when date is present", () => {
+    const src = readSource("../routes/routines.ts");
+    assert.match(src, /parseRoutineListDate/);
+    assert.match(src, /eq\(routinesTable\.date, dateFilter\)/);
+  });
+
   it("POST /routines uses conflict-safe insert paths", () => {
     const src = readSource("../routes/routines.ts");
     assert.match(src, /persistRoutineForChildDate/);
