@@ -22,7 +22,7 @@ describe("AmyNest home navigation chrome", () => {
   it("uses the quiet home identity instead of the legacy product header", () => {
     wrap(<HomeNavHeader onClose={() => undefined} />);
     expect(screen.getByText("AmyNest")).toBeTruthy();
-    expect(screen.getByText("Today's next right thing")).toBeTruthy();
+    expect(screen.getByText("Today's plan")).toBeTruthy();
     expect(screen.queryByText("AmyNest AI")).toBeNull();
     expect(screen.queryByText("AI for Smart Parenting")).toBeNull();
     expect(screen.getByRole("button", { name: "Close menu" })).toBeTruthy();
@@ -82,7 +82,7 @@ describe("AmyNest home navigation chrome", () => {
     expect(screen.queryByText("Parenting assistant & chat")).toBeNull();
     expect(screen.queryByText("Builder & tracking")).toBeNull();
     expect(screen.getByText("Home")).toBeTruthy();
-    expect(screen.getByText("Today's plan")).toBeTruthy();
+    expect(screen.getAllByText("Today's plan").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Amy")).toBeTruthy();
     expect(screen.getByText("Talk whenever you need")).toBeTruthy();
     const rooms = document.querySelector('[data-nav-section="rooms"]');

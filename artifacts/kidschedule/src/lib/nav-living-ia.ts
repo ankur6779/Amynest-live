@@ -16,6 +16,7 @@ import {
   HeartHandshake,
   Home,
   MessageSquarePlus,
+  Mic,
   MoonStar,
   Salad,
   Sparkles,
@@ -33,7 +34,13 @@ import { PARENT_HUB_ROOM_IDS, type ParentHubRoomId } from "@/lib/parent-hub/room
 import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import type { MobileNavItem } from "@/lib/mobile-menu-config";
 import { filterLivingNavCatalogueItems } from "@/lib/living-leave-containment";
-import { isDay0SecondaryHref, shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
+import {
+  isDay0SecondaryHref,
+  isFirstActionOnlyHref,
+  resolveDiscoveryStage,
+  type DiscoveryStage,
+} from "@/lib/day0-discovery";
+import { isMoreHrefVisibleForAge } from "@/lib/discovery/registry";
 
 export type LivingNavGroupId = "home" | "care" | "beside_you" | "rooms" | "more";
 
@@ -106,9 +113,11 @@ const HREF_ICON: Record<string, LucideIcon> = {
   "/nutrition": Salad,
   "/study": BookOpen,
   "/games": Gamepad2,
+  "/speech-coach": Mic,
   "/amy-ai-tutor": Sparkles,
   "/children": Users,
   "/progress": TrendingUp,
+  "/rewards": Gift,
   "/insights": BarChart2,
   "/behavior": Star,
   "/kids-control-center": Baby,
@@ -124,9 +133,11 @@ const QUIET_COPY: Record<string, { label: string; description?: string }> = {
   "/nutrition": { label: "Nutrition", description: "Meals for this body" },
   "/study": { label: "Learning", description: "Skills and practice" },
   "/games": { label: "Play", description: "Safe play together" },
+  "/speech-coach": { label: "Speech Coach", description: "Practice speaking together" },
   "/amy-ai-tutor": { label: "Quick help", description: "A short learning moment" },
   "/children": { label: "Children", description: "Who you're with" },
   "/progress": { label: "Progress" },
+  "/rewards": { label: "Rewards", description: "Stars earned together" },
   "/insights": { label: "Insights" },
   "/behavior": { label: "Patterns" },
   "/kids-control-center": { label: "Kids Control" },
@@ -197,7 +208,7 @@ function take(byHref: Map<string, MobileNavItem>, href: string): MobileNavItem |
  */
 export function buildLivingNavSections(
   items: MobileNavItem[],
-  opts?: { revealSecondary?: boolean },
+  opts?: { revealSecondary?: boolean; stage?: DiscoveryStage; ageMonths?: number | null },
 ): LivingNavSection[] {
   const byHref = new Map(items.map((item) => [item.href, item]));
   const sections: LivingNavSection[] = [];
@@ -243,9 +254,11 @@ export function buildLivingNavSections(
       "/nutrition",
       "/study",
       "/games",
+      "/speech-coach",
       "/amy-ai-tutor",
       "/children",
       "/progress",
+      "/rewards",
       "/insights",
       "/behavior",
       "/kids-control-center",
@@ -261,15 +274,27 @@ export function buildLivingNavSections(
     sections.push({ id: "more", label: "More", items: leftover });
   }
 
-  const reveal = opts?.revealSecondary ?? shouldShowDay0SecondarySurfaces();
-  const visible = reveal
-    ? sections
-    : sections
-        .filter((section) => section.id !== "rooms")
-        .map((section) => ({
-          ...section,
-          items: section.items.filter((item) => !isDay0SecondaryHref(item.href)),
-        }));
+  const stage =
+    opts?.stage ??
+    (opts?.revealSecondary === true
+      ? "first_action"
+      : opts?.revealSecondary === false
+        ? "before_plan"
+        : resolveDiscoveryStage());
+  const revealRooms = stage !== "before_plan";
+  const visible = sections
+    .filter((section) => revealRooms || section.id !== "rooms")
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => {
+        if (stage === "before_plan" && isDay0SecondaryHref(item.href)) return false;
+        if (stage === "plan_visible" && isFirstActionOnlyHref(item.href)) return false;
+        if (section.id === "more" && !isMoreHrefVisibleForAge(item.href, opts?.ageMonths)) {
+          return false;
+        }
+        return true;
+      }),
+    }));
 
   return visible.filter((section) => section.items.length > 0);
 }

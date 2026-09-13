@@ -46,7 +46,7 @@ describe("first-value-telemetry", () => {
     );
   });
 
-  it("fires completion, saved, and first_value_achieved for first routine", () => {
+  it("fires completion and saved for first routine without treating plan-ready as first value", () => {
     trackRoutineGenerationCompleted({
       routineId: 42,
       childId: 1,
@@ -63,14 +63,8 @@ describe("first-value-telemetry", () => {
       "routine_saved",
       expect.objectContaining({ routine_id: 42 }),
     );
-    expect(track).toHaveBeenCalledWith(
-      "first_value_achieved",
-      expect.objectContaining({ routine_id: 42 }),
-    );
-    expect(trackGrowthEvent).toHaveBeenCalledWith(
-      "first_routine_generated",
-      expect.objectContaining({ routineId: 42 }),
-    );
+    expect(vi.mocked(track).mock.calls.filter((c) => c[0] === "first_value_achieved")).toHaveLength(0);
+    expect(trackGrowthEvent).not.toHaveBeenCalled();
   });
 
   it("dedupes first_value_achieved", () => {

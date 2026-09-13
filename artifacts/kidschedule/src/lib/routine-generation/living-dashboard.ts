@@ -22,11 +22,27 @@ export function livingDashboardOpen(childName = "your child") {
 }
 
 export function livingDashboardEmptyTitle(): string {
-  return "We're getting today's plan ready.";
+  return "Today's plan is not on the board yet.";
 }
 
 export function livingDashboardEmptyBody(childName = "your child"): string {
-  return `Amy is shaping a clear day around ${childName}. Retry if the plan did not appear.`;
+  return `Tap Build today's plan for ${childName}, or retry if it did not appear.`;
+}
+
+export function livingDashboardBuildingTitle(): string {
+  return "We're getting today's plan ready.";
+}
+
+export function livingDashboardBuildingBody(childName = "your child"): string {
+  return `Amy is shaping a clear day around ${childName}.`;
+}
+
+export function livingDashboardFailedTitle(): string {
+  return "Today's plan did not finish.";
+}
+
+export function livingDashboardFailedBody(childName = "your child"): string {
+  return `Amy could not place ${childName}'s day. Retry, or tap Build today's plan.`;
 }
 
 export function livingDashboardBuildCta(): string {

@@ -7,6 +7,7 @@ import {
   ChefHat,
   Gamepad2,
   Gift,
+  Mic,
   GraduationCap,
   Home,
   MessageSquarePlus,
@@ -38,6 +39,7 @@ export const NAV_ITEMS: MobileNavItem[] = [
   { href: "/routines", labelKey: "nav.routines", icon: Calendar },
   { href: "/study", labelKey: "nav.learning_zone", icon: GraduationCap },
   { href: "/games", labelKey: "nav.games", icon: Gamepad2 },
+  { href: "/speech-coach", labelKey: "nav.speech_coach", icon: Mic },
   { href: "/assistant", labelKey: "nav.amy_ai", icon: Bot },
   { href: "/amy-ai-tutor", labelKey: "nav.amy_quick_tutor", icon: Sparkles },
   {
@@ -47,6 +49,7 @@ export const NAV_ITEMS: MobileNavItem[] = [
     badge: "Soon 🚀",
   },
   { href: "/progress", labelKey: "nav.progress", icon: TrendingUp },
+  { href: "/rewards", labelKey: "nav.rewards", icon: Gift },
   { href: "/insights", labelKey: "nav.insights", icon: BarChart2 },
   { href: "/behavior", labelKey: "nav.behavior", icon: Star },
   { href: "/recipes", labelKey: "nav.my_recipes", icon: ChefHat },

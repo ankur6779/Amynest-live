@@ -107,6 +107,30 @@ describe("living home navigation IA", () => {
     expect(hrefs).not.toContain("/birth-sky");
   });
 
+  it("reveals Rooms and Play after the plan is visible, not Birth Sky", () => {
+    const mid = buildLivingNavSections(NAV_ITEMS, { stage: "plan_visible" });
+    expect(mid.find((s) => s.id === "rooms")).toBeTruthy();
+    const more = mid.find((s) => s.id === "more")?.items.map((i) => i.href) ?? [];
+    expect(more).toContain("/games");
+    expect(more).toContain("/study");
+    expect(more).toContain("/nutrition");
+    expect(more).not.toContain("/birth-sky");
+    expect(more).not.toContain("/insights");
+    expect(more).not.toContain("/rewards");
+    expect(more).toContain("/speech-coach");
+  });
+
+  it("hides coded age-gated More leaves for infants, not unfiltered Play", () => {
+    const infant = buildLivingNavSections(NAV_ITEMS, {
+      stage: "first_action",
+      ageMonths: 6,
+    });
+    const more = infant.find((s) => s.id === "more")?.items.map((i) => i.href) ?? [];
+    expect(more).toContain("/games");
+    expect(more).toContain("/speech-coach");
+    expect(more).not.toContain("/study");
+  });
+
   it("uses companion wording for Amy, not assistant SaaS copy", () => {
     const amy = buildLivingNavSections(NAV_ITEMS, { revealSecondary: true })
       .flatMap((s) => s.items)

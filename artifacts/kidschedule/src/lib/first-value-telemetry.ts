@@ -108,11 +108,6 @@ export function trackRoutineGenerationCompleted(input: {
         source: input.source ?? "routine_generate",
       }, { onceKey: `plan-${input.routineId ?? "x"}` });
     });
-    trackFirstValueAchieved({
-      routineId: input.routineId,
-      childId: input.childId,
-      source: input.source,
-    });
   }
 }
 

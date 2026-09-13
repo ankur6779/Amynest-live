@@ -54,6 +54,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
+import { localCalendarDateKey } from "@/lib/calendar-date";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
@@ -73,9 +74,17 @@ import {
   trackDashboardView,
   trackRoutineCtaClicked,
 } from "@/lib/first-value-telemetry";
-import { shouldShowDay0SecondarySurfaces } from "@/lib/day0-discovery";
+import {
+  rememberDiscoveryRoutineCount,
+  shouldShowDay0SecondarySurfaces,
+} from "@/lib/day0-discovery";
 import { activateFirstPlan } from "@/lib/first-plan-activation";
 import { trackConversionFunnel } from "@/lib/conversion-funnel";
+import {
+  childHasTodayRoutine,
+  shouldAutoBuildTodayPlan,
+  type TodayPlanPhase,
+} from "@/lib/today-home/today-plan";
 import {
   resolveDashboardUserState,
   shouldShowActivationResumeBanner,
@@ -108,8 +117,12 @@ import { writeStoredActiveChildId } from "@/hooks/use-active-child-id";
 import { isTodayHomeV1Enabled } from "@/lib/today-home/feature-flags";
 import { resolveTodayNrt } from "@/lib/today-home/resolve-today-nrt";
 import {
+  livingDashboardBuildingBody,
+  livingDashboardBuildingTitle,
   livingDashboardEmptyBody,
   livingDashboardEmptyTitle,
+  livingDashboardFailedBody,
+  livingDashboardFailedTitle,
   livingDashboardFamilyHint,
 } from "@/lib/routine-generation/living-dashboard";
 import {
@@ -768,6 +781,8 @@ function NowNextTimeline({
   onGenerate,
   journeyHandlesGenerate,
   subordinate = false,
+  planPhase = "empty",
+  onRetry,
 }: {
   routines: Routine[];
   selectedChildName?: string | null;
@@ -775,19 +790,46 @@ function NowNextTimeline({
   journeyHandlesGenerate?: boolean;
   /** Today Home craft: timeline supports NRT — never competes as a second hero. */
   subordinate?: boolean;
+  planPhase?: TodayPlanPhase;
+  onRetry?: () => void;
 }) {
   const { t } = useTranslation();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localCalendarDateKey();
   const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
   if (todayRoutines.length === 0) {
     if (subordinate) {
+      const name = selectedChildName ?? "your child";
+      const title =
+        planPhase === "building"
+          ? livingDashboardBuildingTitle()
+          : planPhase === "failed"
+            ? livingDashboardFailedTitle()
+            : livingDashboardEmptyTitle();
+      const body =
+        planPhase === "building"
+          ? livingDashboardBuildingBody(name)
+          : planPhase === "failed"
+            ? livingDashboardFailedBody(name)
+            : livingDashboardEmptyBody(name);
       return (
         <TimelineFrame subordinate>
-          <div className="th-timeline-empty" data-testid="today-home-plan-state">
-            <p className="th-timeline-empty-title">{livingDashboardEmptyTitle()}</p>
-            <p className="th-timeline-empty-body">
-              {livingDashboardEmptyBody(selectedChildName ?? "your child")}
-            </p>
+          <div
+            className="th-timeline-empty"
+            data-testid="today-home-plan-state"
+            data-plan-phase={planPhase}
+          >
+            <p className="th-timeline-empty-title">{title}</p>
+            <p className="th-timeline-empty-body">{body}</p>
+            {planPhase === "failed" && onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                data-testid="today-home-plan-retry"
+                className="th-timeline-empty-retry"
+              >
+                Retry today's plan
+              </button>
+            ) : null}
           </div>
         </TimelineFrame>
       );
@@ -1098,7 +1140,8 @@ export default function Dashboard() {
     openPaywall
   } = usePaywall();
   const profileFetchedRef = useRef(false);
-  const firstPlanAttemptRef = useRef(false);
+  const firstPlanAttemptedForRef = useRef<number | null>(null);
+  const [todayPlanPhase, setTodayPlanPhase] = useState<TodayPlanPhase>("empty");
   const displayName =
     profileName ||
     user?.firstName ||
@@ -1192,7 +1235,7 @@ export default function Dashboard() {
   const recentRoutinesSafe = asRoutineList<Routine>(routines);
   const statsSafe = Array.isArray(stats) ? stats : [];
   const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = localCalendarDateKey();
   const filteredRoutines = useMemo(
     () => filterRoutinesByChild(allRoutinesSafe, selectedChildId),
     [allRoutines, selectedChildId],
@@ -1212,9 +1255,11 @@ export default function Dashboard() {
   const streak = useMemo(() => computeRoutineStreak(allRoutinesSafe), [allRoutines]);
   const hubUsage = useFeatureUsage();
   const { status: journeyStatus } = useJourney();
+  const generateRoutineLocked =
+    !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
   const hasTodayRoutine = useMemo(
-    () => allRoutinesSafe.some((r) => routineDateKey(r) === todayKey),
-    [allRoutinesSafe, todayKey],
+    () => childHasTodayRoutine(allRoutinesSafe, selectedChildId, todayKey),
+    [allRoutinesSafe, selectedChildId, todayKey],
   );
   const journeyHandlesGenerate =
     journeyStatus?.active === true &&
@@ -1232,7 +1277,6 @@ export default function Dashboard() {
   }, [streak]);
 
   const todayProgress = useMemo(() => {
-    const todayKey = new Date().toISOString().slice(0, 10);
     const todayList = filterRoutinesByChild(allRoutinesSafe, selectedChildId).filter(
       (r) => routineDateKey(r) === todayKey,
     );
@@ -1241,7 +1285,7 @@ export default function Dashboard() {
       done: items.filter((i) => i.status === "completed").length,
       total: items.length,
     };
-  }, [allRoutines, selectedChildId]);
+  }, [allRoutines, selectedChildId, todayKey]);
 
   const routineCompletionPct =
     todayProgress.total > 0
@@ -1284,6 +1328,10 @@ export default function Dashboard() {
   const showFeatureDiscovery =
     shouldShowFeatureDiscovery(dashboardPriorityEnabled, dashboardUserState) &&
     shouldShowDay0SecondarySurfaces(allRoutinesSafe.length);
+
+  useEffect(() => {
+    rememberDiscoveryRoutineCount(allRoutinesSafe.length);
+  }, [allRoutinesSafe.length]);
   const timelineOrderClass = timelineFlexOrderClass(dashboardPriorityEnabled);
   const showFirstValueHero =
     !TODAY_HOME_V1 &&
@@ -1292,25 +1340,57 @@ export default function Dashboard() {
     !journeyHandlesGenerate;
 
   useEffect(() => {
+    if (hasTodayRoutine) setTodayPlanPhase("ready");
+  }, [hasTodayRoutine]);
+
+  const refreshTodayPlanQueries = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey() });
+    void queryClient.invalidateQueries({ queryKey: getGetRecentRoutinesQueryKey() });
+  }, [queryClient]);
+
+  const requestTodayPlan = useCallback(
+    (source: string, childId: number | null | undefined, childName?: string | null) => {
+      if (!childId) return;
+      firstPlanAttemptedForRef.current = childId;
+      setTodayPlanPhase("building");
+      void activateFirstPlan({
+        authFetch,
+        childId,
+        childName: childName ?? childrenSafe.find((c) => c.id === childId)?.name,
+        source,
+      }).then((plan) => {
+        if (plan.status === "ready") {
+          setTodayPlanPhase("ready");
+          refreshTodayPlanQueries();
+          return;
+        }
+        setTodayPlanPhase("failed");
+        if (plan.retryable) firstPlanAttemptedForRef.current = null;
+      });
+    },
+    [authFetch, childrenSafe, refreshTodayPlanQueries],
+  );
+
+  useEffect(() => {
     if (!isSignedIn || !user) return;
     if (allRoutines === undefined) return;
     if (hasTodayRoutine) return;
-    if (firstPlanAttemptRef.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const forced = params.get("firstPlan") === "retry" || params.get("firstPlan") === "building";
-    const day0 = !hasFirstRoutineActivationProgress(allRoutinesSafe.length);
-    if (!forced && !day0) return;
     const childId = selectedChildId ?? childrenSafe[0]?.id ?? null;
     if (!childId) return;
-    firstPlanAttemptRef.current = true;
-    void activateFirstPlan({
-      authFetch,
-      childId,
-      childName: childrenSafe.find((c) => c.id === childId)?.name,
-      source: forced ? "dashboard_retry" : "dashboard_safety_net",
-    }).then((plan) => {
-      if (plan.status === "ready") setLocation(plan.path);
-    });
+    if (firstPlanAttemptedForRef.current === childId) return;
+    const params = new URLSearchParams(window.location.search);
+    const forced = params.get("firstPlan") === "retry" || params.get("firstPlan") === "building";
+    if (
+      !shouldAutoBuildTodayPlan({
+        hasTodayRoutine,
+        generateLocked: generateRoutineLocked,
+        bypassPaywall: shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length),
+        forced,
+      })
+    ) {
+      return;
+    }
+    requestTodayPlan(forced ? "dashboard_retry" : "dashboard_safety_net", childId);
   }, [
     isSignedIn,
     user,
@@ -1319,8 +1399,8 @@ export default function Dashboard() {
     selectedChildId,
     childrenSafe,
     allRoutinesSafe.length,
-    authFetch,
-    setLocation,
+    generateRoutineLocked,
+    requestTodayPlan,
   ]);
 
   const todayNrtItems = useMemo(() => {
@@ -1523,8 +1603,6 @@ export default function Dashboard() {
 
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
   const isDashboardRefreshing = fetchingSummary || fetchingChildren || fetchingStats;
-  const generateRoutineLocked =
-    !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
   function handleGenerateRoutine(source = "dashboard_default") {
     trackRoutineCtaClicked({
       source,
@@ -1537,20 +1615,15 @@ export default function Dashboard() {
       !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
     ) {
       openPaywall("routines_limit");
-    } else if (!hasFirstRoutineActivationProgress(allRoutinesSafe.length)) {
-      void activateFirstPlan({
-        authFetch,
-        childId: selectedChildId,
-        source,
-      }).then((plan) => {
-        if (plan.status === "ready") {
-          setLocation(plan.path);
-          return;
-        }
-        const childQuery =
-          selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
-        setLocation(`/routines/generate${childQuery}`);
-      });
+    } else if (TODAY_HOME_V1 || !hasFirstRoutineActivationProgress(allRoutinesSafe.length)) {
+      const childId = selectedChildId ?? childrenSafe[0]?.id ?? null;
+      if (childId) {
+        requestTodayPlan(source, childId);
+        return;
+      }
+      const childQuery =
+        selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
+      setLocation(`/routines/generate${childQuery}`);
     } else {
       const childQuery =
         selectedChildId != null ? `?childId=${selectedChildId}&source=${source}` : `?source=${source}`;
@@ -1581,23 +1654,21 @@ export default function Dashboard() {
         !shouldBypassRoutineGeneratePaywall(allRoutinesSafe.length)
       ) {
         openPaywall("routines_limit");
-      } else if (!hasFirstRoutineActivationProgress(allRoutinesSafe.length)) {
-        void activateFirstPlan({
-          authFetch,
-          childId: selectedChildId ?? todayNrtDecision.childId,
-          childName: todayNrtDecision.childName,
-          source: "today_nrt_hero",
-        }).then((plan) => {
-          if (plan.status === "ready") setLocation(plan.path);
-          else {
-            const source = "today_nrt_hero";
-            const childQuery =
-              selectedChildId != null
-                ? `?childId=${selectedChildId}&source=${source}`
-                : `?source=${source}`;
-            setLocation(`/routines/generate${childQuery}`);
-          }
-        });
+      } else if (
+        TODAY_HOME_V1 ||
+        !hasFirstRoutineActivationProgress(allRoutinesSafe.length)
+      ) {
+        const childId = selectedChildId ?? todayNrtDecision.childId ?? childrenSafe[0]?.id ?? null;
+        if (childId) {
+          requestTodayPlan("today_nrt_hero", childId, todayNrtDecision.childName);
+          return;
+        }
+        const source = "today_nrt_hero";
+        const childQuery =
+          selectedChildId != null
+            ? `?childId=${selectedChildId}&source=${source}`
+            : `?source=${source}`;
+        setLocation(`/routines/generate${childQuery}`);
       } else {
         const source = "today_nrt_hero";
         const childQuery =
@@ -1659,7 +1730,12 @@ export default function Dashboard() {
                   done={todayProgress.done}
                   total={todayProgress.total}
                 />
-                <TodayCarePaths childId={selectedChildId} />
+                <TodayCarePaths
+                  childId={selectedChildId}
+                  ageYears={selectedChild?.age}
+                  ageMonths={selectedChild?.ageMonths ?? 0}
+                  routineCount={allRoutinesSafe.length}
+                />
               </TodayHomeShell>
             ) : (
               <SmartHeroSection
@@ -1746,6 +1822,15 @@ export default function Dashboard() {
                 }
                 journeyHandlesGenerate={journeyHandlesGenerate}
                 subordinate={TODAY_HOME_V1}
+                planPhase={hasTodayRoutine ? "ready" : todayPlanPhase}
+                onRetry={
+                  TODAY_HOME_V1
+                    ? () => {
+                        const childId = selectedChildId ?? childrenSafe[0]?.id ?? null;
+                        if (childId) requestTodayPlan("dashboard_retry", childId);
+                      }
+                    : undefined
+                }
               />
             </ContentReveal.Item>
 

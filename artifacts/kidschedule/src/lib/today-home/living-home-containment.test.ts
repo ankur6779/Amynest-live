@@ -71,6 +71,8 @@ describe("living Home dashboard containment", () => {
     const page = readFileSync(resolve(srcDir, "pages/dashboard.tsx"), "utf8");
     expect(page).toContain("TODAY_HOME_V1\n                    ? undefined");
     expect(page).toContain("livingDashboardEmptyTitle()");
+    expect(page).toContain("livingDashboardBuildingTitle()");
+    expect(page).toContain("shouldAutoBuildTodayPlan");
     expect(page).toContain("livingDashboardFamilyHint()");
   });
 
@@ -86,7 +88,7 @@ describe("living Home dashboard containment", () => {
     expect(care).toContain('"/speech-coach"');
     expect(care).toContain('"/assistant"');
     expect(care).toContain('"/parenting-hub"');
-    expect(care).not.toContain("/games");
+    expect(care).toContain('"/games"');
     expect(care).not.toContain("/pricing");
   });
 });

@@ -9,6 +9,8 @@ import {
 import { useMobileMenuData } from "@/hooks/use-mobile-menu-data";
 import { isBirthSkyEnabled } from "@/features/birth-sky/lib/feature-flags";
 import { buildLivingNavSections } from "@/lib/nav-living-ia";
+import { resolveChildTotalMonths } from "@/lib/discovery/registry";
+import { useActiveChildId } from "@/hooks/use-active-child-id";
 import {
   HomeNavFamilyRow,
   HomeNavHeader,
@@ -52,7 +54,13 @@ export function PremiumDesktopSidebar({
   const { t } = useTranslation();
   const { safeMenu, safeChildren } = useMobileMenuData();
 
-  const safeChildList = (safeChildren ?? []) as Array<{ name?: string | null }>;
+  const activeChildId = useActiveChildId();
+  const safeChildList = (safeChildren ?? []) as Array<{
+    id?: number | null;
+    name?: string | null;
+    age?: number | null;
+    ageMonths?: number | null;
+  }>;
   const resolvedMenu = resolveSafeMenu(safeMenu ?? DEFAULT_MOBILE_MENU);
   let drawerItems = resolvedMenu.some((item) => item.href === "/study")
     ? resolvedMenu
@@ -71,7 +79,9 @@ export function PremiumDesktopSidebar({
   } else if (!amyAstroEnabled) {
     drawerItems = drawerItems.filter((item) => item.href !== "/birth-sky");
   }
-  const livingSections = buildLivingNavSections(drawerItems);
+  const livingSections = buildLivingNavSections(drawerItems, {
+    ageMonths: resolveChildTotalMonths(safeChildList, activeChildId),
+  });
 
   const firstChildName = safeChildList.find((c) => c?.name)?.name ?? undefined;
   const extraChildren = safeChildList.length > 1 ? safeChildList.length - 1 : 0;

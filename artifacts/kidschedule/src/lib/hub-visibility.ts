@@ -1,5 +1,10 @@
 // Parent Hub tile visibility — band + month gates for infants; all modules
 // unlocked at 24+ months except Infant Hub (infants only).
+//
+// Infant Care (`infant-hub`) is <24 months, not the canonical AgeGroup.infant
+// (0–11 months). 12–23 month children still need sleep/feed/cry logging.
+// Discovery Care doors reuse this <24m window. Do not unify without a
+// product decision.
 
 import { AGE_BANDS, type AgeBand } from "@/lib/age-bands";
 

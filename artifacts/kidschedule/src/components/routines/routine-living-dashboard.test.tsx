@@ -33,7 +33,7 @@ describe("RoutineLivingDashboard", () => {
     expect(screen.getByTestId("routine-living-dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("routine-living-dashboard")).not.toHaveClass("parent-hub-premium");
     expect(screen.getByTestId("routine-living-dashboard-empty")).toHaveTextContent(
-      "We're getting today's plan ready.",
+      "Today's plan is not on the board yet.",
     );
     expect(screen.getByTestId("routine-living-child-context")).toHaveClass("rg-dash-family");
     expect(screen.getByTestId("routines-primary-cta")).toHaveClass("rg-dash-cta");
