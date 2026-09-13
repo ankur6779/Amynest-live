@@ -5,7 +5,7 @@
 **Firebase UID / RevenueCat appUserID:** `Mvc8x7Jdoid7hmrZVJywGe979qO2`  
 **Play subscription:** `GPA.3305-5562-8196-73420`  
 **Product:** `amynest_monthly:monthly`  
-**Constraint:** No manual premium grant, no allowlist, no test bypass, no product/price changes, no deploy.
+**Constraint:** No manual premium grant, no allowlist, no test bypass, no product/price changes. Deploy + live `purchase_finalize` verification added 2026-09-13.
 
 ---
 
@@ -19,9 +19,11 @@ AmyNest did **not** automatically unlock premium in the app. The remaining break
 
 **Live AmyNest `subscriptions` row for this UID:** `LIVE DB VERIFICATION = BLOCKED` (Coolify Postgres hostname does not resolve from this environment). Whether the webhook wrote a row is therefore **UNKNOWN**. The in-app unlock failure is explained even when the webhook is healthy but delayed, and is guaranteed when the webhook does not write.
 
-**Fix implemented (code only, not deployed):** authenticated `POST /rc-sync` now accepts `purpose: "purchase_finalize"` and uses the same `syncRevenueCatSubscription` writer as the webhook. `finalizeNativePurchase` (Android and iOS) calls that endpoint before polling GET. No second entitlement system. No security weakening. No grant of `amyworld1402` by hand.
+**Fix implemented and deployed:** authenticated `POST /rc-sync` accepts `purpose: "purchase_finalize"` and uses the same `syncRevenueCatSubscription` writer as the webhook. `finalizeNativePurchase` (Android and iOS) calls that endpoint before polling GET. No second entitlement system. No security weakening. No hand-edited row for `amyworld1402`.
 
-**Live unlock after this change:** **UNPROVEN** until the web/API build is deployed and the same Play purchase is re-read (Restore or next session after deploy). Do not treat compile/tests as live proof.
+**Live `purchase_finalize` (2026-09-13):** authenticated as Firebase UID `Mvc8x7Jdoid7hmrZVJywGe979qO2` against the Coolify API after merge `9493e80c`. Result: `verifiedCustomer=true`, `activeEntitlement=true`, `dbUpdated=true`, `provider=revenuecat`, `subscriptionState=ACTIVE`, `plan=monthly`, `isPremium=true`, `isPremiumSubscriber=true`, `currentPeriodEnd=2026-10-12T17:01:10.219Z` (matches RevenueCat). This is a RevenueCat V2 pull, not a manual grant.
+
+**Android device UI:** **DEVICE VERIFICATION = BLOCKED** (no device in this environment). Gate 0 stays **BLOCKED**.
 
 ---
 
@@ -195,7 +197,7 @@ Smallest live-safe change. Same writer as the webhook (`syncRevenueCatSubscripti
 3. Webhook path unchanged (app-closed recovery).
 4. GET still does **not** fan out to RevenueCat for every free user (avoids a second entitlement system and RC API stampede).
 5. Champion6779 force-free, fail-closed resolver, and analytics observers unchanged.
-6. No row written for `amyworld1402`. No products/prices changed.
+6. No hand-edited row for `amyworld1402`. Live `purchase_finalize` wrote the AmyNest row via the same RC snapshot writer. No products/prices changed.
 
 **App killed after Play payment and before finalize:** still depends on the webhook (or a later Restore). That remaining risk is documented in §16.
 
@@ -265,33 +267,44 @@ Results: see §12.
 | Inability to measure subscription conversion | **LIKELY** for Android/iOS store purchases that did not unlock | Ads will under-count payers |
 | This bug caused historical *zero* store subscriptions | **NOT SUPPORTED** | RC now has 3 active store subscriptions including this real Play pay |
 
-Do not start paid acquisition on unit tests alone. Gate 0 remains blocked until live AmyNest unlock is verified.
+Do not start paid acquisition. Google Ads / Firebase attribution is **UNPROVEN**. Gate 0 remains **BLOCKED** until an Android device shows premium UI.
 
 ---
 
 ## 16. Remaining risks
 
-1. **Webhook still required when the app dies after Play payment** before `purchase_finalize`. Restore Purchases remains the manual recovery.
-2. **Live DB still unseen.** Cannot confirm whether a row already exists for this UID.
-3. **Old live JS** still polls GET only until web deploy. Android WebView will keep the bug until `www.amynest.in` serves this bundle.
-4. **Old live API** still 409s `purchase_finalize` until API deploy. Client and API should ship together.
-5. **RC V2 pull dependency.** `purchase_finalize` needs `REVENUECAT_V2_SECRET_KEY` + project id (already required by webhook sync). Webhook payload fallback still covers webhook-only delivery if V2 fetch fails.
-6. No mass unpaid premium path was added. Unknown state remains FREE.
+1. **Webhook still required when the app dies after Play payment** before `purchase_finalize`. Restore Purchases remains the in-app recovery if finalize never runs.
+2. **SQL still unseen.** Coolify Postgres hostname does not resolve. Store / GPA columns cannot be SELECTed here. API entitlements after finalize prove provider/state/plan/expiry.
+3. **DEVICE VERIFICATION = BLOCKED.** No Android or iOS device. Server premium is proven; paywall UI is not.
+4. **Ads attribution UNPROVEN.** This agent did not observe GA4 / Google Ads / `purchase_success` for `GPA.3305-5562-8196-73420`.
+5. **RC V2 pull dependency** unchanged.
+6. Unpaid control UID with no RevenueCat customer stayed FREE after `purchase_finalize`.
 
 ---
 
-## 17. Live verification status
+## 17. Live verification status (2026-09-13)
 
-| Link | Status |
+| Item | Result |
 |---|---|
-| Google Play payment | **PROVEN** |
-| RevenueCat received purchase | **PROVEN** |
-| RevenueCat granted premium | **PROVEN** |
-| AmyNest DB recorded it | **UNPROVEN** (`LIVE DB VERIFICATION = BLOCKED`) |
-| Server `isPremiumNow` | **UNPROVEN** in live (code would return true on a correct row) |
-| App premium unlock | **REPORTED FAIL** on the live purchase; **UNPROVEN** after this fix (not deployed) |
-| Fresh unpaid user remains FREE | **PASS** in resolver tests; live census not re-run |
-| Deploy | **NOT DONE** (stop before deploy) |
+| Before SHA | `ce45fb7fac8fcd9731d446d35298fe5cecd946d2` |
+| Fix head SHA | `e405060ebf9b44ba1429ed1f7726b9022573221f` |
+| main merge SHA | `9493e80c64e0a4a5e69174cec8f5e0c47fe43587` (PR #186, merge commit) |
+| Files in fix | `subscription.ts`, `native-purchase-finalize.ts` + tests + this audit |
+| GitHub Actions | `34736015920` **success** — Cloudflare Pages uploaded; unique deploy `https://73230c62.amynest-web.pages.dev` |
+| Web health | `amynest-web.pages.dev` 200; unique deploy `73230c62` 200; `AppCore-CzPzu65-.js` contains `purchase_finalize` + `rc-sync`. `www.amynest.in` returned 403 from this VM (WAF), not a deploy failure. |
+| API health | Coolify `/api/healthz` 200, `/api/health` 200, `/api/healthz/audio` 200; unauth `rc-sync` 401; no new 5xx on these probes |
+| Coolify rollout | First paid call 409 (old replica); retry 200 (new contract). Matching web+API now live. |
+| RC premium | Still ACTIVE, `GPA.3305-5562-8196-73420`, period end 2026-10-12T17:01:10.219Z |
+| `purchase_finalize` paid UID | **PASS** — see §18 |
+| SQL `subscriptions` row | **LIVE DB VERIFICATION = BLOCKED** (host `tcl9udyxcuq2zu598ebj0pfu` does not resolve) |
+| API-visible AmyNest state | **PASS** — `provider=revenuecat`, `ACTIVE`, `monthly`, expiry matches RC |
+| Android device UI | **DEVICE VERIFICATION = BLOCKED** |
+| iOS device | **BLOCKED** |
+| Unpaid `purchase_finalize` | **PASS** — UID `2lqY46XmXOgMVcM8vyZHfHt2bfF3`, RC 404, stays FREE |
+| Duplicate analytics | **UNPROVEN** (no GA/Ads read; server path does not emit `purchase_success`) |
+| Google Ads attribution | **UNPROVEN** |
+| Gate 0 | **BLOCKED** |
+| ₹4,000 Ads test | **NO** |
 
 ---
 
@@ -306,12 +319,12 @@ Do not start paid acquisition on unit tests alone. Gate 0 remains blocked until 
 | Webhook auth / signature | **UNKNOWN** for this event; code **PASS** | Bearer `REVENUECAT_WEBHOOK_SECRET` |
 | Event parsing | **UNKNOWN** instance; code **PASS** | `subscription.ts` event fields |
 | appUserID / Firebase mapping | **PASS** (same UID) | `preferredRevenueCatUserId` + `resolveSubscriptionOwnerUserId` |
-| Subscription DB write | **UNKNOWN** | `applyRevenueCatSnapshot` / `syncRevenueCatSubscription` |
-| Entitlement state | **UNKNOWN** in prod; resolver **PASS** | `isPremiumNow` / `isPremiumSubscriberNow` |
-| GET `/api/subscription` read path | **FAIL** as first-purchase unlock | `refreshRevenueCatBeforeSubscriptionRead` |
-| Frontend premium hook | **FAIL** pre-fix (poll only) | `finalizeNativePurchase` |
-| Cache invalidation | **PASS** mechanism; data stayed FREE | `useSubscription` / `asUiOnlyCachedSubscription` |
-| Premium UI / features | **FAIL** (reported) | Paywall still offered; no subscriber unlock |
+| Subscription DB write | **PASS (API-visible) / SQL BLOCKED** | Live `purchase_finalize` returned `dbUpdated=true`, `provider=revenuecat`, `ACTIVE` |
+| Entitlement state | **PASS (API)** | Live `isPremium=true`, `isPremiumSubscriber=true` |
+| GET `/api/subscription` read path | **FAIL** as first-purchase unlock (pre-fix) | `refreshRevenueCatBeforeSubscriptionRead` |
+| Frontend premium hook | **PASS (code)** / **DEVICE BLOCKED** | `finalizeNativePurchase` now POSTs `purchase_finalize`; UI not observed |
+| Cache invalidation | **PASS** mechanism | `useSubscription` / `asUiOnlyCachedSubscription` |
+| Premium UI / features | **DEVICE VERIFICATION = BLOCKED** | No Android/iOS device in this environment |
 
 ---
 
@@ -320,13 +333,50 @@ Do not start paid acquisition on unit tests alone. Gate 0 remains blocked until 
 1. Did Google Play payment succeed? **YES (PROVEN).**
 2. Did RevenueCat receive the purchase? **YES (PROVEN).**
 3. Did RevenueCat grant premium? **YES (PROVEN, ACTIVE through 2026-10-12).**
-4. Did AmyNest DB receive/record it? **UNKNOWN. LIVE DB VERIFICATION = BLOCKED.**
-5. Did server entitlement resolve premium? **UNPROVEN in live.** Resolver **would** return true on a correct row.
-6. Did the client refresh premium? **NO on the live purchase (reported / pre-fix path).** Fix is code-only until deploy.
-7. Why did amyworld1402 remain FREE? **AmyNest unlock depended on a webhook write that GET cannot create for a first-time buyer; the client did not pull RevenueCat after Play success. Webhook delivery for this event is UNKNOWN.**
-8. Is the root cause fixed? **Fixed in code (purchase_finalize sync). NOT live-verified. Do not say the live user is unlocked.**
-9. Can a fresh unpaid user still accidentally receive premium? **No added path. Missing/unknown state stays FREE. Not a live census.**
-10. Is Android purchase → premium proven? **Play → RevenueCat YES. AmyNest + app unlock UNPROVEN (DB blocked, not deployed, no device).**
+4. Did AmyNest DB receive/record it? **YES via live `purchase_finalize` API (`provider=revenuecat`, `ACTIVE`, `monthly`, expiry matches RC). SQL SELECT = BLOCKED.**
+5. Did server entitlement resolve premium? **YES.** Live `isPremium=true` and `isPremiumSubscriber=true`.
+6. Did the client refresh premium? **Pre-purchase path: NO. Post-deploy: server yes; Android UI = DEVICE VERIFICATION BLOCKED.**
+7. Why did amyworld1402 remain FREE? **AmyNest unlock depended on a webhook write that GET cannot create for a first-time buyer; the client did not pull RevenueCat after Play success. Webhook delivery for this event is UNKNOWN. After deploy, authenticated `purchase_finalize` wrote ACTIVE.**
+8. Is the root cause fixed? **Server path live-verified. App UI unlock not observed. Do not call Gate 0 PASS.**
+9. Can a fresh unpaid user still accidentally receive premium? **No. Live unpaid UID stayed FREE (`customer_not_found`).**
+10. Is Android purchase → premium proven? **Play → RC → AmyNest ACTIVE → server `isPremiumNow` YES. App UI BLOCKED (no device).**
 11. Is iOS purchase → premium proven? **NO (no device). Shared architecture only.**
-12. Are Ads purchase events now trustworthy? **They remain observers. They become trustworthy for native checkouts only after unlock actually reaches `isPremiumSubscriber` in live.**
+12. Are Ads purchase events now trustworthy? **UNPROVEN. They remain observers. This agent did not read GA4 / Ads.**
 13. Is Gate 0 now PASS or still BLOCKED? **BLOCKED.**
+
+## 18. Live `purchase_finalize` JSON (paid user)
+
+Fields returned by `POST /api/subscription/rc-sync` for UID `Mvc8x7Jdoid7hmrZVJywGe979qO2` after deploy (values, not a full dump):
+
+- `ok=true`
+- `verifiedCustomer=true`
+- `activeEntitlement=true`
+- `dbUpdated=true`
+- `apiPremium=true`
+- `isPremium=true`
+- `isPremiumSubscriber=true`
+- `provider=revenuecat`
+- `subscriptionState=ACTIVE`
+- `plan=monthly`
+- `status=active`
+- `currentPeriodEnd=2026-10-12T17:01:10.219Z` (matches RC `expires_date` to the millisecond)
+
+Replay of the same call returned the same state. Unpaid control returned `ok=false`, `reason=customer_not_found`, `isPremium=false`, `isPremiumSubscriber=false`.
+
+## Final answers (Gate 0 checklist)
+
+1. Google Play payment = **PASS**
+2. RevenueCat purchase = **PASS**
+3. RevenueCat premium = **PASS**
+4. `purchase_finalize` = **PASS**
+5. AmyNest DB subscription = **PASS (API-visible) / SQL BLOCKED**
+6. server `isPremiumNow` = **PASS**
+7. Android app premium unlock = **BLOCKED**
+8. Fresh unpaid user remains FREE = **PASS**
+9. Transaction idempotency = **PASS**
+10. Analytics purchase event = **UNPROVEN**
+11. Android purchase → premium = **BLOCKED**
+12. iOS purchase → premium = **BLOCKED**
+13. Google Ads attribution = **UNPROVEN**
+14. Gate 0 = **BLOCKED**
+15. ₹4,000 Ads test = **NO**
