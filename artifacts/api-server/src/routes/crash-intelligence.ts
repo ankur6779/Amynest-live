@@ -5,6 +5,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import {
   persistCrashEvent,
   safePersistCrashEvent,
@@ -33,14 +34,7 @@ import { getFixCandidateForFingerprint } from "../services/crash-intelligence/fi
 
 const router: IRouter = Router();
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
+router.use("/admin", requireAdmin);
 
 const CrashEventBody = z.object({
   errorId: z.string().min(1).max(64),
@@ -77,12 +71,6 @@ router.post("/crash-events", async (req: Request, res: Response): Promise<void> 
 
 /** GET /api/admin/crash-intelligence/audit — engineering audit report. */
 router.get("/admin/crash-intelligence/audit", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   void syncCrashRegressionRegistry().catch(() => {});
 
   const limit = Math.min(Math.max(Number(req.query["limit"]) || 15, 5), 50);
@@ -92,12 +80,6 @@ router.get("/admin/crash-intelligence/audit", async (req, res): Promise<void> =>
 
 /** GET /api/admin/crash-intelligence/fingerprints */
 router.get("/admin/crash-intelligence/fingerprints", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   const limit = Math.min(Math.max(Number(req.query["limit"]) || 25, 5), 100);
   const fingerprints = await aggregateCrashFingerprints(limit);
   res.json({ ok: true, fingerprints });
@@ -105,12 +87,6 @@ router.get("/admin/crash-intelligence/fingerprints", async (req, res): Promise<v
 
 /** GET /api/admin/crash-intelligence/launch-gate */
 router.get("/admin/crash-intelligence/launch-gate", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
   const aggregates = await aggregateCrashFingerprints(50);
   const globalRecoveryRate = await computeGlobalRecoveryRate();
   const result = evaluateLaunchGate({ aggregates, globalRecoveryRate });
@@ -119,22 +95,12 @@ router.get("/admin/crash-intelligence/launch-gate", async (req, res): Promise<vo
 
 /** GET /api/admin/crash-intelligence/heatmap */
 router.get("/admin/crash-intelligence/heatmap", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const heatmaps = await computeAllHeatmaps();
   res.json({ ok: true, ...heatmaps });
 });
 
 /** GET /api/admin/crash-intelligence/review/:slug — fix candidate review package */
 router.get("/admin/crash-intelligence/review/:slug", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const slug = req.params["slug"] ?? "";
   const readableFingerprint = slug.replace(/-/g, "|");
   const pkg = await analyzeFingerprint(readableFingerprint);
@@ -143,11 +109,6 @@ router.get("/admin/crash-intelligence/review/:slug", async (req, res): Promise<v
 
 /** GET /api/admin/crash-intelligence/fix-candidates */
 router.get("/admin/crash-intelligence/fix-candidates", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const aggregates = await aggregateCrashFingerprints(50);
   const candidates = aggregates
     .filter((a) => a.severity === "P0" || a.severity === "P1")
@@ -162,11 +123,6 @@ router.get("/admin/crash-intelligence/fix-candidates", async (req, res): Promise
 
 /** GET /api/admin/crash-intelligence/new-regressions */
 router.get("/admin/crash-intelligence/new-regressions", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const findings = await detectNewRegressions({
     appVersion: typeof req.query["appVersion"] === "string" ? req.query["appVersion"] : undefined,
   });
@@ -175,11 +131,6 @@ router.get("/admin/crash-intelligence/new-regressions", async (req, res): Promis
 
 /** POST /api/admin/crash-intelligence/deploy-baseline */
 router.post("/admin/crash-intelligence/deploy-baseline", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const appVersion =
     typeof req.body?.appVersion === "string" ? req.body.appVersion : "unknown";
   const deployId =
@@ -190,11 +141,6 @@ router.post("/admin/crash-intelligence/deploy-baseline", async (req, res): Promi
 
 /** POST /api/admin/crash-intelligence/mark-fixed */
 router.post("/admin/crash-intelligence/mark-fixed", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const fp = typeof req.body?.readableFingerprint === "string"
     ? req.body.readableFingerprint
     : null;
@@ -211,11 +157,6 @@ router.post("/admin/crash-intelligence/mark-fixed", async (req, res): Promise<vo
 
 /** POST /api/admin/crash-intelligence/generate-reviews — write artifacts/crash-review/*.md */
 router.post("/admin/crash-intelligence/generate-reviews", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   const paths = await writeAllReviewPackages({
     minSeverity: req.body?.minSeverity === "P0" ? "P0" : "P1",
   });

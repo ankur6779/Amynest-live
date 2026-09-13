@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { z } from "zod";
 import { db, userFeedbackTable } from "@workspace/db";
 import { desc, eq, sql, and, arrayContains } from "drizzle-orm";
@@ -114,29 +115,12 @@ router.get("/user-feedback", async (req, res): Promise<void> => {
   }
 });
 
-// ── Admin helpers ─────────────────────────────────────────────────────────────
-
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
 /**
  * GET /api/admin/feedback
  * Admin-only: returns ALL feedback with filters, pagination, and summary stats.
  * Query params: limit, offset, category, rating, tag
  */
-router.get("/admin/feedback", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-
+router.get("/admin/feedback", requireAdmin, async (req, res): Promise<void> => {
   const limit = Math.min(Number(req.query.limit ?? 20), 100);
   const offset = Number(req.query.offset ?? 0);
   const filterCategory = req.query.category ? String(req.query.category) : null;

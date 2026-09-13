@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { db, parentProfilesTable } from "@workspace/db";
 import { sendRecapForUser, dispatchWeeklyRecaps } from "../services/weeklyRecapService";
 import { logger } from "../lib/logger";
@@ -79,21 +80,7 @@ router.post("/notifications/recap/send-now", async (req, res): Promise<void> => 
 // Admin trigger for the cron job — protected by BOTH a shared secret AND
 // allowlisted admin userIds (defense in depth). Useful for external schedulers
 // (e.g. Replit Scheduled Deployments) when the in-process cron isn't desired.
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
-router.post("/notifications/recap/dispatch-all", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
-  }
+router.post("/notifications/recap/dispatch-all", requireAdmin, async (req, res): Promise<void> => {
   const expected = process.env["RECAP_DISPATCH_SECRET"];
   const provided = req.headers["x-dispatch-secret"];
   if (!expected || provided !== expected) {

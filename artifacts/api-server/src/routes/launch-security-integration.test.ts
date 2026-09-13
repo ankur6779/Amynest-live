@@ -1,5 +1,7 @@
 /**
  * Integration tests for launch security fixes (IDOR + audio warmup auth).
+ *
+ * Run with: node --import tsx/esm --experimental-test-module-mocks --test src/routes/launch-security-integration.test.ts
  */
 import { describe, it, before, after, mock } from "node:test";
 import assert from "node:assert/strict";

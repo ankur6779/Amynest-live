@@ -138,6 +138,7 @@ import { audioSignedUrlPublicRouter } from "./audio-signed-url";
 import devicesRouter from "./devices";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireRegisteredDevice } from "../middlewares/requireRegisteredDevice";
+import { realtimeDebugGuard } from "../middlewares/realtime-debug-guard.js";
 
 const router: IRouter = Router();
 
@@ -190,9 +191,10 @@ router.use(nutritionSharePublicRouter);
 router.use(remoteConfigRouter);
 router.use(appVersionPolicyRouter);
 router.use(appVersionAnalyticsRouter);
+router.use(requireAuth);
+router.use(realtimeDebugGuard);
 router.use(speechCoachV2DebugRouter);
 router.use(openaiRealtimeInfraRouter);
-router.use(requireAuth);
 router.use(driveRouter);
 router.use(worksheetsRouter);
 router.use(devicesRouter);

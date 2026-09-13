@@ -48,8 +48,14 @@ describe("P0 entitlement remediation — route guards", () => {
 
   it("gates coach next-win and rewrite-tip behind ai_query", () => {
     const coach = readRouteSource("ai-coach.ts");
-    assert.match(coach, /router\.post\("\/ai-coach\/next-win", aiUsageGate/);
-    assert.match(coach, /router\.post\("\/coach\/next-win", aiUsageGate/);
+    assert.match(
+      coach,
+      /router\.post\("\/ai-coach\/next-win", infantCoachPreviewGate\(\), aiUsageGate/,
+    );
+    assert.match(
+      coach,
+      /router\.post\("\/coach\/next-win", infantCoachPreviewGate\(\), aiUsageGate/,
+    );
 
     const ai = readRouteSource("ai.ts");
     assert.match(ai, /router\.post\("\/ai\/rewrite-tip", aiUsageGate/);

@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "../lib/auth";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { logger } from "../lib/logger";
 import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
 import {
@@ -29,14 +30,9 @@ const router: IRouter = Router();
 
 const SYNC_RATE = { windowMs: 60_000, maxPerWindow: 60 };
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
+router.get("/admin/health-lab/metrics", requireAdmin, async (req, res): Promise<void> => {
+  res.json({ ok: true, dashboard: getHealthLabDashboardSnapshot() });
+});
 
 async function healthLabMutationRateLimit(
   req: Request,
@@ -140,15 +136,6 @@ router.get("/health-lab/history/:childId", async (req, res): Promise<void> => {
     logger.error(`health-lab history: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }
-});
-
-router.get("/admin/health-lab/metrics", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
-  res.json({ ok: true, dashboard: getHealthLabDashboardSnapshot() });
 });
 
 router.post("/health-lab/sync", healthLabMutationRateLimit, infantExploreMutationGate(), async (req, res): Promise<void> => {

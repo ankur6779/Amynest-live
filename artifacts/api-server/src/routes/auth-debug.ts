@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { adminAuth } from "../lib/firebase-admin";
+import { rejectIfIpRateLimited } from "../lib/endpoint-rate-limit.js";
 
 /**
  * Diagnostic auth endpoint — does NOT require auth and never throws.
@@ -23,6 +24,15 @@ function unsafeDecodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 router.get("/auth/whoami", async (req, res): Promise<void> => {
+  if (
+    await rejectIfIpRateLimited(req, res, "auth-whoami", {
+      windowMs: 60_000,
+      maxPerWindow: 20,
+    })
+  ) {
+    return;
+  }
+
   if (process.env.NODE_ENV === "production" && process.env.ENABLE_AUTH_DEBUG !== "1") {
     res.status(404).json({ error: "not_found" });
     return;

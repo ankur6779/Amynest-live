@@ -5,6 +5,10 @@ import { logger } from "../lib/logger.js";
 import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 export const animalWorldLibraryPublicRouter: IRouter = Router();
 
@@ -68,6 +72,10 @@ function serveBuffer(
 animalWorldLibraryPublicRouter.get(
   "/animal-world-library/*objectPath",
   async (req, res): Promise<void> => {
+    if (await rejectIfIpRateLimited(req, res, "animal-world-library", PUBLIC_STREAM_RATE)) {
+      return;
+    }
+
     const rawParam = req.params.objectPath;
     const objectPath = decodeObjectPathParam(
       Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),

@@ -9,6 +9,7 @@ import { persistInfantProductAnalyticsEvent } from "../services/infantAnalyticsI
 import { safePersistCrashEvent } from "../services/crash-intelligence/ingest-service.js";
 import { parseCrashEventFromClientLog } from "../services/crash-intelligence/ingest-parsers.js";
 import { recordHealthLabClientEvent } from "../services/health-lab-metrics-store.js";
+import { rejectIfUserRateLimited } from "../lib/endpoint-rate-limit.js";
 
 const router: IRouter = Router();
 
@@ -76,6 +77,15 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   }
 
   const { userId } = getAuth(req);
+  if (
+    userId &&
+    (await rejectIfUserRateLimited(res, userId, "client-logs", {
+      windowMs: 60_000,
+      maxPerWindow: 120,
+    }))
+  ) {
+    return;
+  }
   const meta = safeMetaClone(parsed.data.meta);
 
   const entry = {

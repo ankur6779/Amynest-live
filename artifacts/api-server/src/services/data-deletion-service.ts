@@ -103,6 +103,13 @@ import {
   ttsCacheTable,
   coachAudioCacheTable,
   revenuecatWebhookEventsTable,
+  birthProfilesTable,
+  birthSkyPreferencesTable,
+  skySnapshotsTable,
+  birthSkyConversationsTable,
+  birthSkyMessagesTable,
+  birthSkyAiDeliveriesTable,
+  birthSkyPdfExportsTable,
 } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 
@@ -293,6 +300,76 @@ async function purgeUserLinkedCaches(
   }
 }
 
+/** Remove all Birth Sky rows keyed to a user (messages → profiles). */
+async function purgeBirthSkyUserData(
+  tx: DbTx,
+  userId: string,
+  audit: DeletionAuditEntry[],
+): Promise<void> {
+  const birthSkyDeletes: Array<{ table: string; run: () => Promise<{ id?: unknown }[]> }> = [
+    {
+      table: "birth_sky_messages",
+      run: () =>
+        tx
+          .delete(birthSkyMessagesTable)
+          .where(eq(birthSkyMessagesTable.userId, userId))
+          .returning({ id: birthSkyMessagesTable.id }),
+    },
+    {
+      table: "birth_sky_ai_deliveries",
+      run: () =>
+        tx
+          .delete(birthSkyAiDeliveriesTable)
+          .where(eq(birthSkyAiDeliveriesTable.userId, userId))
+          .returning({ deliveryId: birthSkyAiDeliveriesTable.deliveryId }),
+    },
+    {
+      table: "birth_sky_pdf_exports",
+      run: () =>
+        tx
+          .delete(birthSkyPdfExportsTable)
+          .where(eq(birthSkyPdfExportsTable.userId, userId))
+          .returning({ id: birthSkyPdfExportsTable.id }),
+    },
+    {
+      table: "birth_sky_conversations",
+      run: () =>
+        tx
+          .delete(birthSkyConversationsTable)
+          .where(eq(birthSkyConversationsTable.userId, userId))
+          .returning({ id: birthSkyConversationsTable.id }),
+    },
+    {
+      table: "sky_snapshots",
+      run: () =>
+        tx
+          .delete(skySnapshotsTable)
+          .where(eq(skySnapshotsTable.userId, userId))
+          .returning({ id: skySnapshotsTable.id }),
+    },
+    {
+      table: "birth_profiles",
+      run: () =>
+        tx
+          .delete(birthProfilesTable)
+          .where(eq(birthProfilesTable.userId, userId))
+          .returning({ id: birthProfilesTable.id }),
+    },
+    {
+      table: "birth_sky_preferences",
+      run: () =>
+        tx
+          .delete(birthSkyPreferencesTable)
+          .where(eq(birthSkyPreferencesTable.userId, userId))
+          .returning({ userId: birthSkyPreferencesTable.userId }),
+    },
+  ];
+
+  for (const { table, run } of birthSkyDeletes) {
+    await countDeleted(tx, table, await run(), audit);
+  }
+}
+
 export type PurgeUserDataOptions = {
   accountEmail?: string | null;
 };
@@ -361,6 +438,8 @@ async function purgeUserScopedData(
     .limit(1);
 
   await purgeUserLinkedCaches(tx, userId, planCacheKeys, audit);
+
+  await purgeBirthSkyUserData(tx, userId, audit);
 
   const grantConditions = [];
   const normalizedEmail = options?.accountEmail?.trim().toLowerCase();

@@ -32,9 +32,11 @@ import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { enqueueForUser } from "../lib/per-user-queue.js";
 import {
   getChildByIdForUser,
+  getChildByIdForUserOrCaregiver,
   getFixedActivitiesFromChild,
   listChildrenForUser,
 } from "../lib/children-db.js";
+import { canAccessChild, listAccessibleChildIds } from "../lib/child-access.js";
 import { checkRoutineGenerationRateLimitAsync } from "../lib/routine-rate-limit.js";
 import {
   getCachedRoutine,
@@ -1553,7 +1555,7 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
   }
 
   try {
-  const childRow = await getChildByIdForUser(parsed.data.childId, userId);
+  const childRow = await getChildByIdForUserOrCaregiver(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
@@ -1808,7 +1810,7 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     }
 
     try {
-      const childRow = await getChildByIdForUser(parsed.data.childId, userId);
+      const childRow = await getChildByIdForUserOrCaregiver(parsed.data.childId, userId);
       if (!childRow) {
         res.status(404).json({ error: "Child not found" });
         return;
@@ -1939,7 +1941,7 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
   }
 
   await enqueueForUser(userId, async () => {
-  const childRow = await getChildByIdForUser(parsed.data.childId, userId);
+  const childRow = await getChildByIdForUserOrCaregiver(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
@@ -2306,13 +2308,14 @@ router.get("/routines", async (req, res): Promise<void> => {
     return;
   }
 
-  const [children, parentProfiles] = await Promise.all([
+  const [children, parentProfiles, accessibleChildIds] = await Promise.all([
     listChildrenForUser(userId),
     db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
+    listAccessibleChildIds(userId),
   ]);
   const pp = parentProfiles[0];
   const childMap = new Map(children.map((c) => [c.id, c.name]));
-  const childIds = children.map((c) => c.id);
+  const childIds = accessibleChildIds;
 
   let results: Array<typeof routinesTable.$inferSelect> = [];
   if (queryParams.data.childId) {
@@ -2397,10 +2400,7 @@ router.get("/routines/check", async (req, res): Promise<void> => {
     return;
   }
   // Ownership check: cross-tenant access returns 404 to avoid existence disclosure.
-  const [child] = await db
-    .select({ id: childrenTable.id })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
+  const child = await canAccessChild(parsed.data.childId, userId);
   if (!child) {
     res.status(404).json({ error: "Child not found" });
     return;

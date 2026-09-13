@@ -16,18 +16,6 @@ function loadEnvFile(path) {
   return out;
 }
 
-function readReplitRevenueCatIosKey(root) {
-  try {
-    const text = readFileSync(resolve(root, ".replit"), "utf8");
-    const m = text.match(
-      /EXPO_PUBLIC_REVENUECAT_IOS_API_KEY\s*=\s*"([^"]+)"/,
-    );
-    return m?.[1]?.trim() ?? "";
-  } catch {
-    return "";
-  }
-}
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../../..");
 const capacitorEnv = {
@@ -51,16 +39,16 @@ const run = (command, args, options = {}) => {
 const revenueCatIosKey =
   process.env.VITE_REVENUECAT_IOS_API_KEY?.trim() ||
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim() ||
-  readReplitRevenueCatIosKey(repoRoot) ||
   "";
 
 if (!revenueCatIosKey) {
-  console.warn(
-    "⚠️  VITE_REVENUECAT_IOS_API_KEY not set — iOS In-App Purchase will show “billing unavailable”.",
+  console.error(
+    "❌  VITE_REVENUECAT_IOS_API_KEY (or EXPO_PUBLIC_REVENUECAT_IOS_API_KEY) is required for Capacitor iOS builds.",
   );
-  console.warn(
-    "    Set your production RevenueCat App Store key (appl_…) before build:ios.",
+  console.error(
+    "    Set the RevenueCat App Store public SDK key (appl_…) before running build:ios.",
   );
+  process.exit(1);
 } else if (revenueCatIosKey.startsWith("appl_")) {
   console.log("✅  RevenueCat production iOS key (appl_…) will be embedded in www/");
 } else if (revenueCatIosKey.startsWith("test_")) {
