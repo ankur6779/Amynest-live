@@ -209,6 +209,30 @@ export async function ensureHubJourney(
   return childId != null ? syncHubJourneyChildId(retry, childId) : retry;
 }
 
+/**
+ * Read-only journey lookup for authorization. Does not create a journey.
+ * Used so omitting childId cannot bypass a completed/expired hub journey.
+ */
+export async function getExistingHubJourneyForAuth(
+  userId: string,
+  isPremium: boolean,
+): Promise<{ access: HubJourneyAccess; bonusUnlocks: string[] } | null> {
+  const [existing] = await db
+    .select()
+    .from(parentHubJourneyTable)
+    .where(eq(parentHubJourneyTable.userId, userId))
+    .limit(1);
+  if (!existing) return null;
+  return {
+    access: computeHubJourneyAccess({
+      isPremium,
+      completedDays: normaliseCompletedDays(existing.completedDays),
+      startedAt: existing.startedAt,
+    }),
+    bonusUnlocks: asStringArray(existing.bonusUnlocks),
+  };
+}
+
 async function loadProgressSnapshot(
   userId: string,
   childId: number,

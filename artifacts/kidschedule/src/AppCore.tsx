@@ -55,6 +55,7 @@ import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import { useFailOpenAfter } from "@/lib/loading-fail-open";
+import { decidePremiumRouteAccess } from "@/lib/premium-access-decision";
 import {
   effectiveSetupStatus,
   isSetupComplete,
@@ -588,8 +589,12 @@ function ProtectedRoute({
   const deviceBlocked =
     deviceStatus === "blocked" && !location.startsWith("/manage-devices");
   const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
-  const { entitlements, loading: subscriptionLoading, isFetched: subscriptionFetched } =
-    useSubscription();
+  const {
+    entitlements,
+    loading: subscriptionLoading,
+    isFetched: subscriptionFetched,
+    entitlementsResolved,
+  } = useSubscription();
   const premiumRoute = getPremiumRouteMeta(location);
   const { signOut } = useClerk();
 
@@ -644,8 +649,13 @@ function ProtectedRoute({
     return <Redirect to="/onboarding" />;
   }
   if (premiumRoute) {
-    if (premiumLoading && !premiumLoadingTimedOut) return <RouteLoadingShell />;
-    if (entitlements && !entitlements[premiumRoute.accessKey]) {
+    const premiumDecision = decidePremiumRouteAccess({
+      flag: entitlements?.[premiumRoute.accessKey],
+      entitlementsResolved,
+      timedOut: premiumLoadingTimedOut,
+    });
+    if (premiumDecision === "UNKNOWN") return <RouteLoadingShell />;
+    if (premiumDecision !== "ALLOW") {
       return (
         <AppErrorBoundary label="Layout">
           <Layout>

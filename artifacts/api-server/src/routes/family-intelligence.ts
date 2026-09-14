@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth.js";
 import { canAccessChild } from "../lib/child-access.js";
 import { logger } from "../lib/logger.js";
+import { requirePremium } from "../middlewares/requirePremium.js";
 import {
   getFamilyCommandCenter,
   refreshFamilyIntelligence,
@@ -52,7 +53,7 @@ router.get("/family-intelligence/snapshot", async (req, res): Promise<void> => {
 /**
  * GET /api/family-intelligence/weekly-report
  */
-router.get("/family-intelligence/weekly-report", async (req, res): Promise<void> => {
+router.get("/family-intelligence/weekly-report", requirePremium("weekly_reports"), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

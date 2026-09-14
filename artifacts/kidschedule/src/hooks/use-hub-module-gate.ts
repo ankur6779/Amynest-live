@@ -28,7 +28,14 @@ export function useHubModuleGate(featureId: string, childId?: number | null) {
     !!hubJourney.access &&
     hubJourney.isHubFeatureLocked(featureId);
   const legacyLocked = usage.isFeatureLocked(featureId);
-  const locked = hubJourney.access ? journeyLocked : legacyLocked;
+  const journeyLookupFailed = !!resolvedChildId && hubJourney.isError === true;
+  const locked = usage.isPremium
+    ? false
+    : journeyLookupFailed
+      ? true
+      : hubJourney.access
+        ? journeyLocked
+        : legacyLocked;
 
   const tryFree =
     hubJourney.isFreeJourneyPeriod ||

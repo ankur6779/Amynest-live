@@ -16,7 +16,8 @@ describe("Phase 4 Health Lab static preview freeze", () => {
   it("AppCore still gates Health Lab on canAccessHealthLab and never mounts the zone for free users", () => {
     const appCore = readFileSync(join(here, "../AppCore.tsx"), "utf8");
     expect(appCore).toContain('accessKey: "canAccessHealthLab"');
-    expect(appCore).toContain("!entitlements[premiumRoute.accessKey]");
+    expect(appCore).toContain("decidePremiumRouteAccess");
+    expect(appCore).toContain('premiumDecision !== "ALLOW"');
     expect(appCore).toContain("HealthLabStaticFreePreview");
     expect(appCore).toContain('premiumRoute.accessKey === "canAccessHealthLab"');
     expect(appCore).not.toMatch(/canAccessHealthLab\s*=\s*true/);
