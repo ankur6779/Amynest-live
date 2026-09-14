@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { getAuth } from "../lib/auth";
 import type { ParentHubFeatureId } from "../services/featureUsageService.js";
-import { getOrCreateSubscription, isPremiumNow } from "../services/subscriptionService.js";
+import {
+  isPremiumAuthorized,
+  premiumDenialBody,
+  resolveEntitlementDecision,
+} from "../services/entitlement-authorization.js";
 import {
   assertHubModuleAccess,
   hubModuleGateFailureBody,
@@ -39,27 +43,35 @@ export function hubModuleGate(
       return;
     }
 
-    if (opts.premiumOnly) {
-      const sub = await getOrCreateSubscription(userId);
-      if (!isPremiumNow(sub)) {
-        res.status(opts.denyStatus ?? 403).json({
-          error: "premium_required",
-          feature: featureId,
-          message: "Upgrade to use this premium learning action.",
-        });
+    try {
+      if (opts.premiumOnly) {
+        const decision = await resolveEntitlementDecision(userId);
+        if (!isPremiumAuthorized(decision)) {
+          res.status(opts.denyStatus ?? 403).json({
+            ...premiumDenialBody(decision, featureId),
+            message: "Upgrade to use this premium learning action.",
+          });
+          return;
+        }
+        next();
         return;
       }
+
+      const childId = resolveChildIdFromRequest(req);
+      const gate = await assertHubModuleAccess(userId, featureId, childId);
+      if (!gate.ok) {
+        res.status(gate.status).json(hubModuleGateFailureBody(gate));
+        return;
+      }
+
       next();
-      return;
+    } catch {
+      res.status(403).json({
+        error: "premium_required",
+        decision: "UNKNOWN",
+        feature: featureId,
+        message: "Entitlement could not be verified. Premium access is denied.",
+      });
     }
-
-    const childId = resolveChildIdFromRequest(req);
-    const gate = await assertHubModuleAccess(userId, featureId, childId);
-    if (!gate.ok) {
-      res.status(402).json(hubModuleGateFailureBody(gate));
-      return;
-    }
-
-    next();
   };
 }

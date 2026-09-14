@@ -10,6 +10,7 @@
 
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
+import { requirePremium } from "../middlewares/requirePremium.js";
 import {
   GetChildIntelligenceParams,
   GetChildIntelligenceResponse,
@@ -153,7 +154,7 @@ router.post("/child-intelligence/:childId/signal", async (req, res): Promise<voi
   res.json(LogChildDailySignalResponse.parse(snapshot));
 });
 
-router.get("/child-intelligence/:childId/weekly-report", async (req, res): Promise<void> => {
+router.get("/child-intelligence/:childId/weekly-report", requirePremium("weekly_reports"), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

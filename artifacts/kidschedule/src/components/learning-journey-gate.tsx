@@ -6,6 +6,7 @@ import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ROUTE_LOADING_FAIL_OPEN_MS, useFailOpenAfter } from "@/lib/loading-fail-open";
+import { decideLearningJourneyAccess } from "@/lib/premium-access-decision";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
   isGrowLivingV1Enabled,
@@ -47,9 +48,16 @@ export function LearningJourneyGate({ children }: Props) {
 
   if (isPremium) return <>{children}</>;
   if (gateLoading && !gateTimedOut) return <RouteLoadingShell />;
-  // Timed out without journey access — fail-open so Practice/Quiz stay reachable.
-  if (gateTimedOut && !hubJourney.access) return <>{children}</>;
-  if (hubJourney.isJourneyLocked) return <LearningPremiumPreview />;
+  const journeyDecision = decideLearningJourneyAccess({
+    isPremium,
+    journeyLocked: hubJourney.isJourneyLocked,
+    hasJourneyAccess: !!hubJourney.access,
+    hasChild: !!childId,
+    timedOut: gateTimedOut,
+    journeyError: childrenError || hubJourney.isError,
+  });
+  if (journeyDecision === "UNKNOWN") return <RouteLoadingShell />;
+  if (journeyDecision !== "ALLOW") return <LearningPremiumPreview />;
   return <>{children}</>;
 }
 

@@ -3,9 +3,12 @@ import {
   isTrackedFeature,
   type ParentHubFeatureId,
 } from "./featureUsageService.js";
-import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService.js";
 import {
-  getHubJourneyStatus,
+  isPremiumAuthorized,
+  resolveEntitlementDecision,
+} from "./entitlement-authorization.js";
+import {
+  getExistingHubJourneyForAuth,
   isHubJourneyFeatureLocked,
 } from "./parentHubJourneyService.js";
 
@@ -16,10 +19,10 @@ export type HubModuleGateResult =
   | { ok: true }
   | {
       ok: false;
-      status: 402;
-      error: "hub_feature_locked";
+      status: 402 | 403;
+      error: "hub_feature_locked" | "premium_required";
       feature: string;
-      reason: "journey_locked" | "quota_exhausted";
+      reason: "journey_locked" | "quota_exhausted" | "entitlement_unknown";
       limit?: number;
       used?: number;
       message: string;
@@ -36,7 +39,7 @@ function maxFreeOpens(featureId: string): number {
 export async function assertHubModuleAccess(
   userId: string,
   featureId: ParentHubFeatureId,
-  childId?: number | null,
+  _childId?: number | null,
 ): Promise<HubModuleGateResult> {
   if (!isTrackedFeature(featureId)) {
     return {
@@ -49,31 +52,41 @@ export async function assertHubModuleAccess(
     };
   }
 
-  const sub = await getOrCreateSubscription(userId);
-  if (isPremiumNow(sub)) return { ok: true };
+  const entitlement = await resolveEntitlementDecision(userId);
+  if (entitlement.decision === "UNKNOWN") {
+    return {
+      ok: false,
+      status: 403,
+      error: "premium_required",
+      feature: featureId,
+      reason: "entitlement_unknown",
+      message: "Entitlement could not be verified. Premium access is denied.",
+    };
+  }
+  if (isPremiumAuthorized(entitlement)) return { ok: true };
 
-  if (childId != null && childId > 0) {
-    const journey = await getHubJourneyStatus(userId, childId);
-    if (journey?.access) {
-      if (journey.access.isFreePeriod) return { ok: true };
-      if (
-        !isHubJourneyFeatureLocked(
-          featureId,
-          journey.access,
-          journey.bonusUnlocks,
-        )
-      ) {
-        return { ok: true };
-      }
-      return {
-        ok: false,
-        status: 402,
-        error: "hub_feature_locked",
-        feature: featureId,
-        reason: "journey_locked",
-        message: "Upgrade to continue using this learning module.",
-      };
+  // Journey is per-user. Never skip this check when childId is omitted —
+  // that was an expired-trial API bypass.
+  const existingJourney = await getExistingHubJourneyForAuth(userId, false);
+  if (existingJourney) {
+    if (existingJourney.access.isFreePeriod) return { ok: true };
+    if (
+      !isHubJourneyFeatureLocked(
+        featureId,
+        existingJourney.access,
+        existingJourney.bonusUnlocks,
+      )
+    ) {
+      return { ok: true };
     }
+    return {
+      ok: false,
+      status: 402,
+      error: "hub_feature_locked",
+      feature: featureId,
+      reason: "journey_locked",
+      message: "Upgrade to continue using this learning module.",
+    };
   }
 
   const statuses = await getUserFeatureStatus(userId);

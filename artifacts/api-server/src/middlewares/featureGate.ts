@@ -104,16 +104,21 @@ export function routineGenerateGate() {
       const body = req.body as { childId?: number; date?: string } | undefined;
       logger.error(
         {
-          evt: "routine.generate_gate_failed_open",
+          evt: "routine.generate_gate_failed_closed",
           userId: getAuth(req).userId,
           childId: body?.childId,
           date: body?.date,
           message: err instanceof Error ? err.message : String(err),
           stack: err instanceof Error ? err.stack : undefined,
         },
-        "Routine generation gate failed; allowing generation to continue",
+        "Routine generation gate failed; denying generation",
       );
-      next();
+      res.status(503).json({
+        error: "routine_locked",
+        feature: "routine_generate",
+        decision: "UNKNOWN",
+        message: "Entitlement could not be verified. Routine generation is denied.",
+      });
     }
   };
 }
@@ -196,6 +201,26 @@ export function featureGate(feature: FeatureKey) {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    await applyFeatureGate(req, res, feature, next);
+    try {
+      await applyFeatureGate(req, res, feature, next);
+    } catch (err) {
+      logger.error(
+        {
+          evt: "feature.gate_failed_closed",
+          feature,
+          userId: getAuth(req).userId,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "Feature gate failed; denying premium/quota bypass",
+      );
+      if (!res.headersSent) {
+        res.status(503).json({
+          error: "feature_locked",
+          feature,
+          decision: "UNKNOWN",
+          message: "Entitlement could not be verified. Access is denied.",
+        });
+      }
+    }
   };
 }

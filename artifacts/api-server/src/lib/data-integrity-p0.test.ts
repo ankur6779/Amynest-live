@@ -146,6 +146,7 @@ describe("P0-2 routine uniqueness", () => {
     assert.match(routinesSrc, /res\.status\(503\)\.json\(\{\s*error: "routine_save_failed"/);
     assert.match(appSrc, /path\.startsWith\("\/api\/routines"\)/);
     assert.match(appSrc, /error: "routine_service_unavailable"/);
-    assert.match(featureGateSrc, /evt: "routine\.generate_gate_failed_open"/);
+    assert.match(featureGateSrc, /evt: "routine\.generate_gate_failed_closed"/);
+    assert.match(featureGateSrc, /decision: "UNKNOWN"/);
   });
 });

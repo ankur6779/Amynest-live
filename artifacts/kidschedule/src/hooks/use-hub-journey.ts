@@ -100,6 +100,7 @@ export function useHubJourney(childId: number | null | undefined) {
   return {
     status,
     isLoading: query.isLoading,
+    isError: query.isError,
     isPremium,
     isFreeJourneyPeriod,
     isJourneyLocked,
