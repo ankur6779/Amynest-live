@@ -391,6 +391,68 @@ export type EnrichCtx = {
   goals?: string | null;
 };
 
+/** Same bands as generate-ai / rule-based paths — never invent a default age band. */
+export function ageGroupFromTotalMonths(totalAgeMonths: number): AgeGroup {
+  if (totalAgeMonths < 12) return "infant";
+  if (totalAgeMonths < 36) return "toddler";
+  if (totalAgeMonths < 60) return "preschool";
+  if (totalAgeMonths < 120) return "early_school";
+  return "pre_teen";
+}
+
+/**
+ * Build meal-enrich context for GET /routines list jobs.
+ * Must derive ageGroup from age + ageMonths — children rows have no ageGroup column.
+ * Defaulting to early_school (previous bug) sent infant breast/formula notes to AI
+ * and overwrote them with adult Options food.
+ */
+export function buildListEnrichCtx(
+  child:
+    | {
+        age?: number | null;
+        ageMonths?: number | null;
+        foodType?: string | null;
+        dietType?: string | null;
+        foodStyle?: string | null;
+        subCuisine?: string | null;
+        allergies?: string | null;
+        goals?: string | null;
+      }
+    | null
+    | undefined,
+  parent:
+    | {
+        foodType?: string | null;
+        dietType?: string | null;
+        foodStyle?: string | null;
+        subCuisine?: string | null;
+        allergies?: string | null;
+      }
+    | null
+    | undefined,
+): EnrichCtx {
+  const ageYears = typeof child?.age === "number" && Number.isFinite(child.age) ? child.age : 0;
+  const ageMonths =
+    typeof child?.ageMonths === "number" && Number.isFinite(child.ageMonths) ? child.ageMonths : 0;
+  const ageGroup = ageGroupFromTotalMonths(ageYears * 12 + ageMonths);
+
+  const rawChildFt = child?.foodType as string | null | undefined;
+  let foodType = rawChildFt ?? "veg";
+  if (child?.dietType) foodType = child.dietType;
+  else if (parent?.dietType) foodType = parent.dietType;
+  else if (parent?.foodType && rawChildFt == null) foodType = parent.foodType;
+
+  return {
+    foodType,
+    allergies: child?.allergies ?? parent?.allergies ?? null,
+    foodStyle: child?.foodStyle ?? parent?.foodStyle ?? null,
+    subCuisine: child?.subCuisine ?? parent?.subCuisine ?? null,
+    region: null,
+    ageGroup,
+    goals: child?.goals ?? null,
+  };
+}
+
 // Structural shape — accepts both the real OpenAI SDK and the test mock.
 // We only call .chat.completions.create with a small subset of params, so a
 // loose signature avoids the SDK's strict union types for messages/response_format.
@@ -2344,27 +2406,14 @@ router.get("/routines", async (req, res): Promise<void> => {
       return (cat === "meal" || cat === "tiffin") && !isValidOptionsNote(it.notes);
     });
 
-  const buildChildEnrichCtx = (childId: number): EnrichCtx => {
-    const child = children.find((c) => c.id === childId) as (typeof childrenTable.$inferSelect & {
-      dietType?: string; foodStyle?: string; subCuisine?: string; allergies?: string;
-    }) | undefined;
-    const rawChildFt = child?.foodType as string | null | undefined;
-    let foodType = rawChildFt ?? "veg";
-    if ((child as any)?.dietType) foodType = (child as any).dietType;
-    else if (pp?.dietType) foodType = pp.dietType;
-    else if (pp?.foodType && rawChildFt == null) foodType = pp.foodType;
-    const foodStyle = (child as any)?.foodStyle ?? (pp as any)?.foodStyle ?? null;
-    const subCuisine = (child as any)?.subCuisine ?? (pp as any)?.subCuisine ?? null;
-    const allergies = (child as any)?.allergies ?? (pp as any)?.allergies ?? null;
-    const ageGroup = (children.find((c) => c.id === childId) as any)?.ageGroup ?? "early_school";
-    return { foodType, allergies, foodStyle, subCuisine, region: null, ageGroup };
-  };
-
-  // Fire enrichment concurrently for all routines that need it, then update DB.
-  // Each routine gets its own Promise keyed by id so we can await them per-row.
+  // Fire enrichment for routines that need Options notes.
+  // Skip infants entirely — feeding notes must stay breast/formula/puree text.
+  // ageGroup MUST be derived from age+ageMonths (no ageGroup column on children).
   for (const r of results) {
     if (!needsEnrichment(r.items as RoutineItem[])) continue;
-    const ctx = buildChildEnrichCtx(r.childId);
+    const child = children.find((c) => c.id === r.childId);
+    const ctx = buildListEnrichCtx(child, pp);
+    if (ctx.ageGroup === "infant") continue;
     const { wrapJobInput } = await import("../queue/ai-job-payload.js");
     void enqueueAiJob(
       "routines.enrich_meals",
