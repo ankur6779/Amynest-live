@@ -61,6 +61,10 @@ import {
 } from "@workspace/parent-hub-journey";
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import { hubModuleGate } from "../middlewares/hubModuleGate.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 const router: IRouter = Router();
 
@@ -1339,6 +1343,10 @@ export async function synthesizePhonicsSound(letter: string) {
 export const phonicsPublicRouter: IRouter = Router();
 
 phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "phonics-sound", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const raw = String(req.params.letter ?? "").toLowerCase();
   if (!Object.prototype.hasOwnProperty.call(PHONEME_PROMPTS, raw)) {
     res.status(400).json({ error: "invalid_letter" });

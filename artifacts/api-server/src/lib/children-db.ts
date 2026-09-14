@@ -173,6 +173,44 @@ export async function getChildByIdForUser(
   }
 }
 
+import { canAccessChild } from "./child-access.js";
+
+export async function getChildByIdForUserOrCaregiver(
+  childId: number,
+  userId: string,
+): Promise<Child | undefined> {
+  const owned = await getChildByIdForUser(childId, userId);
+  if (owned) return owned;
+
+  const accessible = await canAccessChild(childId, userId);
+  if (!accessible) return undefined;
+
+  try {
+    if (fixedActivitiesColumnOk === false) {
+      const [row] = await db
+        .select(childColumnsWithoutFixedActivities)
+        .from(childrenTable)
+        .where(eq(childrenTable.id, childId));
+      return row ? (await attachSavedFixedActivities(userId, [normalizeChildRow(row) as Child]))[0] : undefined;
+    }
+    const [row] = await db.select().from(childrenTable).where(eq(childrenTable.id, childId));
+    if (!row) return undefined;
+    fixedActivitiesColumnOk = true;
+    const [withSaved] = await attachSavedFixedActivities(userId, [normalizeChildRow(row) as Child]);
+    return withSaved;
+  } catch (err) {
+    noteFixedActivitiesMissing(err);
+    if (fixedActivitiesColumnOk === false) {
+      const [row] = await db
+        .select(childColumnsWithoutFixedActivities)
+        .from(childrenTable)
+        .where(eq(childrenTable.id, childId));
+      return row ? (await attachSavedFixedActivities(userId, [normalizeChildRow(row) as Child]))[0] : undefined;
+    }
+    throw err;
+  }
+}
+
 export async function insertChildRow(
   values: InsertChild & { userId: string },
 ): Promise<Child> {

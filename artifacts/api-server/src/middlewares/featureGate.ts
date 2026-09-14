@@ -104,16 +104,19 @@ export function routineGenerateGate() {
       const body = req.body as { childId?: number; date?: string } | undefined;
       logger.error(
         {
-          evt: "routine.generate_gate_failed_open",
+          evt: "routine.generate_gate_failed_closed",
           userId: getAuth(req).userId,
           childId: body?.childId,
           date: body?.date,
           message: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
         },
-        "Routine generation gate failed; allowing generation to continue",
+        "Routine generation gate failed; denying request",
       );
-      next();
+      res.status(503).json({
+        error: "entitlement_check_unavailable",
+        message: "We could not verify your subscription right now. Please try again shortly.",
+      });
+      return;
     }
   };
 }
@@ -196,6 +199,24 @@ export function featureGate(feature: FeatureKey) {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    await applyFeatureGate(req, res, feature, next);
+    try {
+      await applyFeatureGate(req, res, feature, next);
+    } catch (err) {
+      logger.error(
+        {
+          evt: "feature_gate_failed_closed",
+          feature,
+          userId: getAuth(req).userId,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "Feature gate failed; denying request",
+      );
+      if (!res.headersSent) {
+        res.status(503).json({
+          error: "entitlement_check_unavailable",
+          message: "We could not verify your subscription right now. Please try again shortly.",
+        });
+      }
+    }
   };
 }

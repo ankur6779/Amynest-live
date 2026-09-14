@@ -9,6 +9,7 @@ import {
   createCaregiverShareLink,
   getCaregiverShareView,
 } from "../services/caregiverShareService.js";
+import { rejectIfIpRateLimited } from "../lib/endpoint-rate-limit.js";
 
 const authRouter: IRouter = Router();
 
@@ -75,6 +76,15 @@ export default authRouter;
 export const nutritionSharePublicRouter: IRouter = Router();
 
 nutritionSharePublicRouter.get("/nutrition/share/:token", async (req, res): Promise<void> => {
+  if (
+    await rejectIfIpRateLimited(req, res, "nutrition-share", {
+      windowMs: 60_000,
+      maxPerWindow: 60,
+    })
+  ) {
+    return;
+  }
+
   const token = String(req.params.token ?? "").trim();
   if (!token) {
     res.status(400).json({ error: "invalid_token" });

@@ -5,6 +5,10 @@ import { logger } from "../lib/logger.js";
 import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 export const phonicsLibraryPublicRouter: IRouter = Router();
 
@@ -46,6 +50,10 @@ function decodeObjectPathParam(raw: string | string[]): string {
  * Public, unauthenticated — input is bounded to phonics/*.mp3 paths only.
  */
 phonicsLibraryPublicRouter.get("/phonics-library/*objectPath", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "phonics-library", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const rawParam = req.params.objectPath;
   const objectPath = decodeObjectPathParam(
     Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),

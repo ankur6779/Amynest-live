@@ -24,6 +24,7 @@ import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
 import { speechTranscribeGate } from "../middlewares/speechTranscribeGate.js";
 import { asyncRoute } from "../middlewares/async-route.js";
+import { rejectIfUserRateLimited } from "../lib/endpoint-rate-limit.js";
 
 const router: IRouter = Router();
 
@@ -538,6 +539,15 @@ router.post("/speech/transcribe", speechTranscribeGate(), asyncRoute(async (req,
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  if (
+    await rejectIfUserRateLimited(res, userId, "speech-transcribe-burst", {
+      windowMs: 60_000,
+      maxPerWindow: 15,
+    })
+  ) {
     return;
   }
 

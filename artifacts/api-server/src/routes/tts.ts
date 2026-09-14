@@ -34,10 +34,18 @@ import {
   ttsRateLimitResponseBody,
 } from "../services/ttsCostGuardService.js";
 import { recordUserTtsClientMetrics } from "../services/ttsLatencyMetrics.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 export const ttsPublicRouter: IRouter = Router();
 
 ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "tts-audio-stream", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const key = String(req.params.key ?? "");
   if (!/^[a-f0-9]{64}$/.test(key)) {
     res.status(400).json({ error: "invalid_key" });

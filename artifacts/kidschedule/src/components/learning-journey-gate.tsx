@@ -1,11 +1,12 @@
-import type { ComponentType, ReactNode } from "react";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { ApiRetryShell } from "@/components/api-retry-shell";
+import { resolveLearningJourneyAccess } from "@/lib/learning-journey-access";
+import { ROUTE_LOADING_FAIL_OPEN_MS, useFailOpenAfter } from "@/lib/loading-fail-open";
 import { getListChildrenQueryKey, useListChildren } from "@workspace/api-client-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useHubJourney } from "@/hooks/use-hub-journey";
 import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
-import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { ROUTE_LOADING_FAIL_OPEN_MS, useFailOpenAfter } from "@/lib/loading-fail-open";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
   isGrowLivingV1Enabled,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/grow/living-room";
 import { AmyNestLeaveContinuity } from "@/components/amy-nest-leave-continuity";
 import { cn } from "@/lib/utils";
+import type { ComponentType, ReactNode } from "react";
 
 import "@/components/grow/grow-living-deep.css";
 
@@ -28,7 +30,7 @@ type Props = {
  */
 export function LearningJourneyGate({ children }: Props) {
   const { isPremium, loading: subscriptionLoading } = useSubscription();
-  const { data: childrenList, isFetched, isError: childrenError } = useListChildren({
+  const { data: childrenList, isFetched, isError: childrenError, refetch: refetchChildren } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
       staleTime: 30_000,
@@ -45,12 +47,21 @@ export function LearningJourneyGate({ children }: Props) {
       (!!childId && hubJourney.isLoading && !hubJourney.access));
   const gateTimedOut = useFailOpenAfter(gateLoading, ROUTE_LOADING_FAIL_OPEN_MS);
 
-  if (isPremium) return <>{children}</>;
-  if (gateLoading && !gateTimedOut) return <RouteLoadingShell />;
-  // Timed out without journey access — fail-open so Practice/Quiz stay reachable.
-  if (gateTimedOut && !hubJourney.access) return <>{children}</>;
-  if (hubJourney.isJourneyLocked) return <LearningPremiumPreview />;
-  return <>{children}</>;
+  const access = resolveLearningJourneyAccess({
+    isPremium,
+    gateLoading,
+    gateTimedOut,
+    hasError: childrenError,
+    journeyLocked: hubJourney.isJourneyLocked,
+    accessLoaded: !!hubJourney.access,
+  });
+
+  if (access.kind === "allowed") return <>{children}</>;
+  if (access.kind === "loading") return <RouteLoadingShell />;
+  if (access.kind === "retry") {
+    return <ApiRetryShell onRetry={() => void refetchChildren()} />;
+  }
+  return <LearningPremiumPreview />;
 }
 
 function resolveActiveChildId(

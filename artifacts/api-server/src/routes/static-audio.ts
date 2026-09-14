@@ -27,7 +27,12 @@ import {
   parseStaticAudioMissingKey,
 } from "@workspace/static-audio";
 import { getAuth } from "../lib/auth.js";
+import { requireAdmin } from "../lib/admin-auth.js";
 import { checkDistributedRateLimit } from "../lib/distributed-rate-limit.js";
+import {
+  PUBLIC_STREAM_RATE,
+  rejectIfIpRateLimited,
+} from "../lib/endpoint-rate-limit.js";
 
 const reportedMissing = new Set<string>();
 
@@ -57,6 +62,10 @@ staticAudioPublicRouter.get("/static-audio/health", (_req, res): void => {
 });
 
 staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise<void> => {
+  if (await rejectIfIpRateLimited(req, res, "static-audio-stream", PUBLIC_STREAM_RATE)) {
+    return;
+  }
+
   const started = performance.now();
   const hash = String(req.params.hash ?? "").toLowerCase();
 
@@ -98,33 +107,14 @@ staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise
   }
 });
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
 /** Authenticated missing-audio reports — enqueues TTS generation (cost-sensitive). */
 export const staticAudioAuthRouter: IRouter = Router();
 
-staticAudioAuthRouter.get("/static-audio/metrics", (req, res): void => {
-  const userId = getAuth(req)?.userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
+staticAudioAuthRouter.get("/static-audio/metrics", requireAdmin, (req, res): void => {
   res.json(getStaticAudioMetrics());
 });
 
-staticAudioAuthRouter.get("/static-audio/missing", (req, res): void => {
-  const userId = getAuth(req)?.userId;
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
+staticAudioAuthRouter.get("/static-audio/missing", requireAdmin, (req, res): void => {
   const catalogMissing = computeCatalogMissingStaticAudioKeys(getShippedStaticAudioMap());
   const missing = mergeMissingStaticAudioKeys(catalogMissing, reportedMissing);
 

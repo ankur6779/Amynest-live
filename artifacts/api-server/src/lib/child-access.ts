@@ -104,7 +104,6 @@ export async function isChildOwner(
   return rows.length > 0;
 }
 
-/** All user IDs that should receive infant notifications for a child. */
 export async function listChildCaregiverUserIds(
   childId: number,
 ): Promise<string[]> {
@@ -129,5 +128,28 @@ export async function listChildCaregiverUserIds(
 
   const ids = new Set<string>([ownerId]);
   for (const row of coParents) ids.add(row.userId);
+  return [...ids];
+}
+
+/** Child IDs the user owns or can access as an active caregiver. */
+export async function listAccessibleChildIds(userId: string): Promise<number[]> {
+  const owned = await db
+    .select({ id: childrenTable.id })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId));
+
+  const cared = await db
+    .select({ childId: childCaregiversTable.childId })
+    .from(childCaregiversTable)
+    .where(
+      and(
+        eq(childCaregiversTable.userId, userId),
+        eq(childCaregiversTable.status, "active"),
+      ),
+    );
+
+  const ids = new Set<number>();
+  for (const row of owned) ids.add(row.id);
+  for (const row of cared) ids.add(row.childId);
   return [...ids];
 }

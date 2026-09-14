@@ -1,10 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
-import { getAuth } from "../lib/auth.js";
+import { requireAdmin } from "../lib/admin-auth.js";
 import {
   ingestStartupEvent,
   getStartupTelemetryStats,
 } from "../services/startup-telemetry-store.js";
+import { PUBLIC_BEACON_RATE, rejectIfIpRateLimited } from "../lib/endpoint-rate-limit.js";
 
 const publicRouter: IRouter = Router();
 const adminRouter: IRouter = Router();
@@ -31,17 +32,12 @@ const StartupEventBody = z.object({
   meta: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
-function isAdminUser(userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  const list = (process.env["ADMIN_USER_IDS"] ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return list.includes(userId);
-}
-
 /** Public — pre-auth startup beacon (mount before requireAuth). */
-publicRouter.post("/startup-events", (req: Request, res: Response) => {
+publicRouter.post("/startup-events", async (req: Request, res: Response) => {
+  if (await rejectIfIpRateLimited(req, res, "startup-events", PUBLIC_BEACON_RATE)) {
+    return;
+  }
+
   const parsed = StartupEventBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -69,12 +65,9 @@ publicRouter.post("/startup-events", (req: Request, res: Response) => {
   res.status(204).end();
 });
 
+adminRouter.use(requireAdmin);
+
 adminRouter.get("/admin/startup-stats", (req: Request, res: Response) => {
-  const { userId } = getAuth(req);
-  if (!isAdminUser(userId)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   res.json(getStartupTelemetryStats());
 });
 
