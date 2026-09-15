@@ -145,6 +145,27 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     }
     const { clearUserSessionCaches } = await import("@/lib/user-session-cache");
     clearUserSessionCaches();
+    // Drop leftover Android pending OAuth tokens so the next account on this
+    // install cannot be silently replaced on resume/bootstrap.
+    try {
+      const { isNativeAmyNestAndroidWrapper } = await import("@/lib/device-lite");
+      if (isNativeAmyNestAndroidWrapper()) {
+        const {
+          clearPendingNativeGoogleAuth,
+          clearPendingNativeFacebookAuth,
+        } = await import("@/lib/native-auth");
+        void clearPendingNativeGoogleAuth();
+        void clearPendingNativeFacebookAuth();
+        try {
+          delete window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN;
+          delete window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN;
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch (err) {
+      console.warn("[firebase-auth] pending oauth clear failed:", err);
+    }
     try {
       await fbSignOut(getFirebaseAuth());
     } catch (err) {

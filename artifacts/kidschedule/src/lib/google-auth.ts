@@ -22,6 +22,7 @@ import {
   googleAuthDefaults,
   reversedGoogleWebClientId,
 } from "@/lib/google-auth-defaults";
+import { decidePendingNativeOAuthBootstrap } from "@/lib/pending-native-oauth-guard";
 
 const GOOGLE_TAG = "[amynest:google-auth]";
 
@@ -207,12 +208,36 @@ export async function bootstrapPendingGoogleSignIn(): Promise<boolean> {
   if (!shouldUseAndroidWebViewGoogleAuth() || pendingBootstrapInFlight) {
     return false;
   }
-  const { readPendingNativeGoogleIdToken, isGoogleSignInInFlight } =
-    await import("@/lib/native-auth");
-  if (isGoogleSignInInFlight()) {
-    console.info(`${GOOGLE_TAG} bootstrap skipped — sign-in in flight`);
+  const {
+    readPendingNativeGoogleIdToken,
+    hasPendingNativeGoogleIdToken,
+    isGoogleSignInInFlight,
+    clearPendingNativeGoogleAuth,
+  } = await import("@/lib/native-auth");
+  const decision = decidePendingNativeOAuthBootstrap({
+    hasPendingToken: hasPendingNativeGoogleIdToken(),
+    signInInFlight: isGoogleSignInInFlight(),
+    currentUser: getFirebaseAuth().currentUser,
+  });
+  if (decision === "skip") {
+    if (isGoogleSignInInFlight()) {
+      console.info(`${GOOGLE_TAG} bootstrap skipped — sign-in in flight`);
+    }
     return false;
   }
+  if (decision === "skip_clear_stale") {
+    console.info(
+      `${GOOGLE_TAG} bootstrap skipped — refusing to replace signed-in session`,
+    );
+    void clearPendingNativeGoogleAuth();
+    try {
+      delete window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN;
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
   const idToken = readPendingNativeGoogleIdToken();
   if (!idToken) return false;
 
