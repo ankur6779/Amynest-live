@@ -107,16 +107,75 @@ export function useReferrals() {
 export const PENDING_REFERRAL_KEY = "amynest_pending_referral_code";
 export const PENDING_GIFT_KEY = "amynest_pending_gift_code";
 
-export function capturePendingReferralCode(): string | null {
+/** Pending deep-link codes bound to the uid that captured them (null = signed-out). */
+type PendingAttribution = { code: string; capturedForUid: string | null };
+
+function parsePendingAttribution(raw: string | null): PendingAttribution | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  // Legacy plain-string storage — treat as unsigned capture.
+  if (trimmed[0] !== "{") {
+    return { code: trimmed, capturedForUid: null };
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as { code?: unknown; capturedForUid?: unknown };
+    const code = typeof parsed.code === "string" ? parsed.code.trim() : "";
+    if (!code) return null;
+    const capturedForUid =
+      typeof parsed.capturedForUid === "string" && parsed.capturedForUid.length > 0
+        ? parsed.capturedForUid
+        : null;
+    return { code, capturedForUid };
+  } catch {
+    return null;
+  }
+}
+
+function writePendingAttribution(key: string, code: string, capturedForUid: string | null): void {
+  window.localStorage.setItem(
+    key,
+    JSON.stringify({ code, capturedForUid } satisfies PendingAttribution),
+  );
+}
+
+/**
+ * Auto-apply a pending gift/referral only when it cannot steal across accounts:
+ * - captured while signed in as this uid, or
+ * - unsigned capture and the deep-link query is still on this page load.
+ * Otherwise clear stale/wrong-user pending and return null.
+ */
+export function readPendingAttributionForUser(
+  key: string,
+  userId: string,
+  urlParam: "gift" | "ref",
+): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const pending = parsePendingAttribution(window.localStorage.getItem(key));
+    if (!pending) return null;
+    if (pending.capturedForUid === userId) return pending.code;
+    const urlHasCode = new URLSearchParams(window.location.search).get(urlParam)?.trim();
+    if (!pending.capturedForUid && urlHasCode) {
+      return pending.code;
+    }
+    window.localStorage.removeItem(key);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function capturePendingReferralCode(userId?: string | null): string | null {
   try {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref")?.trim();
     if (ref) {
-      window.localStorage.setItem(PENDING_REFERRAL_KEY, ref);
+      writePendingAttribution(PENDING_REFERRAL_KEY, ref, userId ?? null);
       return ref;
     }
-    return window.localStorage.getItem(PENDING_REFERRAL_KEY);
+    return parsePendingAttribution(window.localStorage.getItem(PENDING_REFERRAL_KEY))?.code ?? null;
   } catch {
     return null;
   }
@@ -134,22 +193,26 @@ export function clearPendingReferralCode(): void {
 export function readPendingReferralCode(): string | null {
   try {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(PENDING_REFERRAL_KEY);
+    return parsePendingAttribution(window.localStorage.getItem(PENDING_REFERRAL_KEY))?.code ?? null;
   } catch {
     return null;
   }
 }
 
-export function capturePendingGiftCode(): string | null {
+export function readPendingReferralCodeForUser(userId: string): string | null {
+  return readPendingAttributionForUser(PENDING_REFERRAL_KEY, userId, "ref");
+}
+
+export function capturePendingGiftCode(userId?: string | null): string | null {
   try {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const gift = params.get("gift")?.trim();
     if (gift) {
-      window.localStorage.setItem(PENDING_GIFT_KEY, gift.toUpperCase());
-      return gift;
+      writePendingAttribution(PENDING_GIFT_KEY, gift.toUpperCase(), userId ?? null);
+      return gift.toUpperCase();
     }
-    return window.localStorage.getItem(PENDING_GIFT_KEY);
+    return parsePendingAttribution(window.localStorage.getItem(PENDING_GIFT_KEY))?.code ?? null;
   } catch {
     return null;
   }
@@ -167,8 +230,12 @@ export function clearPendingGiftCode(): void {
 export function readPendingGiftCode(): string | null {
   try {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(PENDING_GIFT_KEY);
+    return parsePendingAttribution(window.localStorage.getItem(PENDING_GIFT_KEY))?.code ?? null;
   } catch {
     return null;
   }
+}
+
+export function readPendingGiftCodeForUser(userId: string): string | null {
+  return readPendingAttributionForUser(PENDING_GIFT_KEY, userId, "gift");
 }
