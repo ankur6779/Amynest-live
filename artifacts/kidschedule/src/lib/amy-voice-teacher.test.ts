@@ -46,7 +46,7 @@ describe("amy-voice-teacher", () => {
     expect(out[1]).toBe("Add twelve apples.");
   });
 
-  it("adds recovery support when struggling without extra layers", () => {
+  it("adds recovery support when struggling without extra layers", async () => {
     resetTeacherPhraseRotation();
     const out = applyTeacherDelivery({
       phrases: ["Add twelve apples.", "Then subtract four."],
@@ -59,6 +59,8 @@ describe("amy-voice-teacher", () => {
     expect(out[0]).toMatch(/that's okay|you're getting closer|let's try it together/i);
     expect(out[0]).toMatch(/add twelve apples/i);
     expect(out[1]).toBe("Then subtract four.");
+    // Flush the fire-and-forget analytics import while jsdom is still alive.
+    await import("./amy-voice-analytics");
   });
 
   it("uses effort-aware praise after improvement", () => {

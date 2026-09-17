@@ -199,9 +199,14 @@ function applyRecoverySupport(phrases: string[], difficulty: AmyDifficultyLevel)
   if (hasTeacherLayer(phrases[0]!)) return phrases;
 
   const recovery = pickTeacherPhrase(RECOVERY_FRAMES, "recovery");
-  void import("@/lib/amy-voice-analytics").then((m) =>
-    m.recordAmyVoiceRecoveryUsage("struggling_support"),
-  );
+  void import("@/lib/amy-voice-analytics")
+    .then((m) => {
+      m.recordAmyVoiceRecoveryUsage("struggling_support");
+    })
+    .catch(() => {
+      // Best-effort analytics. Ignore load failures, including Vitest
+      // tearing down jsdom before this chunk finishes evaluating.
+    });
   return applyLayer(phrases, 0, recovery, "recovery");
 }
 
