@@ -1,3 +1,4 @@
+import { parseBytesRange, sliceFullAudioResponse } from "./audio-range.js";
 import assert from "node:assert/strict";
 
 const STATIC_AUDIO_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
@@ -101,5 +102,26 @@ assert.equal(
   ),
   false,
 );
+
+const range = parseBytesRange("bytes=0-1023", 316800);
+assert.deepEqual(range, { start: 0, end: 1023 });
+assert.deepEqual(parseBytesRange("bytes=0-", 100), { start: 0, end: 99 });
+
+const full = new Response(new Uint8Array(1000).fill(7), {
+  status: 200,
+  headers: {
+    "Content-Type": "audio/mpeg",
+    "x-amynest-static-source": "asset",
+    "Cache-Control": "public, max-age=31536000",
+  },
+});
+const sliced = await sliceFullAudioResponse(full, "bytes=0-9");
+assert.equal(sliced.status, 206);
+assert.equal(sliced.headers.get("Content-Range"), "bytes 0-9/1000");
+assert.equal(sliced.headers.get("Accept-Ranges"), "bytes");
+assert.equal(sliced.headers.get("Content-Length"), "10");
+assert.match(sliced.headers.get("Cache-Control") ?? "", /no-store/);
+const slicedBytes = new Uint8Array(await sliced.arrayBuffer());
+assert.equal(slicedBytes.byteLength, 10);
 
 console.log("worker.test.mjs OK");

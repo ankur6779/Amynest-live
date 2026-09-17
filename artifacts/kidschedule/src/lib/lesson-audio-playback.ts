@@ -16,7 +16,7 @@ import type { AudioIdentity } from "@/lib/lesson-audio-identity";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 import {
   lookupStaticAudioUrlStrict,
-  prepareRemotePlaybackAudio,
+  fetchStaticAudioObjectUrl,
   isStaticAudioMapReady,
   ensureStaticAudioMapLoaded,
   getLoadedStaticAudioCatalog,
@@ -58,9 +58,8 @@ function startWarm(identity: AudioIdentity): Promise<string | null> {
   if (!proxyUrl) return Promise.resolve(null);
 
   const abs = resolveApiMediaUrl(proxyUrl);
-  const promise = prepareRemotePlaybackAudio(abs)
-    .then((el) => {
-      const src = el?.src?.trim() || null;
+  const promise = fetchStaticAudioObjectUrl(abs)
+    .then((src) => {
       if (src) readyBlobByHash.set(key, src);
       return src;
     })
@@ -130,9 +129,10 @@ export function primeLessonParagraphInUserGesture(identity: AudioIdentity): stri
   }
   const proxyUrl = lookupStaticAudioUrlStrict(identity.text, "default");
   if (!proxyUrl) return null;
-  // Stick to one concrete URL for the whole gesture→play handoff. Switching to a
-  // blob URL after warm completes would miss takeGesturePrimedElement(httpsUrl).
-  const playUrl = resolveApiMediaUrl(proxyUrl);
+  // Prefer the warmed blob so HTMLAudioElement never sends HTTP Range against
+  // www.amynest.in (CF CDN serves Range as a cached 200, which WebView cannot decode).
+  // Fall back to the proxy URL only when the blob is not ready yet.
+  const playUrl = resolvePlayUrl(identity, proxyUrl);
   primedUrlByHash.set(lessonWarmKey(identity), playUrl);
   audioManager.unlockFromUserGesture();
   audioManager.primeSpeechUrlInUserGesture(playUrl, { keepPlaying: true, volume: 1 });

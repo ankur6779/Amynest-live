@@ -77,6 +77,10 @@ describe("amy-voice-audio-start", () => {
     const audio = {
       currentTime: 0,
       ended: false,
+      paused: true,
+      readyState: 0,
+      muted: false,
+      volume: 1,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     } as unknown as HTMLAudioElement;
@@ -85,5 +89,34 @@ describe("amy-voice-audio-start", () => {
     const asserted = expect(promise).rejects.toThrow(/audio_loading_stuck/);
     await vi.advanceTimersByTimeAsync(1001);
     await asserted;
+  });
+
+  it("waitForLoadingProgress resolves when play() succeeded but currentTime is still 0", async () => {
+    const audio = {
+      currentTime: 0,
+      ended: false,
+      paused: false,
+      readyState: 3,
+      muted: false,
+      volume: 1,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as HTMLAudioElement;
+
+    await expect(waitForLoadingProgress(audio, 1000)).resolves.toBeUndefined();
+  });
+
+  it("waitForAudibleStart resolves when readyState>=2 and not paused", async () => {
+    const audio = {
+      paused: false,
+      currentTime: 0,
+      readyState: 2,
+      muted: false,
+      volume: 1,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as HTMLAudioElement;
+
+    await expect(waitForAudibleStart(audio, 800)).resolves.toBe(true);
   });
 });

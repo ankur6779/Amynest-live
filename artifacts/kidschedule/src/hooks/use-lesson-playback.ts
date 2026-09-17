@@ -10,11 +10,12 @@ import {
   logLessonAudioIdentity,
   type AudioIdentity,
 } from "@/lib/lesson-audio-identity";
-import { playLessonParagraphStatic } from "@/lib/lesson-audio-playback";
+import {
+  playLessonParagraphStatic,
+  primeLessonParagraphInUserGesture,
+} from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { audioManager } from "@/lib/audio-manager";
-import { lookupStaticAudioUrlStrict } from "@/lib/static-audio";
-import { resolveApiMediaUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import {
   logAudioPipeline,
@@ -311,10 +312,7 @@ export function useLessonPlayback({
       idx,
     );
     if (identity) {
-      const staticUrl = lookupStaticAudioUrlStrict(identity.text, "default");
-      if (staticUrl) {
-        audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(staticUrl));
-      }
+      primeLessonParagraphInUserGesture(identity);
       prefetchLessonParagraph(identity, authFetch, voiceId, modelId);
     }
     speakParagraphAtRef.current(idx);

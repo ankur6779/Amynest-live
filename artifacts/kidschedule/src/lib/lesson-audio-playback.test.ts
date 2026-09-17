@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const playPreparedUrlMock = vi.fn();
-const prepareRemoteMock = vi.fn();
+const fetchBlobUrlMock = vi.fn();
 const primeSpeechMock = vi.fn();
 const unlockMock = vi.fn();
 
@@ -26,7 +26,7 @@ vi.mock("@/lib/static-audio", () => ({
   isStaticAudioMapReady: () => true,
   ensureStaticAudioMapLoaded: vi.fn(() => Promise.resolve()),
   getLoadedStaticAudioCatalog: vi.fn(() => ({})),
-  prepareRemotePlaybackAudio: (...args: unknown[]) => prepareRemoteMock(...args),
+  fetchStaticAudioObjectUrl: (...args: unknown[]) => fetchBlobUrlMock(...args),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -47,10 +47,9 @@ vi.mock("@/lib/debug-audio-pipeline", () => ({
 describe("playLessonParagraphStatic", () => {
   beforeEach(async () => {
     playPreparedUrlMock.mockReset();
-    prepareRemoteMock.mockReset();
+    fetchBlobUrlMock.mockReset();
     playPreparedUrlMock.mockResolvedValue({ success: true, layer: "static" });
-    // Default: prepare fails so play falls through to direct HTTPS stream.
-    prepareRemoteMock.mockRejectedValue(new Error("prepare skipped"));
+    fetchBlobUrlMock.mockResolvedValue(null);
     const { __resetLessonAudioWarmCacheForTests } = await import("@/lib/lesson-audio-playback");
     __resetLessonAudioWarmCacheForTests();
   });
@@ -97,7 +96,7 @@ describe("playLessonParagraphStatic", () => {
   });
 
   it("uses warmed blob URL when available", async () => {
-    prepareRemoteMock.mockResolvedValue({ src: "blob:lesson-warm" });
+    fetchBlobUrlMock.mockResolvedValue("blob:lesson-warm");
     const mod = await import("@/lib/lesson-audio-playback");
     const identity = {
       lessonId: "lesson-1",
@@ -116,10 +115,10 @@ describe("playLessonParagraphStatic", () => {
     );
   });
 
-  it("primeLessonParagraphInUserGesture starts keepPlaying on the proxy URL (not blob)", async () => {
+  it("primeLessonParagraphInUserGesture prefers warmed blob over HTTPS proxy", async () => {
     primeSpeechMock.mockReset();
     unlockMock.mockReset();
-    prepareRemoteMock.mockResolvedValue({ src: "blob:should-not-use" });
+    fetchBlobUrlMock.mockResolvedValue("blob:lesson-warm");
     const mod = await import("@/lib/lesson-audio-playback");
     const identity = {
       lessonId: "lesson-1",
@@ -131,19 +130,33 @@ describe("playLessonParagraphStatic", () => {
     await mod.ensureLessonParagraphWarmed(identity, 1000);
     const url = mod.primeLessonParagraphInUserGesture(identity);
 
-    // Must stay on https proxy so takeGesturePrimedElement matches after await.
-    expect(url).toBe("https://api.test/api/static-audio/mockhash.mp3");
+    expect(url).toBe("blob:lesson-warm");
     expect(unlockMock).toHaveBeenCalled();
     expect(primeSpeechMock).toHaveBeenCalledWith(
-      "https://api.test/api/static-audio/mockhash.mp3",
+      "blob:lesson-warm",
       expect.objectContaining({ keepPlaying: true, volume: 1 }),
     );
 
     const res = await mod.playLessonParagraphStatic(identity);
     expect(res.success).toBe(true);
     expect(playPreparedUrlMock).toHaveBeenCalledWith(
-      "https://api.test/api/static-audio/mockhash.mp3",
+      "blob:lesson-warm",
       expect.objectContaining({ source: "lesson" }),
+    );
+  });
+
+  it("does not call live TTS when a static catalog URL exists", async () => {
+    const { playLessonParagraphStatic } = await import("@/lib/lesson-audio-playback");
+    const res = await playLessonParagraphStatic({
+      lessonId: "toddler-tantrums-101",
+      paragraphIdx: 0,
+      text: "A tantrum is not bad behaviour.",
+      hash: "abc",
+    });
+    expect(res.success).toBe(true);
+    expect(playPreparedUrlMock).toHaveBeenCalledTimes(1);
+    expect(playPreparedUrlMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ source: "lesson", srcType: "static" }),
     );
   });
 });

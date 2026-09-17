@@ -46,6 +46,7 @@ vi.mock("@/hooks/use-amy-voice", () => ({
 
 vi.mock("@/lib/lesson-audio-playback", () => ({
   playLessonParagraphStatic: (...args: unknown[]) => playLessonStaticMock(...args),
+  primeLessonParagraphInUserGesture: vi.fn(() => null),
 }));
 
 describe("TTS system validation", () => {

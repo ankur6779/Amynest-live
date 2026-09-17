@@ -15,6 +15,7 @@ import {
   logAudibleStartGate,
   type AudibleStartTimestamps,
 } from "@/lib/audible-start-diagnostic";
+import { isHtmlAudioAudiblyStarted } from "@/lib/amy-voice-audible";
 
 export {
   getAudibleStartTimeoutMs,
@@ -145,10 +146,10 @@ export function waitForAudibleStart(
     return Promise.resolve(true);
   }
 
-  if (!audio.paused && audio.currentTime > 0) {
+  if (isHtmlAudioAudiblyStarted(audio) || (!audio.paused && audio.currentTime > 0)) {
     logAudibleStartGate("waitForAudibleStart", "exit", audio, {
       timestamps,
-      fastPath: "already_playing_currentTime_gt_0",
+      fastPath: "already_audible_or_currentTime_gt_0",
     });
     return Promise.resolve(true);
   }
@@ -158,13 +159,22 @@ export function waitForAudibleStart(
   logAudibleStartGate("waitForAudibleStart", "enter", audio, {
     timestamps,
     timeoutMs,
-    waitsFor: "playing_event OR (!paused && currentTime>0)",
-    note: "readyState=4 alone is NOT sufficient",
+    waitsFor: "playing_event OR isHtmlAudioAudiblyStarted (readyState>=2 && !paused)",
   });
 
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       cleanup();
+      if (isHtmlAudioAudiblyStarted(audio)) {
+        const checkEnd = performance.now();
+        if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
+        logAudibleStartGate("waitForAudibleStart", "exit", audio, {
+          timestamps,
+          via: "timeout_but_audible",
+        });
+        resolve(true);
+        return;
+      }
       const checkEnd = performance.now();
       if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
       logAudibleStartGate("waitForAudibleStart", "fail", audio, {
@@ -198,8 +208,22 @@ export function waitForAudibleStart(
       reject(new Error("audio_error"));
     }
 
+    const pollId = window.setInterval(() => {
+      if (isHtmlAudioAudiblyStarted(audio)) {
+        cleanup();
+        const checkEnd = performance.now();
+        if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
+        logAudibleStartGate("waitForAudibleStart", "exit", audio, {
+          timestamps,
+          via: "poll_audible",
+        });
+        resolve(true);
+      }
+    }, 80);
+
     function cleanup() {
       window.clearTimeout(timeout);
+      window.clearInterval(pollId);
       audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("error", onError);
     }
@@ -222,10 +246,10 @@ export function waitForLoadingProgress(
     });
     return Promise.resolve();
   }
-  if (audio.currentTime > 0 || audio.ended) {
+  if (audio.currentTime > 0 || audio.ended || isHtmlAudioAudiblyStarted(audio)) {
     logAudibleStartGate("waitForLoadingProgress", "exit", audio, {
       timestamps,
-      fastPath: "currentTime_gt_0_or_ended",
+      fastPath: "currentTime_gt_0_or_ended_or_audible",
     });
     return Promise.resolve();
   }
@@ -235,7 +259,7 @@ export function waitForLoadingProgress(
   logAudibleStartGate("waitForLoadingProgress", "enter", audio, {
     timestamps,
     timeoutMs,
-    requires: "currentTime > 0 within timeout",
+    requires: "currentTime > 0 OR ended OR isHtmlAudioAudiblyStarted",
   });
 
   return new Promise((resolve, reject) => {
@@ -243,6 +267,11 @@ export function waitForLoadingProgress(
       cleanup();
       const progressEnd = performance.now();
       if (timestamps) timestamps.loadingProgressEndAt = progressEnd;
+      if (isHtmlAudioAudiblyStarted(audio) || audio.ended || audio.currentTime > 0) {
+        logAudibleStartGate("waitForLoadingProgress", "exit", audio, { timestamps });
+        resolve();
+        return;
+      }
       if (audio.currentTime === 0 && !audio.ended) {
         logAudibleStartGate("waitForLoadingProgress", "fail", audio, {
           timestamps,
@@ -257,7 +286,7 @@ export function waitForLoadingProgress(
     }, timeoutMs);
 
     const onProgress = () => {
-      if (audio.currentTime > 0 || audio.ended) {
+      if (audio.currentTime > 0 || audio.ended || isHtmlAudioAudiblyStarted(audio)) {
         cleanup();
         resolve();
       }
