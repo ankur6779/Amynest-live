@@ -149,4 +149,23 @@ describe("AudioPlayButton", () => {
       ),
     );
   });
+
+  it("does not call speak() for empty text", async () => {
+    const user = userEvent.setup();
+    render(<AudioPlayButton text="   " ariaLabel="Play Amy's response" />);
+    await user.click(screen.getByRole("button", { name: "Play Amy's response" }));
+    await waitFor(() => expect(speakMock).not.toHaveBeenCalled());
+  });
+
+  it("toasts when speak() returns invalid_audio_url", async () => {
+    speakMock.mockResolvedValue({ success: false, error: "invalid_audio_url" });
+    const user = userEvent.setup();
+    render(<AudioPlayButton text="hello" ariaLabel="Play Amy's response" />);
+    await user.click(screen.getByRole("button", { name: "Play Amy's response" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Play Amy's response" }).className).toMatch(
+        /ring-amber/,
+      ),
+    );
+  });
 });

@@ -3764,6 +3764,23 @@ export function ListenButton({
   const [isListening, setIsListening] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const playbackGenRef = useRef(0);
+  const winKey = `${planCacheKey ?? ""}:${win.win}:${win.title}`;
+  const prevWinKeyRef = useRef(winKey);
+  useEffect(() => {
+    return () => {
+      playbackGenRef.current += 1;
+      pause();
+    };
+  }, [pause]);
+  useEffect(() => {
+    if (prevWinKeyRef.current === winKey) return;
+    prevWinKeyRef.current = winKey;
+    playbackGenRef.current += 1;
+    setIsListening(false);
+    setHasCompleted(false);
+    setLocalError(null);
+  }, [winKey]);
   const audioIdentity = useMemo(() => {
     const key = (planCacheKey ?? "").trim();
     if (!key) return null;
@@ -3782,6 +3799,7 @@ export function ListenButton({
     event.preventDefault();
     event.stopPropagation();
     if (isListening || loading || speaking) {
+      playbackGenRef.current += 1;
       pause();
       setIsListening(false);
       return;
@@ -3799,25 +3817,32 @@ export function ListenButton({
     setLocalError(null);
     setHasCompleted(false);
     setIsListening(true);
+    const gen = ++playbackGenRef.current;
+    const guardedFinished = () => {
+      if (gen !== playbackGenRef.current) return;
+      onFinished();
+    };
     const opts = audioIdentity
       ? {
           coach: true as const,
           audioIdentity,
           playbackMode: "partial-ok" as const,
-          onFinished,
+          onFinished: guardedFinished,
         }
       : {
           playbackMode: "partial-ok" as const,
-          onFinished,
+          onFinished: guardedFinished,
         };
     void speak(text, opts)
       .then((res) => {
+        if (gen !== playbackGenRef.current) return;
         if (!res?.success) {
           setIsListening(false);
           setLocalError(res?.error ?? "playback_failed");
         }
       })
       .catch((err: unknown) => {
+        if (gen !== playbackGenRef.current) return;
         setIsListening(false);
         const message = err instanceof Error ? err.message : "playback_failed";
         console.error("[ListenButton] Amy Audio playback failed", err);

@@ -56,12 +56,12 @@ const sampleWin: Win = {
 };
 
 beforeEach(() => {
+  cleanup();
   speakMock.mockReset();
   speakMock.mockResolvedValue({ success: true });
   pauseMock.mockReset();
   mockState = { speaking: false, loading: false, error: null };
   capturedOnFinished = undefined;
-  cleanup();
 });
 
 describe("ListenButton (Coach)", () => {
@@ -180,5 +180,99 @@ describe("ListenButton (Coach)", () => {
     await user.click(screen.getByTestId("coach-listen-btn"));
     expect(speakMock).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Stop");
+  });
+
+  it("surfaces empty and invalid audio as Retry", async () => {
+    const user = userEvent.setup();
+    speakMock.mockResolvedValueOnce({ success: false, error: "tts_empty_text" });
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(await screen.findByText("Retry")).toBeInTheDocument();
+
+    cleanup();
+    speakMock.mockResolvedValueOnce({ success: false, error: "invalid_audio_url" });
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(await screen.findByText("Retry")).toBeInTheDocument();
+  });
+
+  it("stop during loading cancels instead of leaving a stuck Stop", async () => {
+    mockState.loading = true;
+    const user = userEvent.setup();
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    const btn = screen.getByTestId("coach-listen-btn");
+    expect(btn).toHaveAttribute("data-audio-state", "loading");
+    await user.click(btn);
+    expect(pauseMock).toHaveBeenCalled();
+    expect(btn).not.toHaveAttribute("data-audio-state", "playing");
+  });
+
+  it("ignores a stale TTS failure after Stop", async () => {
+    let finishSpeak!: (value: { success: boolean; error?: string }) => void;
+    speakMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSpeak = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Stop");
+
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(pauseMock).toHaveBeenCalled();
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Listen");
+
+    await act(async () => {
+      finishSpeak({ success: false, error: "tts_timeout" });
+    });
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Listen");
+    expect(screen.getByTestId("coach-listen-btn")).toHaveAttribute("data-audio-state", "idle");
+  });
+
+  it("ignores onFinished from a cancelled request after switching wins", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    const staleFinished = capturedOnFinished;
+
+    rerender(
+      <ListenButton
+        win={{ ...sampleWin, win: 2, title: "Different win" }}
+        planCacheKey="plan-test-key"
+      />,
+    );
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Listen");
+
+    await act(async () => {
+      staleFinished?.();
+    });
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Listen");
+    expect(screen.getByTestId("coach-listen-btn")).not.toHaveAttribute(
+      "data-audio-state",
+      "completed",
+    );
+  });
+
+  it("pauses on unmount so navigation does not leave audio running", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    unmount();
+    expect(pauseMock).toHaveBeenCalled();
+  });
+
+  it("starts a new speak when a second Amy response is tapped after stop", async () => {
+    const user = userEvent.setup();
+    const secondWin = { ...sampleWin, win: 2, title: "Name the feeling first" };
+    const { rerender } = render(<ListenButton win={sampleWin} planCacheKey="plan-a" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    rerender(<ListenButton win={secondWin} planCacheKey="plan-a" />);
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(speakMock).toHaveBeenCalledTimes(2);
+    const [spoken] = speakMock.mock.calls[1] as [string];
+    expect(spoken).toContain("Name the feeling first");
   });
 });
