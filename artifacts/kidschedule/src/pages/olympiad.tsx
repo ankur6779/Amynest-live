@@ -30,6 +30,7 @@ export default function OlympiadPage() {
     >
       {({ child }) => (
         <OlympiadZone
+          key={child.id}
           child={{
             id: child.id,
             name: child.name,
