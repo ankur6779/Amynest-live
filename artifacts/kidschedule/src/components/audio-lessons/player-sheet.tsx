@@ -21,6 +21,7 @@ import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 import { ensureStaticAudioMapLoaded } from "@/lib/static-audio";
+import { AUDIO_LESSON_PLAYER_LAYOUT as L } from "@/components/audio-lessons/audio-lesson-player-layout";
 import { AudioDiagnosticsPanel } from "@/components/audio-lessons/audio-diagnostics-panel";
 
 import { AMY_TTS_MODEL_ID, AMY_TTS_VOICE_ID } from "@workspace/static-audio/browser";
@@ -152,12 +153,13 @@ export function PlayerSheet({
         style={{
           width: "100%",
           maxWidth: 560,
+          minHeight: `${L.sheetMinVh}vh`,
           background: living
             ? undefined
             : "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          padding: "16px 20px calc(12px + var(--app-bottom-clearance, 48px))",
+          padding: "20px 20px calc(16px + var(--app-bottom-clearance, 48px))",
           color: "#fff",
           boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
           maxHeight: "92vh",
@@ -173,19 +175,20 @@ export function PlayerSheet({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 28 }}>{lesson.emoji}</div>
+            <div style={{ fontSize: 32, lineHeight: 1 }}>{lesson.emoji}</div>
             <div>
               <h3
                 style={{
                   margin: 0,
-                  fontSize: 16,
+                  fontSize: L.titleFontPx,
                   fontWeight: 800,
                   fontFamily: "Quicksand, sans-serif",
+                  lineHeight: 1.25,
                 }}
               >
                 {text.title}
               </h3>
-              <div style={{ fontSize: 11, color: "#a99fd9" }}>
+              <div style={{ fontSize: L.subtitleFontPx, color: "#a99fd9", marginTop: 4 }}>
                 {series && seriesPart >= 0
                   ? t("pages.audio_lessons.series_part", {
                       series: series.title.en,
@@ -211,8 +214,8 @@ export function PlayerSheet({
               color: "hsl(var(--brand-violet-300))",
               background: "rgba(167,139,250,0.15)",
               borderRadius: 999,
-              width: 34,
-              height: 34,
+              width: L.closeButtonPx,
+              height: L.closeButtonPx,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -223,7 +226,7 @@ export function PlayerSheet({
               zIndex: 2,
             }}
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
@@ -255,14 +258,14 @@ export function PlayerSheet({
           playbackError={playbackError}
         />
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
           {paragraphs.map((_, i) => (
             <div
               key={i}
               style={{
                 flex: 1,
-                height: 3,
-                borderRadius: 2,
+                height: L.progressPx,
+                borderRadius: 3,
                 background: i <= paragraphIdx ? "hsl(var(--brand-violet-500))" : "rgba(139,92,246,0.2)",
                 transition: "background 0.3s",
               }}
@@ -272,61 +275,11 @@ export function PlayerSheet({
 
         <div
           style={{
-            background: "rgba(139,92,246,0.10)",
-            border: "1px solid rgba(139,92,246,0.3)",
-            borderRadius: 14,
-            padding: 14,
-            marginBottom: 14,
-            fontSize: 15,
-            lineHeight: 1.6,
-            color: "#fff",
-          }}
-        >
-          {paragraphs[paragraphIdx]}
-        </div>
-
-        <details style={{ marginBottom: 14, color: "#c7c0e8" }}>
-          <summary
-            style={{
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "hsl(var(--brand-violet-300))",
-            }}
-          >
-            Show full transcript
-          </summary>
-          <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-            {paragraphs.map((p, i) => (
-              <button
-                key={i}
-                onClick={() => jumpToParagraph(i)}
-                style={{
-                  textAlign: "left",
-                  color: i === paragraphIdx ? "#fff" : "#c7c0e8",
-                  background: "transparent",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  fontSize: 13,
-                  lineHeight: 1.55,
-                  opacity: i === paragraphIdx ? 1 : 0.85,
-                }}
-              >
-                <strong style={{ color: "#a99fd9", marginRight: 6 }}>{i + 1}.</strong>
-                {p}
-              </button>
-            ))}
-          </div>
-        </details>
-
-        <div
-          style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 12,
-            marginBottom: 12,
+            gap: 16,
+            marginBottom: 16,
           }}
         >
           <button
@@ -339,8 +292,8 @@ export function PlayerSheet({
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(139,92,246,0.3)",
               borderRadius: 999,
-              width: 44,
-              height: 44,
+              width: L.skipButtonPx,
+              height: L.skipButtonPx,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -348,7 +301,7 @@ export function PlayerSheet({
               opacity: paragraphIdx === 0 ? 0.4 : 1,
             }}
           >
-            <SkipBack size={18} />
+            <SkipBack size={22} />
           </button>
 
           <button
@@ -360,16 +313,12 @@ export function PlayerSheet({
               recordTtsUserGesture();
               primeSpeakGesture(txt);
               const identity = createAudioIdentity(lesson.id, paragraphIdx, txt);
-              // Sync: start HTMLAudioElement.play() while the gesture is valid.
-              // playLessonParagraphStatic later reuses this same element.
               const primedUrl = primeLessonParagraphInUserGesture(identity);
               if (!primedUrl) {
                 primeStaticAudioInUserGesture(txt, "default");
               }
               warmLessonParagraphStatic(identity);
               prefetchLessonParagraph(identity, authFetch, VOICE_AMY_EN, MODEL_EN);
-              // Android WebView: start play inside pointerdown so audio.play()
-              // keeps the user-gesture token (click is often too late after await).
               if (
                 !playing &&
                 (isAndroidAmyNestAudioClient() || isMobileStaticAudioDevice())
@@ -398,21 +347,21 @@ export function PlayerSheet({
               background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               border: "none",
               borderRadius: 999,
-              width: 64,
-              height: 64,
+              width: L.playButtonPx,
+              height: L.playButtonPx,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 8px 24px rgba(139,92,246,0.5)",
+              boxShadow: "0 10px 28px rgba(139,92,246,0.55)",
             }}
           >
             {!playing ? (
-              <Play size={26} style={{ marginLeft: 3 }} />
+              <Play size={36} style={{ marginLeft: 4 }} />
             ) : loading && !speaking ? (
-              <Loader2 size={24} className="animate-spin" />
+              <Loader2 size={32} className="animate-spin" />
             ) : (
-              <Pause size={26} />
+              <Pause size={36} />
             )}
           </button>
 
@@ -428,8 +377,8 @@ export function PlayerSheet({
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(139,92,246,0.3)",
               borderRadius: 999,
-              width: 44,
-              height: 44,
+              width: L.skipButtonPx,
+              height: L.skipButtonPx,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -437,21 +386,32 @@ export function PlayerSheet({
               opacity: paragraphIdx === paragraphs.length - 1 ? 0.4 : 1,
             }}
           >
-            <SkipForward size={18} />
+            <SkipForward size={22} />
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Gauge size={14} color="#a99fd9" />
-          <span style={{ fontSize: 12, color: "#a99fd9", marginRight: 6 }}>Speed</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          <Gauge size={16} color="#a99fd9" />
+          <span style={{ fontSize: 13, color: "#a99fd9", marginRight: 4 }}>Speed</span>
           {[0.85, 1, 1.15, 1.3, 1.5].map((r) => (
             <button
               key={r}
               onClick={() => setRate(r)}
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 700,
-                padding: "5px 10px",
+                minHeight: L.speedHitMinPx,
+                minWidth: L.speedHitMinPx,
+                padding: "8px 12px",
                 borderRadius: 999,
                 border: "1px solid " + (rate === r ? "transparent" : "rgba(139,92,246,0.3)"),
                 background:
@@ -466,6 +426,60 @@ export function PlayerSheet({
             </button>
           ))}
         </div>
+
+        <div
+          style={{
+            background: "rgba(139,92,246,0.10)",
+            border: "1px solid rgba(139,92,246,0.3)",
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 14,
+            fontSize: 16,
+            lineHeight: 1.6,
+            color: "#fff",
+          }}
+        >
+          {paragraphs[paragraphIdx]}
+        </div>
+
+        <details style={{ marginBottom: 8, color: "#c7c0e8" }}>
+          <summary
+            style={{
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+              color: "hsl(var(--brand-violet-300))",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            Show full transcript
+          </summary>
+          <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+            {paragraphs.map((p, i) => (
+              <button
+                key={i}
+                onClick={() => jumpToParagraph(i)}
+                style={{
+                  textAlign: "left",
+                  color: i === paragraphIdx ? "#fff" : "#c7c0e8",
+                  background: "transparent",
+                  border: "none",
+                  padding: "8px 0",
+                  minHeight: 44,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  opacity: i === paragraphIdx ? 1 : 0.85,
+                }}
+              >
+                <strong style={{ color: "#a99fd9", marginRight: 6 }}>{i + 1}.</strong>
+                {p}
+              </button>
+            ))}
+          </div>
+        </details>
       </div>
     </div>
   );

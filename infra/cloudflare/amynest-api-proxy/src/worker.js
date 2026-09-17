@@ -19,6 +19,7 @@ import {
   REELS_STREAM_RE,
 } from "./reels-gcs-origin.js";
 import { selectBackend } from "./canary.js";
+import { sliceFullAudioResponse, withAcceptRanges } from "./audio-range.js";
 
 const DEFAULT_BACKEND =
   "https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io";
@@ -286,7 +287,7 @@ async function proxyToBackend(request, env, url) {
  * @param {"HIT" | "MISS"} edgeLabel
  */
 function withEdgeCacheHeaders(cached, url, edgeLabel, request) {
-  const headers = new Headers(cached.headers);
+  const headers = withAcceptRanges(cached.headers);
   headers.set("X-AmyNest-Edge-Cache", edgeLabel);
   const corsOrigin = resolveAccessControlOrigin(request, url);
   headers.set("Access-Control-Allow-Origin", corsOrigin);
@@ -300,13 +301,64 @@ function withEdgeCacheHeaders(cached, url, edgeLabel, request) {
 
 /**
  * Edge cache — repeat requests for the same clip/video should not hit Render.
- * Range requests are always proxied (video players); full GET responses are stored.
+ * Audio Range is sliced to 206 from the cached full GET (CF CDN ignores Range
+ * cache keys and would otherwise replay a 200 full body).
  * @param {Request} request @param {Record<string, string>} env @param {ExecutionContext} ctx @param {URL} url
  */
+async function fetchFullAudioForRange(request, env, ctx, url, cache, cacheKey) {
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    const source = cached.headers.get("x-amynest-static-source") ?? "";
+    const contentLength = Number(cached.headers.get("content-length") || 0);
+    const isPoison =
+      source === "placeholder" || (contentLength > 0 && contentLength <= 512);
+    if (!isPoison) return cached;
+    ctx.waitUntil(cache.delete(cacheKey));
+  }
+
+  const noRangeHeaders = new Headers(request.headers);
+  noRangeHeaders.delete("Range");
+  noRangeHeaders.delete("range");
+  const fullReq = new Request(url.toString(), {
+    method: "GET",
+    headers: noRangeHeaders,
+    redirect: "follow",
+  });
+  const full = await proxyToBackend(fullReq, env, url);
+  const contentType = full.headers.get("content-type") ?? "";
+  if (
+    full.ok &&
+    full.status === 200 &&
+    shouldStoreInEdgeCache(url.pathname, contentType, full.headers)
+  ) {
+    ctx.waitUntil(cache.put(cacheKey, full.clone()));
+  }
+  return full;
+}
+
 async function fetchWithEdgeCache(request, env, ctx, url) {
   const cache = caches.default;
   const cacheKey = mediaCacheRequest(url);
   const hasRange = Boolean(request.headers.get("Range"));
+  const audioPath = isCacheableAudioPath(url.pathname);
+
+  // HTMLAudioElement Range + CF CDN 200 HIT = silent Android decode.
+  // Slice 206 from the full cached GET; never forward Range to origin for MP3s.
+  if (hasRange && audioPath && request.method === "GET") {
+    const full = await fetchFullAudioForRange(request, env, ctx, url, cache, cacheKey);
+    if (!full.ok) {
+      const headers = new Headers(full.headers);
+      headers.set("X-AmyNest-Edge-Cache", "RANGE-SLICE");
+      return new Response(full.body, { status: full.status, headers });
+    }
+    const sliced = await sliceFullAudioResponse(full, request.headers.get("Range"));
+    const headers = withAcceptRanges(sliced.headers);
+    headers.set("X-AmyNest-Edge-Cache", "RANGE-SLICE");
+    const corsOrigin = resolveAccessControlOrigin(request, url);
+    headers.set("Access-Control-Allow-Origin", corsOrigin);
+    headers.set("Access-Control-Allow-Credentials", "true");
+    return new Response(sliced.body, { status: sliced.status, headers });
+  }
 
   if (!hasRange) {
     const cached = await cache.match(cacheKey);
@@ -338,7 +390,7 @@ async function fetchWithEdgeCache(request, env, ctx, url) {
     ctx.waitUntil(cache.put(cacheKey, toStore));
   }
 
-  const headers = new Headers(response.headers);
+  const headers = withAcceptRanges(response.headers);
   headers.set("X-AmyNest-Edge-Cache", hasRange ? "BYPASS-RANGE" : "MISS");
   return new Response(response.body, {
     status: response.status,

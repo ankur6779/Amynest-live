@@ -682,10 +682,13 @@ function createStaticPlaybackElement(proxyUrl: string): HTMLAudioElement | null 
   }
 }
 
-/**
- * Android installed PWA: fetch MP3 into a blob URL first.
- * Avoids cross-origin Range/206 decode bugs on HTMLAudioElement.src.
- */
+/** Fetch catalog MP3 into a blob: URL — no HTTP Range (Android WebView-safe). */
+export async function fetchStaticAudioObjectUrl(proxyUrl: string): Promise<string | null> {
+  const el = await createStaticPlaybackElementFromBlob(proxyUrl);
+  const src = el?.src?.trim() || null;
+  return src?.startsWith("blob:") ? src : null;
+}
+
 async function createStaticPlaybackElementFromBlob(
   proxyUrl: string,
 ): Promise<HTMLAudioElement | null> {
