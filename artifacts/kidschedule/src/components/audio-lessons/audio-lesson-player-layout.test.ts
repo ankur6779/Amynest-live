@@ -7,6 +7,9 @@ describe("AUDIO_LESSON_PLAYER_LAYOUT", () => {
     expect(AUDIO_LESSON_PLAYER_LAYOUT.skipButtonPx).toBeGreaterThanOrEqual(44);
     expect(AUDIO_LESSON_PLAYER_LAYOUT.closeButtonPx).toBeGreaterThanOrEqual(44);
     expect(AUDIO_LESSON_PLAYER_LAYOUT.speedHitMinPx).toBeGreaterThanOrEqual(44);
+    expect(AUDIO_LESSON_PLAYER_LAYOUT.playButtonPx).toBeGreaterThan(
+      AUDIO_LESSON_PLAYER_LAYOUT.skipButtonPx,
+    );
     expect(AUDIO_LESSON_PLAYER_LAYOUT.titleFontPx).toBeGreaterThanOrEqual(18);
     expect(AUDIO_LESSON_PLAYER_LAYOUT.progressPx).toBeGreaterThanOrEqual(4);
   });
