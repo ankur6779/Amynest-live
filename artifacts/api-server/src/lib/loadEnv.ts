@@ -2,10 +2,10 @@
  * Loads repo-root `.env*` files before the rest of the server boots.
  * `AMYNEST_ENV` is the source of truth for DEV vs PROD (not only NODE_ENV).
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { config as dotenvConfig } from "dotenv";
+import { parse as parseDotenv } from "dotenv";
 
 export type AmynestEnv = "development" | "production";
 
@@ -38,9 +38,26 @@ export function resolveAmynestEnv(): AmynestEnv {
   return process.env.NODE_ENV === "production" ? "production" : "development";
 }
 
+/**
+ * Apply dotenv records without wiping secrets already in process.env.
+ * Empty `KEY=` placeholders in `.env.development` must not override Cursor/host secrets.
+ */
+export function applyParsedEnv(
+  parsed: Record<string, string | undefined>,
+  override: boolean,
+): void {
+  for (const [key, raw] of Object.entries(parsed)) {
+    const value = (raw ?? "").trim();
+    if (!value) continue;
+    const existing = process.env[key];
+    if (!override && existing != null && existing.trim() !== "") continue;
+    process.env[key] = value;
+  }
+}
+
 function loadEnvFile(filePath: string, override: boolean): void {
   if (!existsSync(filePath)) return;
-  dotenvConfig({ path: filePath, override, quiet: true });
+  applyParsedEnv(parseDotenv(readFileSync(filePath)), override);
 }
 
 /** Load `.env`, `.env.local`, `.env.{development|production}`, and optional `.local` overrides. */

@@ -213,6 +213,7 @@ import {
   trySpeechSynthesisLayer,
   tryTextVisualLayer,
 } from "@/lib/amy-voice-pipeline-fallback-layers";
+import { isHtmlAudioAudiblyStarted } from "@/lib/amy-voice-audible";
 
 export type { PlaybackMode };
 export type { AmyVoicePipelineContext };
@@ -252,16 +253,7 @@ function validateAudibleElement(audio: HTMLAudioElement): boolean {
   if (isAudioPlaybackRecoveryMode()) {
     return audio.readyState >= 2 || !audio.paused;
   }
-  if (audio.muted) return false;
-  if (audio.volume <= 0) return false;
-  if (audio.currentTime <= 0) return false;
-  if (!audio.paused && audio.currentTime > 0.02) return true;
-  const dur = audio.duration;
-  if (dur === Infinity) {
-    return !audio.paused && audio.currentTime > 0;
-  }
-  if (!Number.isFinite(dur) || dur <= 0) return false;
-  return true;
+  return isHtmlAudioAudiblyStarted(audio);
 }
 
 function stopLoserPlaybacks(
@@ -933,7 +925,7 @@ async function attemptOpenAiPlay(
       { planCacheKey: identity.planCacheKey, identity },
       { signal },
     );
-    if (data?.ok && data.cached && data.audioUrl) {
+    if (data?.ok && data.audioUrl) {
       const playbackUrl = resolveCoachPlaybackUrl(data.audioUrl, data.cacheKey);
       if (!playbackUrl) return { ok: false, error: "tts_invalid_audio_url" };
 

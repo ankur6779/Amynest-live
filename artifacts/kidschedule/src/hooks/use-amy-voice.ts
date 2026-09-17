@@ -10,7 +10,6 @@ import {
   type SpeakOptions,
   type SpeakResult,
 } from "@/lib/amy-voice-controller";
-import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -117,10 +116,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   );
 
   const primeSpeakGesture = useCallback((rawText: string, opts?: SpeakOptions) => {
-    if (!isAndroidAmyNestAudioClient()) return;
+    // Unlock in the pointerdown turn on every platform. Waiting until after
+    // POST /api/tts/stream drops the user gesture and play() is silent.
+    recordTtsUserGesture();
     const text = (rawText ?? "").trim();
     if (!text) return;
-    recordTtsUserGesture();
     primeStaticAudioInUserGesture(text, opts?.mode === "phonics" ? "phonics" : "default");
   }, []);
 

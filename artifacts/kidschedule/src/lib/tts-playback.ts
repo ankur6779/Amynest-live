@@ -130,14 +130,16 @@ export async function generateTts(
     }
 
     resetApiBackoff();
-    const proxyUrl = result.cacheKey
-      ? resolveTtsAudioUrl(`/api/tts/audio/${result.cacheKey}.mp3`)
-      : result.url;
-
+    // Keep the streamed blob. Swapping to /api/tts/audio/:key races async
+    // persist and 404s the live Listen click (empty playback).
+    logTtsClient("stream_blob_ready", {
+      srcType: result.url.startsWith("blob:") ? "blob" : "remote",
+      cacheKeyPresent: Boolean(result.cacheKey),
+    });
     return {
       success: true,
       ok: true,
-      audioUrl: proxyUrl,
+      audioUrl: result.url,
       cacheKey: result.cacheKey,
       cached: result.cached,
     };

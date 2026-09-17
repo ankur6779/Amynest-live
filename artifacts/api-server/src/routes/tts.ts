@@ -584,6 +584,7 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
 
   if (isElevenLabsFallbackEnabled()) {
     try {
+      if (!res.headersSent) res.setHeader("X-TTS-Provider", "elevenlabs");
       const ok = await streamElevenLabsTtsWithCache(
         res,
         { text: phrase, voiceId, modelId, mode, cacheKey },
@@ -634,9 +635,21 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
   const openAiModelId = getOpenAiTtsModel();
   const openAiCacheKey = computeTtsCacheKey(phrase, openAiVoiceId, openAiModelId, mode);
 
-  if (!res.headersSent) res.setHeader("X-TTS-Cache-Key", openAiCacheKey);
+  if (!res.headersSent) {
+    res.setHeader("X-TTS-Cache-Key", openAiCacheKey);
+    res.setHeader("X-TTS-Provider", "openai");
+  }
 
   try {
+    logger.info(
+      {
+        evt: "tts.stream_openai_start",
+        cacheKeyPrefix: openAiCacheKey.slice(0, 12),
+        charCount: phrase.length,
+        mode,
+      },
+      "TTS stream OpenAI fallback",
+    );
     const ok = await streamOpenAiTtsWithCache(
       res,
       {

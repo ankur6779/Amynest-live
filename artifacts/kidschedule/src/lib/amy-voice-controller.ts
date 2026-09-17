@@ -96,9 +96,6 @@ import {
 import { resolveApiMediaUrl } from "@/lib/api";
 import { audioManager, type AudioSrcType } from "@/lib/audio-manager";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
-import {
-  resolveClientPlaybackUrl,
-} from "@/lib/tts-playback";
 import { prepareRemotePlaybackAudio } from "@/lib/static-audio";
 import {
   attachAudioPipelineElementListeners,
@@ -1017,9 +1014,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       });
       return null;
     }
-    const url = data.cacheKey
-      ? (resolveClientPlaybackUrl(`/api/tts/audio/${data.cacheKey}.mp3`, data.cacheKey) ?? data.url)
-      : data.url;
+    const url = data.url;
     emitAudioPlaybackEvent("source_selected", {
       source: "tts",
       phrase: trimmed.slice(0, 80),

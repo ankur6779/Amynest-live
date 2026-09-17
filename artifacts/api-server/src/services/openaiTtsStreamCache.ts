@@ -133,6 +133,15 @@ function startOpenAiGeneration(
     }
 
     const buffer = await streamBufferToClient(res, upstream, params.cacheKey);
+    logger.info(
+      {
+        evt: "openai.tts_audio_bytes",
+        cacheKeyPrefix: params.cacheKey.slice(0, 12),
+        audio_bytes: buffer.byteLength,
+        cache_write: "pending",
+      },
+      "OpenAI TTS audio bytes received",
+    );
     void persistOpenAiTtsCache({
       cacheKey: params.cacheKey,
       text: params.text,
