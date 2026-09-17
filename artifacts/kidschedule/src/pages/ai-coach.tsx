@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type MouseEvent, type ReactNode } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
@@ -3350,14 +3350,13 @@ function WinCard({
           </div>
         </div>
 
-        {/* Duration + compact listen */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 10,
-            marginBottom: 16,
+            marginBottom: 12,
             flexWrap: "wrap",
           }}
         >
@@ -3374,7 +3373,41 @@ function WinCard({
           >
             ⏱ {win.duration}
           </span>
-          <ListenButton win={win} planCacheKey={planCacheKey} compact />
+        </div>
+
+        {/* READ ALOUD — dedicated prominent row restored from 6db944be.
+            compact ListenButton (266697c9) hid the icon and collapsed this into a 11px chip. */}
+        <div
+          data-testid="coach-read-aloud-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            marginBottom: 18,
+            padding: "10px 12px",
+            borderRadius: 12,
+            background: "rgba(139,92,246,0.10)",
+            border: "1px solid rgba(167,139,250,0.30)",
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11.5,
+              fontWeight: 800,
+              letterSpacing: 0.6,
+              color: "hsl(var(--brand-violet-200))",
+              textTransform: "uppercase",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Volume2 size={16} aria-hidden />
+            {t("pages.ai_coach.read_this_win_aloud")}
+          </span>
+          <ListenButton win={win} planCacheKey={planCacheKey} />
         </div>
 
         {/* DO THIS — primary action */}
@@ -3717,18 +3750,20 @@ function WinCard({
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LISTEN BUTTON — Amy Coach win read-aloud via dedicated shared cache layer.
+// Visual hierarchy restored from 6db944be (green Listen pill + Volume icon).
+// Playback still uses useAmyVoice + coach cache (not the retired speechSynthesis path).
 export function ListenButton({
   win,
   planCacheKey,
-  compact = false,
 }: {
   win: Win;
   planCacheKey?: string;
-  compact?: boolean;
 }) {
   const { t } = useTranslation();
-  const { speak, pause, loading, speaking, primeSpeakGesture } = useAmyVoice();
+  const { speak, pause, loading, speaking, error, primeSpeakGesture } = useAmyVoice();
   const [isListening, setIsListening] = useState(false);
+  const [hasCompleted, setHasCompleted] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const audioIdentity = useMemo(() => {
     const key = (planCacheKey ?? "").trim();
     if (!key) return null;
@@ -3743,14 +3778,26 @@ export function ListenButton({
     const text = buildText();
     primeSpeakGesture(text, audioIdentity ? { coach: true, audioIdentity } : undefined);
   }, [buildText, primeSpeakGesture, audioIdentity]);
-  const handleClick = () => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (isListening || loading || speaking) {
       pause();
       setIsListening(false);
       return;
     }
     const text = buildText();
-    const onFinished = () => setIsListening(false);
+    if (!text.trim()) {
+      setLocalError("tts_empty_text");
+      return;
+    }
+    const onFinished = () => {
+      setIsListening(false);
+      setHasCompleted(true);
+      setLocalError(null);
+    };
+    setLocalError(null);
+    setHasCompleted(false);
     setIsListening(true);
     const opts = audioIdentity
       ? {
@@ -3763,18 +3810,54 @@ export function ListenButton({
           playbackMode: "partial-ok" as const,
           onFinished,
         };
-    void speak(text, opts).then((res) => {
-      if (!res?.success) setIsListening(false);
-    });
+    void speak(text, opts)
+      .then((res) => {
+        if (!res?.success) {
+          setIsListening(false);
+          setLocalError(res?.error ?? "playback_failed");
+        }
+      })
+      .catch((err: unknown) => {
+        setIsListening(false);
+        const message = err instanceof Error ? err.message : "playback_failed";
+        console.error("[ListenButton] Amy Audio playback failed", err);
+        setLocalError(message);
+      });
   };
   const isActive = isListening || loading || speaking;
-  const listenLabel = isActive && !loading
-    ? t("pages.ai_coach.listen_stop", "Stop")
-    : loading
-      ? "…"
-      : compact
-        ? t("pages.ai_coach.listen_compact", "🔊 Listen")
-        : t("pages.ai_coach.listen", "Listen");
+  const showError = Boolean((localError || error) && !isActive);
+  const audioState = showError
+    ? "error"
+    : loading && !speaking
+      ? "loading"
+      : isActive
+        ? "playing"
+        : hasCompleted
+          ? "completed"
+          : "idle";
+  const listenLabel =
+    audioState === "playing"
+      ? t("pages.ai_coach.listen_stop", "Stop")
+      : audioState === "loading"
+        ? t("pages.ai_coach.listen_loading", "Generating audio")
+        : audioState === "error"
+          ? t("pages.ai_coach.listen_retry", "Retry")
+          : audioState === "completed"
+            ? t("pages.ai_coach.listen_play_again", "Play again")
+            : t("pages.ai_coach.listen", "Listen");
+  const ariaLabel =
+    audioState === "playing"
+      ? t("pages.ai_coach.listen_aria_pause", "Pause Amy's response")
+      : audioState === "loading"
+        ? t("pages.ai_coach.listen_loading", "Generating audio")
+        : audioState === "error"
+          ? t("pages.ai_coach.listen_aria_retry", "Retry audio")
+          : audioState === "completed"
+            ? t("pages.ai_coach.listen_aria_replay", "Play Amy's response again")
+            : t("pages.ai_coach.listen_aria_play", "Play Amy's response");
+  const idleBackground = showError ? "rgba(239,68,68,0.18)" : "rgba(34,197,94,0.18)";
+  const idleColor = showError ? "rgba(254,202,202,1)" : "rgba(134,239,172,1)";
+  const idleBorder = showError ? "1px solid rgba(239,68,68,0.45)" : "1px solid rgba(34,197,94,0.35)";
   return (
     <span
       style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
@@ -3785,25 +3868,37 @@ export function ListenButton({
         onPointerDown={primeListen}
         onClick={handleClick}
         data-testid="coach-listen-btn"
+        data-audio-state={audioState}
+        aria-busy={audioState === "loading"}
+        aria-pressed={audioState === "playing"}
+        className="coach-listen-btn"
         style={{
-          fontSize: compact ? 11 : 11,
-          padding: compact ? "5px 10px" : "4px 10px",
-          borderRadius: 999,
-          background: isActive ? "rgba(139,92,246,0.22)" : "rgba(255,255,255,0.06)",
-          color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.82)",
+          fontSize: 14,
           fontWeight: 700,
-          border: isActive
-            ? "1px solid rgba(167,139,250,0.45)"
-            : "1px solid rgba(255,255,255,0.12)",
+          minHeight: 44,
+          minWidth: 48,
+          padding: "10px 16px",
+          borderRadius: 999,
+          background: isActive ? "rgba(236,72,153,0.25)" : idleBackground,
+          color: isActive ? "rgba(251,207,232,1)" : idleColor,
+          border: isActive ? "1px solid rgba(236,72,153,0.4)" : idleBorder,
           display: "inline-flex",
           alignItems: "center",
-          gap: compact ? 0 : 5,
-          cursor: "pointer",
+          justifyContent: "center",
+          gap: 8,
+          cursor: audioState === "loading" ? "progress" : "pointer",
+          lineHeight: 1.2,
         }}
-        aria-label={isActive ? t("pages.ai_coach.listen_stop", "Stop listening") : t("pages.ai_coach.listen_aria", "Listen to this win")}
-        title={isActive ? t("pages.ai_coach.listen_stop", "Stop") : t("pages.ai_coach.listen_aria", "Amy reads this aloud")}
+        aria-label={ariaLabel}
+        title={ariaLabel}
       >
-        {!compact && (isActive ? <VolumeX size={12} /> : <Volume2 size={12} />)}
+        {audioState === "loading" ? (
+          <Loader2 size={18} className="animate-spin" aria-hidden />
+        ) : audioState === "playing" ? (
+          <VolumeX size={18} aria-hidden />
+        ) : (
+          <Volume2 size={18} aria-hidden />
+        )}
         {listenLabel}
       </button>
     </span>

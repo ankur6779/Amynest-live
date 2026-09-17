@@ -457,8 +457,24 @@ export function AudioPlayButton({
       });
       try {
         await play();
-      } catch {
-        // speak() never throws — guard only
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[AudioPlayButton] playback failed", err);
+        if (isMounted.current) {
+          setVisualFallback(true);
+          toast({
+            title: "Voice unavailable",
+            description:
+              message === "playback_blocked_tap_again" ||
+              /notallowed|user.?interaction|gesture/i.test(message)
+                ? AUDIO_UI_MESSAGE.TAP_TO_ENABLE_SOUND
+                : message.replace(/_/g, " ") || "Audio could not start. Please try again.",
+            variant: "destructive",
+          });
+          window.setTimeout(() => {
+            if (isMounted.current) setVisualFallback(false);
+          }, 1600);
+        }
       }
     });
   }, [
@@ -478,6 +494,7 @@ export function AudioPlayButton({
     phonemeKey,
     resolvedAudioKey,
     playbackRate,
+    toast,
   ]);
 
   const label = preparing

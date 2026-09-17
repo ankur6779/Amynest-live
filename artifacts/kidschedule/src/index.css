@@ -3021,6 +3021,14 @@ html.amynest-native-shell .drawer-overlay {
 
 /* ─── Print / Save-as-PDF support for Amy Coach plan ─────────────────── */
 .ws-print-only { display: none; }
+
+/* Coach Amy Audio — restored prominent Listen control (6db944be hierarchy, 44px target). */
+.coach-listen-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #0f0c29,
+    0 0 0 4px rgba(134, 239, 172, 0.95);
+}
 @media print {
   /* Hide everything by default */
   body * { visibility: hidden !important; }

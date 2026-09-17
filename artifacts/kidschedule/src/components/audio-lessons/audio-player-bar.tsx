@@ -62,11 +62,12 @@ export function AudioPlayerBar({
         <button
           type="button"
           onClick={onTogglePlay}
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={playing ? "Pause Amy's lesson" : "Play Amy's lesson"}
+          data-testid="amy-audio-mini-play"
           className={living ? "aaudio-mini-play" : undefined}
           style={{
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             borderRadius: 999,
             border: "none",
             background: living

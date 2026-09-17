@@ -330,6 +330,7 @@ export function PlayerSheet({
           }}
         >
           <button
+            type="button"
             onClick={() => paragraphIdx > 0 && jumpToParagraph(paragraphIdx - 1)}
             disabled={paragraphIdx === 0}
             aria-label={t("pages.audio_lessons.previous")}
@@ -351,6 +352,8 @@ export function PlayerSheet({
           </button>
 
           <button
+            type="button"
+            data-testid="amy-audio-sheet-play"
             onPointerDown={() => {
               const txt = paragraphs[paragraphIdx];
               if (!txt) return;
@@ -383,7 +386,13 @@ export function PlayerSheet({
               if (playing) pause();
               else play();
             }}
-            aria-label={playing ? "Pause" : "Play"}
+            aria-label={
+              playing
+                ? "Pause Amy's lesson"
+                : playbackError || error
+                  ? "Retry audio"
+                  : "Play Amy's lesson"
+            }
             style={{
               color: "#fff",
               background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
@@ -408,6 +417,7 @@ export function PlayerSheet({
           </button>
 
           <button
+            type="button"
             onClick={() =>
               paragraphIdx + 1 < paragraphs.length && jumpToParagraph(paragraphIdx + 1)
             }

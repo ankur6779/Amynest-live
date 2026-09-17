@@ -269,6 +269,8 @@
 }
 
 .aaudio-mini-living .aaudio-mini-play {
-  background: rgba(232, 212, 184, 0.18) !important;
-  box-shadow: none !important;
+  width: 44px !important;
+  height: 44px !important;
+  background: linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500))) !important;
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45) !important;
 }
