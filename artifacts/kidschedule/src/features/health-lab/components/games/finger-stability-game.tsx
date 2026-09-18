@@ -236,7 +236,7 @@ export function FingerStabilityGame({ onComplete, onExit }: Props) {
           setPhase("playing");
           playTap();
         }}
-        startLabel="Power Up Reactor"
+        startLabel={living ? undefined : "Power Up Reactor"}
         ctaVariant="violet"
         extraContent={
           <div className="mt-4 w-full">

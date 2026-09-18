@@ -37,6 +37,17 @@ describe("Rooms eligibility product model", () => {
     expect(UNIVERSAL_ROOM_MODULE_TILE_IDS).toContain("health-lab");
   });
 
+  it("does not advertise Health Lab at 13+ (same cap as the Care wellness page)", () => {
+    expect(isHealthModuleEligible(155)).toBe(true);
+    expect(isHealthModuleEligible(156)).toBe(false);
+    const teen = resolveQuietPathsForRoom("care", {
+      isInfant: false,
+      ageMonths: 168,
+      visibleTileIds: ALL_VISIBLE,
+    });
+    expect(teen.map((p) => p.id)).toEqual(["nutrition"]);
+  });
+
   it("restricts Infant Care to under 24 months", () => {
     expect(INFANT_CARE_MAX_AGE_MONTHS).toBe(24);
     expect(isInfantCareAge(0)).toBe(true);

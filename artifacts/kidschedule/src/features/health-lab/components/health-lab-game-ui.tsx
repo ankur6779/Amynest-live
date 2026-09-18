@@ -309,6 +309,8 @@ export function HealthLabGameStage({
         !style && `bg-gradient-to-b ${stage}`,
         className,
       )}
+      data-testid={gameId ? `health-lab-game-stage-${gameId}` : "health-lab-game-stage"}
+      data-game-id={gameId}
       data-hl-living={living ? "1" : undefined}
       style={style}
     >
@@ -364,6 +366,7 @@ export function HealthLabGameTopBar({
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
+          data-testid="health-lab-practice-exit"
           onClick={onExit}
           className={cn(
             HEALTH_LAB_TOUCH_TARGET,
@@ -389,6 +392,60 @@ export function HealthLabGameTopBar({
         <div className="w-[4.5rem]" aria-hidden />
       </div>
     </div>
+  );
+}
+
+export function HealthLabGameUnavailable({
+  onExit,
+  title = "This practice couldn't open",
+  body = "Something went wrong loading this wellness practice. Return to Care and try another path.",
+}: {
+  onExit: () => void;
+  title?: string;
+  body?: string;
+}) {
+  const living = isHealthLabLivingV1Enabled();
+  return (
+    <HealthLabGameStage fullBleed className="health-lab-game-stage-scroll">
+      <div className="relative z-20 shrink-0">
+        <HealthLabGameTopBar onExit={onExit} title={living ? "Care" : "Health Lab"} />
+      </div>
+      <div
+        className="relative z-[3] mx-auto flex w-full max-w-md flex-col items-center gap-4 px-4 py-8 text-center"
+        data-testid="health-lab-game-unavailable"
+        role="alert"
+      >
+        <h2
+          className={cn(
+            "text-2xl font-bold",
+            living ? "hl-living-deep-title" : "text-white",
+          )}
+        >
+          {title}
+        </h2>
+        <p
+          className={cn(
+            "text-sm leading-relaxed",
+            living ? "text-[rgba(232,212,184,0.82)]" : "text-violet-100/80",
+          )}
+        >
+          {body}
+        </p>
+        <button
+          type="button"
+          onClick={onExit}
+          className={cn(
+            HEALTH_LAB_TOUCH_TARGET,
+            "rounded-2xl px-6 py-3 text-sm font-bold",
+            living
+              ? "hl-living-deep-primary-btn"
+              : "bg-white/15 text-white",
+          )}
+        >
+          Return to Care
+        </button>
+      </div>
+    </HealthLabGameStage>
   );
 }
 

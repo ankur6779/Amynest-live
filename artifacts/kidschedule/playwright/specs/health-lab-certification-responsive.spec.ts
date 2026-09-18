@@ -90,10 +90,13 @@ function mockHealthLabApi(page: Page) {
 
 async function gotoLab(page: Page) {
   await page.goto("/playwright-health-lab.html?childId=42&childName=Riya");
-  await page.waitForSelector("text=Amy Health Lab", { timeout: 30_000 });
-  await page.waitForSelector('[class*="health-lab-world-card"], button:has-text("Balloon")', {
+  await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
     timeout: 30_000,
   });
+  await page.waitForSelector(
+    "[data-testid=health-lab-quiet-paths], [class*='health-lab-world-card'], button:has-text('Balloon')",
+    { timeout: 30_000 },
+  );
 }
 
 async function setViewportFont(page: Page, width: number, height: number, fontScale: number) {

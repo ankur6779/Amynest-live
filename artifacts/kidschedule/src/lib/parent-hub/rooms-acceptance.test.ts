@@ -52,6 +52,16 @@ describe("Rooms acceptance matrix", () => {
     }
   });
 
+  it("does not advertise Health on Care at 13+", () => {
+    const teen = resolveQuietPathsForRoom("care", {
+      isInfant: false,
+      ageMonths: 168,
+      visibleTileIds: ["nutrition", "health-lab"],
+    });
+    expect(isHealthModuleEligible(168)).toBe(false);
+    expect(teen.map((p) => p.id)).toEqual(["nutrition"]);
+  });
+
   it("hides Help PTM/life-skills until Hub visibility unlocks them", () => {
     for (const months of AGE_BOUNDARIES) {
       const visible = visibleHelpTileIdsForAge(months);

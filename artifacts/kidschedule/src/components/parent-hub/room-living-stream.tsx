@@ -23,6 +23,8 @@ export type RoomLivingStreamProps = {
   room: RoomLivingPeerRoom;
   childName: string;
   isInfant: boolean;
+  /** Total age in months — Health Lab is hidden at 13+ (same cap as the Care page). */
+  ageMonths?: number;
   /** Hub-visible tile ids — filters age-gated quiet paths without hiding Nutrition. */
   visibleTileIds?: readonly string[];
   activeTileId?: string | null;
@@ -33,6 +35,7 @@ export function RoomLivingStream({
   room,
   childName,
   isInfant,
+  ageMonths,
   visibleTileIds,
   activeTileId = null,
   onSelectTile,
@@ -44,8 +47,8 @@ export function RoomLivingStream({
     [room, isInfant, childName],
   );
   const quietPaths = useMemo(
-    () => resolveQuietPathsForRoom(room, { isInfant, visibleTileIds }),
-    [room, isInfant, visibleTileIds],
+    () => resolveQuietPathsForRoom(room, { isInfant, visibleTileIds, ageMonths }),
+    [room, isInfant, visibleTileIds, ageMonths],
   );
   const recommendActive = activeTileId === recommend.tileId;
 

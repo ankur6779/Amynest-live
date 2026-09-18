@@ -2192,7 +2192,7 @@ function ParentingHubPage() {
     <div
       className={cn(
         roomsV1 ? "parent-hub-sanctuary" : PARENT_HUB_PAGE,
-        "mx-auto w-full max-w-full space-y-4 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] md:max-w-6xl",
+        "app-tabbar-content-clearance mx-auto w-full max-w-full space-y-4 md:max-w-6xl",
       )}
       data-ph-pack={roomsV1 ? "4.9" : undefined}
       data-testid={roomsV1 ? "parent-hub-sanctuary-page" : "parent-hub-legacy-page"}
@@ -2438,6 +2438,7 @@ function ParentingHubPage() {
                   room={room}
                   childName={effectiveChild.name}
                   isInfant={isInfant}
+                  ageMonths={totalAgeMonths}
                   visibleTileIds={[
                     ...forYouStandaloneFeatured.map((s) => s.id),
                     ...todayTiles.map((s) => s.id),

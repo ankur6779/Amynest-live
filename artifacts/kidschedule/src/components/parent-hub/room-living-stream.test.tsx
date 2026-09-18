@@ -54,6 +54,21 @@ describe("RoomLivingStream Care nutrition", () => {
     expect(onSelect).toHaveBeenCalledWith("infant-hub");
   });
 
+  it("does not show Health for a 13-year-old", () => {
+    render(
+      <RoomLivingStream
+        room="care"
+        childName="Teen"
+        isInfant={false}
+        ageMonths={168}
+        visibleTileIds={visibleOlder}
+        onSelectTile={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("care-quiet-nutrition")).toBeTruthy();
+    expect(screen.queryByTestId("care-quiet-health-lab")).toBeNull();
+  });
+
   it("filters Help school-meeting when the tile is not visible", () => {
     render(
       <RoomLivingStream

@@ -191,7 +191,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
         gameId="flamingo-balance"
         onExit={onExit}
         onStart={beginCalibration}
-        startLabel="Start Survival"
+        startLabel={living ? undefined : "Start Survival"}
         ctaVariant="rose"
         extraContent={
           <>
@@ -236,7 +236,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
       </div>
 
       {phase === "calibrating" && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center">
+        <div className="relative z-[3] flex min-h-0 flex-1 items-center justify-center">
           <HealthLabMotionCalibration progress={sensor.calibrationProgress} />
         </div>
       )}
