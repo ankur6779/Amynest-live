@@ -294,11 +294,11 @@ Kidschedule `tsc --noEmit`: passed.
 
 # Remaining Issues
 
-- Parent Hub still uses `amy-astro-hero.png` (3:4 cutout). Out of this module’s interior scope.
 - Insights chapter SVGs are a different art system; not the screenshot bug.
 - Live child-switch against a signed-in API session is not exercised here (fixture + dashboard `key` cover the UI contract). Direct `/birth-sky/app/astronomy` remains a text segment without this illustration.
-- 609 KB PNG could later gain a 2x/1x srcset; quality was not reduced in this pass.
-- When the closing CTA cluster is centered in the mobile viewport, the tiny disclaimer line under the buttons can still pass through the FAB corridor. Save / Ask Amy / Continue do not.
+- Hub launch tile still loads `amy-astro-hero.png` at 1.36 MB into a ~132px slot. Out of the 609 KB module-PNG performance scope.
+- AVIF delivery is deferred: encoders available here were not visually lossless (max channel delta ≥ 110, and ffmpeg still-picture dropped alpha).
+- At 1× device pixel ratio Playwright Chromium selects the 384w WebP for both hero and closing (one request). 2× DPR was not measured in this pass.
 
 ---
 
@@ -327,3 +327,88 @@ SYMPTOM: Save / expanded state could survive a child change.
 ROOT CAUSE: State initialized once; no card key.  
 FIX: `key={profile.profileId}` + reset effect.  
 VERIFICATION: Vitest + Playwright child switch.
+
+---
+
+# Final Polish Pass
+
+**Scope:** Hub tile art, FAB disclaimer clearance, responsive image delivery. Illustration-frame architecture and source PNG were not changed. Not deployed.
+
+## Hub Tile Art
+
+**Status: INTENTIONALLY RETAINED**
+
+Hub launch tile (`AMY_ASTRO_LAUNCH_VISUAL.heroSrc`) uses `amy-astro-hero.png` (960×1280, 3:4 transparent cutout, 1.36 MB). The module uses `amy-astro-portrait.png` (768×768, 1:1 ceremonial illustration).
+
+This is not an accidental mismatch:
+
+- Hub CSS (`.amy-astro-launch-card .hub-feature-tile__hero`) is a ~132px glass media slot with `object-fit: contain` and `object-position: center bottom`.
+- The module PNG is a complete square with ~10% side padding and gold ornaments. Dropping it into the hub slot would shrink the character and make ornaments unreadable.
+- Both assets share product language (purple hoodie, seated pose, celestial orb) so the hub → Astronomy tap still reads as the same module.
+
+Journey verified in Playwright at 390×844, 412×915, 768×1024, 1024×1366, 1440×900: hub `src` contains `amy-astro-hero.png`; after tap, module `src` contains `amy-astro-portrait.png`.
+
+## FAB Disclaimer Clearance
+
+**Status: FIXED**
+
+Save / Ask Amy / Continue already used `.amynest-fab-avoid`. The tagline and disclaimer sat outside that cluster, so the right edge of the small print could enter the FAB corridor.
+
+The CTA row, tagline, and disclaimer now share `.amy-astro-portrait-cta-cluster.amynest-fab-avoid`, which applies the existing `--amynest-fab-gutter` (`padding-right` at ≤1023px). The FAB was not moved. No screen-specific bottom offset, negative margin, hide, or truncation.
+
+Playwright at 390 / 412 / 768: Save, Ask Amy, Continue, tagline, and disclaimer bounding boxes do not overlap the mock FAB. Disclaimer text equals the full string, `text-overflow` is not ellipsis, `white-space` is not nowrap, and `scrollWidth ≤ clientWidth`.
+
+Measured at 390×844: Save right 276 vs FAB left 310 (34px gap), same as the prior pass.
+
+## Image Performance
+
+**Status: FIXED (WebP srcset) · DEFERRED (AVIF) · PASS (lazy/eager, no duplicate URL)**
+
+Source PNG was not edited (609084 bytes, 768×768, sha256 `df4ee1e16e32d3117d59ce975782d987180b83ed484d4271a145c917a0cd2b8f`).
+
+Investigated:
+
+| Option | Result |
+|---|---|
+| WebP | Lossless siblings added. Pixel-identical to the PNG at 768 and to a Lanczos 384 downscale. |
+| AVIF | Pillow q100 / “lossless” and ffmpeg libaom still-picture were **not** visually lossless (max channel delta ≥ 110; ffmpeg dropped alpha). Not shipped. |
+| srcset / sizes | `<picture>` with 384w + 768w WebP. `sizes` matches hero / closing / ceremony CSS. PNG remains the `<img>` fallback. |
+| Lazy / eager | Hero `loading="eager"` `fetchPriority="high"`. Closing `loading="lazy"`. |
+| Duplicate downloads | Hero and closing share the same selected URL at 1× DPR (one request). |
+
+If a WebP `<source>` errors, picture is dropped and the PNG is used. A second error swaps to the SVG fallback.
+
+## Before/After Measurements
+
+Rendered hero/closing CSS sizes are unchanged from the illustration-frame pass. `img.naturalWidth` with `srcset` `w` descriptors is density-corrected (equals `sizes`, not file pixels). File pixel size was probed with a standalone `Image()` (no `sizes`).
+
+| Viewport | Hero rendered | Closing rendered | currentSrc (1× DPR) | Image requests | Overflow X |
+|---|---|---|---|---|---|
+| 390×844 | 316×316 | 192×192 | 384.webp | 1 | no |
+| 412×915 | 338×338 | 192×192 | 384.webp | 1 | no |
+| 768×1024 | 208×208 | 192×192 | 384.webp | 1 | no |
+| 1024×1366 | 224×224 | 192×192 | 384.webp | 1 | no |
+| 1440×900 | 224×224 | 192×192 | 384.webp | 1 | no |
+
+| Asset | Natural file px | Bytes | Role |
+|---|---|---|---|
+| `amy-astro-portrait.png` (unchanged) | 768×768 | 609084 | `<img>` fallback |
+| `amy-astro-portrait-768.webp` | 768×768 | 462540 | 2× / large `srcset` |
+| `amy-astro-portrait-384.webp` | 384×384 | 137508 | 1× hero + closing (measured) |
+
+At 1× DPR the browser requested **137508 bytes** (384.webp) instead of **609084 bytes** (PNG): **77.4% fewer bytes** for that request. 768.webp is 24.1% smaller than the PNG at identical pixels. 2× DPR was not measured.
+
+## Tests
+
+- Vitest: 55 passed across cosmic portrait, portrait card, signature insight, hub tile config, hub visibility, parent-hub destinations/rooms/eligibility, birth-sky entry resolver.
+- Playwright: 13/13 passed (`playwright.config.amy-astro-portrait.ts`) — layout × 5 viewports, WebP file probe, child switch, back nav, hub → Astronomy × 5 viewports.
+- Kidschedule `tsc --noEmit`: passed (commit hook, `NODE_OPTIONS=--max-old-space-size=4096`).
+- Source PNG sha256 unchanged. No deploy.
+
+## Remaining Issues
+
+- AVIF: **DEFERRED** (quality / alpha).
+- Hub hero PNG 1.36 MB in a 132px slot: **DEFERRED** (out of module-PNG scope).
+- 2× DPR network mix (768.webp vs 384.webp): **DEFERRED** (not measured).
+- Signed-in live API child switch: unchanged from prior remaining list.
+
