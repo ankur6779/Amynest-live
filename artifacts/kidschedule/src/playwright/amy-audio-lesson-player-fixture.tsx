@@ -1,5 +1,5 @@
 /** Standalone fixture for the restored Audio Lesson player sheet (no auth). */
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "../index.css";
 import "../i18n";
@@ -74,18 +74,55 @@ const stubAuth: AuthContextValue = {
 const lesson = getLessonById("toddler-tantrums-101");
 const series = getSeriesById("toddler-tantrums") ?? null;
 
+function FixtureAudioClock() {
+  const [snap, setSnap] = useState({ currentTime: 0, paused: true, ended: false });
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const w = window as Window & {
+        __amynestAudioManagerRef?: { getCurrentElement?: () => HTMLAudioElement | null };
+      };
+      const el = w.__amynestAudioManagerRef?.getCurrentElement?.() ?? null;
+      if (!el) return;
+      setSnap({ currentTime: el.currentTime, paused: el.paused, ended: el.ended });
+    }, 100);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div
+      data-testid="fixture-audio-clock"
+      style={{
+        position: "fixed",
+        top: 12,
+        left: 12,
+        zIndex: 9999,
+        color: "#fff",
+        background: "rgba(0,0,0,0.55)",
+        borderRadius: 8,
+        padding: "8px 12px",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 14,
+      }}
+    >
+      currentTime={snap.currentTime.toFixed(2)}s paused={String(snap.paused)} ended={String(snap.ended)}
+    </div>
+  );
+}
+
 function PreviewShell() {
   if (!lesson) {
     return <p style={{ color: "#fff", padding: 24 }}>Lesson not found</p>;
   }
   return (
-    <PlayerSheet
-      lesson={lesson}
-      series={series}
-      visible
-      autoPlay={false}
-      onMinimize={() => undefined}
-    />
+    <>
+      <FixtureAudioClock />
+      <PlayerSheet
+        lesson={lesson}
+        series={series}
+        visible
+        autoPlay={false}
+        onMinimize={() => undefined}
+      />
+    </>
   );
 }
 

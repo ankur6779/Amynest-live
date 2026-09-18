@@ -97,6 +97,10 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   const whilePaused = await speechTime(page);
   expect(whilePaused.paused).toBe(true);
   expect(Math.abs(whilePaused.currentTime - pausedAt)).toBeLessThan(0.75);
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/audio_lesson_paused_at_position.png",
+    fullPage: true,
+  });
 
   const fetchesBeforeResume = staticAudioGets.length;
   await playBtn.click();
