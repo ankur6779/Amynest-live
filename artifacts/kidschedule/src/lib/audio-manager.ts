@@ -4,6 +4,10 @@
  */
 
 import { resolveApiMediaUrl } from "@/lib/api";
+
+/** Silent WAV used to hold the Play gesture without an HTTPS Range request. */
+export const LESSON_AUDIO_KEEPALIVE_SRC =
+  "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 import {
   logAudioStart,
   playWithAudibleStartGuarantee,
@@ -674,6 +678,41 @@ class AudioManagerImpl {
     } catch {
       return null;
     }
+  }
+
+  primeLessonKeepAliveInUserGesture(): HTMLAudioElement | null {
+    return this.primeSpeechUrlInUserGesture(LESSON_AUDIO_KEEPALIVE_SRC, {
+      keepPlaying: true,
+      volume: 0.01,
+    });
+  }
+
+  /**
+   * Retarget the keep-alive element onto the warmed lesson blob so play() after
+   * await fetch stays on the same HTMLAudioElement (Android gesture token).
+   */
+  adoptLessonKeepAliveForBlob(blobUrl: string): HTMLAudioElement | null {
+    const trimmed = (blobUrl ?? "").trim();
+    if (!trimmed.startsWith("blob:")) return null;
+    const el =
+      this.takeGesturePrimedElement(LESSON_AUDIO_KEEPALIVE_SRC) ??
+      this.gesturePrimeElements.get(LESSON_AUDIO_KEEPALIVE_SRC) ??
+      null;
+    if (!el) return null;
+    this.gesturePrimeElements.delete(LESSON_AUDIO_KEEPALIVE_SRC);
+    try {
+      el.pause();
+      el.src = trimmed;
+      el.muted = false;
+      el.volume = 1;
+      el.load();
+    } catch {
+      /* keep the element even if load throws */
+    }
+    this.gesturePrimeElements.set(trimmed, el);
+    const p = el.play();
+    if (p) void p.catch(() => {});
+    return el;
   }
 
   /**

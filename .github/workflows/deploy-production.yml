@@ -1,7 +1,8 @@
-# Production deploy — runs all CI gates first; then Pages (static) + Hetzner worker.
+# Production deploy — runs all CI gates first; then Pages + CF Worker + Hetzner.
 #
 # Live static: Cloudflare Pages (amynest-web) → www.amynest.in
-# Live API: Coolify (auto-deploy via Coolify Git webhook — not this workflow)
+# Live API edge: Cloudflare Worker amynest-api-proxy (wrangler deploy)
+# Live API origin: Coolify (auto-deploy via Coolify Git webhook — not this workflow)
 # AI worker: Hetzner (path-filtered SSH deploy)
 # Render API standby is retired (service suspended) — do not trigger from CI.
 
@@ -92,6 +93,27 @@ jobs:
           # www is WAF-blocked for GitHub Actions IPs; probe Pages + Coolify origin.
           SMOKE_WEB_URL: https://amynest-web.pages.dev
           SMOKE_API_URL: https://ik6ml2uhw6op765lo14wn5m3.188.245.208.126.sslip.io
+
+  deploy-cloudflare-worker:
+    name: Deploy Cloudflare API proxy worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [crash-release-gates, routine-engine-gates, audio-gates, chat-platform-gates, typecheck-gate]
+    if: |
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      github.repository == 'ankur6779/Amynest-live'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Deploy amynest-api-proxy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bash scripts/deploy-cloudflare-api-proxy.sh
 
   deploy-hetzner-worker:
     name: Deploy Hetzner AI worker

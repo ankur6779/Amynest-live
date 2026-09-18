@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   AUDIBLE_START_TIMEOUT_MS,
   MIN_AUDIO_BLOB_BYTES,
+  looksLikeMpegAudioBytes,
   validateAudioBlob,
   validateAudioSrc,
   waitForAudibleStart,
@@ -38,6 +39,12 @@ describe("amy-voice-audio-start", () => {
     expect(() =>
       validateAudioBlob(new Blob([new Uint8Array(MIN_AUDIO_BLOB_BYTES)])),
     ).not.toThrow();
+  });
+
+  it("looksLikeMpegAudioBytes accepts ID3 and MPEG frame sync", () => {
+    expect(looksLikeMpegAudioBytes(new Uint8Array([0xff, 0xf3, 0xc4]))).toBe(true);
+    expect(looksLikeMpegAudioBytes(new Uint8Array([0x49, 0x44, 0x33]))).toBe(true);
+    expect(looksLikeMpegAudioBytes(new Uint8Array([0x47, 0x00]))).toBe(false);
   });
 
   it("waitForAudibleStart resolves on playing event", async () => {

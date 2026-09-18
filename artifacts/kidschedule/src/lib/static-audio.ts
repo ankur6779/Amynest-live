@@ -1,6 +1,6 @@
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
-import { validateAudioBlobDecodable } from "@/lib/amy-voice-audio-start";
+import { validateAudioBlobDecodable, looksLikeMpegAudioBytes } from "@/lib/amy-voice-audio-start";
 import { audioManager } from "@/lib/audio-manager";
 import {
   assertStaticAudioUrl,
@@ -684,14 +684,6 @@ function createStaticPlaybackElement(proxyUrl: string): HTMLAudioElement | null 
 
 /** Fetch catalog MP3 into a blob: URL — no HTTP Range (Android WebView-safe). */
 export async function fetchStaticAudioObjectUrl(proxyUrl: string): Promise<string | null> {
-  const el = await createStaticPlaybackElementFromBlob(proxyUrl);
-  const src = el?.src?.trim() || null;
-  return src?.startsWith("blob:") ? src : null;
-}
-
-async function createStaticPlaybackElementFromBlob(
-  proxyUrl: string,
-): Promise<HTMLAudioElement | null> {
   const absUrl = proxyUrl.startsWith("http") ? proxyUrl : getApiUrl(proxyUrl);
   try {
     const res = await fetch(absUrl, {
@@ -715,21 +707,33 @@ async function createStaticPlaybackElementFromBlob(
       logAmyVoiceDiag("static_placeholder_rejected", { url: absUrl.slice(-72) });
       return null;
     }
-    const blob = await res.blob();
-    if (isPlaceholderStaticAsset({ blobSize: blob.size })) {
-      logAmyVoiceDiag("static_placeholder_blob_rejected", { url: absUrl.slice(-72), bytes: blob.size });
+    const buf = await res.arrayBuffer();
+    if (isPlaceholderStaticAsset({ blobSize: buf.byteLength })) {
+      logAmyVoiceDiag("static_placeholder_blob_rejected", {
+        url: absUrl.slice(-72),
+        bytes: buf.byteLength,
+      });
       return null;
     }
+    const head = new Uint8Array(buf.slice(0, 16));
+    const mpeg = looksLikeMpegAudioBytes(head);
+    const blob = new Blob([buf], { type: "audio/mpeg" });
     try {
       await validateAudioBlobDecodable(blob);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      logAmyVoiceDiag("blob_decode_failed", { bytes: blob.size, error: msg });
-      return null;
+      if (!mpeg) {
+        logAmyVoiceDiag("blob_decode_failed", { bytes: blob.size, error: msg });
+        return null;
+      }
+      // Web Audio decodeAudioData often rejects valid MP3s in Android WebView.
+      // HTMLAudioElement is the playback decoder — keep the blob if MPEG sync/ID3 is present.
+      logAmyVoiceDiag("blob_web_audio_decode_skipped", { bytes: blob.size, error: msg });
     }
     const blobUrl = URL.createObjectURL(blob);
-    audioManager.trackObjectUrl(blobUrl);
-    return audioManager.create(blobUrl);
+    // Do not audioManager.trackObjectUrl — that revokes the previous blob, and
+    // lesson warmup holds current + next paragraph at the same time.
+    return blobUrl;
   } catch (err) {
     logAmyVoiceDiag("blob_fetch_error", {
       url: absUrl.slice(-72),
@@ -737,6 +741,15 @@ async function createStaticPlaybackElementFromBlob(
     });
     return null;
   }
+}
+
+async function createStaticPlaybackElementFromBlob(
+  proxyUrl: string,
+): Promise<HTMLAudioElement | null> {
+  const blobUrl = await fetchStaticAudioObjectUrl(proxyUrl);
+  if (!blobUrl) return null;
+  audioManager.trackObjectUrl(blobUrl);
+  return audioManager.create(blobUrl);
 }
 
 function shouldPreferBlobStaticPlayback(): boolean {
