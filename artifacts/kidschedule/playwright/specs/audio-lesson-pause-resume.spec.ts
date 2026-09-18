@@ -98,7 +98,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   expect(whilePaused.paused).toBe(true);
   expect(Math.abs(whilePaused.currentTime - pausedAt)).toBeLessThan(0.75);
   await page.screenshot({
-    path: "/opt/cursor/artifacts/audio_lesson_paused_at_position.png",
+    path: "/opt/cursor/artifacts/audio_lesson_paused_clock_5s.png",
     fullPage: true,
   });
 
@@ -112,7 +112,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   expect(afterResume.paused).toBe(false);
   expect(await sameSpeechElement(page)).toBe(true);
   await page.screenshot({
-    path: "/opt/cursor/artifacts/audio_lesson_resumed_from_position.png",
+    path: "/opt/cursor/artifacts/audio_lesson_resumed_clock_6s.png",
     fullPage: true,
   });
 
@@ -140,7 +140,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
 
   mkdirSync("/opt/cursor/artifacts", { recursive: true });
   writeFileSync(
-    "/opt/cursor/artifacts/audio_lesson_pause_resume_times.json",
+    "/opt/cursor/artifacts/audio_lesson_pause_resume_times_v2.json",
     JSON.stringify(
       {
         pausedAt,
