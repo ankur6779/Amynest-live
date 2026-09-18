@@ -1,9 +1,9 @@
 # AmyNest Care → Health & Wellness Deep Audit
 
-**Status:** FIXED in branch `cursor/care-health-wellness-audit-fb4f`  
+**Status:** FIXED + final verification on branch `cursor/care-health-wellness-audit-fb4f`  
 **Date:** 2026-09-18  
 **Scope:** Care living room → Health quiet path → Health Lab practices  
-**Production:** not deployed
+**Production:** not deployed. Live signed-in billing and device motion still require controlled production verification.
 
 Authoritative living catalog is `HEALTH_LAB_QUIET_PATHS` in `artifacts/kidschedule/src/lib/health-lab/living-room.ts`. Game engines live in `artifacts/kidschedule/src/features/health-lab/`. Care advertising is `quietPathsForRoom("care")` filtered by `resolveQuietPathsForRoom`.
 
@@ -183,11 +183,11 @@ Infant preview is intentional, not a broken catalog. 13+ hiding matches the page
 |---|---|
 | `**/api/health-lab/**` in E2E | Mocked 200. No remaining health-lab request failures. |
 | Other `/api/**` (client logs) during a long practice loop | `ERR_CONNECTION_REFUSED` without API server. Fixture now fulfills `**/api/**`. EXPECTED in this harness. |
-| `/health-lab-audio/crystal-garden-dance.mp3` | **Not in repo.** Freeze dance preload would 404 on a Vite fixture. E2E fulfills empty MPEG. **REQUIRES PRODUCTION VERIFICATION** that the asset is on the CDN. |
+| `/health-lab-audio/crystal-garden-dance.mp3` | **In repo** at `artifacts/kidschedule/public/health-lab-audio/crystal-garden-dance.mp3` (97010 bytes, MPEG ADTS layer III). Vite public URL `/health-lab-audio/crystal-garden-dance.mp3`. Production `https://www.amynest.in/health-lab-audio/crystal-garden-dance.mp3` HTTP 200, `content-type: audio/mpeg`, `content-length: 97010`. Care E2E now requests the real file (no empty MPEG stub). **PASS** for repo + local Vite + production static HTTP. |
 | Experience photography `/experience/r1/shot-01-arrival.png` | Loads in fixture (Care hero visible). |
-| Page errors during advertised launches | None after mocks. PASS |
+| Page errors during advertised launches | None after API mocks. Health-lab / health-lab-audio / `/api/` 404s and 500s: none. PASS |
 
-Do not treat the client-log connection refusal as a Health Lab product bug.
+Do not treat the client-log connection refusal as a Health Lab product bug. The Care E2E fixture still fulfills `**/api/**` so those refusals are not part of this run.
 
 ---
 
@@ -223,6 +223,9 @@ Do not treat the client-log connection refusal as a Health Lab product bug.
 - `artifacts/kidschedule/src/lib/parent-hub/rooms-acceptance.test.ts`
 - `artifacts/kidschedule/src/lib/health-lab/living-room.test.ts`
 - `artifacts/kidschedule/src/components/parent-hub/room-living-stream.test.tsx`
+- `artifacts/kidschedule/src/lib/health-lab-entitlement-path.test.tsx`
+- `artifacts/kidschedule/src/features/health-lab/crystal-garden-dance-asset.test.ts`
+- `artifacts/kidschedule/vitest.config.ts` (`NODE_ENV=test` so React 19 exports `act`)
 - `artifacts/kidschedule/package.json` (`test:e2e:care-health-wellness`)
 
 GCS / TTS / audio infrastructure was not changed. Crystal garden dance is still a static `/health-lab-audio/` file reference.
@@ -235,9 +238,10 @@ GCS / TTS / audio infrastructure was not changed. Crystal garden dance is still 
 |---|---|---|
 | Libs typecheck | `pnpm run typecheck:libs` (pre-commit) | PASS |
 | Kidschedule `tsc` | `NODE_OPTIONS=--max-old-space-size=8192 pnpm --filter @workspace/kidschedule typecheck` | PASS (8GB heap required; default OOM is a known kidschedule tsc issue) |
-| Vitest living-room, eligibility, rooms-acceptance, room-living, health-lab, hub-visibility | `vitest run --config vitest.config.ts` those files | **84 passed / 6 files** |
-| Vitest `room-living-stream.test.tsx` in isolation | same config | **4 failed** — `TypeError: React.act is not a function` (RTL 16 + React 19 dual package). Pre-existing when this file is run alone. Logic is covered by eligibility + Playwright. Not suppressed. |
-| Playwright Care Health Wellness | `pnpm --filter @workspace/kidschedule test:e2e:care-health-wellness` | **8 passed** (final run after calibration Exit) |
+| Vitest `room-living-stream.test.tsx` in isolation | `pnpm exec vitest run --config vitest.config.ts src/components/parent-hub/room-living-stream.test.tsx` | **4 passed / 1 file** |
+| Vitest Care / Health subset | living-room, eligibility, rooms-acceptance, room-living, room-living-stream, health-lab, crystal-garden-dance-asset, health-lab-dialog-escape, hub-visibility, health-lab-entitlement-path, premium-access-decision, free-premium-phase4-freeze, locked-block.quiet, parent-hub-room | **131 passed / 14 files** |
+| Playwright Care Health Wellness | `pnpm --filter @workspace/kidschedule test:e2e:care-health-wellness` | **9 passed** (32.4s) including denied entitlement |
+| API Health Lab premium matrix | `node --import tsx/esm --test src/routes/health-lab-premium.test.ts` | **2 passed**; DB HTTP 402/200 suite **SKIPPED** (`isDbIntegrationAvailable()` false) |
 
 Full `pnpm --filter @workspace/kidschedule test` (entire Vitest package) was **not** re-run this pass. Known unrelated failures remain: some kidschedule Vitest files with Vite resolution errors; `abacus.test.ts` / `speech.test.ts` Node 20 mock issues (AGENTS.md).
 
@@ -247,14 +251,15 @@ Full `pnpm --filter @workspace/kidschedule test` (entire Vitest package) was **n
 
 Playwright `care-health-wellness.spec.ts` (Chromium, `isMobile: true` project, per-test viewports):
 
-1. Care advertises Health and every quiet practice launches — **PASS** (16.5s). Each of the five: visible, clickable, briefing `Begin gently`, play UI, tab bar hidden, Exit returns to Health Lab. Re-open breath works.
-2. Child profiles change Care Health eligibility — **PASS**. Infant preview; 6-year-old full lab; 13+ Health hidden.
-3. Recommend launches a real practice — **PASS**.
-4. Viewport 390×844 — **PASS**
-5. Viewport 412×915 — **PASS**
-6. Viewport 768×1024 — **PASS**
-7. Viewport 1024×1366 — **PASS**
-8. Viewport 1440×900 — **PASS**
+1. Care advertises Health and every quiet practice launches — **PASS** (11.5s). Each of the five: visible, clickable, briefing `Begin gently`, play UI, tab bar hidden, Exit returns to Health Lab. Re-open breath works. Crystal Garden MP3 HTTP 200 from Vite.
+2. Denied entitlement keeps Care Health visible but does not launch practices — **PASS**. Static preview only; no quiet-path launch.
+3. Child profiles change Care Health eligibility — **PASS**. Infant preview; 6-year-old full lab; 13+ Health hidden.
+4. Recommend launches a real practice — **PASS**.
+5. Viewport 390×844 — **PASS**
+6. Viewport 412×915 — **PASS**
+7. Viewport 768×1024 — **PASS**
+8. Viewport 1024×1366 — **PASS**
+9. Viewport 1440×900 — **PASS**
 
 ---
 
@@ -292,11 +297,12 @@ Playwright `care-health-wellness.spec.ts` (Chromium, `isMobile: true` project, p
 
 | Issue | Status |
 |---|---|
-| `crystal-garden-dance.mp3` missing from this checkout | REQUIRES PRODUCTION VERIFICATION |
-| `room-living-stream.test.tsx` RTL `React.act` when run in isolation | BLOCKED on React 19 / RTL dual-package; product logic covered elsewhere |
-| Production Care still deepens to a Health launch card before `/health-lab` | NOT a broken registry. Two-step rooms destination. REQUIRES PRODUCTION VERIFICATION on a signed-in hub with entitlements |
-| `FeatureGate` / `hub_health_lab` paywall on the Care destination card | Not exercised in the unauthenticated fixture. REQUIRES PRODUCTION VERIFICATION |
-| Motion games on a real device (DeviceOrientation permission, calibration timing) | REQUIRES PRODUCTION VERIFICATION |
+| Crystal Garden dance MP3 in repo, Vite public, and production HTTP 200 | PASS |
+| `room-living-stream.test.tsx` standalone RTL `React.act` | FIXED (`vitest.config.ts` forces `NODE_ENV=test`; React 19 production CJS omits `act`) |
+| Fixture allowed vs denied Health Lab surfaces | PASS for the isolated fixture. Live Firebase / RevenueCat signed-in subscription is **PRODUCTION VERIFICATION REQUIRED** |
+| Production Care two-step launch card → `/health-lab` | Not a broken registry. **PRODUCTION VERIFICATION REQUIRED** on a real signed-in hub |
+| Server Health Lab HTTP 402 vs 200 against a real DB | Wiring tests PASS. DB integration suite SKIPPED here. **PRODUCTION VERIFICATION REQUIRED** |
+| Motion games on a real device (DeviceOrientation permission, calibration timing) | PRODUCTION VERIFICATION REQUIRED |
 | `calmness-meter` absent from living opening | Intentional. NOT a hide-the-bug. |
 | Kidschedule `tsc` OOM without 8GB heap | Pre-existing tooling. Not introduced here. |
 | Full package Vitest + health-lab certification Playwright | Not claimed. Run those on CI / follow-up if needed. |
@@ -307,10 +313,86 @@ No advertised living Care Health practice is left as a blank page, dead click, o
 
 # Evidence
 
-Playwright artifacts (this run):
+Playwright artifacts (final verification run):
 
 - Care listing 390: `/opt/cursor/artifacts/care_health_wellness_care_listing_390.png`
 - Breath play: `/opt/cursor/artifacts/care_health_wellness_breath-control_play.png`
-- Attention play: `/opt/cursor/artifacts/care_health_wellness_reaction-time_play.png`
-- Steady hands play: `/opt/cursor/artifacts/care_health_wellness_finger-stability_play.png`
+- Stillness calibration with Exit: `/opt/cursor/artifacts/care_health_wellness_freeze-statue_play.png`
+- Denied entitlement preview: `/opt/cursor/artifacts/care_health_wellness_entitlement_denied.png`
 - Viewport sheets: `/opt/cursor/artifacts/care_health_wellness_{390x844,412x915,768x1024,1024x1366,1440x900}.png`
+- Production MP3 headers: `/opt/cursor/artifacts/crystal_garden_production_http_headers.txt`
+
+---
+
+# Final Verification
+
+**Date:** 2026-09-18  
+**Branch:** `cursor/care-health-wellness-audit-fb4f`  
+**Production:** not deployed from this pass. No GCS, Cloudflare, TTS, OpenAI, ElevenLabs, production DB, or production secrets were modified.
+
+This implementation is ready for **controlled production verification** of live signed-in billing and device motion. It is **not** an overall product PASS while those remain unverified.
+
+## Crystal Garden Asset
+
+- **Status:** PASS (repo + local Vite + production static HTTP). Not a GCS object.
+- **Activity:** Stillness (`freeze-statue` / Crystal Garden). Preload on onboarding/calibration; loop during the dance phase via `useCrystalGardenDanceMusic`.
+- **Exact reference:** `CRYSTAL_GARDEN_DANCE_URL = "/health-lab-audio/crystal-garden-dance.mp3"` in `artifacts/kidschedule/src/features/health-lab/components/games/crystal-garden/crystal-garden-audio.ts`.
+- **Source:** Vite `public/` static file `artifacts/kidschedule/public/health-lab-audio/crystal-garden-dance.mp3` (commit `0e8299f2`). Optional regenerator: `scripts/generate-crystal-garden-audio.ts` (ElevenLabs; **not run** this pass).
+- **Missing-asset behavior:** `el.play().catch(() => {})` swallows autoplay (and play()) failures so the game continues without music. A true 404 still logs a browser media error. Not silent for console; gameplay continues.
+- **Evidence:**
+  - Local file 97010 bytes, ID3v2 + MPEG ADTS layer III 128 kbps 44.1 kHz stereo.
+  - Vitest `crystal-garden-dance-asset.test.ts` asserts URL, size, MPEG header.
+  - Playwright `page.request.get("/health-lab-audio/crystal-garden-dance.mp3")` → 200, `audio/mpeg`, body > 4000 bytes.
+  - Read-only `HEAD https://www.amynest.in/health-lab-audio/crystal-garden-dance.mp3` → 200, `audio/mpeg`, `content-length: 97010`.
+
+The earlier audit line “not in this checkout” was a glob miss (`**/*health-lab-audio*` matched a hook file, not the MP3). The reference was already correct; no asset was invented or replaced.
+
+## Living Stream Test
+
+- **Previous failure:** standalone `room-living-stream.test.tsx` → `TypeError: React.act is not a function` at RTL `render()` / `cleanup()`, stack in `react-dom/cjs/react-dom-test-utils.production.js`.
+- **Root cause:** host `NODE_ENV=production`. React 19 production CJS does **not** export `act`. RTL 16 still calls `require("react").act`. This is a test-harness / environment issue, not a Care UI regression.
+- **Fix:** `artifacts/kidschedule/vitest.config.ts` sets `process.env.NODE_ENV = "test"` and `test.env.NODE_ENV = "test"` before Vite resolves React. Also `dedupe: ["react", "react-dom"]`. Assertions were not weakened; the file is not skipped.
+- **Standalone result:** `4 passed / 1 file`.
+
+## Signed-in Entitlements
+
+- **Test method:**
+  - Unit: `decidePremiumRouteAccess` + AppCore / parenting-hub / health-lab route source contracts + `LockedBlock` locked vs unlocked + `HealthLabStaticFreePreview` render.
+  - E2E fixture: default `data-entitlement=allow` mounts `HealthLabZone`; `?entitlement=deny` mounts `HealthLabStaticFreePreview` after Care → Health. Care still lists Health by age.
+  - API: `health-lab-premium.test.ts` protection matrix (assertHealthLabPremium on reads and mutations).
+- **Allowed result:** fixture launches all five practices; `flag: true` + `entitlementsResolved` → `ALLOW` → zone; unlocked `LockedBlock` has no overlay. Playwright test 1 PASS.
+- **Denied result:** Care Health path remains visible; practices do not launch; static preview CTA “Continue with AmyNest”; `FREE_ENTITLEMENTS.canAccessHealthLab === false`; missing/false/timeout flags DENY. Playwright test 2 PASS.
+- **Limitations (do not claim live signed-in PASS):**
+  - Fixture stub auth (`playwright_user`) bypasses Firebase, Clerk, RevenueCat, and AppCore `ProtectedRoute`.
+  - Production Care destination `FeatureGate` (`hub_health_lab` / `healthLabRouteOpen`) is source-contract tested, not clicked inside the real parenting hub with a billed user.
+  - API DB enforcement suite SKIPPED (`isDbIntegrationAvailable()` false). HTTP 402 for free users vs 200 for premium was **not** executed against PostgreSQL in this environment.
+
+## Final Regression
+
+Exact commands and counts:
+
+1. `NODE_OPTIONS=--max-old-space-size=8192 pnpm --filter @workspace/kidschedule typecheck` — PASS (pre-commit).
+2. `pnpm exec vitest run --config vitest.config.ts src/components/parent-hub/room-living-stream.test.tsx` — **4 passed / 1 file**.
+3. Relevant Vitest subset (14 files listed in Tests Run) — **131 passed / 14 files**.
+4. `pnpm --filter @workspace/kidschedule test:e2e:care-health-wellness` — **9 passed / 9 expected / 0 unexpected / 0 flaky** (32.4s).
+5. `node --import tsx/esm --test src/routes/health-lab-premium.test.ts` — **2 passed**, DB HTTP suite skipped.
+
+Playwright DOM checks (not screenshot-only): `documentElement.scrollWidth <= clientWidth + 1` at all five viewports; last quiet path and exit-home sit above the tab bar on widths under 1024; `mobile-tab-bar` hidden while a practice is open; `health-lab-practice-start` text `/Begin gently/i`; Exit returns to `health-lab-living`; 13+ Health count 0; infant preview; reopen breath.
+
+Console / network this run: no page errors; no health-lab / health-lab-audio / `/api/` request failures or 4xx/5xx after the API mock. Crystal Garden is served, not stubbed.
+
+## Remaining Risks
+
+| Item | Classification |
+|---|---|
+| Crystal Garden MP3 repo + Vite + production static HTTP | PASS |
+| Living Care → five practices launch / chrome / Begin gently / Exit / age bands / chips wrap | PASS |
+| `room-living-stream.test.tsx` standalone | FIXED |
+| Fixture allowed vs denied Health Lab UI | PASS |
+| Live signed-in Firebase + RevenueCat entitlement | PRODUCTION VERIFICATION REQUIRED |
+| Real parenting-hub FeatureGate hop to `/health-lab` | PRODUCTION VERIFICATION REQUIRED |
+| Server Health Lab 402/200 against production or local DB | PRODUCTION VERIFICATION REQUIRED (DB suite skipped here) |
+| DeviceOrientation / calibration on physical devices | PRODUCTION VERIFICATION REQUIRED |
+| Kidschedule `tsc` default heap OOM | TEST INFRASTRUCTURE ISSUE (pre-existing; 8GB heap PASS) |
+
+**Not overall PASS** while live signed-in billing and device motion remain unverified.
