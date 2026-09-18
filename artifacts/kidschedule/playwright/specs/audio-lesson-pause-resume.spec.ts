@@ -111,6 +111,10 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   expect(afterResume.currentTime).toBeGreaterThan(5);
   expect(afterResume.paused).toBe(false);
   expect(await sameSpeechElement(page)).toBe(true);
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/audio_lesson_resumed_from_position.png",
+    fullPage: true,
+  });
 
   await page.waitForTimeout(800);
   const progressed = await speechTime(page);
