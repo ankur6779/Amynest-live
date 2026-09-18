@@ -24,4 +24,13 @@ describe("Health Lab immersive host CSS", () => {
       /\.health-lab-game-viewport\.hl-living-deep\s*\{[\s\S]*?position:\s*fixed/,
     );
   });
+
+  it("standalone living home does not bleed hub header negative margins", () => {
+    const zone = readFileSync(
+      join(kidscheduleRoot, "src/features/health-lab/components/health-lab-zone.tsx"),
+      "utf8",
+    );
+    expect(zone).toMatch(/view === "home" && standalone && !living/);
+    expect(zone).toMatch(/standalone && "!mx-0"/);
+  });
 });
