@@ -2,6 +2,7 @@
  * Amy Health Lab™ — production certification E2E suite (30+ scenarios).
  */
 import { test, expect, type Route } from "@playwright/test";
+import { waitForHealthLabHome } from "../helpers/health-lab-home";
 
 const CHILD_ID = 42;
 
@@ -53,9 +54,7 @@ function mockHealthLabApi(page: import("@playwright/test").Page) {
 test.beforeEach(async ({ page }) => {
   await mockHealthLabApi(page);
   await page.goto("/playwright-health-lab.html?childId=42&childName=Riya");
-  await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
-    timeout: 30_000,
-  });
+  await waitForHealthLabHome(page);
 });
 
 async function expandGrownUps(page: import("@playwright/test").Page) {
@@ -202,13 +201,13 @@ test.describe("Game launch", () => {
 test.describe("Onboarding and calibration flows", () => {
   test("Sky Island shows calibration overlay after start", async ({ page }) => {
     await launchAdventure(page, "Sky Island Survival");
-    await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
+    await page.getByTestId("health-lab-practice-start").click();
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Sky Island shows progress ring during gameplay", async ({ page }) => {
     await launchAdventure(page, "Sky Island Survival");
-    await page.getByRole("button", { name: /Start Survival/i }).click({ force: true });
+    await page.getByTestId("health-lab-practice-start").click();
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
     await page.waitForTimeout(3500);
     await expect(page.getByText("to go")).toBeVisible({ timeout: 5000 });
@@ -223,7 +222,7 @@ test.describe("Onboarding and calibration flows", () => {
 
   test("Rocket Launch reaches countdown after onboarding", async ({ page }) => {
     await launchAdventure(page, "Rocket Launch Academy");
-    await page.getByRole("button", { name: /Launch Mission/i }).click({ force: true });
+    await page.getByTestId("health-lab-practice-start").click();
     await expect(page.getByText("3").or(page.getByText("GO!"))).toBeVisible({ timeout: 8000 });
   });
 });
@@ -522,7 +521,7 @@ test.describe("Accessibility", () => {
 
   test("reaction uses icon not color alone", async ({ page }) => {
     await launchAdventure(page, "Rocket Launch Academy");
-    await page.getByRole("button", { name: /Launch Mission/i }).click();
+    await page.getByTestId("health-lab-practice-start").click();
     await expect(page.getByText("🚀").first()).toBeVisible();
   });
 });

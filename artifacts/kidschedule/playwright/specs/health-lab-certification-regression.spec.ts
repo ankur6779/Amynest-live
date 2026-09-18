@@ -6,6 +6,12 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  healthLabListing,
+  openHealthLabAdventure,
+  waitForHealthLabHome,
+  waitForHealthLabListing,
+} from "../helpers/health-lab-home";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, "../../../../audit/health-lab-release-regression");
@@ -76,13 +82,13 @@ function mockHealthLabApi(page: Page) {
 
 async function gotoLab(page: Page) {
   await page.goto("/playwright-health-lab.html?childId=42&childName=Riya");
-  await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
-    timeout: 30_000,
-  });
-  await page.waitForSelector(
-    "[data-testid=health-lab-quiet-paths], [class*='health-lab-world-card'], button:has-text('Balloon')",
-    { timeout: 30_000 },
-  );
+  await waitForHealthLabHome(page);
+  await page
+    .getByTestId("health-lab-quiet-paths")
+    .or(page.locator("[class*='health-lab-world-card']"))
+    .or(page.getByRole("button", { name: /Balloon/i }))
+    .first()
+    .waitFor({ timeout: 30_000 });
 }
 
 async function shot(page: Page, name: string) {
@@ -287,7 +293,7 @@ test("immersive mode exit restores DOM and scroll", async ({ page }) => {
 
   await launchBalloonGameplay(page);
   await page.getByRole("button", { name: /^Exit$/i }).first().click();
-  await page.waitForSelector("text=Today's Adventures", { timeout: 10_000 });
+  await waitForHealthLabListing(page);
 
   const state = await readImmersiveState(page);
   const ss = await shot(page, "02-immersive-exit-home");
@@ -319,12 +325,16 @@ test("navigation: home → progress → home", async ({ page }) => {
   await mockHealthLabApi(page);
   await gotoLab(page);
 
+  const more = page.getByTestId("health-lab-more-toggle");
+  if (await more.isVisible().catch(() => false)) {
+    if ((await more.getAttribute("aria-expanded")) !== "true") await more.click();
+  }
   const grownUps = page.getByRole("button", { name: /For grown-ups/i });
   if ((await grownUps.getAttribute("aria-expanded")) !== "true") await grownUps.click();
-  await page.getByRole("button", { name: /^Progress$/ }).click();
-  await expect(page.getByText("Your Progress")).toBeVisible();
+  await page.getByRole("button", { name: /See gentle progress|^Progress$/i }).click();
+  await expect(page.getByText(/Your Progress|How we've been practicing/i)).toBeVisible();
   await page.getByRole("button", { name: /Go back|Back/i }).first().click();
-  await expect(page.getByText("Today's Adventures")).toBeVisible();
+  await expect(healthLabListing(page).first()).toBeVisible();
 
   record({
     id: "nav-progress-roundtrip",
@@ -339,15 +349,15 @@ test("browser / Android back handler exits game then prep", async ({ page }) => 
   await mockHealthLabApi(page);
   await gotoLab(page);
 
-  await page.getByRole("button", { name: /Balloon Journey Adventure/i }).click();
-  await expect(page.getByText("Mission Briefing")).toBeVisible();
+  await openHealthLabAdventure(page, "Balloon Journey Adventure");
+  await expect(page.getByText(/Mission Briefing|Today's care practice/i).first()).toBeVisible();
 
   const fromOnboarding = await invokeAppBack(page);
-  await expect(page.getByText("Today's Adventures")).toBeVisible({ timeout: 10_000 });
+  await expect(healthLabListing(page).first()).toBeVisible({ timeout: 10_000 });
 
   await launchBalloonGameplay(page);
   const fromGame = await invokeAppBack(page);
-  await expect(page.getByText("Today's Adventures")).toBeVisible({ timeout: 10_000 });
+  await expect(healthLabListing(page).first()).toBeVisible({ timeout: 10_000 });
 
   record({
     id: "back-from-onboarding",
@@ -368,10 +378,16 @@ test("motion prep cancel via back restores home without host leak", async ({ pag
   await mockHealthLabApi(page);
   await gotoLab(page);
 
-  await page.getByRole("button", { name: /Sky Island Survival/i }).click();
-  await expect(page.getByRole("button", { name: /I'm Ready!/i })).toBeVisible({ timeout: 5000 });
-  await page.getByRole("button", { name: "Back", exact: true }).click();
-  await page.waitForSelector("text=Today's Adventures", { timeout: 10_000 });
+  const livingBalance = page.getByTestId("health-lab-quiet-flamingo-balance");
+  if (await livingBalance.isVisible().catch(() => false)) {
+    await livingBalance.click();
+  } else {
+    await page.getByRole("button", { name: /Sky Island Survival/i }).click();
+  }
+  const prepOrStart = page.getByRole("button", { name: /I'm Ready!|I'm ready|Begin gently/i }).first();
+  await expect(prepOrStart).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: /^Back$|^Exit$/i }).first().click();
+  await waitForHealthLabListing(page);
 
   const state = await readImmersiveState(page);
   record({
@@ -442,7 +458,7 @@ test("memory cleanup after repeated enter/exit cycles", async ({ page }) => {
   for (let i = 0; i < 5; i++) {
     await launchBalloonGameplay(page);
     await page.getByRole("button", { name: /^Exit$/i }).first().click();
-    await page.waitForSelector("text=Today's Adventures", { timeout: 10_000 });
+    await waitForHealthLabListing(page);
   }
 
   const state = await readImmersiveState(page);
@@ -520,7 +536,7 @@ test("responsive immersive layout smoke at all breakpoints", async ({ page }) =>
       fails.push(`${width}dp: ${layoutFails.join(",")}`);
     }
     await page.getByRole("button", { name: /^Exit$/i }).first().click();
-    await page.waitForSelector("text=Today's Adventures", { timeout: 10_000 }).catch(() => undefined);
+    await waitForHealthLabListing(page).catch(() => undefined);
   }
 
   if (fails.length === 0) {
