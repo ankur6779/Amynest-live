@@ -135,4 +135,29 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   await expect(playBtn).toHaveAttribute("aria-label", /Pause/i, { timeout: 10_000 });
   const afterStopPlay = await speechTime(page);
   expect(afterStopPlay.currentTime).toBeLessThan(1.2);
+
+  mkdirSync("/opt/cursor/artifacts", { recursive: true });
+  writeFileSync(
+    "/opt/cursor/artifacts/audio_lesson_pause_resume_times.json",
+    JSON.stringify(
+      {
+        pausedAt,
+        whilePaused,
+        afterResume,
+        progressed,
+        sameElement: true,
+        staticAudioGetsAfterResume: staticAudioGets.length,
+        fetchesBeforeResume,
+        secondPause,
+        afterStop,
+        afterStopPlay,
+      },
+      null,
+      2,
+    ),
+  );
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/audio_lesson_pause_resume_player.png",
+    fullPage: true,
+  });
 });
