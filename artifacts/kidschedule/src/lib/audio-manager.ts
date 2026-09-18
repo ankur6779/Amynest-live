@@ -167,6 +167,20 @@ export const AUDIO_ERROR = {
   GESTURE_BLOCKED: "audio_blocked_until_gesture",
 } as const;
 
+/** Play Again after ended; Pause → Play must NOT use this. */
+export function shouldRestartAudioFromBeginning(audio: {
+  ended: boolean;
+  currentTime: number;
+  duration: number;
+}): boolean {
+  if (audio.ended) return true;
+  const duration = audio.duration;
+  if (Number.isFinite(duration) && duration > 0 && audio.currentTime >= duration - 0.05) {
+    return true;
+  }
+  return false;
+}
+
 export type AudioChannel = "speech" | "ui";
 
 export type AudioSrcType = "blob" | "static" | "tts" | "unknown";
@@ -1574,6 +1588,11 @@ class AudioManagerImpl {
         audio.onerror = null;
         if (result.ok) {
           this.clearChannelIfCurrent(channel, audio);
+        } else if (result.error === "audio_cancelled") {
+          // Keep the same HTMLAudioElement so Pause/Stop can preserve or reset
+          // currentTime instead of tearing down src (which restarts at 0).
+          const state = this.channelState(channel);
+          state.playing = false;
         } else {
           this.clearChannelIfCurrent("speech", audio);
           this.clearChannelIfCurrent("ui", audio);
@@ -1619,19 +1638,28 @@ class AudioManagerImpl {
         }, pollMs);
       }
 
-      fallbackTimer = window.setTimeout(() => {
-        if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
-        logStructured("waitUntilEnd fallback timeout", new Error("wait_until_end_timeout"), {
-          attempt: 0,
-          srcType: inferSrcType(audio.src),
-          fallbackMs,
-          channel,
-        }, audio);
-        if (audio.ended) {
-          return done({ ok: true });
-        }
-        done({ ok: false, error: "wait_until_end_timeout" });
-      }, fallbackMs);
+      const armFallback = () => {
+        if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+        fallbackTimer = window.setTimeout(() => {
+          if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
+          // Pause must not expire the clip — user can resume minutes later.
+          if (audio.paused && !audio.ended) {
+            armFallback();
+            return;
+          }
+          logStructured("waitUntilEnd fallback timeout", new Error("wait_until_end_timeout"), {
+            attempt: 0,
+            srcType: inferSrcType(audio.src),
+            fallbackMs,
+            channel,
+          }, audio);
+          if (audio.ended) {
+            return done({ ok: true });
+          }
+          done({ ok: false, error: "wait_until_end_timeout" });
+        }, fallbackMs);
+      };
+      armFallback();
 
       audio.onended = () => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
@@ -1666,24 +1694,78 @@ class AudioManagerImpl {
     configureMobileAudioElement(audio);
     try {
       await audio.play();
-      await this.runPlaybackWatchdog(audio, this.channels.speech.playToken, "speech");
       this.channels.speech.playing = true;
+      this.channels.speech.current = audio;
       return true;
     } catch (err) {
       if (isNotAllowedError(err)) {
         this.setLastError(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
         return false;
       }
-      logStructured("resume failed — retrying via play", err, {
+      logStructured("resume failed", err, {
         attempt: 1,
         srcType: inferSrcType(audio.src),
       });
-      return this.play(
-        audio,
-        { proxyUrl: audio.src, source: "resume-retry", interrupt: true },
-        { maxRetries: 1, channel: "speech", interrupt: true },
-      );
+      return false;
     }
+  }
+
+  hasResumableSpeech(): boolean {
+    const audio = this.channels.speech.current;
+    if (!audio) return false;
+    const src = (audio.src ?? "").trim();
+    return src.length > 0 && !audio.error;
+  }
+
+  pauseSpeechPreservePosition(): number | null {
+    const audio = this.channels.speech.current;
+    if (!audio) return null;
+    this.pauseElement(audio);
+    this.channels.speech.playing = false;
+    this.playInFlight = false;
+    return audio.currentTime;
+  }
+
+  /**
+   * Gesture-safe resume: call audio.play() on the existing element without
+   * touching currentTime (unless the clip already ended).
+   */
+  resumeSpeechPreservePositionInGesture(): HTMLAudioElement | null {
+    const audio = this.channels.speech.current;
+    if (!audio || !this.hasResumableSpeech()) return null;
+    if (shouldRestartAudioFromBeginning(audio)) {
+      audio.currentTime = 0;
+    }
+    audio.muted = false;
+    if (audio.volume <= 0) audio.volume = 1;
+    const p = audio.play();
+    if (p) void p.catch(() => {});
+    this.channels.speech.playing = true;
+    return audio;
+  }
+
+  async resumeSpeechPreservePosition(): Promise<boolean> {
+    const audio = this.channels.speech.current;
+    if (!audio || !this.hasResumableSpeech()) return false;
+    if (shouldRestartAudioFromBeginning(audio)) {
+      audio.currentTime = 0;
+    }
+    return this.resumeElement(audio);
+  }
+
+  /** STOP — pause and reset to 0 on the same element (do not revoke src). */
+  resetSpeechToStart(): number {
+    const audio = this.channels.speech.current;
+    if (!audio) return 0;
+    this.pauseElement(audio);
+    try {
+      audio.currentTime = 0;
+    } catch {
+      /* ignore */
+    }
+    this.channels.speech.playing = false;
+    this.playInFlight = false;
+    return audio.currentTime;
   }
 
   getCurrentElement(): HTMLAudioElement | null {

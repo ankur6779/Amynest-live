@@ -14,6 +14,8 @@ import { isStaticAudioMapReady } from "@/lib/static-audio";
 export type LessonPlaybackMachineState =
   | "idle"
   | "playing"
+  | "paused"
+  | "resume"
   | "speak_start"
   | "static_lookup"
   | "static_play"
@@ -40,7 +42,7 @@ export type AudioPipelineSnapshot = {
   stateMachine: LessonPlaybackMachineState;
   paragraphIdx: number | null;
   lessonId: string | null;
-  intent: "idle" | "playing" | null;
+  intent: "idle" | "playing" | "paused" | null;
   playbackError: string | null;
   audioUrl: string | null;
   mapReady: boolean;
@@ -55,7 +57,7 @@ const MAX_EVENTS = 80;
 let machineState: LessonPlaybackMachineState = "idle";
 let paragraphIdx: number | null = null;
 let lessonId: string | null = null;
-let intent: "idle" | "playing" | null = null;
+let intent: "idle" | "playing" | "paused" | null = null;
 let playbackError: string | null = null;
 let audioUrl: string | null = null;
 let watchdogStatus: string | null = null;
@@ -115,7 +117,7 @@ export function getAudioPipelineEvents(): readonly AudioPipelineEvent[] {
 export function setAudioPipelineContext(ctx: {
   paragraphIdx?: number;
   lessonId?: string;
-  intent?: "idle" | "playing";
+  intent?: "idle" | "playing" | "paused";
   playbackError?: string | null;
   audioUrl?: string | null;
 }): void {

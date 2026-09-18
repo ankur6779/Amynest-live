@@ -1,5 +1,5 @@
 /** Standalone fixture for the restored Audio Lesson player sheet (no auth). */
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "../index.css";
 import "../i18n";
@@ -11,6 +11,45 @@ import {
   AuthContext,
   type AuthContextValue,
 } from "@/lib/firebase-auth-context";
+
+function makeFixtureWavBlob(durationSec = 12, sampleRate = 8000): Blob {
+  const samples = durationSec * sampleRate;
+  const buffer = new ArrayBuffer(44 + samples * 2);
+  const view = new DataView(buffer);
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, samples * 2, true);
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+const originalFetch = window.fetch.bind(window);
+window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = String(input);
+  if (url.includes("/api/static-audio/")) {
+    return new Response(makeFixtureWavBlob(12), {
+      status: 200,
+      headers: {
+        "content-type": "audio/wav",
+        "x-amynest-static-source": "asset",
+        "content-length": String(44 + 12 * 8000 * 2),
+      },
+    });
+  }
+  return originalFetch(input, init);
+};
 
 const stubAuth: AuthContextValue = {
   user: {
@@ -35,18 +74,79 @@ const stubAuth: AuthContextValue = {
 const lesson = getLessonById("toddler-tantrums-101");
 const series = getSeriesById("toddler-tantrums") ?? null;
 
+function FixtureAudioClock() {
+  const [snap, setSnap] = useState({ currentTime: 0, paused: true, ended: false });
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const w = window as Window & {
+        __amynestAudioManagerRef?: { getCurrentElement?: () => HTMLAudioElement | null };
+      };
+      const el = w.__amynestAudioManagerRef?.getCurrentElement?.() ?? null;
+      if (!el) return;
+      setSnap({ currentTime: el.currentTime, paused: el.paused, ended: el.ended });
+    }, 100);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div
+      data-testid="fixture-audio-clock"
+      style={{
+        position: "fixed",
+        top: 12,
+        left: 12,
+        zIndex: 9999,
+        color: "#fff",
+        background: "rgba(0,0,0,0.55)",
+        borderRadius: 8,
+        padding: "8px 12px",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 14,
+      }}
+    >
+      currentTime={snap.currentTime.toFixed(2)}s paused={String(snap.paused)} ended={String(snap.ended)}
+    </div>
+  );
+}
+
 function PreviewShell() {
   if (!lesson) {
     return <p style={{ color: "#fff", padding: 24 }}>Lesson not found</p>;
   }
   return (
-    <PlayerSheet
-      lesson={lesson}
-      series={series}
-      visible
-      autoPlay={false}
-      onMinimize={() => undefined}
-    />
+    <>
+      <FixtureAudioClock />
+      <button
+        type="button"
+        data-testid="fixture-lesson-stop"
+        onClick={() => {
+          const w = window as Window & {
+            __amynestLessonPlayback?: { stop: () => void };
+          };
+          w.__amynestLessonPlayback?.stop();
+        }}
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 12,
+          zIndex: 9999,
+          padding: "8px 14px",
+          borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.4)",
+          background: "rgba(0,0,0,0.55)",
+          color: "#fff",
+          cursor: "pointer",
+        }}
+      >
+        Stop
+      </button>
+      <PlayerSheet
+        lesson={lesson}
+        series={series}
+        visible
+        autoPlay={false}
+        onMinimize={() => undefined}
+      />
+    </>
   );
 }
 

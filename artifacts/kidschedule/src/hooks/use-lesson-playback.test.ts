@@ -6,6 +6,10 @@ const speakMock = vi.fn().mockResolvedValue({ success: true, layer: "static" });
 const pauseMock = vi.fn();
 const prefetchMock = vi.fn();
 const playLessonStaticMock = vi.fn().mockResolvedValue({ success: true, layer: "static" });
+const pausePreserveMock = vi.fn(() => 6.4);
+const hasResumableMock = vi.fn(() => false);
+const resumePreserveMock = vi.fn(async () => true);
+const resetToStartMock = vi.fn(() => 0);
 
 vi.mock("@/hooks/use-amy-voice", () => ({
   useAmyVoice: () => ({
@@ -21,6 +25,16 @@ vi.mock("@/hooks/use-amy-voice", () => ({
 vi.mock("@/lib/lesson-audio-playback", () => ({
   playLessonParagraphStatic: (...args: unknown[]) => playLessonStaticMock(...args),
   primeLessonParagraphInUserGesture: vi.fn(() => null),
+}));
+
+vi.mock("@/lib/audio-manager", () => ({
+  audioManager: {
+    unlockFromUserGesture: vi.fn(),
+    pauseSpeechPreservePosition: (...args: unknown[]) => pausePreserveMock(...args),
+    hasResumableSpeech: () => hasResumableMock(),
+    resumeSpeechPreservePosition: (...args: unknown[]) => resumePreserveMock(...args),
+    resetSpeechToStart: (...args: unknown[]) => resetToStartMock(...args),
+  },
 }));
 
 vi.mock("@/hooks/use-auth-fetch", () => ({
@@ -42,6 +56,12 @@ describe("useLessonPlayback lesson switch safety", () => {
     prefetchMock.mockClear();
     playLessonStaticMock.mockClear();
     playLessonStaticMock.mockResolvedValue({ success: true, layer: "static" });
+    pausePreserveMock.mockClear();
+    hasResumableMock.mockReset();
+    hasResumableMock.mockReturnValue(false);
+    resumePreserveMock.mockClear();
+    resumePreserveMock.mockResolvedValue(true);
+    resetToStartMock.mockClear();
   });
 
   it("starts Lesson B from its resume index without Lesson A carryover", () => {
@@ -118,7 +138,104 @@ describe("useLessonPlayback lesson switch safety", () => {
     });
   });
 
+  it("pause preserves position and Play resumes without restarting the paragraph", async () => {
+    playLessonStaticMock.mockImplementation(() => new Promise(() => {}));
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["P0", "P1"],
+        lessonId: "lesson-pause-resume",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+    expect(result.current.intent).toBe("playing");
+    expect(playLessonStaticMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.pause();
+    });
+    expect(pausePreserveMock).toHaveBeenCalled();
+    expect(pauseMock).not.toHaveBeenCalled();
+    expect(result.current.intent).toBe("paused");
+
+    hasResumableMock.mockReturnValue(true);
+    act(() => {
+      result.current.play();
+    });
+    expect(result.current.intent).toBe("playing");
+    expect(resumePreserveMock).toHaveBeenCalled();
+    expect(playLessonStaticMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stop resets to 0 and the next Play starts from the beginning", () => {
+    playLessonStaticMock.mockImplementation(() => new Promise(() => {}));
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["P0"],
+        lessonId: "lesson-stop",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+    act(() => {
+      result.current.stop();
+    });
+    expect(resetToStartMock).toHaveBeenCalled();
+    expect(result.current.intent).toBe("idle");
+
+    hasResumableMock.mockReturnValue(true);
+    act(() => {
+      result.current.play();
+    });
+    expect(resumePreserveMock).not.toHaveBeenCalled();
+    expect(playLessonStaticMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("pause then a React rerender still resumes without restarting", async () => {
+    playLessonStaticMock.mockImplementation(() => new Promise(() => {}));
+    const { result, rerender } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["P0"],
+        lessonId: "lesson-rerender",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+    act(() => {
+      result.current.pause();
+    });
+    expect(result.current.intent).toBe("paused");
+
+    rerender();
+    expect(result.current.intent).toBe("paused");
+    expect(playLessonStaticMock).toHaveBeenCalledTimes(1);
+
+    hasResumableMock.mockReturnValue(true);
+    act(() => {
+      result.current.play();
+    });
+    expect(resumePreserveMock).toHaveBeenCalledTimes(1);
+    expect(playLessonStaticMock).toHaveBeenCalledTimes(1);
+  });
+
   it("pause stops voice and clears playing intent", () => {
+    playLessonStaticMock.mockImplementation(() => new Promise(() => {}));
     const { result } = renderHook(() =>
       useLessonPlayback({
         paragraphs: ["P0", "P1"],
@@ -139,8 +256,9 @@ describe("useLessonPlayback lesson switch safety", () => {
       result.current.pause();
     });
 
-    expect(pauseMock).toHaveBeenCalled();
-    expect(result.current.intent).toBe("idle");
+    expect(pausePreserveMock).toHaveBeenCalled();
+    expect(pauseMock).not.toHaveBeenCalled();
+    expect(result.current.intent).toBe("paused");
     expect(result.current.playbackError).toBeNull();
   });
 

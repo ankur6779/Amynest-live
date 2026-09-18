@@ -19,7 +19,7 @@ const READY_LABELS: Record<number, string> = {
 type AudioDiagnosticsPanelProps = {
   paragraphIdx: number;
   lessonId: string;
-  intent: "idle" | "playing";
+  intent: "idle" | "playing" | "paused";
   playbackError: string | null;
 };
 

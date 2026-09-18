@@ -14,6 +14,7 @@ import {
   warmLessonParagraphStatic,
 } from "@/lib/lesson-audio-playback";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { audioManager } from "@/lib/audio-manager";
 import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
@@ -81,6 +82,7 @@ export function PlayerSheet({
     error,
     play,
     pause,
+    stop,
     primeSpeakGesture,
   } = useLessonPlayback({
     paragraphs,
@@ -94,6 +96,7 @@ export function PlayerSheet({
   });
 
   const playing = intent === "playing";
+  const paused = intent === "paused";
 
   // Warm catalog map + current/next paragraph blobs as soon as the sheet is
   // visible so Play never awaits a chunk load or fetch inside the gesture stack.
@@ -114,6 +117,18 @@ export function PlayerSheet({
   useEffect(() => {
     onPlaybackChange?.({ playing, loading: loading && !speaking, play, pause });
   }, [playing, loading, speaking, play, pause, onPlaybackChange]);
+
+  useEffect(() => {
+    const w = window as Window & {
+      __amynestLessonPlayback?: { play: () => void; pause: () => void; stop: () => void };
+    };
+    w.__amynestLessonPlayback = { play, pause, stop };
+    return () => {
+      if (w.__amynestLessonPlayback?.play === play) {
+        delete w.__amynestLessonPlayback;
+      }
+    };
+  }, [play, pause, stop]);
 
   const handleMinimize = useCallback(() => {
     onMinimize();
@@ -311,6 +326,17 @@ export function PlayerSheet({
             type="button"
             data-testid="amy-audio-sheet-play"
             onPointerDown={() => {
+              if (playing) {
+                recordTtsUserGesture();
+                return;
+              }
+              if (paused) {
+                recordTtsUserGesture();
+                audioManager.resumeSpeechPreservePositionInGesture();
+                playStartedFromPointerRef.current = true;
+                play();
+                return;
+              }
               const txt = paragraphs[paragraphIdx];
               if (!txt) return;
               recordTtsUserGesture();
@@ -328,12 +354,16 @@ export function PlayerSheet({
               }
             }}
             onClick={() => {
+              if (playing) {
+                playStartedFromPointerRef.current = false;
+                pause();
+                return;
+              }
               if (playStartedFromPointerRef.current) {
                 playStartedFromPointerRef.current = false;
                 return;
               }
-              if (playing) pause();
-              else play();
+              play();
             }}
             aria-label={
               playing

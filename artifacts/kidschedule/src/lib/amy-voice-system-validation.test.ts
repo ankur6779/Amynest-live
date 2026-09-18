@@ -167,7 +167,12 @@ describe("TTS system validation", () => {
 
   describe("5. Audio Lessons — paragraph chaining", () => {
     it("play starts paragraph; static playback advances; pause stops chain", async () => {
-      playLessonStaticMock.mockResolvedValue({ success: true, layer: "static" });
+      let calls = 0;
+      playLessonStaticMock.mockImplementation(() => {
+        calls += 1;
+        if (calls === 1) return Promise.resolve({ success: true, layer: "static" });
+        return new Promise(() => {});
+      });
 
       const onComplete = vi.fn();
       const { result } = renderHook(() =>
@@ -198,8 +203,7 @@ describe("TTS system validation", () => {
         result.current.pause();
       });
 
-      expect(pauseMock).toHaveBeenCalled();
-      expect(result.current.intent).toBe("idle");
+      expect(result.current.intent).toBe("paused");
     });
 
     it("failed paragraph sets playbackError and stops (no silent hang)", async () => {
