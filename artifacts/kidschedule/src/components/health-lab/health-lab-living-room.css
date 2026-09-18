@@ -5,7 +5,8 @@
 
 .health-lab-living.fe-shell {
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   min-height: 0;
   height: auto;
   width: 100%;
@@ -15,7 +16,7 @@
   padding-top: max(8px, env(safe-area-inset-top, 0px));
   padding-left: max(12px, env(safe-area-inset-left, 0px));
   padding-right: max(12px, env(safe-area-inset-right, 0px));
-  padding-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
 }
 
 .health-lab-living .fe-ambient {

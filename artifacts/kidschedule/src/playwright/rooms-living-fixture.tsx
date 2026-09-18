@@ -170,7 +170,7 @@ function Fixture() {
               type="button"
               data-testid={`rooms-child-${entry.id}`}
               data-active={entry.id === child.id ? "true" : "false"}
-              className="rounded-full px-3 py-2 text-sm"
+              className="max-w-full truncate rounded-full px-3 py-2 text-sm"
               style={{
                 background:
                   entry.id === child.id
@@ -197,7 +197,7 @@ function Fixture() {
             Force missing
           </button>
         </header>
-        <main className="app-shell-main flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col pb-28">
+        <main className="app-shell-main app-tabbar-content-clearance flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
           <ParentHubRoomsShell
             childName={child.name}
             childId={child.id}
@@ -297,6 +297,7 @@ function Fixture() {
                 room={room}
                 childName={child.name}
                 isInfant={isInfant}
+                ageMonths={child.ageMonths}
                 visibleTileIds={visibleTileIds}
                 activeTileId={activeTileId}
                 onSelectTile={onSelectTile}

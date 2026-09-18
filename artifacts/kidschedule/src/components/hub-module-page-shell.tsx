@@ -299,7 +299,7 @@ export function HubModulePageShell({
   return (
     <div
       className={cn(
-        "flex min-h-dvh w-full flex-col bg-background",
+        "flex min-h-dvh w-full min-w-0 max-w-full flex-col overflow-x-clip bg-background",
         growLiving && "gw-living-deep",
       )}
       data-hub-module-shell
@@ -338,7 +338,7 @@ export function HubModulePageShell({
 
       {eligibleChildren.length > 1 && (
         <div
-          className="mx-auto flex w-full max-w-4xl gap-2 overflow-x-auto px-4 pt-3 pb-1"
+          className="mx-auto flex w-full min-w-0 max-w-4xl flex-wrap gap-2 px-4 pt-3 pb-1"
           data-hub-module-child-picker
         >
           {eligibleChildren.map((child) => (
@@ -346,7 +346,7 @@ export function HubModulePageShell({
               key={child.id}
               type="button"
               onClick={() => setSelectedChildId(child.id)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
+              className={`max-w-full truncate rounded-full border px-3 py-1.5 text-xs font-bold ${
                 activeChild.id === child.id
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-foreground"
@@ -358,7 +358,7 @@ export function HubModulePageShell({
         </div>
       )}
 
-      <main className="scroll-safe min-h-0 flex-1 px-4 py-4">
+      <main className="app-tabbar-content-clearance min-h-0 flex-1 px-4 py-4">
         <div className="mx-auto max-w-4xl space-y-4">
           {infantExplorePreview ? (
             <InfantExplorePreviewBanner className="mb-4" messageKey={previewBannerKey} />

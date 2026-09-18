@@ -2412,6 +2412,21 @@ html[data-theme="dark"] {
   padding-bottom: 120px;
 }
 
+/*
+ * Pages that keep the mobile tab bar + Ask Amy FAB must clear both:
+ * tab bar 72px, FAB ~70px sitting 8px above it.
+ * Desktop (lg) hides the tab bar.
+ */
+.app-tabbar-content-clearance {
+  padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .app-tabbar-content-clearance {
+    padding-bottom: 2rem;
+  }
+}
+
 .scroll-safe--audio {
   padding-bottom: 120px;
 }
@@ -4467,7 +4482,8 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
 .health-lab-game-viewport {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  /* Above tab bar (1000) and Ask Amy FAB (2000/2001) so practice chrome stays tappable. */
+  z-index: 3000;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -4491,6 +4507,13 @@ html.health-lab-immersive [data-hub-module-header],
 html.health-lab-immersive [data-hub-module-child-picker] {
   visibility: hidden;
   pointer-events: none;
+}
+
+html.health-lab-immersive .app-footer,
+html.health-lab-immersive #amy-fab-floating {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 html.health-lab-immersive [data-hub-module-shell] > main {

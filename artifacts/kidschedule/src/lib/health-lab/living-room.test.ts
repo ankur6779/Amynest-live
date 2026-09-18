@@ -33,6 +33,14 @@ describe("health-lab living-room", () => {
     expect(isHealthLabLivingV1Enabled()).toBe(true);
   });
 
+  it("every advertised quiet path maps to a registered Health Lab game", async () => {
+    const { GAMES } = await import("@/features/health-lab/constants");
+    const ids = new Set(GAMES.map((g) => g.id));
+    for (const path of HEALTH_LAB_QUIET_PATHS) {
+      expect(ids.has(path.gameId), path.gameId).toBe(true);
+    }
+  });
+
   it("opens as Care companionship — never galaxy / XP marketing", () => {
     const open = healthLabLivingOpen("Maya");
     expect(open.companionship).toContain("Maya");

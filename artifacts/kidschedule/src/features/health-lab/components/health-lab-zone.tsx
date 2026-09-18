@@ -17,6 +17,7 @@ import { HealthLabShop } from "./health-lab-shop";
 import { HealthLabSessionRewards } from "./health-lab-session-rewards";
 import { HealthLabCelebration } from "./health-lab-celebration";
 import { HealthLabImmersiveHost } from "./health-lab-immersive-host";
+import { HealthLabGameUnavailable } from "./health-lab-game-ui";
 import { HealthLabMotionPrep } from "./health-lab-motion-prep";
 import { BreathControlGame } from "./games/breath-control-game";
 import { FlamingoBalanceGame } from "./games/flamingo-balance-game";
@@ -190,7 +191,7 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
           />
         );
       default:
-        return null;
+        return <HealthLabGameUnavailable onExit={() => setView("home")} />;
     }
   };
 

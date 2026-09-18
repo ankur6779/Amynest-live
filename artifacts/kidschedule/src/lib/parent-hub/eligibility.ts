@@ -3,14 +3,15 @@
  *
  * Universal rooms (always): Help · Understand · Care · Moments
  *
- * Universal modules (never disappear when the child changes):
- *   Ask Amy, Guidance, Nutrition, Health, Moments presence/story
+ * Universal modules (never disappear when the child changes, within module age):
+ *   Ask Amy, Guidance, Nutrition, Health (preview <24m; hidden at 13+), Moments presence/story
  *
  * Age-adapted (same module, different content / recommendation):
  *   Nutrition meals, Grow practice recommend, Care primary spine
  *
  * Age-restricted (intentional exclusion — documented, not silent):
  *   Infant Care — 0–24 months only
+ *   Health Lab — under 13 years (156 months); preview-only under 24 months
  *   PTM / school meeting — month gate (typically 36+)
  *   Grow challenge (Olympiad) — 72+ months
  *
@@ -21,6 +22,7 @@
 
 import { getAgeBand } from "@/lib/age-bands";
 import {
+  HEALTH_LAB_MAX_AGE_MONTHS,
   isHubSectionVisible,
   type HubSectionVisibilityInput,
 } from "@/lib/hub-visibility";
@@ -59,9 +61,13 @@ export function isNutritionModuleEligible(_ageMonths: number): boolean {
   return true;
 }
 
-/** Health is a Care module for every supported child (preview below 24 months). */
-export function isHealthModuleEligible(_ageMonths: number): boolean {
-  return true;
+/**
+ * Health is a Care module through age 12.
+ * Under 24 months the Care page still shows Health — /health-lab is preview-only.
+ * At 13+ the games are not available, so Care must not advertise a dead path.
+ */
+export function isHealthModuleEligible(ageMonths: number): boolean {
+  return Number.isFinite(ageMonths) && ageMonths < HEALTH_LAB_MAX_AGE_MONTHS;
 }
 
 export function isSyntheticRoomTileId(tileId: string | null | undefined): boolean {
@@ -76,15 +82,15 @@ export function isUrlSafeRoomTileId(tileId: string | null | undefined): tileId i
 /**
  * Quiet paths shown for this child.
  * Infant Care is excluded for 24+ months (intentional — not a broken card).
- * Named Nutrition / Health always remain for Care.
- * When visibleTileIds is provided, hide paths whose underlying tile is not
- * in the Hub visibility set (e.g. PTM for a 6-month-old).
+ * Nutrition always remains for Care. Health remains through age 12 (preview <24m).
  */
 export function resolveQuietPathsForRoom(
   room: RoomLivingPeerRoom,
   opts: {
     isInfant: boolean;
     visibleTileIds?: readonly string[];
+    /** When set, Health is omitted at 13+ so Care never shows a launch that empties. */
+    ageMonths?: number;
   },
 ): RoomLivingPath[] {
   const catalog = quietPathsForRoom(room, { isInfant: opts.isInfant });
@@ -92,6 +98,13 @@ export function resolveQuietPathsForRoom(
 
   return catalog.filter((path) => {
     if (path.tileId === "infant-hub" && !opts.isInfant) return false;
+    if (
+      path.tileId === "health-lab" &&
+      opts.ageMonths != null &&
+      !isHealthModuleEligible(opts.ageMonths)
+    ) {
+      return false;
+    }
     if (ROOM_LIVING_STREAM_TILE_IDS.has(path.tileId)) return true;
     if (!visible) return true;
     return visible.has(path.tileId);

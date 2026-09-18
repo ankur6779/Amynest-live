@@ -1,0 +1,247 @@
+/**
+ * Care → Health & Wellness deep audit E2E.
+ * Production living UI: Care room Health path → Health Lab quiet practices.
+ */
+import { test, expect, type Page, type Route } from "@playwright/test";
+
+const ARTIFACTS = "/opt/cursor/artifacts";
+
+const VIEWPORTS = [
+  { name: "390x844", width: 390, height: 844 },
+  { name: "412x915", width: 412, height: 915 },
+  { name: "768x1024", width: 768, height: 1024 },
+  { name: "1024x1366", width: 1024, height: 1366 },
+  { name: "1440x900", width: 1440, height: 900 },
+] as const;
+
+const QUIET_PATHS = [
+  { id: "breath-control", title: "Breath & focus", start: /Begin gently|Start Journey/i },
+  { id: "flamingo-balance", title: "Balance", start: /Start Survival|Begin gently|I'm ready/i },
+  { id: "freeze-statue", title: "Stillness", start: /Start Dancing|Begin gently|I'm ready/i },
+  { id: "reaction-time", title: "Attention", start: /Launch Mission|Begin gently/i },
+  { id: "finger-stability", title: "Steady hands", start: /Power Up Reactor|Begin gently/i },
+] as const;
+
+function mockHealthLabApi(page: Page) {
+  let serverProfile: Record<string, unknown> | null = null;
+  return page.route("**/api/health-lab/**", async (route: Route) => {
+    const req = route.request();
+    const url = req.url();
+    if (req.method() === "GET" && url.includes("/profile/")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
+      });
+      return;
+    }
+    if (req.method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, profile: serverProfile, history: [], dashboard: {} }),
+      });
+      return;
+    }
+    if (req.method() === "POST") {
+      const body = (req.postDataJSON() ?? {}) as Record<string, unknown>;
+      if (body.profile) serverProfile = body.profile as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+}
+
+function collectErrors(page: Page) {
+  const errors: string[] = [];
+  const failed: string[] = [];
+  page.on("pageerror", (err) => errors.push(err.message));
+  page.on("console", (msg) => {
+    if (msg.type() === "error") errors.push(msg.text());
+  });
+  page.on("requestfailed", (req) => {
+    const url = req.url();
+    if (/favicon|fonts\.gstatic|googletagmanager/i.test(url)) return;
+    failed.push(`${req.failure()?.errorText ?? "failed"} ${url}`);
+  });
+  return { errors, failed };
+}
+
+function relevantErrors(errors: string[]) {
+  return errors.filter(
+    (text) =>
+      !/favicon|Download the React DevTools|Failed to load resource.*experience\/|net::ERR_ABORTED/i.test(
+        text,
+      ),
+  );
+}
+
+async function gotoCare(page: Page, child = 2) {
+  await page.goto(`/playwright-care-health-wellness.html?child=${child}`, {
+    waitUntil: "domcontentloaded",
+    timeout: 60_000,
+  });
+  await expect(page.getByTestId("care-wellness-fixture")).toBeVisible({ timeout: 30_000 });
+}
+
+async function assertNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const root = document.documentElement;
+    return { scrollWidth: root.scrollWidth, clientWidth: root.clientWidth };
+  });
+  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
+}
+
+async function lastPathClearsTabbar(page: Page) {
+  const last = page.getByTestId("health-lab-quiet-finger-stability");
+  const tab = page.getByTestId("mobile-tab-bar");
+  if (!(await tab.isVisible().catch(() => false))) return;
+  await last.scrollIntoViewIfNeeded();
+  const pathBox = await last.boundingBox();
+  const tabBox = await tab.boundingBox();
+  expect(pathBox).toBeTruthy();
+  expect(tabBox).toBeTruthy();
+  expect((pathBox?.y ?? 0) + (pathBox?.height ?? 0)).toBeLessThanOrEqual((tabBox?.y ?? 0) + 2);
+}
+
+async function enterHealth(page: Page) {
+  await page.getByTestId("care-quiet-health-lab").click();
+}
+
+async function dismissMotionPrep(page: Page) {
+  const ready = page.getByRole("button", { name: /I'm ready|I'm Ready/i });
+  if (await ready.isVisible().catch(() => false)) {
+    await ready.click();
+  }
+}
+
+async function exitPractice(page: Page) {
+  const exit = page.getByRole("button", { name: /Exit|Return to Care/i }).first();
+  if (await exit.isVisible().catch(() => false)) {
+    await exit.click();
+    return;
+  }
+  await page.keyboard.press("Escape");
+}
+
+test.describe("Care → Health & Wellness", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockHealthLabApi(page);
+  });
+
+  test("Care advertises Health and every quiet practice launches", async ({ page }) => {
+    const { errors, failed } = collectErrors(page);
+    await gotoCare(page, 2);
+    await expect(page.getByTestId("care-living-stream")).toBeVisible();
+    await expect(page.getByTestId("care-quiet-health-lab")).toBeVisible();
+    await expect(page.getByTestId("care-quiet-nutrition")).toBeVisible();
+    await assertNoHorizontalOverflow(page);
+
+    await enterHealth(page);
+    await expect(page.getByTestId("health-lab-living")).toBeVisible();
+    await expect(page.getByTestId("health-lab-recommend")).toBeVisible();
+    await expect(page.getByTestId("health-lab-quiet-paths")).toBeVisible();
+
+    for (const path of QUIET_PATHS) {
+      const card = page.getByTestId(`health-lab-quiet-${path.id}`);
+      await expect(card).toBeVisible();
+      await expect(card).toContainText(path.title);
+      await card.click();
+      await dismissMotionPrep(page);
+      await expect(page.getByText(/Today's care practice|Mission Briefing|Get ready/i).first()).toBeVisible({
+        timeout: 10_000,
+      });
+      await expect(page.locator("[data-health-lab-immersive-host]")).toBeVisible();
+      await expect(page.getByTestId("mobile-tab-bar")).toBeHidden();
+      const start = page.getByRole("button", { name: path.start });
+      if (await start.isVisible().catch(() => false)) {
+        await expect(start).toBeVisible();
+      }
+      await exitPractice(page);
+      await expect(page.getByTestId("health-lab-living")).toBeVisible({ timeout: 10_000 });
+    }
+
+    await page.getByTestId("health-lab-quiet-breath-control").click();
+    await expect(page.getByText(/Today's care practice|Balloon Journey/i).first()).toBeVisible();
+    await exitPractice(page);
+    await expect(page.getByTestId("health-lab-living")).toBeVisible();
+
+    expect(relevantErrors(errors), errors.join("\n")).toEqual([]);
+    expect(
+      failed.filter((f) => /health-lab|api\//i.test(f)),
+      failed.join("\n"),
+    ).toEqual([]);
+  });
+
+  test("child profiles change Care Health eligibility", async ({ page }) => {
+    await gotoCare(page, 1);
+    await expect(page.getByTestId("care-quiet-health-lab")).toBeVisible();
+    await enterHealth(page);
+    await expect(page.getByTestId("health-lab-preview-living")).toBeVisible();
+    await page.getByRole("button", { name: /^Care$/ }).click();
+
+    await page.getByTestId("care-wellness-child-3").click();
+    await expect(page.getByTestId("care-wellness-fixture")).toHaveAttribute("data-child-id", "3");
+    await enterHealth(page);
+    await expect(page.getByTestId("health-lab-living")).toBeVisible();
+    await expect(page.getByTestId("health-lab-quiet-breath-control")).toBeVisible();
+    await page.getByTestId("health-lab-back-care").click();
+
+    await page.getByTestId("care-wellness-child-4").click();
+    await expect(page.getByTestId("care-quiet-nutrition")).toBeVisible();
+    await expect(page.getByTestId("care-quiet-health-lab")).toHaveCount(0);
+  });
+
+  test("recommend launches a real practice", async ({ page }) => {
+    await gotoCare(page, 2);
+    await enterHealth(page);
+    await page.getByTestId("health-lab-recommend").click();
+    await dismissMotionPrep(page);
+    await expect(
+      page.getByText(/Today's care practice|Mission Briefing|Get ready/i).first(),
+    ).toBeVisible();
+    await exitPractice(page);
+    await expect(page.getByTestId("health-lab-living")).toBeVisible();
+  });
+});
+
+for (const vp of VIEWPORTS) {
+  test.describe(`viewport ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    test(`Care and Health Lab stay usable at ${vp.name}`, async ({ page }) => {
+      await mockHealthLabApi(page);
+      await gotoCare(page, 3);
+      await assertNoHorizontalOverflow(page);
+      const health = page.getByTestId("care-quiet-health-lab");
+      await health.scrollIntoViewIfNeeded();
+      await expect(health).toBeVisible();
+      await enterHealth(page);
+      await expect(page.getByTestId("health-lab-living")).toBeVisible();
+      await assertNoHorizontalOverflow(page);
+      if (vp.width < 1024) {
+        const exit = page.getByTestId("health-lab-exit-home");
+        await exit.scrollIntoViewIfNeeded();
+        await lastPathClearsTabbar(page);
+        const tabBox = await page.getByTestId("mobile-tab-bar").boundingBox();
+        const exitBox = await exit.boundingBox();
+        expect((exitBox?.y ?? 0) + (exitBox?.height ?? 0)).toBeLessThanOrEqual((tabBox?.y ?? 0) + 2);
+      }
+      await page.getByTestId("health-lab-quiet-reaction-time").click();
+      await expect(page.getByText(/Rocket Launch|Today's care practice/i).first()).toBeVisible();
+      if (vp.width < 1024) {
+        await expect(page.getByTestId("mobile-tab-bar")).toBeHidden();
+      }
+      await exitPractice(page);
+      await page.screenshot({
+        path: `${ARTIFACTS}/care_health_wellness_${vp.name}.png`,
+        fullPage: true,
+      });
+    });
+  });
+}
