@@ -120,7 +120,7 @@ async function readImmersiveState(page: Page) {
     hostZ: document.querySelector("[data-health-lab-immersive-host]")
       ? getComputedStyle(document.querySelector("[data-health-lab-immersive-host]")!).zIndex
       : null,
-    topBarTop: document.querySelector(".health-lab-topbar-glass")?.getBoundingClientRect().top ?? null,
+    topBarTop: document.querySelector("[data-testid=health-lab-game-topbar], .health-lab-topbar-glass, .hl-living-deep-topbar")?.getBoundingClientRect().top ?? null,
     hudBottom: document.querySelector(".health-lab-game-region-hud")?.getBoundingClientRect().bottom ?? null,
     innerHeight: window.innerHeight,
   }));
@@ -145,7 +145,7 @@ async function probeLayout(page: Page) {
       if (r.top < -2) fails.push(`host_top=${Math.round(r.top)}`);
       if (r.width > vw + 4) fails.push(`host_width=${Math.round(r.width)}`);
       if (r.height > vh + 4) fails.push(`host_height=${Math.round(r.height)}`);
-      const topBar = document.querySelector(".health-lab-topbar-glass");
+      const topBar = document.querySelector("[data-testid=health-lab-game-topbar], .health-lab-topbar-glass, .hl-living-deep-topbar");
       if (topBar) {
         const tb = topBar.getBoundingClientRect();
         if (tb.top < r.top - 2) fails.push(`topbar_above_host top=${Math.round(tb.top)} hostTop=${Math.round(r.top)}`);
@@ -490,7 +490,7 @@ test("safe-area host padding and HUD within viewport", async ({ page }) => {
     if (!host) return { ok: false, reason: "no host" };
     const style = getComputedStyle(host);
     const padTop = parseFloat(style.paddingTop) || 0;
-    const topBar = document.querySelector(".health-lab-topbar-glass");
+    const topBar = document.querySelector("[data-testid=health-lab-game-topbar], .health-lab-topbar-glass, .hl-living-deep-topbar");
     const tbTop = topBar?.getBoundingClientRect().top ?? 0;
     const hud = document.querySelector(".health-lab-game-region-hud");
     const hudBottom = hud?.getBoundingClientRect().bottom ?? 0;
