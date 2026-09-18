@@ -30,6 +30,7 @@ import {
 } from "@workspace/life-skills";
 import { getArticlesForAgeMonths } from "@workspace/parenting-articles";
 import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 import { logger } from "../lib/logger.js";
 import { withApiDomainMetrics } from "../lib/api-domain-metrics.js";
 
@@ -175,35 +176,46 @@ function asStringArray(raw: unknown): string[] {
   return Array.isArray(raw) ? raw.filter((v): v is string => typeof v === "string") : [];
 }
 
+
+/**
+ * Parent Hub freemium journey rows must use the sticky subscription owner so
+ * aliased Firebase uids cannot remint a free hub period after the owner locks.
+ */
+async function journeyOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
+
 export async function ensureHubJourney(
   userId: string,
   childId?: number,
 ): Promise<ParentHubJourney | null> {
+  const authUserId = userId;
+  const ownerUserId = await journeyOwnerUserId(userId);
   const [existing] = await db
     .select()
     .from(parentHubJourneyTable)
-    .where(eq(parentHubJourneyTable.userId, userId))
+    .where(eq(parentHubJourneyTable.userId, ownerUserId))
     .limit(1);
   if (existing) {
     return childId != null ? syncHubJourneyChildId(existing, childId) : existing;
   }
-  if (!(await userHasChild(userId))) return null;
+  if (!(await userHasChild(authUserId)) && !(await userHasChild(ownerUserId))) return null;
 
   const [created] = await db
     .insert(parentHubJourneyTable)
-    .values({ userId, childId: childId ?? null })
+    .values({ userId: ownerUserId, childId: childId ?? null })
     .onConflictDoNothing({ target: parentHubJourneyTable.userId })
     .returning();
 
   if (created) {
-    logger.info({ evt: "hub_journey.started", userId, childId }, "Parent Hub journey started");
+    logger.info({ evt: "hub_journey.started", userId: ownerUserId, childId }, "Parent Hub journey started");
     return created;
   }
 
   const [retry] = await db
     .select()
     .from(parentHubJourneyTable)
-    .where(eq(parentHubJourneyTable.userId, userId))
+    .where(eq(parentHubJourneyTable.userId, ownerUserId))
     .limit(1);
   if (!retry) return null;
   return childId != null ? syncHubJourneyChildId(retry, childId) : retry;
@@ -217,10 +229,11 @@ export async function getExistingHubJourneyForAuth(
   userId: string,
   isPremium: boolean,
 ): Promise<{ access: HubJourneyAccess; bonusUnlocks: string[] } | null> {
+  const ownerUserId = await journeyOwnerUserId(userId);
   const [existing] = await db
     .select()
     .from(parentHubJourneyTable)
-    .where(eq(parentHubJourneyTable.userId, userId))
+    .where(eq(parentHubJourneyTable.userId, ownerUserId))
     .limit(1);
   if (!existing) return null;
   return {
@@ -536,7 +549,7 @@ export async function completeHubJourneyPath(
       completedAt: journeyFinished ? now : null,
       updatedAt: now,
     })
-    .where(eq(parentHubJourneyTable.userId, userId));
+    .where(eq(parentHubJourneyTable.userId, row.userId));
 
   logger.info(
     {
@@ -573,7 +586,7 @@ export async function useHubJourneyPeekAhead(
   await db
     .update(parentHubJourneyTable)
     .set({ peekAheadUsed: nextPeek, updatedAt: new Date() })
-    .where(eq(parentHubJourneyTable.userId, userId));
+    .where(eq(parentHubJourneyTable.userId, row.userId));
 
   const unlocked = status.peekAhead.map((p) => ({ ...p, locked: false }));
   return { ok: true, peekAhead: unlocked };

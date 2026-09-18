@@ -16,7 +16,17 @@ import {
   getOrCreateSubscription,
   isPremiumNow,
 } from "./subscriptionService.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 import { logger } from "../lib/logger.js";
+
+/**
+ * Freemium journey rows must key off the sticky subscription owner (B→A alias),
+ * matching getOrCreateSubscription / getEntitlements. Raw Firebase uids remint
+ * free generations after account recreation.
+ */
+async function journeyOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
 
 export {
   ROUTINE_JOURNEY_FREE_DAYS,
@@ -32,19 +42,20 @@ export interface RoutineJourneyStatusResponse {
 }
 
 export async function ensureRoutineJourney(userId: string): Promise<RoutineJourney> {
+  const ownerUserId = await journeyOwnerUserId(userId);
   const [existing] = await db
     .select()
     .from(routineJourneyTable)
-    .where(eq(routineJourneyTable.userId, userId))
+    .where(eq(routineJourneyTable.userId, ownerUserId))
     .limit(1);
   if (existing) return existing;
 
   const [created] = await db
     .insert(routineJourneyTable)
-    .values({ userId })
+    .values({ userId: ownerUserId })
     .returning();
 
-  logger.info({ evt: "routine_journey.started", userId }, "Routine journey started");
+  logger.info({ evt: "routine_journey.started", userId: ownerUserId }, "Routine journey started");
   return created!;
 }
 
@@ -76,14 +87,15 @@ function buildStatus(
 export async function getRoutineJourneyStatus(
   userId: string,
 ): Promise<RoutineJourneyStatusResponse> {
+  const ownerUserId = await journeyOwnerUserId(userId);
   const sub = await getOrCreateSubscription(userId);
   const premium = isPremiumNow(sub);
-  const row = await ensureRoutineJourney(userId);
+  const row = await ensureRoutineJourney(ownerUserId);
   const generations = normaliseRoutineGenerations(row.generationsCompleted);
   if (!premium && generations.length === 0) {
-    const legacyCount = await getFeatureUsage(userId, "routine_generate");
+    const legacyCount = await getFeatureUsage(ownerUserId, "routine_generate");
     if (legacyCount > 0) {
-      return syncLegacyRoutineUsage(userId);
+      return syncLegacyRoutineUsage(ownerUserId);
     }
   }
   return buildStatus(row, premium);
@@ -113,18 +125,19 @@ export async function getRoutineGenerateEntitlement(
 export async function syncLegacyRoutineUsage(
   userId: string,
 ): Promise<RoutineJourneyStatusResponse> {
+  const ownerUserId = await journeyOwnerUserId(userId);
   const sub = await getOrCreateSubscription(userId);
   if (isPremiumNow(sub)) {
-    return getRoutineJourneyStatus(userId);
+    return getRoutineJourneyStatus(ownerUserId);
   }
 
-  const row = await ensureRoutineJourney(userId);
+  const row = await ensureRoutineJourney(ownerUserId);
   const existingGenerations = normaliseRoutineGenerations(row.generationsCompleted);
   if (existingGenerations.length > 0) {
     return buildStatus(row, false);
   }
 
-  const legacyCount = await getFeatureUsage(userId, "routine_generate");
+  const legacyCount = await getFeatureUsage(ownerUserId, "routine_generate");
   const migrated = migrateLegacyRoutineUsage(legacyCount);
   if (migrated.generationsCompleted.length === 0) {
     return buildStatus(row, false);
@@ -145,12 +158,12 @@ export async function syncLegacyRoutineUsage(
       completedAt: journeyFinished ? now : null,
       updatedAt: now,
     })
-    .where(eq(routineJourneyTable.userId, userId));
+    .where(eq(routineJourneyTable.userId, row.userId));
 
   logger.info(
     {
       evt: "routine_journey.legacy_sync",
-      userId,
+      userId: ownerUserId,
       generations: migrated.generationsCompleted.length,
     },
     "Migrated legacy routine generation usage",
@@ -159,7 +172,7 @@ export async function syncLegacyRoutineUsage(
   const [updated] = await db
     .select()
     .from(routineJourneyTable)
-    .where(eq(routineJourneyTable.userId, userId))
+    .where(eq(routineJourneyTable.userId, row.userId))
     .limit(1);
   return buildStatus(updated ?? row, false);
 }
@@ -245,12 +258,12 @@ export async function recordRoutineGeneration(
       completedAt: journeyFinished ? now : null,
       updatedAt: now,
     })
-    .where(eq(routineJourneyTable.userId, userId));
+    .where(eq(routineJourneyTable.userId, row.userId));
 
   logger.info(
     {
       evt: journeyFinished ? "routine_journey.finished" : "routine_journey.generation_complete",
-      userId,
+      userId: row.userId,
       day: journeyDay,
       childId,
       date,
@@ -261,7 +274,7 @@ export async function recordRoutineGeneration(
   const [updated] = await db
     .select()
     .from(routineJourneyTable)
-    .where(eq(routineJourneyTable.userId, userId))
+    .where(eq(routineJourneyTable.userId, row.userId))
     .limit(1);
   return buildStatus(updated ?? row, false);
 }

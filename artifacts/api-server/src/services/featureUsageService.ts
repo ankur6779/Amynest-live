@@ -1,6 +1,7 @@
 import { db, featureUsageTable } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 
 /**
  * Allow-list of Parent Hub feature IDs whose first-use is tracked server-side.
@@ -79,9 +80,20 @@ export interface FeatureUsageStatus {
  * record yet (hasUsedOnce: false), so the client can render the full grid
  * without waiting for individual round-trips.
  */
+
+/**
+ * Parent Hub feature_usage must key off the sticky subscription owner so
+ * aliased uids cannot remint free tile opens after the owner journey locks.
+ */
+async function usageOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
+
 export async function getUserFeatureStatus(
   userId: string,
 ): Promise<FeatureUsageStatus[]> {
+  userId = await usageOwnerUserId(userId);
+
   const rows = await db
     .select()
     .from(featureUsageTable)
@@ -113,6 +125,7 @@ export async function trackFeatureUsage(
   userId: string,
   featureId: string,
 ): Promise<{ firstTime: boolean; useCount: number }> {
+  userId = await usageOwnerUserId(userId);
   const inserted = await db
     .insert(featureUsageTable)
     .values({
@@ -156,6 +169,8 @@ export async function trackFeatureUsage(
  * "lock → conversion" analytics. Idempotent.
  */
 export async function markAllFeaturesConverted(userId: string): Promise<void> {
+  userId = await usageOwnerUserId(userId);
+
   await db
     .update(featureUsageTable)
     .set({ convertedToPremium: true, convertedAt: sql`now()` })
