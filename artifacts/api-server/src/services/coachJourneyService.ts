@@ -16,7 +16,16 @@ import {
   type CoachPlanRecord,
 } from "@workspace/coach-journey";
 import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 import { logger } from "../lib/logger.js";
+
+/**
+ * Coach freemium journey must share the sticky subscription owner key so
+ * aliased account recreation cannot remint free sample days.
+ */
+async function journeyOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
 
 export {
   COACH_JOURNEY_FREE_DAYS,
@@ -36,19 +45,20 @@ export interface CoachJourneyStatusResponse {
 }
 
 export async function ensureCoachJourney(userId: string): Promise<CoachJourney> {
+  const ownerUserId = await journeyOwnerUserId(userId);
   const [existing] = await db
     .select()
     .from(coachJourneyTable)
-    .where(eq(coachJourneyTable.userId, userId))
+    .where(eq(coachJourneyTable.userId, ownerUserId))
     .limit(1);
   if (existing) return existing;
 
   const [created] = await db
     .insert(coachJourneyTable)
-    .values({ userId })
+    .values({ userId: ownerUserId })
     .returning();
 
-  logger.info({ evt: "coach_journey.started", userId }, "Amy Coach journey started");
+  logger.info({ evt: "coach_journey.started", userId: ownerUserId }, "Amy Coach journey started");
   return created!;
 }
 
@@ -126,7 +136,7 @@ export async function syncLegacyCoachUsage(
       completedAt: journeyFinished ? now : null,
       updatedAt: now,
     })
-    .where(eq(coachJourneyTable.userId, userId));
+    .where(eq(coachJourneyTable.userId, row.userId));
 
   logger.info(
     { evt: "coach_journey.legacy_sync", userId, topics: migrated.plansCompleted.length },
@@ -136,7 +146,7 @@ export async function syncLegacyCoachUsage(
   const [updated] = await db
     .select()
     .from(coachJourneyTable)
-    .where(eq(coachJourneyTable.userId, userId))
+    .where(eq(coachJourneyTable.userId, row.userId))
     .limit(1);
   return buildStatus(updated ?? row, false);
 }
@@ -232,7 +242,7 @@ export async function recordCoachPlanCompleted(
       completedAt: journeyFinished ? now : null,
       updatedAt: now,
     })
-    .where(eq(coachJourneyTable.userId, userId));
+    .where(eq(coachJourneyTable.userId, row.userId));
 
   logger.info(
     {
@@ -247,7 +257,7 @@ export async function recordCoachPlanCompleted(
   const [updated] = await db
     .select()
     .from(coachJourneyTable)
-    .where(eq(coachJourneyTable.userId, userId))
+    .where(eq(coachJourneyTable.userId, row.userId))
     .limit(1);
   return buildStatus(updated ?? row, false);
 }
