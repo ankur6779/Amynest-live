@@ -4,16 +4,20 @@
 import { StrictMode, useMemo, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "../index.css";
+import "../i18n";
 import { AmyAstroEmblem } from "@/features/birth-sky/components/amy-astro-emblem";
 import { AmyAstroCosmicPortrait } from "@/features/birth-sky/components/cosmic-portrait";
 import { AmyAstroCosmicPortraitCard } from "@/features/birth-sky/components/cosmic-portrait-card";
 import { AmyAstroInsightsPanel } from "@/features/birth-sky/pages/dashboard/insights-panel";
 import { buildCosmicPortrait } from "@/features/birth-sky/lib/signature-insight";
+import { HubPremiumFeatureCard } from "@/components/hub-premium-feature-card";
+import { AMY_ASTRO_LAUNCH_VISUAL } from "@/lib/amy-astro-card-config";
 import "@/features/birth-sky/design/amy-astro.css";
 
 const params = new URLSearchParams(window.location.search);
 const mode = params.get("mode") ?? "all";
 const childName = params.get("name") ?? "John";
+const startAtHub = params.get("from") === "hub";
 
 function Shell({ children, testId }: { children: ReactNode; testId: string }) {
   return (
@@ -69,7 +73,7 @@ function Fixture() {
   }
 
   if (mode === "layout") {
-    return <AstronomyLayoutFixture initialName={childName} />;
+    return <AstronomyLayoutFixture initialName={childName} startAtHub={startAtHub} />;
   }
 
   if (mode === "chapters") {
@@ -118,12 +122,18 @@ function Fixture() {
 
 const LAYOUT_CHILDREN = ["Child 1", "Child 2", "Child 3"] as const;
 
-function AstronomyLayoutFixture({ initialName }: { initialName: string }) {
+function AstronomyLayoutFixture({
+  initialName,
+  startAtHub,
+}: {
+  initialName: string;
+  startAtHub: boolean;
+}) {
   const start = LAYOUT_CHILDREN.includes(initialName as (typeof LAYOUT_CHILDREN)[number])
     ? initialName
     : "Child 2";
   const [name, setName] = useState(start);
-  const [view, setView] = useState<"portrait" | "home">("portrait");
+  const [view, setView] = useState<"portrait" | "home" | "hub">(startAtHub ? "hub" : "portrait");
   const portrait = useMemo(
     () =>
       buildCosmicPortrait({
@@ -144,6 +154,38 @@ function AstronomyLayoutFixture({ initialName }: { initialName: string }) {
         <button type="button" onClick={() => setView("portrait")}>
           Open Astronomy
         </button>
+      </div>
+    );
+  }
+
+  if (view === "hub") {
+    return (
+      <div
+        className="min-h-screen bg-[hsl(222_47%_11%)] px-4 py-6 text-white"
+        data-testid="amy-astro-layout-hub"
+      >
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/50">
+          Parent Hub · Understand
+        </p>
+        <div className="mx-auto w-full max-w-md">
+          <button
+            type="button"
+            className="amy-astro-launch-card block h-full w-full overflow-visible rounded-[30px] p-0 text-left"
+            data-testid="amy-astro-hub-tile"
+            aria-label="Amy Astro Intelligence. Your child's cosmic portrait"
+            onClick={() => setView("portrait")}
+          >
+            <HubPremiumFeatureCard
+              visual={AMY_ASTRO_LAUNCH_VISUAL}
+              title="Amy Astro Intelligence"
+              description="Your child's cosmic portrait · Birth Sky · Soft parenting insights"
+              previewBadge="Explore Free"
+              tryFree
+              showTryFreeBadge
+              className="amy-astro-launch-card"
+            />
+          </button>
+        </div>
       </div>
     );
   }

@@ -1520,6 +1520,12 @@
   aspect-ratio: 1 / 1;
 }
 
+.amy-astro-portrait-frame__art picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .amy-astro-portrait-illustration {
   display: block;
   width: 100%;
@@ -1577,6 +1583,14 @@
   min-width: 0;
 }
 
+.amy-astro-portrait-cta-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 28rem;
+}
+
 .amy-astro-portrait-cta-row {
   display: flex;
   width: 100%;
@@ -1584,6 +1598,17 @@
   flex-direction: column;
   gap: 0.65rem;
   scroll-margin-bottom: calc(var(--amynest-tabbar-height, 72px) + var(--amynest-fab-size, 70px) + 1rem);
+}
+
+.amy-astro-portrait-cta-cluster .amy-astro-portrait-cta-row {
+  max-width: none;
+}
+
+.amy-astro-portrait-tagline,
+.amy-astro-portrait-disclaimer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {

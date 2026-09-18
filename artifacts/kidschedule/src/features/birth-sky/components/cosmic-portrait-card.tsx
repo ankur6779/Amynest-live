@@ -694,61 +694,72 @@ export function AmyAstroCosmicPortraitCard({
           Your steady love is their safest launchpad.
         </p>
 
-        <div className="amy-astro-portrait-cta-row amynest-fab-avoid mt-5">
-          <button
-            type="button"
-            className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[hsl(42_50%_60%/0.28)] bg-[hsl(275_40%_22%/0.45)] px-2 text-sm font-semibold"
-            onClick={() => void saveMemory()}
-            data-testid="amy-astro-portrait-save-memory"
-          >
-            <AmyAstroIcon
-              name="save_heart"
-              size={28}
-              reducedMotion={reducedMotion}
-              title="Save"
-            />
-            {memorySaved ? "Memory saved" : "Save Memory"}
-          </button>
-          {onAskAmy ? (
+        <div
+          className="amy-astro-portrait-cta-cluster amynest-fab-avoid mt-5"
+          data-testid="amy-astro-portrait-cta-cluster"
+        >
+          <div className="amy-astro-portrait-cta-row">
             <button
               type="button"
-              className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.05] px-2 text-sm font-semibold"
-              onClick={onAskAmy}
-              data-testid="amy-astro-portrait-ask-amy"
+              className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[hsl(42_50%_60%/0.28)] bg-[hsl(275_40%_22%/0.45)] px-2 text-sm font-semibold"
+              onClick={() => void saveMemory()}
+              data-testid="amy-astro-portrait-save-memory"
             >
               <AmyAstroIcon
-                name="ask_amy"
+                name="save_heart"
                 size={28}
                 reducedMotion={reducedMotion}
-                title="Ask Amy"
+                title="Save"
               />
-              Ask Amy
+              {memorySaved ? "Memory saved" : "Save Memory"}
             </button>
-          ) : null}
-          {onContinue ? (
-            <button
-              type="button"
-              className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[hsl(275_55%_42%)] to-[hsl(42_55%_40%)] px-2 text-sm font-semibold text-white shadow-[0_8px_28px_hsl(275_60%_30%/0.4)]"
-              onClick={onContinue}
-              data-testid="amy-astro-portrait-continue"
-            >
-              <AmyAstroIcon
-                name="continue_moon"
-                size={28}
-                reducedMotion={reducedMotion}
-                title="Continue"
-              />
-              Continue Journey
-            </button>
-          ) : null}
-        </div>
+            {onAskAmy ? (
+              <button
+                type="button"
+                className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.05] px-2 text-sm font-semibold"
+                onClick={onAskAmy}
+                data-testid="amy-astro-portrait-ask-amy"
+              >
+                <AmyAstroIcon
+                  name="ask_amy"
+                  size={28}
+                  reducedMotion={reducedMotion}
+                  title="Ask Amy"
+                />
+                Ask Amy
+              </button>
+            ) : null}
+            {onContinue ? (
+              <button
+                type="button"
+                className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[hsl(275_55%_42%)] to-[hsl(42_55%_40%)] px-2 text-sm font-semibold text-white shadow-[0_8px_28px_hsl(275_60%_30%/0.4)]"
+                onClick={onContinue}
+                data-testid="amy-astro-portrait-continue"
+              >
+                <AmyAstroIcon
+                  name="continue_moon"
+                  size={28}
+                  reducedMotion={reducedMotion}
+                  title="Continue"
+                />
+                Continue Journey
+              </button>
+            ) : null}
+          </div>
 
-        <p className="mt-5 text-[11px] text-[hsl(40_16%_94%/0.45)]">
-          Guided by stars. Inspired by love. Built for your child. · AmyNest✦
-        </p>
-        <p className="mt-2 max-w-md text-[10px] leading-snug text-[hsl(40_20%_96%/0.32)]">
-          {AMY_ASTRO_DISCLAIMER}
-        </p>
+          <p
+            className="amy-astro-portrait-tagline mt-5 text-[11px] leading-relaxed text-[hsl(40_16%_94%/0.45)]"
+            data-testid="amy-astro-portrait-tagline"
+          >
+            Guided by stars. Inspired by love. Built for your child. · AmyNest✦
+          </p>
+          <p
+            className="amy-astro-portrait-disclaimer mt-2 text-[10px] leading-snug text-[hsl(40_20%_96%/0.32)]"
+            data-testid="amy-astro-portrait-disclaimer"
+          >
+            {AMY_ASTRO_DISCLAIMER}
+          </p>
+        </div>
       </footer>
     </section>
   );

@@ -4,7 +4,7 @@
  * The PNG is a full illustration (child + celestial ornaments), not a photo crop.
  */
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { cn } from "@/lib/utils";
 import {
   resolveAmyPortraitVariant,
@@ -13,6 +13,8 @@ import {
 import { useLivingSky } from "../state/living-sky-context";
 import {
   AMY_ASTRO_PORTRAIT_FALLBACK_SRC,
+  AMY_ASTRO_PORTRAIT_SIZES,
+  AMY_ASTRO_PORTRAIT_WEBP_SRCSET,
   AMY_ASTRO_TILE_PORTRAIT_SRC,
 } from "../lib/branding";
 import "../design/amy-astro.css";
@@ -152,20 +154,12 @@ export function AmyAstroCosmicPortrait({
             aria-hidden
           />
         ) : null}
-        <img
+        <AmyAstroPortraitResponsiveImage
           src={src}
-          alt=""
-          width={768}
-          height={768}
-          draggable={false}
-          className={cn(
-            "amy-astro-portrait-illustration",
-            !reducedMotion && "amy-astro-pulse-glow",
-          )}
-          decoding="async"
-          loading={eager ? "eager" : "lazy"}
-          fetchPriority={eager ? "high" : "auto"}
-          ref={imgRef}
+          presentation={presentation}
+          eager={eager}
+          reducedMotion={reducedMotion}
+          imgRef={imgRef}
           onLoad={() => setStatus((prev) => (prev === "fallback" ? prev : "ready"))}
           onError={() => {
             if (src !== AMY_ASTRO_PORTRAIT_FALLBACK_SRC) {
@@ -191,5 +185,55 @@ export function AmyAstroCosmicPortrait({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function AmyAstroPortraitResponsiveImage({
+  src,
+  presentation,
+  eager,
+  reducedMotion,
+  imgRef,
+  onLoad,
+  onError,
+}: {
+  src: string;
+  presentation: AmyAstroPortraitPresentation;
+  eager: boolean;
+  reducedMotion: boolean;
+  imgRef: RefObject<HTMLImageElement | null>;
+  onLoad: () => void;
+  onError: () => void;
+}) {
+  const sizes = AMY_ASTRO_PORTRAIT_SIZES[presentation];
+  const fallback = src === AMY_ASTRO_PORTRAIT_FALLBACK_SRC;
+  const img = (
+    <img
+      src={src}
+      alt=""
+      width={768}
+      height={768}
+      draggable={false}
+      className={cn(
+        "amy-astro-portrait-illustration",
+        !reducedMotion && "amy-astro-pulse-glow",
+      )}
+      decoding="async"
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : "auto"}
+      sizes={fallback ? undefined : sizes}
+      ref={imgRef}
+      onLoad={onLoad}
+      onError={onError}
+    />
+  );
+
+  if (fallback) return img;
+
+  return (
+    <picture data-testid="amy-astro-portrait-picture" data-portrait-sizes={sizes}>
+      <source type="image/webp" srcSet={AMY_ASTRO_PORTRAIT_WEBP_SRCSET} sizes={sizes} />
+      {img}
+    </picture>
   );
 }

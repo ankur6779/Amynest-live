@@ -30,6 +30,17 @@ describe("AmyAstroCosmicPortraitCard", () => {
     expect(frames[1]).toHaveAttribute("data-portrait-presentation", "closing");
     expect(screen.getByTestId("amy-astro-portrait-save-memory")).toBeInTheDocument();
     expect(screen.getByLabelText("Child 2")).toBeInTheDocument();
+    const cluster = screen.getByTestId("amy-astro-portrait-cta-cluster");
+    expect(cluster.className).toContain("amynest-fab-avoid");
+    expect(cluster.querySelector(".amy-astro-portrait-cta-row")?.className).not.toContain(
+      "amynest-fab-avoid",
+    );
+    expect(screen.getByTestId("amy-astro-portrait-disclaimer")).toHaveTextContent(
+      "This is for awareness and reflection, not prediction.",
+    );
+    expect(screen.getByTestId("amy-astro-portrait-tagline")).toHaveTextContent(
+      "Guided by stars. Inspired by love. Built for your child.",
+    );
   });
 
   it("updates personalized copy when the child changes", () => {
