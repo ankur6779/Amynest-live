@@ -267,16 +267,28 @@ Same URL (browser cache). Hero `loading="eager"` `fetchPriority="high"`. Closing
 
 # Before / After Measurements
 
-Computed from the pre-fix layout vs CSS after the fix. Playwright JSON artifacts overwrite empirical after values when tests run.
+Empirical Playwright DOM measurements (natural image 768×768, `object-fit: contain`, `object-position: 50% 50%`).
 
-| Surface @ 390×844 | Before | After (target) |
+| Viewport | Hero rendered | Closing | Save box | FAB box | Overflow X | Save ∩ FAB | Save ∩ tab |
+|---|---|---|---|---|---|---|---|
+| 390×844 | 316×316 | 192×192 | 239×48 (right 276) | 70×70 (left 310) | no | no | no |
+| 412×915 | 338×338 | 192×192 | 261×48 (right 298) | 70×70 (left 332) | no | no | no |
+| 768×1024 | 208×208 (2-col) | 192×192 | 110×48 | 70×70 | no | no | no |
+| 1024×1366 | 224×224 (2-col) | 192×192 | 137×48 | 70×70 | no | no | no |
+| 1440×900 | 224×224 (2-col) | 192×192 | 137×48 | 70×70 | no | no | no |
+
+| Surface @ 390×844 | Before | After (measured) |
 |---|---|---|
-| Hero frame | 280px max, art 84% ≈ 235px | `min(100%, 22rem)` ≈ content width (~318px in fixture) |
-| Hero object-fit | contain / **bottom** | contain / **center** |
-| Hero crop | circular inset + orbit overlap | square contain, ornaments intact |
-| Closing frame | 144px (`w-36`) | `min(12rem, 56vw)` ≈ 192px |
+| Hero frame | 280px max, art 84% ≈ 235px, circular inset | 316×316, fills art box 100% |
+| Hero object-fit | contain / **bottom** | contain / **center** (`50% 50%`) |
+| Hero crop | circular inset + orbit overlap + beat text on art | square contain, ornaments intact, beats below |
+| Closing frame | 144px (`w-36`) | 192×192 |
 | Ending glow | 10rem empty (`h-40`) | 5.5rem behind seal |
-| Save vs FAB | overlap | `.amynest-fab-avoid` right gutter |
+| Save vs FAB | overlap (full-width CTA) | Save right 276, FAB left 310 |
+
+Vitest: 6/6 passed (`cosmic-portrait`, `cosmic-portrait-card`, `signature-insight`).  
+Playwright: 7/7 passed (`amy-astro-portrait-layout.spec.ts`).  
+Kidschedule `tsc --noEmit`: passed.
 
 ---
 
@@ -286,6 +298,7 @@ Computed from the pre-fix layout vs CSS after the fix. Playwright JSON artifacts
 - Insights chapter SVGs are a different art system; not the screenshot bug.
 - Live child-switch against a signed-in API session is not exercised here (fixture + dashboard `key` cover the UI contract). Direct `/birth-sky/app/astronomy` remains a text segment without this illustration.
 - 609 KB PNG could later gain a 2x/1x srcset; quality was not reduced in this pass.
+- When the closing CTA cluster is centered in the mobile viewport, the tiny disclaimer line under the buttons can still pass through the FAB corridor. Save / Ask Amy / Continue do not.
 
 ---
 

@@ -29,7 +29,7 @@ describe("AmyAstroCosmicPortraitCard", () => {
     expect(frames[0]).toHaveAttribute("data-portrait-presentation", "hero");
     expect(frames[1]).toHaveAttribute("data-portrait-presentation", "closing");
     expect(screen.getByTestId("amy-astro-portrait-save-memory")).toBeInTheDocument();
-    expect(screen.getByText(/Child 2/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Child 2")).toBeInTheDocument();
   });
 
   it("updates personalized copy when the child changes", () => {

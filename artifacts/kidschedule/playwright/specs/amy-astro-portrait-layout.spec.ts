@@ -102,7 +102,7 @@ test.describe("Amy Astronomy portrait layout", () => {
       expect(metrics.naturalWidth).toBeGreaterThan(0);
       expect(metrics.naturalHeight).toBeGreaterThan(0);
       expect(metrics.objectFit).toBe("contain");
-      expect(metrics.objectPosition).toMatch(/center/i);
+      expect(metrics.objectPosition === "center" || metrics.objectPosition === "50% 50%").toBe(true);
       expect(metrics.renderedWidth).toBeGreaterThan(vp.width < 640 ? 240 : 160);
       expect(metrics.renderedWidth / metrics.artWidth).toBeGreaterThan(0.92);
       expect(Math.abs(metrics.renderedWidth / metrics.renderedHeight - 1)).toBeLessThan(0.08);
@@ -126,10 +126,23 @@ test.describe("Amy Astronomy portrait layout", () => {
       const tabBox = await clientBox(tabbar);
       expect(overlap(saveBox, fabBox)).toBe(false);
       expect(overlap(saveBox, tabBox)).toBe(false);
+      expect(fabBox.width).toBeGreaterThan(40);
       expect(saveBox.width).toBeGreaterThan(40);
       expect(saveBox.height).toBeGreaterThanOrEqual(44);
 
       mkdirSync(ARTIFACT_DIR, { recursive: true });
+      if (vp.name === "mobile_390") {
+        await hero.evaluate((el) => el.scrollIntoView({ block: "start" }));
+        await page.screenshot({
+          path: `${ARTIFACT_DIR}/amy_astronomy_hero_mobile_390.png`,
+        });
+      }
+      await save.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
+      if (vp.name === "mobile_390") {
+        await page.screenshot({
+          path: `${ARTIFACT_DIR}/amy_astronomy_cta_mobile_390.png`,
+        });
+      }
       await page.screenshot({
         path: `${ARTIFACT_DIR}/amy_astronomy_layout_${vp.name}.png`,
         fullPage: true,
@@ -144,10 +157,10 @@ test.describe("Amy Astronomy portrait layout", () => {
   test("child switching updates Astronomy copy", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openAstronomy(page, "Child 1");
-    await expect(page.getByLabel("Child 1")).toBeVisible();
+    await expect(page.locator('h2[aria-label="Child 1"]')).toBeVisible();
     await page.getByTestId("amy-astro-switch-child-2").click();
-    await expect(page.getByLabel("Child 2")).toBeVisible();
-    await expect(page.getByLabel("Child 1")).toHaveCount(0);
+    await expect(page.locator('h2[aria-label="Child 2"]')).toBeVisible();
+    await expect(page.locator('h2[aria-label="Child 1"]')).toHaveCount(0);
     await expect(page.getByText(/I'll keep discovering new stars as Child 2 grows/i)).toBeVisible();
   });
 

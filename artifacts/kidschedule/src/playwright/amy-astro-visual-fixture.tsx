@@ -218,14 +218,19 @@ function AstronomyLayoutFixture({ initialName }: { initialName: string }) {
             position: "absolute",
             right: 10,
             bottom: "calc(100% + 8px)",
-            width: 70,
-            height: 70,
-            borderRadius: 9999,
-            background: "#f97316",
             zIndex: 2001,
           }}
           aria-label="Ask Amy AI"
-        />
+        >
+          <div
+            style={{
+              width: 70,
+              height: 70,
+              borderRadius: 9999,
+              background: "#f97316",
+            }}
+          />
+        </div>
       </footer>
     </div>
   );
