@@ -45,13 +45,6 @@ const QUIET_PATHS = [
 function mockHealthLabApi(page: Page) {
   let serverProfile: Record<string, unknown> | null = null;
   return Promise.all([
-    page.route("**/health-lab-audio/**", async (route: Route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "audio/mpeg",
-        body: Buffer.alloc(0),
-      });
-    }),
     page.route("**/api/**", async (route: Route) => {
       const req = route.request();
       const url = req.url();
@@ -95,6 +88,7 @@ function mockHealthLabApi(page: Page) {
 function collectErrors(page: Page) {
   const errors: string[] = [];
   const failed: string[] = [];
+  const httpFailures: string[] = [];
   page.on("pageerror", (err) => errors.push(err.message));
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
@@ -106,7 +100,13 @@ function collectErrors(page: Page) {
     if (/favicon|fonts\.gstatic|googletagmanager/i.test(url)) return;
     failed.push(`${req.failure()?.errorText ?? "failed"} ${url}`);
   });
-  return { errors, failed };
+  page.on("response", (res) => {
+    const url = res.url();
+    if (res.status() < 400) return;
+    if (/favicon|fonts\.gstatic|googletagmanager/i.test(url)) return;
+    httpFailures.push(`${res.status()} ${url}`);
+  });
+  return { errors, failed, httpFailures };
 }
 
 function relevantErrors(errors: string[]) {
@@ -118,12 +118,21 @@ function relevantErrors(errors: string[]) {
   );
 }
 
-async function gotoCare(page: Page, child = 2) {
-  await page.goto(`/playwright-care-health-wellness.html?child=${child}`, {
+async function gotoCare(page: Page, child = 2, extraQuery = "") {
+  const suffix = extraQuery ? `&${extraQuery.replace(/^\?/, "").replace(/^&/, "")}` : "";
+  await page.goto(`/playwright-care-health-wellness.html?child=${child}${suffix}`, {
     waitUntil: "domcontentloaded",
     timeout: 60_000,
   });
   await expect(page.getByTestId("care-wellness-fixture")).toBeVisible({ timeout: 30_000 });
+}
+
+async function assertCrystalGardenDanceAsset(page: Page) {
+  const audio = await page.request.get("/health-lab-audio/crystal-garden-dance.mp3");
+  expect(audio.status(), "Crystal Garden dance MP3 must be served by Vite public/").toBe(200);
+  expect(audio.headers()["content-type"] ?? "").toMatch(/audio\/mpeg/i);
+  const body = await audio.body();
+  expect(body.byteLength).toBeGreaterThan(4_000);
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -193,8 +202,10 @@ test.describe("Care → Health & Wellness", () => {
   });
 
   test("Care advertises Health and every quiet practice launches", async ({ page }) => {
-    const { errors, failed } = collectErrors(page);
+    const { errors, failed, httpFailures } = collectErrors(page);
     await gotoCare(page, 2);
+    await expect(page.getByTestId("care-wellness-fixture")).toHaveAttribute("data-entitlement", "allow");
+    await assertCrystalGardenDanceAsset(page);
     await expect(page.getByTestId("care-living-stream")).toBeVisible();
     await expect(page.getByTestId("care-quiet-health-lab")).toBeVisible();
     await expect(page.getByTestId("care-quiet-nutrition")).toBeVisible();
@@ -248,6 +259,39 @@ test.describe("Care → Health & Wellness", () => {
       failed.filter((f) => /health-lab|api\//i.test(f)),
       failed.join("\n"),
     ).toEqual([]);
+    expect(
+      httpFailures.filter((f) => /health-lab|health-lab-audio|api\//i.test(f)),
+      httpFailures.join("\n"),
+    ).toEqual([]);
+  });
+
+  test("denied entitlement keeps Care Health visible but does not launch practices", async ({ page }) => {
+    const { errors, failed, httpFailures } = collectErrors(page);
+    await gotoCare(page, 2, "entitlement=deny");
+    await expect(page.getByTestId("care-wellness-fixture")).toHaveAttribute(
+      "data-entitlement",
+      "deny",
+    );
+    await expect(page.getByTestId("care-quiet-health-lab")).toBeVisible();
+    await enterHealth(page);
+    await expect(page.getByTestId("health-lab-static-free-preview")).toBeVisible();
+    await expect(page.getByTestId("health-lab-living")).toHaveCount(0);
+    await expect(page.getByTestId("health-lab-quiet-breath-control")).toHaveCount(0);
+    await expect(page.getByTestId("health-lab-practice-start")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /continue/i })).toBeVisible();
+    await page.screenshot({
+      path: `${ARTIFACTS}/care_health_wellness_entitlement_denied.png`,
+      fullPage: true,
+    });
+    expect(relevantErrors(errors), errors.join("\n")).toEqual([]);
+    expect(
+      failed.filter((f) => /health-lab|api\//i.test(f)),
+      failed.join("\n"),
+    ).toEqual([]);
+    expect(
+      httpFailures.filter((f) => /health-lab|health-lab-audio|api\//i.test(f)),
+      httpFailures.join("\n"),
+    ).toEqual([]);
   });
 
   test("child profiles change Care Health eligibility", async ({ page }) => {
@@ -287,6 +331,7 @@ for (const vp of VIEWPORTS) {
     test.use({ viewport: { width: vp.width, height: vp.height } });
 
     test(`Care and Health Lab stay usable at ${vp.name}`, async ({ page }) => {
+      const { errors, failed, httpFailures } = collectErrors(page);
       await mockHealthLabApi(page);
       await gotoCare(page, 3);
       await assertNoHorizontalOverflow(page);
@@ -309,6 +354,11 @@ for (const vp of VIEWPORTS) {
         path: `${ARTIFACTS}/care_health_wellness_${vp.name}.png`,
         fullPage: true,
       });
+      expect(relevantErrors(errors), errors.join("\n")).toEqual([]);
+      expect(
+        [...failed, ...httpFailures].filter((f) => /health-lab|health-lab-audio|api\//i.test(f)),
+        [...failed, ...httpFailures].join("\n"),
+      ).toEqual([]);
     });
   });
 }

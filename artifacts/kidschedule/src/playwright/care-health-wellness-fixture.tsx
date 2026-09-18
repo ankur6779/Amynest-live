@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/contexts/theme-context";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { RoomLivingStream } from "@/components/parent-hub/room-living-stream";
 import { HealthLabZone } from "@/features/health-lab/components/health-lab-zone";
+import { HealthLabStaticFreePreview } from "@/components/health-lab/health-lab-static-free-preview";
 import {
   AuthContext,
   type AuthContextValue,
@@ -60,6 +61,7 @@ type Surface = "care" | "health-lab";
 function Fixture() {
   const params = new URLSearchParams(window.location.search);
   const initialChild = Number(params.get("child") ?? "2");
+  const entitlementDenied = params.get("entitlement") === "deny";
   const [childId, setChildId] = useState(
     CHILDREN.some((c) => c.id === initialChild) ? initialChild : 2,
   );
@@ -101,6 +103,7 @@ function Fixture() {
         data-child-id={String(child.id)}
         data-age-months={String(child.ageMonths)}
         data-surface={surface}
+        data-entitlement={entitlementDenied ? "deny" : "allow"}
       >
         <header
           className="flex min-w-0 max-w-full flex-wrap gap-2 px-3 pt-3 pb-2"
@@ -136,6 +139,10 @@ function Fixture() {
                 if (tileId === "health-lab") openHealth();
               }}
             />
+          ) : entitlementDenied ? (
+            <div data-testid="care-wellness-health-lab-denied">
+              <HealthLabStaticFreePreview />
+            </div>
           ) : preview ? (
             <div data-testid="health-lab-preview-living" className="space-y-3 p-3">
               <button type="button" className="hl-back" onClick={backToCare}>
