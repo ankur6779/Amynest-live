@@ -81,13 +81,13 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   await expect(playBtn).toHaveAttribute("aria-label", /Pause/i, { timeout: 20_000 });
 
   await expect
-    .poll(async () => (await speechTime(page)).currentTime, { timeout: 15_000 })
-    .toBeGreaterThan(1.2);
+    .poll(async () => (await speechTime(page)).currentTime, { timeout: 20_000 })
+    .toBeGreaterThan(5.5);
 
   const beforePause = await speechTime(page);
   expect(beforePause.paused).toBe(false);
   const pausedAt = beforePause.currentTime;
-  expect(pausedAt).toBeGreaterThan(1.2);
+  expect(pausedAt).toBeGreaterThan(5.5);
   await markSpeechElement(page);
 
   await playBtn.click();
@@ -104,8 +104,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
 
   const afterResume = await speechTime(page);
   expect(afterResume.currentTime).toBeGreaterThan(pausedAt - 0.35);
-  expect(afterResume.currentTime).not.toBeLessThan(0.8);
-  expect(afterResume.currentTime).toBeGreaterThan(1);
+  expect(afterResume.currentTime).toBeGreaterThan(5);
   expect(afterResume.paused).toBe(false);
   expect(await sameSpeechElement(page)).toBe(true);
 
@@ -119,7 +118,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   await expect(playBtn).toHaveAttribute("aria-label", /Play/i, { timeout: 10_000 });
   const secondPause = await speechTime(page);
   expect(secondPause.paused).toBe(true);
-  expect(secondPause.currentTime).toBeGreaterThan(1);
+  expect(secondPause.currentTime).toBeGreaterThan(5);
 
   await page.evaluate(() => {
     const w = window as Window & {
