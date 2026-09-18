@@ -20,7 +20,7 @@ import {
   AmyCoachGoalsShell,
   AmyCoachSearchInput,
 } from "@/components/amy-coach/coach-keyboard-shell";
-import { AmyAudioLessonsCard } from "@/components/amy-coach/amy-audio-lessons-card";
+import { AmyAudioLessonsCard, amyAudioLessonsPath } from "@/components/amy-coach/amy-audio-lessons-card";
 import { AmyCoachLivingOpening } from "@/components/amy-coach/amy-coach-living-opening";
 import {
   isAmyCoachLivingV1Enabled,
@@ -2428,14 +2428,11 @@ export default function AICoachPage() {
           </button>
         )}
 
-        {!living && (
         <AmyAudioLessonsCard
           onClick={() => {
-            const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
-            setLocation(`/audio-lessons${q}`);
+            setLocation(amyAudioLessonsPath(goalId));
           }}
         />
-        )}
 
         {forYouCategory && !living && (
           <section>
@@ -2495,21 +2492,6 @@ export default function AICoachPage() {
           </section>
         )}
 
-        {living && (
-          <button
-            type="button"
-            className="ac-more-link"
-            data-testid="amy-coach-more-audio"
-            onClick={() => {
-              const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
-              setLocation(`/audio-lessons${q}`);
-            }}
-          >
-            {t("amy_coach.living.more_audio", {
-              defaultValue: "Listen later — quiet audio lessons",
-            })}
-          </button>
-        )}
         {living ? (
           <AmyNestLeaveContinuity
             className="mt-3"

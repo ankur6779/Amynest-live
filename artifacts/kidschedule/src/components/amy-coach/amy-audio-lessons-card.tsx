@@ -9,6 +9,11 @@ type AmyAudioLessonsCardProps = {
   onClick: () => void;
 };
 
+export function amyAudioLessonsPath(goalId?: string | null): string {
+  const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
+  return `/audio-lessons${q}`;
+}
+
 function AudioLessonsChip({
   icon: Icon,
   label,
@@ -81,6 +86,9 @@ export function AmyAudioLessonsCard({ onClick }: AmyAudioLessonsCardProps) {
                   label={t("pages.ai_coach.audio_lessons_tag_age_curated", "Age-based")}
                 />
               </div>
+              <p className="amy-audio-lessons-tile__cta">
+                {t("pages.ai_coach.audio_lessons_explore", "Explore audio →")}
+              </p>
             </div>
 
             <div className="amy-audio-lessons-tile__media" aria-hidden>

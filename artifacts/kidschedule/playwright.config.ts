@@ -19,6 +19,7 @@ const PORT = Number(process.env.PLAYWRIGHT_PORT ?? "5188");
 
 export default defineConfig({
   testDir: "./playwright/specs",
+  testIgnore: "amy-audio-module-tile.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

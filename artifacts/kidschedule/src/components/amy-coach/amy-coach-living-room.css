@@ -241,6 +241,11 @@
   letter-spacing: 0.08em;
 }
 
+.amy-coach-living .amy-audio-lessons-tile-trigger {
+  display: block;
+  width: 100%;
+}
+
 .amy-coach-living .ac-more-link {
   display: block;
   width: 100%;

@@ -509,6 +509,14 @@
   margin-top: 0.15rem;
 }
 
+.amy-audio-lessons-tile__cta {
+  margin: 0.2rem 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .amy-audio-lessons-tile__chip {
   display: inline-flex;
   min-height: 1.375rem;
