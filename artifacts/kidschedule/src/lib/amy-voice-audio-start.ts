@@ -72,6 +72,15 @@ export function validateAudioBlob(blob: Blob): void {
   }
 }
 
+/** MPEG frame sync (0xFFE…) or ID3 tag — enough for HTMLAudioElement to decode. */
+export function looksLikeMpegAudioBytes(bytes: Uint8Array): boolean {
+  if (bytes.length < 2) return false;
+  if (bytes.length >= 3 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    return true;
+  }
+  return bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0;
+}
+
 let decodeCtx: AudioContext | null = null;
 
 /** Decode-check blob MP3 payload — catches silent Android corrupt downloads. */

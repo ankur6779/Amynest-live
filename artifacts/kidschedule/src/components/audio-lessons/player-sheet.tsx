@@ -9,7 +9,6 @@ import {
 } from "@/lib/audio-lessons";
 import { useLessonPlayback } from "@/hooks/use-lesson-playback";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import {
   primeLessonParagraphInUserGesture,
   warmLessonParagraphStatic,
@@ -317,10 +316,7 @@ export function PlayerSheet({
               recordTtsUserGesture();
               primeSpeakGesture(txt);
               const identity = createAudioIdentity(lesson.id, paragraphIdx, txt);
-              const primedUrl = primeLessonParagraphInUserGesture(identity);
-              if (!primedUrl) {
-                primeStaticAudioInUserGesture(txt, "default");
-              }
+              primeLessonParagraphInUserGesture(identity);
               warmLessonParagraphStatic(identity);
               prefetchLessonParagraph(identity, authFetch, VOICE_AMY_EN, MODEL_EN);
               if (
