@@ -132,7 +132,7 @@ export function buildCosmicPortrait(input: SignatureInsightInput): CosmicPortrai
       ? "Rising waits softly — their Day Sky remains complete."
       : `Rising ${input.risingSign} may feel like a soft doorway into new rooms.`;
 
-  const currentSkyInfluence = `In their birth chart: ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} in ${input.moonSign}, with ${input.sunSign} as daylight themes. ${risingBit} These are birth-sky facts for reflection — not today's live weather.`;
+  const currentSkyInfluence = `In their birth sky: ${withIndefiniteArticle(moonPhasePhraseLower(input.moonPhaseLabel))} in ${input.moonSign}, with ${input.sunSign} as daylight themes. ${risingBit} These are birth-sky facts for reflection — not today's live weather.`;
 
   const amyReflection = `I notice ${child}'s sky favors presence over pressure. When you meet them where curiosity begins — not where mastery ends — something tender opens. This is a lens for love, never a map of fate.`;
 

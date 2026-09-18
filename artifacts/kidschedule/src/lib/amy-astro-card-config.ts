@@ -37,7 +37,16 @@ export const AMY_ASTRO_SECTION_HEADER_VISUAL: HubPremiumCardVisual = {
   ],
 };
 
-/** Expanded launch tile — transparent cutout Amy so glass/glow shows through. */
+/**
+ * Expanded launch tile — 3:4 transparent cutout (`amy-astro-hero.png`).
+ *
+ * Intentional vs the in-module 1:1 portrait (`amy-astro-portrait.png`):
+ * hub media is a ~132px glass slot with `object-position: center bottom`.
+ * The module illustration is a full ceremonial square (ornaments + cushion)
+ * and would shrink the character to unreadability in that slot.
+ * Same product language (purple hoodie, orb, seated Amy); different art role.
+ * Do not swap these assets.
+ */
 export const AMY_ASTRO_LAUNCH_VISUAL: HubPremiumCardVisual = {
   iconSrc: `${BASE}/amy-astro-icon.png?v=${ASSET_V}`,
   heroSrc: `${BASE}/amy-astro-hero.png?v=${ASSET_V}`,
