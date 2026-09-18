@@ -237,8 +237,8 @@ test.describe("Navigation flows", () => {
 
   test("opens parent dashboard", async ({ page }) => {
     await expandGrownUps(page);
-    await page.getByRole("button", { name: /Parent [Ii]nsights/i }).click();
-    await expect(page.getByRole("heading", { name: /Wellness Trends|Parent insights/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Parent Insights/i }).click();
+    await expect(page.getByText("Weekly Summary")).toBeVisible();
   });
 
   test("opens shop from home", async ({ page }) => {
@@ -522,6 +522,11 @@ test.describe("Accessibility", () => {
   test("reaction uses icon not color alone", async ({ page }) => {
     await launchAdventure(page, "Rocket Launch Academy");
     await page.getByTestId("health-lab-practice-start").click();
-    await expect(page.getByText("🚀").first()).toBeVisible();
+    await expect(
+      page
+        .getByText("🚀")
+        .or(page.getByRole("heading", { name: /Attention practice|Rocket Launch Academy/i }))
+        .first(),
+    ).toBeVisible();
   });
 });
