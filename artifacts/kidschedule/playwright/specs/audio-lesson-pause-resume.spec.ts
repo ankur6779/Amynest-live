@@ -159,7 +159,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
     ),
   );
   await page.screenshot({
-    path: "/opt/cursor/artifacts/audio_lesson_pause_resume_player.png",
+    path: "/opt/cursor/artifacts/audio_lesson_after_stop_play.png",
     fullPage: true,
   });
 });
