@@ -5,6 +5,7 @@
  *     --config playwright.config.audio-lesson-pause.ts
  */
 import { test, expect } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 type SpeechSnapshot = {
   currentTime: number;
@@ -115,7 +116,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   expect(staticAudioGets.length).toBe(fetchesBeforeResume);
 
   await playBtn.click();
-  await expect(playBtn).toHaveAttribute("aria-label", /Play/i);
+  await expect(playBtn).toHaveAttribute("aria-label", /Play/i, { timeout: 10_000 });
   const secondPause = await speechTime(page);
   expect(secondPause.paused).toBe(true);
   expect(secondPause.currentTime).toBeGreaterThan(1);

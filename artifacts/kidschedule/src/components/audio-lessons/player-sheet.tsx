@@ -354,12 +354,16 @@ export function PlayerSheet({
               }
             }}
             onClick={() => {
+              if (playing) {
+                playStartedFromPointerRef.current = false;
+                pause();
+                return;
+              }
               if (playStartedFromPointerRef.current) {
                 playStartedFromPointerRef.current = false;
                 return;
               }
-              if (playing) pause();
-              else play();
+              play();
             }}
             aria-label={
               playing
