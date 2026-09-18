@@ -138,7 +138,7 @@ test.describe("Amy Astronomy portrait layout", () => {
 
       expect(metrics.naturalWidth).toBeGreaterThan(0);
       expect(metrics.naturalHeight).toBeGreaterThan(0);
-      expect([384, 768]).toContain(metrics.naturalWidth);
+      expect(metrics.currentSrc).toMatch(/amy-astro-portrait-(?:384|768)\.webp|amy-astro-portrait\.png/);
       expect(metrics.objectFit).toBe("contain");
       expect(metrics.objectPosition === "center" || metrics.objectPosition === "50% 50%").toBe(true);
       expect(metrics.renderedWidth).toBeGreaterThan(vp.width < 640 ? 240 : 160);
@@ -238,6 +238,46 @@ test.describe("Amy Astronomy portrait layout", () => {
       );
     });
   }
+
+  test("lossless WebP variants decode at file pixel size", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/playwright-amy-astro-visual.html?mode=layout", {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
+    const probe = await page.evaluate(async () => {
+      async function inspect(url: string) {
+        const res = await fetch(url);
+        const bytes = (await res.arrayBuffer()).byteLength;
+        const dims = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          img.onerror = () => reject(new Error(`decode failed ${url}`));
+          img.src = url;
+        });
+        return { url, status: res.status, type: res.headers.get("content-type"), bytes, ...dims };
+      }
+      return {
+        png: await inspect("/illustrations/amy-astro/amy-astro-portrait.png?v=20260727a"),
+        webp384: await inspect("/illustrations/amy-astro/amy-astro-portrait-384.webp?v=20260918a"),
+        webp768: await inspect("/illustrations/amy-astro/amy-astro-portrait-768.webp?v=20260918a"),
+      };
+    });
+    expect(probe.png.status).toBe(200);
+    expect(probe.png.bytes).toBe(609084);
+    expect(probe.png.width).toBe(768);
+    expect(probe.png.height).toBe(768);
+    expect(probe.webp384.status).toBe(200);
+    expect(probe.webp384.bytes).toBe(137508);
+    expect(probe.webp384.width).toBe(384);
+    expect(probe.webp384.height).toBe(384);
+    expect(probe.webp768.status).toBe(200);
+    expect(probe.webp768.bytes).toBe(462540);
+    expect(probe.webp768.width).toBe(768);
+    expect(probe.webp768.height).toBe(768);
+    mkdirSync(ARTIFACT_DIR, { recursive: true });
+    writeFileSync(`${ARTIFACT_DIR}/amy_astronomy_image_performance.json`, JSON.stringify(probe, null, 2));
+  });
 
   test("child switching updates Astronomy copy", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

@@ -48,7 +48,10 @@ describe("AmyAstroCosmicPortrait", () => {
     );
     const img = container.querySelector("img.amy-astro-portrait-illustration")!;
     fireEvent.error(img);
-    expect(img).toHaveAttribute("src", AMY_ASTRO_PORTRAIT_FALLBACK_SRC);
+    const afterPicture = container.querySelector("img.amy-astro-portrait-illustration")!;
+    fireEvent.error(afterPicture);
+    const imgAfter = container.querySelector("img.amy-astro-portrait-illustration")!;
+    expect(imgAfter).toHaveAttribute("src", AMY_ASTRO_PORTRAIT_FALLBACK_SRC);
     expect(screen.getByTestId("amy-astro-cosmic-portrait")).toHaveAttribute(
       "data-image-status",
       "fallback",

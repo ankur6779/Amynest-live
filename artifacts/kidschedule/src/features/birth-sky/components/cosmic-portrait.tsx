@@ -82,6 +82,7 @@ export function AmyAstroCosmicPortrait({
   const [tapPulse, setTapPulse] = useState(false);
   const [src, setSrc] = useState<string>(AMY_ASTRO_TILE_PORTRAIT_SRC);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
+  const [allowPicture, setAllowPicture] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export function AmyAstroCosmicPortrait({
   useEffect(() => {
     setSrc(AMY_ASTRO_TILE_PORTRAIT_SRC);
     setStatus("loading");
+    setAllowPicture(true);
   }, [childName]);
 
   useLayoutEffect(() => {
@@ -159,9 +161,15 @@ export function AmyAstroCosmicPortrait({
           presentation={presentation}
           eager={eager}
           reducedMotion={reducedMotion}
+          allowPicture={allowPicture}
           imgRef={imgRef}
           onLoad={() => setStatus((prev) => (prev === "fallback" ? prev : "ready"))}
           onError={() => {
+            if (allowPicture) {
+              setAllowPicture(false);
+              setStatus("loading");
+              return;
+            }
             if (src !== AMY_ASTRO_PORTRAIT_FALLBACK_SRC) {
               setSrc(AMY_ASTRO_PORTRAIT_FALLBACK_SRC);
               setStatus("fallback");
@@ -193,6 +201,7 @@ function AmyAstroPortraitResponsiveImage({
   presentation,
   eager,
   reducedMotion,
+  allowPicture,
   imgRef,
   onLoad,
   onError,
@@ -201,6 +210,7 @@ function AmyAstroPortraitResponsiveImage({
   presentation: AmyAstroPortraitPresentation;
   eager: boolean;
   reducedMotion: boolean;
+  allowPicture: boolean;
   imgRef: RefObject<HTMLImageElement | null>;
   onLoad: () => void;
   onError: () => void;
@@ -221,14 +231,13 @@ function AmyAstroPortraitResponsiveImage({
       decoding="async"
       loading={eager ? "eager" : "lazy"}
       fetchPriority={eager ? "high" : "auto"}
-      sizes={fallback ? undefined : sizes}
       ref={imgRef}
       onLoad={onLoad}
       onError={onError}
     />
   );
 
-  if (fallback) return img;
+  if (fallback || !allowPicture) return img;
 
   return (
     <picture data-testid="amy-astro-portrait-picture" data-portrait-sizes={sizes}>

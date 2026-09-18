@@ -1589,6 +1589,7 @@
   align-items: center;
   width: 100%;
   max-width: 28rem;
+  scroll-margin-bottom: calc(var(--amynest-tabbar-height, 72px) + var(--amynest-fab-size, 70px) + 1rem);
 }
 
 .amy-astro-portrait-cta-row {
