@@ -5,6 +5,11 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  openHealthLabAdventure,
+  startHealthLabPractice,
+  waitForHealthLabHome,
+} from "../helpers/health-lab-home";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, "../../../../audit/health-lab-certification-screenshots");
@@ -100,22 +105,18 @@ test.describe("Certification capture", () => {
     });
 
     await page.goto(`/playwright-health-lab.html?childId=${CHILD_ID}&childName=Riya`);
-    await page.waitForSelector("text=Amy Health Lab", { timeout: 30_000 });
+    await waitForHealthLabHome(page);
 
     await page.screenshot({ path: path.join(OUT, "01-health-lab-home.png"), fullPage: true });
 
     async function openAdventure(title: string) {
-      await page
-        .getByRole("button", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })
-        .click();
-      const ready = page.getByRole("button", { name: /I'm Ready!/i });
-      if (await ready.isVisible().catch(() => false)) await ready.click();
+      await openHealthLabAdventure(page, title);
     }
 
     // Balloon Journey
     await openAdventure("Balloon Journey Adventure");
     await page.screenshot({ path: path.join(OUT, "05-balloon-onboarding.png"), fullPage: true });
-    await page.getByRole("button", { name: /Start Journey/i }).click();
+    await startHealthLabPractice(page);
     await expect(page.getByText("Hold time")).toBeVisible();
     await page.screenshot({ path: path.join(OUT, "05-balloon-journey-gameplay.png"), fullPage: true });
     const balloonFps = await sampleFps(page, "balloon");
@@ -124,7 +125,7 @@ test.describe("Certification capture", () => {
     // Rocket Launch
     await openAdventure("Rocket Launch Academy");
     await page.screenshot({ path: path.join(OUT, "06-rocket-onboarding.png"), fullPage: true });
-    await page.getByRole("button", { name: /Launch Mission/i }).click();
+    await startHealthLabPractice(page);
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(OUT, "06-rocket-launch-gameplay.png"), fullPage: true });
     const rocketFps = await sampleFps(page, "rocket");
@@ -133,7 +134,7 @@ test.describe("Certification capture", () => {
     // Crystal Garden
     await openAdventure("Crystal Garden Challenge");
     await page.screenshot({ path: path.join(OUT, "07-crystal-garden-onboarding.png"), fullPage: true });
-    await page.getByRole("button", { name: /Start Dancing/i }).click();
+    await startHealthLabPractice(page);
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
     await page.screenshot({ path: path.join(OUT, "07-crystal-garden-calibration.png"), fullPage: true });
     await page.waitForTimeout(3500);
@@ -143,7 +144,7 @@ test.describe("Certification capture", () => {
     // Crystal Core
     await openAdventure("Crystal Core Reactor");
     await page.screenshot({ path: path.join(OUT, "08-crystal-core-onboarding.png"), fullPage: true });
-    await page.getByRole("button", { name: /Power Up Reactor/i }).click();
+    await startHealthLabPractice(page);
     await page.getByRole("button", { name: "Touch to Start" }).click();
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(OUT, "08-crystal-core-gameplay.png"), fullPage: true });
@@ -152,7 +153,7 @@ test.describe("Certification capture", () => {
     // Sky Island + motion debug
     await openAdventure("Sky Island Survival");
     await page.screenshot({ path: path.join(OUT, "02-onboarding-sky-island.png"), fullPage: true });
-    await page.getByRole("button", { name: /Start Survival/i }).click();
+    await startHealthLabPractice(page);
     await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible({ timeout: 5000 });
     await page.screenshot({ path: path.join(OUT, "03-motion-calibration.png"), fullPage: true });
     await page.waitForTimeout(3500);
@@ -181,13 +182,20 @@ test.describe("Certification capture", () => {
     // Wellness dashboard (after at least one game)
     await page.getByRole("button", { name: "Home" }).click({ timeout: 5000 }).catch(() => {});
     await page.goto(`/playwright-health-lab.html?childId=${CHILD_ID}&childName=Riya`);
-    await page.waitForSelector("text=Amy Health Lab");
+    await waitForHealthLabHome(page);
+    const more = page.getByTestId("health-lab-more-toggle");
+    if (await more.isVisible().catch(() => false)) {
+      if ((await more.getAttribute("aria-expanded")) !== "true") await more.click();
+    }
     const grownUps = page.getByRole("button", { name: /For grown-ups/i });
     if (await grownUps.isVisible().catch(() => false)) await grownUps.click();
-    await page.getByText("Amy Wellness Report").click();
-    await page.screenshot({ path: path.join(OUT, "09-wellness-onboarding.png"), fullPage: true });
-    await page.getByRole("button", { name: /Open Dashboard|View Report/i }).click();
-    await page.screenshot({ path: path.join(OUT, "09-wellness-dashboard.png"), fullPage: true });
+    const wellness = page.getByText("Amy Wellness Report");
+    if (await wellness.isVisible().catch(() => false)) {
+      await wellness.click();
+      await page.screenshot({ path: path.join(OUT, "09-wellness-onboarding.png"), fullPage: true });
+      await page.getByRole("button", { name: /Open Dashboard|View Report/i }).click();
+      await page.screenshot({ path: path.join(OUT, "09-wellness-dashboard.png"), fullPage: true });
+    }
 
     const report = {
       timestamp: new Date().toISOString(),

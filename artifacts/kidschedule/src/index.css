@@ -4509,6 +4509,12 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+/* Living deep sets position:relative on inner stages; keep the portaled host overlay. */
+html.health-lab-immersive-living .health-lab-game-viewport {
+  position: fixed;
+  inset: 0;
+}
+
 /* Hide hub/app chrome while immersive host is active (class toggled by HealthLabImmersiveHost) */
 html.health-lab-immersive .app-header,
 html.health-lab-immersive [data-hub-module-header],
@@ -4624,7 +4630,8 @@ html.health-lab-immersive body {
 
 /* Short landscape — tighten chrome so HUD stays above gesture bar (layout only) */
 @media (orientation: landscape) and (max-height: 500px) {
-  .health-lab-topbar-glass {
+  .health-lab-topbar-glass,
+  .health-lab-game-viewport .hl-living-deep-topbar {
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }

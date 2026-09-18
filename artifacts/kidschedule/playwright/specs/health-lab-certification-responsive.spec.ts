@@ -6,6 +6,11 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  openHealthLabAdventure,
+  waitForHealthLabHome,
+  waitForHealthLabListing,
+} from "../helpers/health-lab-home";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, "../../../../audit/health-lab-responsive-cert");
@@ -90,13 +95,13 @@ function mockHealthLabApi(page: Page) {
 
 async function gotoLab(page: Page) {
   await page.goto("/playwright-health-lab.html?childId=42&childName=Riya");
-  await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
-    timeout: 30_000,
-  });
-  await page.waitForSelector(
-    "[data-testid=health-lab-quiet-paths], [class*='health-lab-world-card'], button:has-text('Balloon')",
-    { timeout: 30_000 },
-  );
+  await waitForHealthLabHome(page);
+  await page
+    .getByTestId("health-lab-quiet-paths")
+    .or(page.locator("[class*='health-lab-world-card']"))
+    .or(page.getByRole("button", { name: /Balloon/i }))
+    .first()
+    .waitFor({ timeout: 30_000 });
 }
 
 async function setViewportFont(page: Page, width: number, height: number, fontScale: number) {
@@ -357,12 +362,7 @@ async function expandSection(page: Page, name: RegExp) {
 }
 
 async function launchWorld(page: Page, title: string) {
-  const btn = page.getByRole("button", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
-  await btn.first().click();
-  const ready = page.getByRole("button", { name: /I'm Ready!/i });
-  if (await ready.isVisible({ timeout: 2500 }).catch(() => false)) {
-    await ready.click();
-  }
+  await openHealthLabAdventure(page, title);
   // Motion prep may appear
   const startAnyway = page.getByRole("button", { name: /Start anyway|Continue|Got it|I'm Ready/i });
   if (await startAnyway.isVisible({ timeout: 1500 }).catch(() => false)) {
@@ -378,11 +378,11 @@ async function backHome(page: Page) {
     await page.waitForTimeout(300);
   }
   // May need second back from onboarding
-  if (!(await page.getByText("Today's Adventures").isVisible({ timeout: 1500 }).catch(() => false))) {
+  if (!(await page.getByTestId("health-lab-living").or(page.getByText("Today's Adventures")).first().isVisible({ timeout: 1500 }).catch(() => false))) {
     const exit2 = page.getByRole("button", { name: /Exit|Go back|Back/i }).first();
     if (await exit2.isVisible().catch(() => false)) await exit2.click();
   }
-  await page.waitForSelector("text=Today's Adventures", { timeout: 10_000 }).catch(() => undefined);
+  await waitForHealthLabListing(page).catch(() => undefined);
 }
 
 async function shot(page: Page, name: string) {
