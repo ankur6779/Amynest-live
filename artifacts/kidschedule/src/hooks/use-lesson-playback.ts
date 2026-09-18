@@ -47,13 +47,14 @@ export interface UseLessonPlaybackResult {
   uiIdentity: AudioIdentity | null;
   setParagraphIdx: (idx: number) => void;
   jumpToParagraph: (idx: number) => void;
-  intent: "idle" | "playing";
+  intent: "idle" | "playing" | "paused";
   playbackError: string | null;
   speaking: boolean;
   loading: boolean;
   error: string | null;
   play: () => void;
   pause: () => void;
+  stop: () => void;
   primeSpeakGesture: (text: string) => void;
 }
 
@@ -91,7 +92,7 @@ export function useLessonPlayback({
   const [paragraphIdx, setParagraphIdxState] = useState(() =>
     clampParagraphIdx(initialParagraphIdx, paragraphs.length),
   );
-  const [intent, setIntent] = useState<"idle" | "playing">("idle");
+  const [intent, setIntent] = useState<"idle" | "playing" | "paused">("idle");
   const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   const intentRef = useRef(intent);
@@ -227,8 +228,11 @@ export function useLessonPlayback({
       logLessonAudioIdentity(identity, { phase: "playback_start" });
 
       const session = ++playbackSessionRef.current;
+      // Pause must not cancel waitUntilEnd — the same HTMLAudioElement stays
+      // attached so Play can resume currentTime. Only STOP / jump / lesson
+      // switch increment the session (or return to idle).
       const isCancelled = () =>
-        session !== playbackSessionRef.current || intentRef.current !== "playing";
+        session !== playbackSessionRef.current || intentRef.current === "idle";
 
       setAudioPipelineContext({
         paragraphIdx: idx,
@@ -280,17 +284,58 @@ export function useLessonPlayback({
   speakParagraphAtRef.current = speakParagraphAt;
 
   const pause = useCallback(() => {
+    if (intentRef.current !== "playing") return;
+    const pausedAt = audioManager.pauseSpeechPreservePosition();
+    intentRef.current = "paused";
+    setIntent("paused");
+    setPlaybackError(null);
+    logAudioPipeline("pause_preserve", {
+      paragraphIdx: paragraphIdxRef.current,
+      lessonId: lessonIdRef.current,
+      detail: { currentTime: pausedAt },
+    });
+    setAudioPipelineContext({ intent: "paused" });
+    setAudioPipelineMachineState("paused", { currentTime: pausedAt });
+  }, []);
+
+  const stop = useCallback(() => {
+    playbackSessionRef.current += 1;
+    audioManager.resetSpeechToStart();
     intentRef.current = "idle";
     setIntent("idle");
     setPlaybackError(null);
-    playbackSessionRef.current += 1;
-    pauseVoice();
-  }, [pauseVoice]);
+    logAudioPipeline("stop_reset", {
+      paragraphIdx: paragraphIdxRef.current,
+      lessonId: lessonIdRef.current,
+    });
+    setAudioPipelineContext({ intent: "idle" });
+    setAudioPipelineMachineState("idle", { reason: "stop" });
+  }, []);
 
   const play = useCallback(() => {
     recordTtsUserGesture();
     audioManager.unlockFromUserGesture();
     setPlaybackError(null);
+
+    if (intentRef.current === "paused" && audioManager.hasResumableSpeech()) {
+      skipParagraphEffectRef.current = true;
+      intentRef.current = "playing";
+      setIntent("playing");
+      setAudioPipelineContext({
+        intent: "playing",
+        playbackError: null,
+        lessonId: lessonIdRef.current,
+        paragraphIdx: paragraphIdxRef.current,
+      });
+      setAudioPipelineMachineState("resume");
+      logAudioPipeline("play_resume", {
+        paragraphIdx: paragraphIdxRef.current,
+        lessonId: lessonIdRef.current,
+      });
+      void audioManager.resumeSpeechPreservePosition();
+      return;
+    }
+
     intentRef.current = "playing";
     setIntent("playing");
     setAudioPipelineContext({
@@ -333,6 +378,13 @@ export function useLessonPlayback({
         skipParagraphEffectRef.current = true;
         speakParagraphAtRef.current(next);
         return;
+      }
+
+      if (intentRef.current === "paused") {
+        playbackSessionRef.current += 1;
+        pauseVoice();
+        intentRef.current = "idle";
+        setIntent("idle");
       }
 
       paragraphIdxRef.current = next;
@@ -418,6 +470,7 @@ export function useLessonPlayback({
     error,
     play,
     pause,
+    stop,
     primeSpeakGesture: (text: string) => {
       const idx = paragraphIdxRef.current;
       const identity = identityForParagraph(lessonIdRef.current, paragraphsRef.current, idx);
