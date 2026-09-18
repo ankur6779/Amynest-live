@@ -184,6 +184,7 @@ export function HealthLabGameOnboarding({
 
         <motion.button
           type="button"
+          data-testid="health-lab-practice-start"
           onClick={onStart}
           className={cn(
             HEALTH_LAB_TOUCH_TARGET,

@@ -15,11 +15,31 @@ const VIEWPORTS = [
 ] as const;
 
 const QUIET_PATHS = [
-  { id: "breath-control", title: "Breath & focus", start: /Begin gently|Start Journey/i },
-  { id: "flamingo-balance", title: "Balance", start: /Start Survival|Begin gently|I'm ready/i },
-  { id: "freeze-statue", title: "Stillness", start: /Start Dancing|Begin gently|I'm ready/i },
-  { id: "reaction-time", title: "Attention", start: /Launch Mission|Begin gently/i },
-  { id: "finger-stability", title: "Steady hands", start: /Power Up Reactor|Begin gently/i },
+  {
+    id: "breath-control",
+    title: "Breath & focus",
+    play: /Hold gently|Place your finger|Balloon/i,
+  },
+  {
+    id: "flamingo-balance",
+    title: "Balance",
+    play: /Hold still|calibrat|Sky Island|Stay balanced|Simulation/i,
+  },
+  {
+    id: "freeze-statue",
+    title: "Stillness",
+    play: /Hold still|calibrat|Dance|FREEZE|Simulation/i,
+  },
+  {
+    id: "reaction-time",
+    title: "Attention",
+    play: /Wait|Tap now|GO|Rocket|countdown/i,
+  },
+  {
+    id: "finger-stability",
+    title: "Steady hands",
+    play: /Touch the core|crystal|Power|Hold/i,
+  },
 ] as const;
 
 function mockHealthLabApi(page: Page) {
@@ -120,10 +140,22 @@ async function dismissMotionPrep(page: Page) {
   }
 }
 
+async function startPractice(page: Page) {
+  const start = page.getByTestId("health-lab-practice-start");
+  await expect(start).toBeVisible({ timeout: 10_000 });
+  await expect(start).toHaveText(/Begin gently/i);
+  await start.click();
+}
+
 async function exitPractice(page: Page) {
-  const exit = page.getByRole("button", { name: /Exit|Return to Care/i }).first();
+  const exit = page.getByTestId("health-lab-practice-exit");
   if (await exit.isVisible().catch(() => false)) {
     await exit.click();
+    return;
+  }
+  const labeled = page.getByRole("button", { name: /Exit|Return to Care/i }).first();
+  if (await labeled.isVisible().catch(() => false)) {
+    await labeled.click();
     return;
   }
   await page.keyboard.press("Escape");
@@ -141,6 +173,10 @@ test.describe("Care → Health & Wellness", () => {
     await expect(page.getByTestId("care-quiet-health-lab")).toBeVisible();
     await expect(page.getByTestId("care-quiet-nutrition")).toBeVisible();
     await assertNoHorizontalOverflow(page);
+    await page.screenshot({
+      path: `${ARTIFACTS}/care_health_wellness_care_listing_390.png`,
+      fullPage: true,
+    });
 
     await enterHealth(page);
     await expect(page.getByTestId("health-lab-living")).toBeVisible();
@@ -153,15 +189,25 @@ test.describe("Care → Health & Wellness", () => {
       await expect(card).toContainText(path.title);
       await card.click();
       await dismissMotionPrep(page);
-      await expect(page.getByText(/Today's care practice|Mission Briefing|Get ready/i).first()).toBeVisible({
+      await expect(page.getByText(/Today's care practice|Get ready/i).first()).toBeVisible({
         timeout: 10_000,
       });
       await expect(page.locator("[data-health-lab-immersive-host]")).toBeVisible();
+      await expect(page.getByTestId(`health-lab-game-stage-${path.id}`)).toBeVisible();
       await expect(page.getByTestId("mobile-tab-bar")).toBeHidden();
-      const start = page.getByRole("button", { name: path.start });
-      if (await start.isVisible().catch(() => false)) {
-        await expect(start).toBeVisible();
-      }
+      await expect(page.getByTestId("health-lab-practice-start")).toBeVisible();
+      await page.screenshot({
+        path: `${ARTIFACTS}/care_health_wellness_${path.id}_briefing.png`,
+        fullPage: false,
+      });
+      await startPractice(page);
+      await expect(page.getByTestId("health-lab-practice-start")).toHaveCount(0);
+      await expect(page.getByText(path.play).first()).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mobile-tab-bar")).toBeHidden();
+      await page.screenshot({
+        path: `${ARTIFACTS}/care_health_wellness_${path.id}_play.png`,
+        fullPage: false,
+      });
       await exitPractice(page);
       await expect(page.getByTestId("health-lab-living")).toBeVisible({ timeout: 10_000 });
     }

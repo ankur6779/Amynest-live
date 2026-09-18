@@ -66,6 +66,14 @@ function Fixture() {
   const [surface, setSurface] = useState<Surface>(
     params.get("surface") === "health-lab" ? "health-lab" : "care",
   );
+  const [loc, setLoc] = useState("/parenting-hub");
+  const navigate = (to: string) => {
+    const path = to.split("#")[0] ?? to;
+    setLoc(to);
+    if (path.startsWith("/parenting-hub") || path.startsWith("/dashboard")) {
+      setSurface("care");
+    }
+  };
   const child = CHILDREN.find((c) => c.id === childId) ?? CHILDREN[1];
   const isInfant = isInfantCareAge(child.ageMonths);
   const preview = isHealthLabPreviewAge(child.ageMonths);
@@ -86,7 +94,7 @@ function Fixture() {
   const backToCare = () => setSurface("care");
 
   return (
-    <Router hook={() => ["/parenting-hub", () => {}]}>
+    <Router hook={() => [loc, navigate]}>
       <div
         className="app-shell main-container relative w-full max-w-full min-w-0 overflow-x-clip box-border min-h-screen"
         data-testid="care-wellness-fixture"
@@ -149,7 +157,6 @@ function Fixture() {
                 key={child.id}
                 childId={child.id}
                 childName={child.name}
-                standalone
               />
             </div>
           )}

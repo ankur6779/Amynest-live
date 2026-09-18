@@ -309,6 +309,8 @@ export function HealthLabGameStage({
         !style && `bg-gradient-to-b ${stage}`,
         className,
       )}
+      data-testid={gameId ? `health-lab-game-stage-${gameId}` : "health-lab-game-stage"}
+      data-game-id={gameId}
       data-hl-living={living ? "1" : undefined}
       style={style}
     >
@@ -364,6 +366,7 @@ export function HealthLabGameTopBar({
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
+          data-testid="health-lab-practice-exit"
           onClick={onExit}
           className={cn(
             HEALTH_LAB_TOUCH_TARGET,

@@ -191,7 +191,7 @@ export function FlamingoBalanceGame({ onComplete, onExit, childId }: Props) {
         gameId="flamingo-balance"
         onExit={onExit}
         onStart={beginCalibration}
-        startLabel="Start Survival"
+        startLabel={living ? undefined : "Start Survival"}
         ctaVariant="rose"
         extraContent={
           <>

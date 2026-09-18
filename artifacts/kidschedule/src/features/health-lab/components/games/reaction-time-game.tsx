@@ -163,7 +163,7 @@ export function ReactionTimeGame({ onComplete, onExit, ghostBestMs }: Props) {
         gameId="reaction-time"
         onExit={onExit}
         onStart={beginGame}
-        startLabel="Launch Mission"
+        startLabel={living ? undefined : "Launch Mission"}
         ctaVariant="amber"
       />
     );

@@ -262,7 +262,7 @@ export function FreezeStatueGame({ onComplete, onExit, childId }: Props) {
           preloadCrystalGardenDance();
           void beginCalibration();
         }}
-        startLabel="Start Dancing"
+        startLabel={living ? undefined : "Start Dancing"}
         ctaVariant="emerald"
         extraContent={
           sensor.simulated ? (
