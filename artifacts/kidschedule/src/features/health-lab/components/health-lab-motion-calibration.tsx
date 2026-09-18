@@ -1,21 +1,52 @@
 import { motion } from "framer-motion";
-import { Smartphone } from "lucide-react";
+import { ArrowLeft, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/reduced-motion";
+import { isHealthLabLivingV1Enabled } from "@/lib/health-lab/living-room";
+import { HEALTH_LAB_TOUCH_TARGET } from "../theme";
 
 interface Props {
   progress: number;
+  onCancel?: () => void;
   onComplete?: () => void;
 }
 
-export function HealthLabMotionCalibration({ progress }: Props) {
+export function HealthLabMotionCalibration({ progress, onCancel }: Props) {
   const reduced = useReducedMotion();
+  const living = isHealthLabLivingV1Enabled();
   const pct = Math.round(progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f2e]/95 backdrop-blur-xl">
+    <div
+      className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-4 py-6"
+      role="status"
+      aria-live="polite"
+      data-testid="health-lab-motion-calibration"
+    >
+      {onCancel ? (
+        <button
+          type="button"
+          data-testid="health-lab-practice-exit"
+          onClick={onCancel}
+          className={cn(
+            HEALTH_LAB_TOUCH_TARGET,
+            "mb-6 inline-flex items-center gap-1.5 self-start rounded-full px-3.5 py-2 text-xs font-semibold",
+            living
+              ? "hl-living-deep-ghost-btn text-[rgba(255,252,248,0.92)]"
+              : "border border-white/12 bg-white/[0.08] text-white/85",
+          )}
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Exit
+        </button>
+      ) : null}
       <motion.div
-        className="mx-4 flex max-w-sm flex-col items-center rounded-3xl border border-white/15 bg-white/[0.06] p-8 text-center backdrop-blur-2xl"
+        className={cn(
+          "mx-4 flex w-full max-w-sm flex-col items-center p-8 text-center",
+          living
+            ? "hl-living-deep-panel rounded-3xl"
+            : "rounded-3xl border border-white/15 bg-white/[0.06] backdrop-blur-2xl",
+        )}
         initial={reduced ? false : { scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.4 }}

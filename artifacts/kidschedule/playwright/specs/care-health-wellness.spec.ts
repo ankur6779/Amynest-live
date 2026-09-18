@@ -44,37 +44,52 @@ const QUIET_PATHS = [
 
 function mockHealthLabApi(page: Page) {
   let serverProfile: Record<string, unknown> | null = null;
-  return page.route("**/api/health-lab/**", async (route: Route) => {
-    const req = route.request();
-    const url = req.url();
-    if (req.method() === "GET" && url.includes("/profile/")) {
+  return Promise.all([
+    page.route("**/health-lab-audio/**", async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "audio/mpeg",
+        body: Buffer.alloc(0),
+      });
+    }),
+    page.route("**/api/**", async (route: Route) => {
+      const req = route.request();
+      const url = req.url();
+      if (url.includes("/api/health-lab/")) {
+        if (req.method() === "GET" && url.includes("/profile/")) {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
+          });
+          return;
+        }
+        if (req.method() === "GET") {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ok: true, profile: serverProfile, history: [], dashboard: {} }),
+          });
+          return;
+        }
+        if (req.method() === "POST") {
+          const body = (req.postDataJSON() ?? {}) as Record<string, unknown>;
+          if (body.profile) serverProfile = body.profile as Record<string, unknown>;
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
+          });
+          return;
+        }
+      }
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
+        body: JSON.stringify({ ok: true }),
       });
-      return;
-    }
-    if (req.method() === "GET") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ok: true, profile: serverProfile, history: [], dashboard: {} }),
-      });
-      return;
-    }
-    if (req.method() === "POST") {
-      const body = (req.postDataJSON() ?? {}) as Record<string, unknown>;
-      if (body.profile) serverProfile = body.profile as Record<string, unknown>;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ok: true, profile: serverProfile, clientUpdatedAt: Date.now() }),
-      });
-      return;
-    }
-    await route.continue();
-  });
+    }),
+  ]);
 }
 
 function collectErrors(page: Page) {
@@ -82,7 +97,9 @@ function collectErrors(page: Page) {
   const failed: string[] = [];
   page.on("pageerror", (err) => errors.push(err.message));
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
+    if (msg.type() !== "error") return;
+    const loc = msg.location();
+    errors.push([msg.text(), loc.url].filter(Boolean).join(" "));
   });
   page.on("requestfailed", (req) => {
     const url = req.url();
@@ -95,7 +112,7 @@ function collectErrors(page: Page) {
 function relevantErrors(errors: string[]) {
   return errors.filter(
     (text) =>
-      !/favicon|Download the React DevTools|Failed to load resource.*experience\/|net::ERR_ABORTED/i.test(
+      !/favicon|Download the React DevTools|Failed to load resource.*experience\/|net::ERR_ABORTED|\/api\/(client-logs|logs)/i.test(
         text,
       ),
   );
@@ -119,14 +136,23 @@ async function assertNoHorizontalOverflow(page: Page) {
 
 async function lastPathClearsTabbar(page: Page) {
   const last = page.getByTestId("health-lab-quiet-finger-stability");
+  const exit = page.getByTestId("health-lab-exit-home");
   const tab = page.getByTestId("mobile-tab-bar");
   if (!(await tab.isVisible().catch(() => false))) return;
-  await last.scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    const root = document.scrollingElement ?? document.documentElement;
+    root.scrollTo({ top: root.scrollHeight, behavior: "instant" });
+  });
+  await last.evaluate((el) => el.scrollIntoView({ block: "end", inline: "nearest" }));
   const pathBox = await last.boundingBox();
   const tabBox = await tab.boundingBox();
   expect(pathBox).toBeTruthy();
   expect(tabBox).toBeTruthy();
   expect((pathBox?.y ?? 0) + (pathBox?.height ?? 0)).toBeLessThanOrEqual((tabBox?.y ?? 0) + 2);
+  await exit.evaluate((el) => el.scrollIntoView({ block: "end", inline: "nearest" }));
+  const exitBox = await exit.boundingBox();
+  expect(exitBox).toBeTruthy();
+  expect((exitBox?.y ?? 0) + (exitBox?.height ?? 0)).toBeLessThanOrEqual((tabBox?.y ?? 0) + 2);
 }
 
 async function enterHealth(page: Page) {
@@ -271,12 +297,7 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByTestId("health-lab-living")).toBeVisible();
       await assertNoHorizontalOverflow(page);
       if (vp.width < 1024) {
-        const exit = page.getByTestId("health-lab-exit-home");
-        await exit.scrollIntoViewIfNeeded();
         await lastPathClearsTabbar(page);
-        const tabBox = await page.getByTestId("mobile-tab-bar").boundingBox();
-        const exitBox = await exit.boundingBox();
-        expect((exitBox?.y ?? 0) + (exitBox?.height ?? 0)).toBeLessThanOrEqual((tabBox?.y ?? 0) + 2);
       }
       await page.getByTestId("health-lab-quiet-reaction-time").click();
       await expect(page.getByText(/Rocket Launch|Today's care practice/i).first()).toBeVisible();

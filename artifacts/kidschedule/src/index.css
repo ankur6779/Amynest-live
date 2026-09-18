@@ -2421,9 +2421,17 @@ html[data-theme="dark"] {
   padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+body.has-tabbar {
+  scroll-padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+}
+
 @media (min-width: 1024px) {
   .app-tabbar-content-clearance {
     padding-bottom: 2rem;
+  }
+
+  body.has-tabbar {
+    scroll-padding-bottom: 2rem;
   }
 }
 
