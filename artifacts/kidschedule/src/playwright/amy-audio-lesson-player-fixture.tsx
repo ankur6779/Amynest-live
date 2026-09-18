@@ -115,6 +115,30 @@ function PreviewShell() {
   return (
     <>
       <FixtureAudioClock />
+      <button
+        type="button"
+        data-testid="fixture-lesson-stop"
+        onClick={() => {
+          const w = window as Window & {
+            __amynestLessonPlayback?: { stop: () => void };
+          };
+          w.__amynestLessonPlayback?.stop();
+        }}
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 12,
+          zIndex: 9999,
+          padding: "8px 14px",
+          borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.4)",
+          background: "rgba(0,0,0,0.55)",
+          color: "#fff",
+          cursor: "pointer",
+        }}
+      >
+        Stop
+      </button>
       <PlayerSheet
         lesson={lesson}
         series={series}

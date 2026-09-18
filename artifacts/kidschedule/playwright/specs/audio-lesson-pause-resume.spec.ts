@@ -116,9 +116,9 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
     fullPage: true,
   });
 
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(2000);
   const progressed = await speechTime(page);
-  expect(progressed.currentTime).toBeGreaterThan(afterResume.currentTime - 0.05);
+  expect(progressed.currentTime).toBeGreaterThan(afterResume.currentTime + 0.8);
 
   expect(staticAudioGets.length).toBe(fetchesBeforeResume);
 
@@ -128,12 +128,7 @@ test("audio lesson pause then play resumes from the paused time", async ({ page 
   expect(secondPause.paused).toBe(true);
   expect(secondPause.currentTime).toBeGreaterThan(5);
 
-  await page.evaluate(() => {
-    const w = window as Window & {
-      __amynestLessonPlayback?: { stop: () => void };
-    };
-    w.__amynestLessonPlayback?.stop();
-  });
+  await page.getByTestId("fixture-lesson-stop").click();
   await expect(playBtn).toHaveAttribute("aria-label", /Play/i);
   const afterStop = await speechTime(page);
   expect(afterStop.currentTime).toBeLessThan(0.35);
