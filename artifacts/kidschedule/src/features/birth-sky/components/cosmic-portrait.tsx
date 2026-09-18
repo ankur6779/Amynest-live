@@ -1,19 +1,26 @@
 /**
- * Amy Astro cosmic portrait — tile hero art in a soft orbit frame.
- * Child is represented by orbiting sun/moon signs around Amy.
+ * Amy Astro cosmic portrait — complete square illustration in a role-based frame.
+ * Hero / ceremony fill the stage; closing is a quieter keepsake seal.
+ * The PNG is a full illustration (child + celestial ornaments), not a photo crop.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   resolveAmyPortraitVariant,
   type AmyPortraitVariant,
 } from "../lib/portrait-variant";
 import { useLivingSky } from "../state/living-sky-context";
-import { AMY_ASTRO_TILE_PORTRAIT_SRC } from "../lib/branding";
+import {
+  AMY_ASTRO_PORTRAIT_FALLBACK_SRC,
+  AMY_ASTRO_TILE_PORTRAIT_SRC,
+} from "../lib/branding";
 import "../design/amy-astro.css";
 
 export type AmyLookTarget = "left" | "right" | "center" | "up";
+
+/** Explicit visual role — never size the same illustration identically everywhere. */
+export type AmyAstroPortraitPresentation = "hero" | "closing" | "ceremony";
 
 type Props = {
   childName: string;
@@ -28,6 +35,9 @@ type Props = {
   /** Play entrance wave once on mount */
   playEntranceWave?: boolean;
   onOrbTap?: () => void;
+  presentation?: AmyAstroPortraitPresentation;
+  /** When nested in a labeled control, hide duplicate accessible name. */
+  nestedInControl?: boolean;
 };
 
 const ZODIAC_GLYPH: Record<string, string> = {
@@ -57,6 +67,8 @@ export function AmyAstroCosmicPortrait({
   orbPulse = false,
   playEntranceWave: _playEntranceWave = true,
   onOrbTap,
+  presentation = "hero",
+  nestedInControl = false,
 }: Props) {
   const variant = useMemo(
     () => variantProp ?? resolveAmyPortraitVariant(childName),
@@ -66,6 +78,9 @@ export function AmyAstroCosmicPortrait({
   const moonGlyph = moonSign ? ZODIAC_GLYPH[moonSign] ?? "☽" : "☽";
   const livingSky = useLivingSky();
   const [tapPulse, setTapPulse] = useState(false);
+  const [src, setSrc] = useState<string>(AMY_ASTRO_TILE_PORTRAIT_SRC);
+  const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     livingSky?.setAmyGazeUp(lookTarget === "up");
@@ -77,52 +92,43 @@ export function AmyAstroCosmicPortrait({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pulse on interaction edges
   }, [orbPulse, smileBoost]);
 
+  useEffect(() => {
+    setSrc(AMY_ASTRO_TILE_PORTRAIT_SRC);
+    setStatus("loading");
+  }, [childName]);
+
+  useLayoutEffect(() => {
+    const node = imgRef.current;
+    if (node?.complete && node.naturalWidth > 0) {
+      setStatus((prev) => (prev === "fallback" ? prev : "ready"));
+    }
+  }, [src]);
+
+  const showSignRow = presentation !== "closing";
+  const eager = presentation !== "closing";
+
   return (
     <div
       className={cn(
-        "relative mx-auto aspect-square w-full max-w-[280px]",
+        "amy-astro-portrait-frame",
+        `amy-astro-portrait-frame--${presentation}`,
         !reducedMotion && "amy-astro-amy-breathe",
         className,
       )}
       data-testid="amy-astro-cosmic-portrait"
       data-portrait-variant={variant}
+      data-portrait-presentation={presentation}
       data-look={lookTarget}
-      role="img"
-      aria-label={`Amy guiding ${childName}'s cosmic portrait`}
+      data-image-status={status}
+      role={nestedInControl ? undefined : "img"}
+      aria-hidden={nestedInControl || undefined}
+      aria-label={nestedInControl ? undefined : `Cosmic portrait for ${childName}`}
     >
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-[-2%] rounded-full border border-[hsl(42_70%_68%/0.35)]",
-          !reducedMotion && "amy-astro-orbit",
-        )}
-        aria-hidden
-      >
-        <span className="absolute left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[hsl(42_60%_60%/0.4)] bg-[hsl(275_40%_22%/0.85)] text-sm text-[hsl(42_80%_78%)] shadow-[0_0_16px_hsl(42_90%_55%/0.45)]">
-          {sunGlyph}
-        </span>
-        <span className="absolute bottom-[8%] right-0 flex h-8 w-8 translate-x-1/4 items-center justify-center rounded-full border border-[hsl(275_50%_65%/0.35)] bg-[hsl(248_40%_20%/0.9)] text-sm text-[hsl(275_70%_82%)] shadow-[0_0_14px_hsl(275_80%_55%/0.4)]">
-          {moonGlyph}
-        </span>
-        <span className="absolute left-0 top-[42%] h-2 w-2 -translate-x-1/2 rounded-full bg-[hsl(210_80%_72%)] shadow-[0_0_10px_hsl(210_90%_60%/0.7)]" />
-        <span className="absolute right-[6%] top-[18%] h-1.5 w-1.5 rounded-full bg-[hsl(42_90%_70%)] shadow-[0_0_8px_hsl(42_90%_55%/0.8)]" />
-      </div>
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-[10%] rounded-full border border-dashed border-[hsl(42_55%_62%/0.22)]",
-          !reducedMotion && "amy-astro-orbit-reverse",
-        )}
-        aria-hidden
-      />
-
-      {/* Soft violet bloom so the tile Amy art merges into the cosmic stage */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-[6%] rounded-full bg-[radial-gradient(circle_at_50%_42%,hsl(275_70%_48%/0.55)_0%,hsl(248_55%_28%/0.35)_42%,transparent_72%)] blur-[2px]"
-      />
+      <div className="amy-astro-portrait-frame__halo" aria-hidden />
 
       <div
         className={cn(
-          "absolute inset-[8%] h-[84%] w-[84%] overflow-visible rounded-full",
+          "amy-astro-portrait-frame__art",
           (orbPulse || smileBoost || tapPulse) &&
             !reducedMotion &&
             "amy-astro-orb-react",
@@ -139,20 +145,51 @@ export function AmyAstroCosmicPortrait({
         }}
         role={onOrbTap ? "presentation" : undefined}
       >
+        {status === "loading" ? (
+          <div
+            className="amy-astro-portrait-frame__placeholder"
+            data-testid="amy-astro-portrait-placeholder"
+            aria-hidden
+          />
+        ) : null}
         <img
-          src={AMY_ASTRO_TILE_PORTRAIT_SRC}
+          src={src}
           alt=""
-          width={280}
-          height={280}
+          width={768}
+          height={768}
           draggable={false}
           className={cn(
-            "amy-astro-tile-portrait h-full w-full object-contain object-bottom",
-            "drop-shadow-[0_0_36px_hsl(275_65%_48%/0.45)]",
+            "amy-astro-portrait-illustration",
             !reducedMotion && "amy-astro-pulse-glow",
           )}
           decoding="async"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "auto"}
+          ref={imgRef}
+          onLoad={() => setStatus((prev) => (prev === "fallback" ? prev : "ready"))}
+          onError={() => {
+            if (src !== AMY_ASTRO_PORTRAIT_FALLBACK_SRC) {
+              setSrc(AMY_ASTRO_PORTRAIT_FALLBACK_SRC);
+              setStatus("fallback");
+              return;
+            }
+            setStatus("fallback");
+          }}
         />
       </div>
+
+      {showSignRow ? (
+        <p className="amy-astro-portrait-sign-row" aria-hidden>
+          <span className="amy-astro-portrait-sign-chip">
+            {sunGlyph}
+            {sunSign ? ` ${sunSign}` : ""}
+          </span>
+          <span className="amy-astro-portrait-sign-chip">
+            {moonGlyph}
+            {moonSign ? ` ${moonSign}` : ""}
+          </span>
+        </p>
+      ) : null}
     </div>
   );
 }

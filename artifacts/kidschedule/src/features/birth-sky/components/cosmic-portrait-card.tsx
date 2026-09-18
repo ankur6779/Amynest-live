@@ -93,6 +93,11 @@ export function AmyAstroCosmicPortraitCard({
   );
   const [parallax, setParallax] = useState({ y: 0, stars: 0 });
 
+  useEffect(() => {
+    setMemorySaved(Boolean(continuity?.portraitSaved));
+    setExpandedId(null);
+  }, [childName, profileId, continuity?.portraitSaved]);
+
   const world = useMemo(
     () =>
       resolvePortraitWorldTheme({
@@ -331,9 +336,37 @@ export function AmyAstroCosmicPortraitCard({
         />
       ) : null}
 
-      {/* Hero story opening */}
-      <div className="relative z-10 grid gap-5 sm:grid-cols-[1.05fr_0.95fr] sm:items-center">
-        <div className="min-w-0">
+      {/* Hero: artwork first on mobile, copy | art on tablet+ */}
+      <div className="amy-astro-portrait-hero relative z-10">
+        <div className="amy-astro-portrait-hero__visual">
+          <button
+            type="button"
+            className="w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[hsl(42_70%_60%)]"
+            onClick={() => sparkMagic("amy", "up")}
+            aria-label={`View ${childName}'s cosmic portrait`}
+          >
+            <AmyAstroCosmicPortrait
+              childName={childName}
+              reducedMotion={reducedMotion}
+              presentation="hero"
+              sunSign={portrait.sunSign}
+              moonSign={portrait.moonSign}
+              smileBoost={smileBoost}
+              lookTarget={lookTarget}
+              orbPulse={orbPulse}
+              playEntranceWave={showAmy && !reducedMotion}
+              onOrbTap={() => sparkMagic("orb", "up")}
+              nestedInControl
+              className={cn(
+                "transition-all duration-1000",
+                showAmy
+                  ? "translate-y-0 scale-100 opacity-100"
+                  : "translate-y-8 scale-90 opacity-0",
+              )}
+            />
+          </button>
+        </div>
+        <div className="amy-astro-portrait-hero__copy min-w-0">
           <p
             className={cn(
               "amy-astro-display text-sm leading-relaxed text-[hsl(42_60%_78%/0.9)] transition-opacity duration-700",
@@ -399,40 +432,12 @@ export function AmyAstroCosmicPortraitCard({
             </ul>
           </div>
         </div>
-
-        <div
-          className={cn(
-            "relative mx-auto w-full max-w-[280px] transition-all duration-1000",
-            showAmy
-              ? "translate-y-0 scale-100 opacity-100"
-              : "translate-y-8 scale-90 opacity-0",
-          )}
-        >
-          <button
-            type="button"
-            className="w-full cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[hsl(42_70%_60%)]"
-            onClick={() => sparkMagic("amy", "up")}
-            aria-label="Meet Amy — tap for a magical moment"
-          >
-            <AmyAstroCosmicPortrait
-              childName={childName}
-              reducedMotion={reducedMotion}
-              sunSign={portrait.sunSign}
-              moonSign={portrait.moonSign}
-              smileBoost={smileBoost}
-              lookTarget={lookTarget}
-              orbPulse={orbPulse}
-              playEntranceWave={showAmy && !reducedMotion}
-              onOrbTap={() => sparkMagic("orb", "up")}
-            />
-          </button>
-        </div>
       </div>
 
       {/* Soft constellation divider */}
       <div
         className={cn(
-          "amy-astro-constellation-divider relative z-10 my-7",
+          "amy-astro-constellation-divider relative z-10",
           showRest ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
@@ -459,7 +464,7 @@ export function AmyAstroCosmicPortraitCard({
 
       <div
         className={cn(
-          "amy-astro-constellation-divider relative z-10 my-7",
+          "amy-astro-constellation-divider relative z-10",
           showRest ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
@@ -522,7 +527,7 @@ export function AmyAstroCosmicPortraitCard({
 
       <div
         className={cn(
-          "amy-astro-nebula-separator relative z-10 my-8",
+          "amy-astro-nebula-separator relative z-10",
           showRest ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
@@ -588,7 +593,7 @@ export function AmyAstroCosmicPortraitCard({
 
       <div
         className={cn(
-          "amy-astro-constellation-divider relative z-10 my-7",
+          "amy-astro-constellation-divider relative z-10",
           showRest ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
@@ -660,27 +665,25 @@ export function AmyAstroCosmicPortraitCard({
         {portrait.currentSkyInfluence}
       </p>
 
-      {/* Ending — Amy, not cards */}
+      {/* Closing seal — quieter reprise of the same illustration */}
       <footer
         className={cn(
-          "relative z-10 mt-10 flex flex-col items-center text-center transition-all duration-1000",
+          "amy-astro-portrait-closing relative z-10 mt-6 text-center transition-all duration-1000",
           showRest ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
         )}
       >
-        <div className="amy-astro-ending-glow pointer-events-none absolute inset-x-0 -top-8 h-40" aria-hidden />
-        <div className="relative w-36">
-          <AmyAstroCosmicPortrait
-            childName={childName}
-            reducedMotion={reducedMotion}
-            sunSign={portrait.sunSign}
-            moonSign={portrait.moonSign}
-            smileBoost={smileBoost || (showRest && !reducedMotion)}
-            lookTarget="center"
-            orbPulse={false}
-            playEntranceWave={false}
-            className="max-w-[140px]"
-          />
-        </div>
+        <div className="amy-astro-ending-glow pointer-events-none absolute inset-x-0 -top-4" aria-hidden />
+        <AmyAstroCosmicPortrait
+          childName={childName}
+          reducedMotion={reducedMotion}
+          presentation="closing"
+          sunSign={portrait.sunSign}
+          moonSign={portrait.moonSign}
+          smileBoost={smileBoost || (showRest && !reducedMotion)}
+          lookTarget="center"
+          orbPulse={false}
+          playEntranceWave={false}
+        />
         <p className="amy-astro-display mt-4 max-w-md text-lg leading-relaxed text-[hsl(40_22%_96%/0.94)]">
           {world.closingLine}
         </p>
@@ -691,7 +694,7 @@ export function AmyAstroCosmicPortraitCard({
           Your steady love is their safest launchpad.
         </p>
 
-        <div className="mt-6 flex w-full max-w-md flex-col gap-2.5 sm:flex-row">
+        <div className="amy-astro-portrait-cta-row amynest-fab-avoid mt-5">
           <button
             type="button"
             className="amy-astro-ripple flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[hsl(42_50%_60%/0.28)] bg-[hsl(275_40%_22%/0.45)] px-2 text-sm font-semibold"

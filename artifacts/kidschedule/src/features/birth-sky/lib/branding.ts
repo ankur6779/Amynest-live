@@ -19,5 +19,8 @@ export const AMY_ASTRO_TILE_HERO_SRC =
 /** Soft circular portrait derived from the same tile Amy art. */
 export const AMY_ASTRO_TILE_PORTRAIT_SRC =
   "/illustrations/amy-astro/amy-astro-portrait.png?v=20260727a" as const;
+/** Inline SVG fallback when the PNG illustration fails to load. */
+export const AMY_ASTRO_PORTRAIT_FALLBACK_SRC =
+  "/amy-astro/child-cosmic-portrait.svg" as const;
 /** @deprecated Prefer AMY_ASTRO_TILE_PORTRAIT_SRC — kept for older static fallbacks. */
 export const AMY_ASTRO_COSMIC_PORTRAIT_SRC = AMY_ASTRO_TILE_PORTRAIT_SRC;

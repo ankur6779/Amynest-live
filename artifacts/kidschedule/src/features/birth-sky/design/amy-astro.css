@@ -1471,3 +1471,161 @@
     filter: none;
   }
 }
+
+/* ——— Astronomy illustration frame (hero vs closing vs ceremony) ———
+ * The PNG is a complete 1:1 illustration, not a photographic crop.
+ * Roles share one wrapper; sizes use min()/clamp() — no 390px offsets.
+ */
+.amy-astro-portrait-frame {
+  --aa-portrait-size: min(100%, 22rem);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--aa-portrait-size);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.amy-astro-portrait-frame--hero {
+  --aa-portrait-size: min(100%, 22rem);
+}
+
+.amy-astro-portrait-frame--ceremony {
+  --aa-portrait-size: min(17.5rem, 72vw);
+}
+
+.amy-astro-portrait-frame--closing {
+  --aa-portrait-size: min(12rem, 56vw);
+}
+
+.amy-astro-portrait-frame__halo {
+  pointer-events: none;
+  position: absolute;
+  inset: 4% 8% 10%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 42%,
+    hsl(275 70% 48% / 0.42) 0%,
+    hsl(248 55% 28% / 0.22) 46%,
+    transparent 72%
+  );
+  z-index: 0;
+}
+
+.amy-astro-portrait-frame__art {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.amy-astro-portrait-illustration {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 0 28px hsl(275 65% 48% / 0.4));
+}
+
+.amy-astro-portrait-frame__placeholder {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 40%, hsl(275 50% 40% / 0.35), hsl(230 40% 12% / 0.5) 70%);
+}
+
+.amy-astro-portrait-sign-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  max-width: 100%;
+}
+
+.amy-astro-portrait-sign-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid hsl(42 50% 70% / 0.28);
+  background: hsl(248 40% 16% / 0.72);
+  color: hsl(42 75% 82%);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.amy-astro-portrait-hero {
+  display: grid;
+  gap: 1.35rem;
+  align-items: center;
+}
+
+.amy-astro-portrait-hero__visual {
+  width: 100%;
+  min-width: 0;
+}
+
+.amy-astro-portrait-hero__copy {
+  min-width: 0;
+}
+
+.amy-astro-portrait-cta-row {
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+  flex-direction: column;
+  gap: 0.65rem;
+  scroll-margin-bottom: calc(var(--amynest-tabbar-height, 72px) + var(--amynest-fab-size, 70px) + 1rem);
+}
+
+@media (min-width: 640px) {
+  .amy-astro-portrait-hero {
+    grid-template-columns: minmax(0, 1.08fr) minmax(13rem, 0.92fr);
+    gap: 1.6rem;
+  }
+
+  .amy-astro-portrait-hero__visual {
+    order: 2;
+  }
+
+  .amy-astro-portrait-cta-row {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 1024px) {
+  .amy-astro-portrait-hero {
+    grid-template-columns: minmax(0, 1.12fr) minmax(14rem, 0.88fr);
+  }
+
+  .amy-astro-portrait-frame--hero {
+    --aa-portrait-size: min(100%, 20rem);
+  }
+}
+
+.amy-astro-portrait-closing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.amy-astro-ending-glow {
+  height: 5.5rem;
+}
+
+.amy-astro-portrait-story .amy-astro-constellation-divider {
+  margin-block: 1.35rem;
+}
+
+.amy-astro-portrait-story .amy-astro-nebula-separator {
+  margin-block: 1.5rem;
+}

@@ -1,7 +1,7 @@
 /**
  * Visual Identity sprint fixture — emblem, portrait, chapter previews (no auth).
  */
-import { StrictMode, type ReactNode } from "react";
+import { StrictMode, useMemo, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "../index.css";
 import { AmyAstroEmblem } from "@/features/birth-sky/components/amy-astro-emblem";
@@ -58,10 +58,18 @@ function Fixture() {
     return (
       <Shell testId="amy-astro-visual-portrait">
         <div className="mx-auto max-w-lg">
-          <AmyAstroCosmicPortraitCard childName={childName} portrait={portrait} />
+          <AmyAstroCosmicPortraitCard
+            childName={childName}
+            portrait={portrait}
+            reducedMotion
+          />
         </div>
       </Shell>
     );
+  }
+
+  if (mode === "layout") {
+    return <AstronomyLayoutFixture initialName={childName} />;
   }
 
   if (mode === "chapters") {
@@ -105,6 +113,121 @@ function Fixture() {
         />
       </div>
     </Shell>
+  );
+}
+
+const LAYOUT_CHILDREN = ["Child 1", "Child 2", "Child 3"] as const;
+
+function AstronomyLayoutFixture({ initialName }: { initialName: string }) {
+  const start = LAYOUT_CHILDREN.includes(initialName as (typeof LAYOUT_CHILDREN)[number])
+    ? initialName
+    : "Child 2";
+  const [name, setName] = useState(start);
+  const [view, setView] = useState<"portrait" | "home">("portrait");
+  const portrait = useMemo(
+    () =>
+      buildCosmicPortrait({
+        childName: name,
+        sunSign: "Cancer",
+        moonSign: "Sagittarius",
+        moonPhaseLabel: "Waxing Gibbous",
+        risingSign: "Cancer",
+        daySky: false,
+      }),
+    [name],
+  );
+
+  if (view === "home") {
+    return (
+      <div className="min-h-screen bg-[hsl(228_48%_5%)] p-6 text-white" data-testid="amy-astro-layout-home">
+        <p>Returned from Amy Astronomy</p>
+        <button type="button" onClick={() => setView("portrait")}>
+          Open Astronomy
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="amy-astro-root min-h-screen bg-[hsl(228_48%_5%)] text-[hsl(40_20%_96%)] has-tabbar">
+      <header
+        data-testid="mock-app-header"
+        className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-white/10 bg-[hsl(228_48%_6%/0.92)] px-3"
+      >
+        <button
+          type="button"
+          data-testid="birth-sky-back"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
+          aria-label="Back"
+          onClick={() => setView("home")}
+        >
+          ←
+        </button>
+        <p className="font-semibold">AmyNest AI</p>
+      </header>
+
+      <main className="mx-auto w-full max-w-lg px-4 pb-[calc(env(safe-area-inset-bottom,0px)+var(--amynest-module-end-gap,2.75rem))] pt-3">
+        <div className="mb-3 flex flex-wrap gap-2" data-testid="amy-astro-child-switcher">
+          {LAYOUT_CHILDREN.map((child) => (
+            <button
+              key={child}
+              type="button"
+              data-testid={`amy-astro-switch-${child.replace(/\s+/g, "-").toLowerCase()}`}
+              className="min-h-11 rounded-full border border-white/20 px-3 text-sm"
+              onClick={() => setName(child)}
+            >
+              {child}
+            </button>
+          ))}
+        </div>
+        <AmyAstroCosmicPortraitCard
+          key={name}
+          childName={name}
+          portrait={portrait}
+          reducedMotion
+          profileId={name}
+          onAskAmy={() => undefined}
+          onContinue={() => undefined}
+        />
+      </main>
+
+      <footer
+        data-testid="mock-tabbar"
+        className="app-footer tabbar"
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 72,
+          zIndex: 40,
+          background: "rgba(12,10,20,0.96)",
+        }}
+      >
+        <nav className="flex h-full items-center justify-around text-[11px]" aria-label="Bottom navigation">
+          <span>Home</span>
+          <span>Today</span>
+          <span>Beside you</span>
+          <span>Rooms</span>
+        </nav>
+        <div
+          id="amy-fab-floating"
+          data-testid="mock-amy-fab"
+          className="amy-fab-floating amy-fab-in-footer"
+          style={{
+            position: "absolute",
+            right: 10,
+            bottom: "calc(100% + 8px)",
+            width: 70,
+            height: 70,
+            borderRadius: 9999,
+            background: "#f97316",
+            zIndex: 2001,
+          }}
+          aria-label="Ask Amy AI"
+        />
+      </footer>
+    </div>
   );
 }
 
