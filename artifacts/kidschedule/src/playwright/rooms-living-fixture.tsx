@@ -63,6 +63,9 @@ const ROOM_SECTIONS: readonly HubSectionVisibilityInput[] = [
   { id: "activities", alwaysCurrent: true },
   { id: "story-hub", bands: ["0-2", "2-4", "4-6", "6-8"] },
   { id: "worksheets", alwaysCurrent: true },
+  { id: "coloring-books", bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"] },
+  { id: "fun-sheets", bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"] },
+  { id: "art-craft", alwaysCurrent: true },
   { id: "gaming-rewards", alwaysCurrent: true },
   { id: "talking-amy", bands: ["0-2", "2-4", "4-6", "6-8"] },
 ];
@@ -212,6 +215,24 @@ function Fixture() {
               const knownTiles = new Set(visibleTileIds);
               if (tileId === "not-a-module" || !knownTiles.has(tileId)) return null;
               if (tileId === "infant-hub" && !isInfant) return null;
+              if (tileId === "infant-hub") {
+                return (
+                  <div
+                    data-testid="dest-infant-hub"
+                    data-child-id={String(child.id)}
+                    data-age-months={String(child.ageMonths)}
+                  >
+                    <div data-testid="infant-care-living">
+                      <div data-testid="infant-care-quiet-paths">
+                        <div data-testid="infant-module-sleep">Sleep</div>
+                        <div data-testid="infant-module-feeding">Feeding</div>
+                        <div data-testid="infant-module-growth">Growth</div>
+                        <div data-testid="infant-module-milestones">Milestones</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               if (tileId === "nutrition") {
                 return (
                   <div data-testid="dest-nutrition" data-child-id={String(child.id)}>
@@ -280,6 +301,7 @@ function Fixture() {
                 childName={child.name}
                 activeTileId={activeTileId}
                 onSelectTile={onSelectTile}
+                visibleTileIds={visibleTileIds}
               />
             )}
             renderGrowStream={({ activeTileId, onSelectTile }) => (
