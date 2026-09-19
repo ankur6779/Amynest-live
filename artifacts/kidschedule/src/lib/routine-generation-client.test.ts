@@ -3,6 +3,7 @@ import {
   fetchStandardRoutine,
   fetchAmyAiRoutine,
   fetchRoutineWithResilience,
+  persistGeneratedRoutine,
   RoutineGenerationPaywallError,
 } from "./routine-generation-client";
 import { resetAnalyticsServiceForTests, getAnalyticsService } from "./analytics/analytics-service";
@@ -78,6 +79,27 @@ describe("routine-generation-client resilience", () => {
 
     await fetchStandardRoutine(authFetch as never, { childId: 3, date: "2026-07-05" });
     expect(getAnalyticsService().pendingCount()).toBeGreaterThanOrEqual(0);
+  });
+
+  it("persistGeneratedRoutine POSTs override save payload", async () => {
+    const authFetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      expect(String(url)).toContain("/api/routines");
+      expect(init?.method).toBe("POST");
+      const body = JSON.parse(String(init?.body));
+      expect(body.override).toBe(true);
+      expect(body.childId).toBe(7);
+      expect(body.date).toBe("2026-07-15");
+      return new Response(JSON.stringify({ id: 99, childId: 7, date: "2026-07-15" }), { status: 200 });
+    });
+
+    const saved = await persistGeneratedRoutine(authFetch as never, {
+      childId: 7,
+      date: "2026-07-15",
+      title: "Tomorrow",
+      items: [{ activity: "Breakfast", time: "8:00 AM", duration: 30, category: "meal" }],
+    });
+
+    expect(saved.id).toBe(99);
   });
 });
 

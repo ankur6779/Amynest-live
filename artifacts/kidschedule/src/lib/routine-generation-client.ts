@@ -443,6 +443,81 @@ async function runAmyAiRoutineInner(
   }
 }
 
+export type PersistGeneratedRoutineResult = {
+  id: number;
+  childId: number;
+  date: string;
+};
+
+/**
+ * Persist a generated routine via POST /api/routines (override replaces same child+date).
+ */
+export async function persistGeneratedRoutine(
+  authFetch: AuthFetchFn,
+  input: {
+    childId: number;
+    date: string;
+    title: string;
+    items: unknown[];
+    adaptations?: string[] | null;
+  },
+): Promise<PersistGeneratedRoutineResult> {
+  const res = await authFetch(
+    getApiUrl("/api/routines"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childId: input.childId,
+        date: input.date,
+        title: input.title,
+        items: sanitizeRoutineItems(input.items),
+        adaptations: input.adaptations ?? undefined,
+        override: true,
+      }),
+    },
+    AI_FETCH_TIMEOUT_MS,
+  );
+
+  let body: unknown = null;
+  const raw = await res.text();
+  try {
+    body = raw ? JSON.parse(raw) : null;
+  } catch {
+    /* ignore */
+  }
+
+  if (res.status === 402 || res.status === 403) {
+    const errBody = body as { reason?: string; error?: string; feature?: string } | null;
+    const isFeatureLocked =
+      res.status === 402 &&
+      (errBody?.error === "feature_locked" ||
+        errBody?.error === "routine_locked" ||
+        errBody?.feature === "routine_generate" ||
+        errBody?.error === "routine_limit_reached");
+    const isLegacyLimit = res.status === 403 && errBody?.reason === "routine_limit_exceeded";
+    if (isFeatureLocked || isLegacyLimit) {
+      throw new RoutineGenerationPaywallError();
+    }
+  }
+
+  if (!res.ok) {
+    const errBody = body as { message?: string } | null;
+    throw new Error(errBody?.message ?? `Failed to save routine (${res.status})`);
+  }
+
+  const saved = body as { id?: number; childId?: number; date?: string };
+  if (typeof saved?.id !== "number") {
+    throw new Error("Save succeeded but routine id missing in response");
+  }
+
+  return {
+    id: saved.id,
+    childId: saved.childId ?? input.childId,
+    date: saved.date ?? input.date,
+  };
+}
+
 /**
  * Standard rule-based generation with optional client emergency routine.
  * Used when the server must return a persisted-ready payload (e.g. next-day).
