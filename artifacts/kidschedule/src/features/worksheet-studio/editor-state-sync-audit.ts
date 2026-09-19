@@ -470,6 +470,14 @@ export function getEditorSyncAudit(): EditorSyncAuditor | null {
   return active;
 }
 
+/** Request a single canvas re-paint after the parent swaps WorksheetDocument in-place. */
+export function requestEditorDocumentRepaint(reason: string): void {
+  if (!active) {
+    active = new EditorSyncAuditor();
+  }
+  active.allowTeacher(reason);
+}
+
 export function endEditorSyncAudit(): EditorSyncReport | null {
   if (!active) return null;
   const report = active.printReport();

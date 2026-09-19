@@ -4,6 +4,7 @@ import {
   beginEditorSyncAudit,
   endEditorSyncAudit,
   getEditorSyncAudit,
+  requestEditorDocumentRepaint,
 } from "./editor-state-sync-audit";
 import { generateWorksheetLocal } from "@workspace/worksheet-studio";
 
@@ -92,5 +93,14 @@ describe("EditorSyncAuditor", () => {
     const report = endEditorSyncAudit();
     expect(report).not.toBeNull();
     expect(getEditorSyncAudit()).toBeNull();
+  });
+
+  it("requestEditorDocumentRepaint sets pending repaint for in-place document swaps", () => {
+    endEditorSyncAudit();
+    requestEditorDocumentRepaint("copilot_apply");
+    const audit = getEditorSyncAudit();
+    expect(audit).toBeInstanceOf(EditorSyncAuditor);
+    expect(audit!.consumePendingRepaint()).toBe(true);
+    endEditorSyncAudit();
   });
 });
