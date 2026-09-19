@@ -28,26 +28,37 @@ function mapRecommendationToDecision(rec: Recommendation, existing?: GrowthOsDec
   };
 }
 
+function mergeDecisionsFromRecommendations(
+  recommendations: Recommendation[],
+  existingDecisions: GrowthOsDecision[],
+): GrowthOsDecision[] {
+  const byRecId = new Map(existingDecisions.map((d) => [d.recommendationId, d]));
+  const merged = recommendations.map((rec) =>
+    mapRecommendationToDecision(rec, byRecId.get(rec.id)),
+  );
+  const preserved = existingDecisions.filter(
+    (d) => !recommendations.some((r) => r.id === d.recommendationId),
+  );
+  return [...merged, ...preserved].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+}
+
 export async function syncDecisionsFromRecommendations(
   recommendations: Recommendation[],
 ): Promise<GrowthOsDecision[]> {
   const payload = await loadGrowthOsPayload();
-  const byRecId = new Map(payload.decisions.map((d) => [d.recommendationId, d]));
-  const merged: GrowthOsDecision[] = [];
+  const knownRecIds = new Set(payload.decisions.map((d) => d.recommendationId));
+  const hasNew = recommendations.some((r) => !knownRecIds.has(r.id));
 
-  for (const rec of recommendations) {
-    const existing = byRecId.get(rec.id);
-    merged.push(mapRecommendationToDecision(rec, existing));
+  if (!hasNew) {
+    return mergeDecisionsFromRecommendations(recommendations, payload.decisions);
   }
 
-  const preserved = payload.decisions.filter(
-    (d) => !recommendations.some((r) => r.id === d.recommendationId),
-  );
-  payload.decisions = [...merged, ...preserved].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
-  await saveGrowthOsPayload(payload);
-  return payload.decisions;
+  const fresh = await loadGrowthOsPayload();
+  fresh.decisions = mergeDecisionsFromRecommendations(recommendations, fresh.decisions);
+  await saveGrowthOsPayload(fresh);
+  return fresh.decisions;
 }
 
 export async function listDecisions(): Promise<GrowthOsDecision[]> {
