@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, childrenTable, parentProfilesTable } from "@workspace/db";
 import {
@@ -23,6 +23,7 @@ import {
   isPremiumNow,
   resolveChildrenMax,
 } from "../services/subscriptionService";
+import { listUserIdsForSubscriptionIdentity } from "../services/userIdentityService";
 import { tryMarkReferralValidForUser } from "../services/referralService";
 import { ONBOARDING_CHILD_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
@@ -83,14 +84,17 @@ router.post(
       }
 
       // Enforce child limit (free: 1, premium: 2; demo@amynest.in exempt).
+      // Count across sticky-alias identity so B→A cannot remint a full childrenMax
+      // while plan limits already resolve to A's subscription.
       try {
         const sub = await getOrCreateSubscription(userId);
         const premium = isPremiumNow(sub);
         const childMax = resolveChildrenMax(premium, auth.email);
+        const identityUserIds = await listUserIdsForSubscriptionIdentity(userId);
         const [{ n }] = await db
           .select({ n: sql<number>`count(*)::int` })
           .from(childrenTable)
-          .where(eq(childrenTable.userId, userId));
+          .where(inArray(childrenTable.userId, identityUserIds));
         if ((n ?? 0) >= childMax) {
           res.status(402).json({
             error: "child_limit_reached",
