@@ -110,6 +110,32 @@ test.describe("Content delivery certification", () => {
       await expect(page.getByTestId("dest-worksheets")).toBeVisible();
       await page.getByTestId("moments-quiet-story").click();
       await expect(page.getByTestId("dest-story-hub")).toBeVisible();
+      const story = page.getByTestId("story-video");
+      await expect(story).toBeVisible();
+      await story.evaluate(async (el) => {
+        const video = el as HTMLVideoElement;
+        video.muted = true;
+        await video.play();
+      });
+      await expect.poll(async () =>
+        story.evaluate((el) => (el as HTMLVideoElement).currentTime),
+      ).toBeGreaterThan(0.05);
+      const pausedAt = await story.evaluate(async (el) => {
+        const video = el as HTMLVideoElement;
+        video.pause();
+        return video.currentTime;
+      });
+      await page.waitForTimeout(200);
+      const afterPause = await story.evaluate((el) => (el as HTMLVideoElement).currentTime);
+      expect(Math.abs(afterPause - pausedAt)).toBeLessThan(0.05);
+      await story.evaluate(async (el) => {
+        const video = el as HTMLVideoElement;
+        video.muted = true;
+        await video.play();
+      });
+      await expect.poll(async () =>
+        story.evaluate((el) => (el as HTMLVideoElement).currentTime),
+      ).toBeGreaterThan(pausedAt);
       await page.getByTestId("parent-hub-exit-room").click();
       await page.getByTestId("cert-enter-understand").click();
       await expect(page.getByTestId("dest-answer-to-kids-how")).toBeVisible();

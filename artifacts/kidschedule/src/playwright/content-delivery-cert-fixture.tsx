@@ -201,16 +201,19 @@ function Fixture() {
               {tileId === "art-craft" ? (
                 <video
                   data-testid="art-craft-video"
-                  src="/api/reels/stream/artcraft-1"
-                  poster="/favicon.ico"
-                  preload="none"
+                  src="/playwright/cert-clip.mp4"
+                  preload="auto"
+                  playsInline
+                  controls
                 />
               ) : null}
               {tileId === "story-hub" ? (
                 <video
                   data-testid="story-video"
-                  src="/api/stories/stream/demo"
-                  preload="none"
+                  src="/playwright/cert-clip.mp4"
+                  preload="auto"
+                  playsInline
+                  controls
                 />
               ) : null}
               {tileId}
