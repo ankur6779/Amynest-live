@@ -15,6 +15,10 @@ function fabSource() {
   return readFileSync(resolve(srcDir, "components/amy-fab.tsx"), "utf8");
 }
 
+function wrap(ui: React.ReactNode) {
+  return render(<Router hook={() => ["/dashboard", () => {}]}>{ui}</Router>);
+}
+
 describe("Amy FAB responsive positioning contract", () => {
   it("uses a viewport-driven gutter with safe-area insets, not a 10px edge glue", () => {
     const css = cssSource();
@@ -52,7 +56,7 @@ describe("Amy FAB responsive positioning contract", () => {
     );
     expect(css).toMatch(/#amy-fab-floating\.amy-fab-in-footer[\s\S]*?z-index:\s*2001/);
     expect(css).toContain("bottom: calc(100% + var(--amy-fab-nav-gap))");
-    expect(cancelAgent).toContain('z-[4000]');
+    expect(cancelAgent).toContain("z-[4000]");
   });
 
   it("does not hide Health Lab immersive suppression of the FAB", () => {
@@ -62,11 +66,7 @@ describe("Amy FAB responsive positioning contract", () => {
   });
 
   it("renders the Ask Amy control with an accessible name and visible label", async () => {
-    render(
-      <Router hook={() => ["/dashboard", () => {}]}>
-        <AmyFab embedded />
-      </Router>,
-    );
+    wrap(<AmyFab embedded />);
     const control = await screen.findByRole("link", { name: "Ask Amy AI" });
     expect(control).toHaveAttribute("href", "/assistant");
     expect(screen.getByTestId("amy-fab-label")).toHaveTextContent("Amy AI");
