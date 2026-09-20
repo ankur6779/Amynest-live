@@ -11,6 +11,7 @@ import {
   isPremiumNow,
   type FeatureKey,
 } from "./subscriptionService.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 import {
   buildAiContentLookupKey,
   fetchCachedItems,
@@ -35,6 +36,15 @@ import type {
 import { ageBandForLifeSkills } from "@workspace/life-skills";
 import { logger } from "../lib/logger.js";
 import { assertLearningZoneEnglishItems } from "../lib/learning-zone-english.js";
+
+/**
+ * Keys load-more usage_daily counters to the sticky-alias subscription owner.
+ * getOrCreateSubscription already resolves B→A for premium; without this,
+ * raw Firebase uid B remints FREE lifetime / PREMIUM daily AI load-more caps.
+ */
+async function usageOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
 
 export type LearningLoadMoreSection = AiContentNamespace;
 
@@ -122,13 +132,14 @@ async function getLoadMoreUsage(
   feature: FeatureKey,
   isPremium: boolean,
 ): Promise<number> {
+  const ownerUserId = await usageOwnerUserId(userId);
   const day = usageBucket(isPremium);
   const rows = await db
     .select({ count: usageDailyTable.count })
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, ownerUserId),
         eq(usageDailyTable.day, day),
         eq(usageDailyTable.feature, feature),
       ),
@@ -142,10 +153,11 @@ async function incrementLoadMoreUsage(
   feature: FeatureKey,
   isPremium: boolean,
 ): Promise<number> {
+  const ownerUserId = await usageOwnerUserId(userId);
   const day = usageBucket(isPremium);
   const result = await db
     .insert(usageDailyTable)
-    .values({ userId, feature, day, count: 1 })
+    .values({ userId: ownerUserId, feature, day, count: 1 })
     .onConflictDoUpdate({
       target: [
         usageDailyTable.userId,
@@ -225,6 +237,7 @@ export async function refundLoadMoreQuota(
   const sub = await getOrCreateSubscription(userId);
   const isPremium = isPremiumNow(sub);
   const feature = LEARNING_LOAD_MORE_FEATURES[section];
+  const ownerUserId = await usageOwnerUserId(userId);
   const day = usageBucket(isPremium);
   await db
     .update(usageDailyTable)
@@ -234,7 +247,7 @@ export async function refundLoadMoreQuota(
     })
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, ownerUserId),
         eq(usageDailyTable.day, day),
         eq(usageDailyTable.feature, feature),
       ),
