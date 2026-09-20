@@ -33,6 +33,7 @@ const UNUSUAL = [
 const FOLDABLE_ANDROID = [
   { width: 412, height: 659, label: "fold-cover-css" },
   { width: 840, height: 630, label: "fold-main-css" },
+  { width: 1024, height: 1366, label: "ipad-pro-portrait" },
   { width: 1248, height: 1972, label: "fold8-cover-display" },
   { width: 1848, height: 2448, label: "fold8-main-display" },
 ] as const;
