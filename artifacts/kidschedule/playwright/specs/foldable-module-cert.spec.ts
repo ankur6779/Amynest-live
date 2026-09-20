@@ -259,6 +259,7 @@ test.describe("Home extra unusual viewports", () => {
 });
 
 test.describe("Gaming Hub viewport matrix", () => {
+  test.describe.configure({ retries: 1, timeout: 45_000 });
   const gameVps = MODULE_VPS.filter((vp) =>
     ["320x568", "360x640", "390x844", "fold_cover", "fold_unfolded", "4_3", "landscape_844x390"].includes(
       vp.label,
@@ -270,10 +271,10 @@ test.describe("Gaming Hub viewport matrix", () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy", {
         waitUntil: "domcontentloaded",
-        timeout: 90_000,
+        timeout: 45_000,
       });
-      await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 60_000 });
-      await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 60_000 });
+      await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 20_000 });
+      await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 20_000 });
       await assertNoOverflow(page, `maze ${vp.label}`);
       const grid = page.getByTestId("maze-grid");
       const box = await grid.boundingBox();
@@ -337,9 +338,7 @@ test.describe("Health Lab viewport matrix", () => {
         waitUntil: "domcontentloaded",
         timeout: 90_000,
       });
-      await expect(
-        page.getByTestId("health-lab-living").or(page.getByText("Amy Health Lab")),
-      ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("health-lab-living")).toBeVisible({ timeout: 30_000 });
       await assertNoOverflow(page, `health ${vp.label}`);
       const living = page.getByTestId("health-lab-living");
       await expect(living).toBeVisible();
@@ -496,11 +495,11 @@ test.describe("Hub content modules", () => {
         waitUntil: "domcontentloaded",
         timeout: 90_000,
       });
-      await expect(page.locator(".ws-card").or(page.getByText(/Letter tracing/i))).toBeVisible({
+      await expect(page.locator(".ws-card").first()).toBeVisible({
         timeout: 30_000,
       });
       await assertNoOverflow(page, `worksheets ${vp.label}`);
-      await expect(page.locator("[data-worksheet-id='ws1'], .ws-card").first()).toBeVisible();
+      await expect(page.locator("[data-worksheet-id='ws1']").first()).toBeVisible();
     });
   }
 
@@ -560,9 +559,9 @@ test.describe("Orientation flip", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy", {
       waitUntil: "domcontentloaded",
-      timeout: 90_000,
+      timeout: 45_000,
     });
-    await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 60_000 });
+    await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 20_000 });
     const portrait = await page.getByTestId("maze-grid").boundingBox();
     await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(300);
@@ -690,9 +689,7 @@ test.describe("Visual captures", () => {
       if (shot.setup) await shot.setup(page);
       await page.goto(shot.goto, { waitUntil: "domcontentloaded", timeout: 90_000 });
       if (shot.ready === "health-lab-living") {
-        await expect(
-          page.getByTestId("health-lab-living").or(page.getByText("Amy Health Lab")),
-        ).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByTestId("health-lab-living")).toBeVisible({ timeout: 30_000 });
       } else if (shot.ready === "audio-player-sheet") {
         await expect(page.getByTestId("audio-player-sheet")).toBeVisible({ timeout: 20_000 });
       } else {

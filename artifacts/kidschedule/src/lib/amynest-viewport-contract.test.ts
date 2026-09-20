@@ -43,6 +43,20 @@ describe("AmyNest viewport contract", () => {
     expect(sanctuary).toContain("--app-fab-clearance-inline");
   });
 
+  it("contains Health Lab living chrome so body scrollWidth cannot exceed the viewport", () => {
+    const living = read("components/health-lab/health-lab-living-room.css");
+    const shell = living.slice(
+      living.indexOf(".health-lab-living.fe-shell {"),
+      living.indexOf(".health-lab-living .fe-ambient"),
+    );
+    expect(shell).toContain("overflow-x: clip");
+    expect(shell).toContain("overflow-y: clip");
+    expect(shell).toContain("min-width: 0");
+    expect(shell).toContain("max-width: min(48rem, 100%)");
+    expect(living).toContain(".health-lab-living .fe-breath");
+    expect(living).toMatch(/\.health-lab-living \.fe-breath[\s\S]*inset: 0/);
+  });
+
   it("keeps PDF preview dialogs inside the dynamic viewport", () => {
     const coloring = read("components/coloring-books.tsx");
     const funsheets = read("components/fun-sheets.tsx");

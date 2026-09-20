@@ -26,7 +26,10 @@ export function HealthLabShell({
   /** Living manufacturing — Care sanctuary opening; no violet galaxy wash on the house seat. */
   if (living) {
     return (
-      <div className={cn("relative w-full min-w-0 bg-transparent", className)} data-hl-shell="living">
+      <div
+        className={cn("relative w-full min-w-0 max-w-full overflow-x-clip bg-transparent", className)}
+        data-hl-shell="living"
+      >
         <div className="relative z-10">{children}</div>
       </div>
     );
