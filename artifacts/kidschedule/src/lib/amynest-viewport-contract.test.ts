@@ -20,6 +20,7 @@ describe("AmyNest viewport contract", () => {
     expect(css).toContain("--app-content-max");
     expect(css).toContain("--app-dialog-max-height");
     expect(css).toContain("--app-sheet-max-height");
+    expect(css).toContain("--app-fab-clearance-inline");
     expect(css).toContain("clamp(");
     expect(css).not.toMatch(/Fold8|iPhone Duo/i);
     expect(css).not.toMatch(/@media[^{]*Samsung/i);
@@ -39,6 +40,7 @@ describe("AmyNest viewport contract", () => {
     expect(contentBlock).toContain("--app-content-max");
     expect(contentBlock).not.toContain("safe-area-inset-left");
     expect(contentBlock).not.toContain("safe-area-inset-right");
+    expect(sanctuary).toContain("--app-fab-clearance-inline");
   });
 
   it("keeps dialogs and sheets inside the dynamic viewport", () => {

@@ -30,8 +30,11 @@
   --app-header-bar-height: 3.5rem;
   --app-tabbar-height: 72px;
   --amy-fab-nav-gap: clamp(8px, 1.2vh, 12px);
+  --amy-fab-size: clamp(58px, 52px + 1.6vw, 70px);
   --amy-fab-gutter-inline: var(--app-gutter-inline-end);
   --amy-fab-gutter-inline-start: var(--app-gutter-inline-start);
+  /* Space reserved so full-width CTAs do not sit under the FAB cluster. */
+  --app-fab-clearance-inline: calc(var(--amy-fab-size) + 0.5rem);
 
   --app-dialog-max-height: min(
     90dvh,

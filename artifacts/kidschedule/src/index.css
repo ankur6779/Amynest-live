@@ -2780,10 +2780,10 @@ html.amynest-native-shell .drawer-overlay {
 .app-footer #amy-fab-floating,
 #amy-fab-floating.amy-fab-in-footer {
   position: absolute !important;
-  right: var(--amy-fab-gutter-inline) !important;
-  left: auto !important;
-  top: auto !important;
-  bottom: calc(100% + var(--amy-fab-nav-gap)) !important;
+  inset-inline-end: var(--amy-fab-gutter-inline) !important;
+  inset-inline-start: auto !important;
+  inset-block-start: auto !important;
+  inset-block-end: calc(100% + var(--amy-fab-nav-gap)) !important;
   width: max-content !important;
   max-width: calc(
     100% - var(--amy-fab-gutter-inline) - var(--amy-fab-gutter-inline-start)
@@ -2870,9 +2870,8 @@ html.amynest-native-shell .drawer-overlay {
 /* Ask Amy FAB avatar — slightly larger so the mascot reads at a glance.
    Touch target comes from .amy-fab-hit min size. */
 .amy-fab-avatar {
-  --amy-fab-size: clamp(58px, 52px + 1.6vw, 70px);
-  width: var(--amy-fab-size);
-  height: var(--amy-fab-size);
+  width: var(--amy-fab-size, clamp(58px, 52px + 1.6vw, 70px));
+  height: var(--amy-fab-size, clamp(58px, 52px + 1.6vw, 70px));
   flex-shrink: 0;
   position: relative;
   filter: drop-shadow(0 4px 12px rgba(88, 28, 135, 0.35));
@@ -2904,10 +2903,10 @@ html.amynest-native-shell .drawer-overlay {
 /* Fallback when not embedded (non-dashboard routes). */
 #amy-fab-floating:not(.amy-fab-in-footer) {
   position: fixed !important;
-  right: var(--amy-fab-gutter-inline) !important;
-  left: auto !important;
-  top: auto !important;
-  bottom: calc(var(--app-tabbar-height) + var(--amy-fab-nav-gap)) !important;
+  inset-inline-end: var(--amy-fab-gutter-inline) !important;
+  inset-inline-start: auto !important;
+  inset-block-start: auto !important;
+  inset-block-end: calc(var(--app-tabbar-height) + var(--amy-fab-nav-gap)) !important;
   width: max-content !important;
   max-width: calc(
     100vw - var(--amy-fab-gutter-inline) - var(--amy-fab-gutter-inline-start)
@@ -2920,9 +2919,9 @@ html.amynest-native-shell .drawer-overlay {
 }
 
 body.no-tabbar #amy-fab-floating:not(.amy-fab-in-footer) {
-  bottom: max(
+  inset-block-end: max(
     12px,
-    calc(env(safe-area-inset-bottom, 0px) + 12px)
+    calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 12px)
   ) !important;
 }
 

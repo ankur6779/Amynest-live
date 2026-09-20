@@ -73,6 +73,18 @@ function assertInside(
   expect(box.y + box.height, `${name} bottom`).toBeLessThanOrEqual(viewport.height + 1);
 }
 
+function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number },
+) {
+  return (
+    a.x < b.x + b.width - 2 &&
+    a.x + a.width > b.x + 2 &&
+    a.y < b.y + b.height - 2 &&
+    a.y + a.height > b.y + 2
+  );
+}
+
 async function assertChrome(page: Page, name: string) {
   const tabBar = page.getByTestId("mobile-tab-bar");
   await expect(tabBar).toBeVisible();
@@ -148,6 +160,16 @@ test.describe("Today Home foldable certification", () => {
       const beginBox = await begin.boundingBox();
       expect(beginBox).toBeTruthy();
       expect(beginBox!.height).toBeGreaterThanOrEqual(44);
+      const fabBox = await page.getByTestId("amy-fab-floating").boundingBox();
+      expect(fabBox).toBeTruthy();
+      const beginInView =
+        beginBox!.y < vp.height && beginBox!.y + beginBox!.height > 0;
+      if (beginInView) {
+        expect(
+          boxesOverlap(beginBox!, fabBox!),
+          `${vp.label} Begin today must not sit under the Amy FAB`,
+        ).toBe(false);
+      }
       const hero = page.locator(".th-hero-card");
       const heroBox = await hero.boundingBox();
       expect(heroBox).toBeTruthy();

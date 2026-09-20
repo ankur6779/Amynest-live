@@ -57,7 +57,8 @@ describe("Amy FAB responsive positioning contract", () => {
       "utf8",
     );
     expect(css).toMatch(/#amy-fab-floating\.amy-fab-in-footer[\s\S]*?z-index:\s*2001/);
-    expect(css).toContain("bottom: calc(100% + var(--amy-fab-nav-gap))");
+    expect(css).toContain("inset-block-end: calc(100% + var(--amy-fab-nav-gap))");
+    expect(css).toContain("inset-inline-end: var(--amy-fab-gutter-inline)");
     expect(cancelAgent).toContain("z-[4000]");
   });
 
