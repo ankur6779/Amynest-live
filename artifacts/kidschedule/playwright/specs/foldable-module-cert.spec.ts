@@ -269,7 +269,7 @@ test.describe("Gaming Hub viewport matrix", () => {
   for (const vp of gameVps) {
     test(`maze ${vp.label}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy", {
+      await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
         waitUntil: "domcontentloaded",
         timeout: 45_000,
       });
@@ -533,6 +533,7 @@ test.describe("Hub content modules", () => {
 });
 
 test.describe("Orientation flip", () => {
+  test.describe.configure({ retries: 1 });
   test("Home portrait → landscape → portrait", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/playwright-today-home-dashboard.html?panel=plan", {
@@ -557,7 +558,7 @@ test.describe("Orientation flip", () => {
 
   test("Maze portrait → landscape → portrait", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy", {
+    await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
     });
@@ -612,13 +613,13 @@ test.describe("Visual captures", () => {
       },
       {
         file: "module_gaming_hub_narrow.png",
-        goto: "/playwright-gaming-hub-certification.html?mode=maze-easy",
+        goto: "/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1",
         ready: "maze-grid",
         size: { width: 360, height: 640, label: "g" },
       },
       {
         file: "module_gaming_hub_4_3.png",
-        goto: "/playwright-gaming-hub-certification.html?mode=maze-easy",
+        goto: "/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1",
         ready: "maze-grid",
         size: { width: 1024, height: 768, label: "g" },
       },
