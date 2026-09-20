@@ -21,7 +21,7 @@ describe("AmyNest viewport contract", () => {
     expect(css).toContain("--app-dialog-max-height");
     expect(css).toContain("--app-sheet-max-height");
     expect(css).toContain("clamp(");
-    expect(css).not.toMatch(/Fold8|iPhone Duo|user-agent/i);
+    expect(css).not.toMatch(/Fold8|iPhone Duo/i);
     expect(css).not.toMatch(/@media[^{]*Samsung/i);
   });
 

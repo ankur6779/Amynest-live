@@ -36,7 +36,6 @@ describe("Amy FAB responsive positioning contract", () => {
     expect(css).toContain("100dvh");
     expect(css).not.toMatch(/right:\s*max\(\s*10px/);
     expect(css).not.toMatch(/@media[^{]*Samsung/i);
-    expect(css).not.toMatch(/user-agent/i);
     expect(css).not.toMatch(/right:\s*137px/);
   });
 

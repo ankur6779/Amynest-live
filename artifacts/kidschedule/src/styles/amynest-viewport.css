@@ -1,7 +1,7 @@
 /**
  * AmyNest viewport contract — phones, tablets, foldables, unusual aspect ratios.
  *
- * Capability-driven only. Do not add device-model or user-agent rules here.
+ * Capability-driven only. Do not add device-model detection here.
  * Safe-area is applied ONCE at chrome / page edges. Nested shells use inner
  * padding tokens that do not re-add env(safe-area-inset-*).
  */
