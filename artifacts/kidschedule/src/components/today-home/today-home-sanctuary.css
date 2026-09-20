@@ -307,10 +307,11 @@
 }
 
 /*
- * Cover-class / short viewports: keep Begin today clear of the FAB cluster.
- * Wide layouts leave the CTA full-column; the FAB sits in the side gutter.
+ * Short viewports where the content column and FAB share the same band:
+ * keep Begin today clear of the FAB cluster. Taller phones and wide tablets
+ * leave the CTA full-column because the FAB sits below or in the side gutter.
  */
-@media (max-width: 42rem) and (max-height: 45rem) {
+@media (max-width: 54rem) and (max-height: 48rem) {
   .th-hero-cta {
     max-width: calc(100% - var(--app-fab-clearance-inline, 4.75rem));
   }
