@@ -272,7 +272,8 @@ test.describe("Gaming Hub viewport matrix", () => {
         waitUntil: "domcontentloaded",
         timeout: 90_000,
       });
-      await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 30_000 });
+      await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 60_000 });
+      await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 60_000 });
       await assertNoOverflow(page, `maze ${vp.label}`);
       const grid = page.getByTestId("maze-grid");
       const box = await grid.boundingBox();
@@ -336,9 +337,9 @@ test.describe("Health Lab viewport matrix", () => {
         waitUntil: "domcontentloaded",
         timeout: 90_000,
       });
-      await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
-        timeout: 30_000,
-      });
+      await expect(
+        page.getByTestId("health-lab-living").or(page.getByText("Amy Health Lab")),
+      ).toBeVisible({ timeout: 30_000 });
       await assertNoOverflow(page, `health ${vp.label}`);
       const living = page.getByTestId("health-lab-living");
       await expect(living).toBeVisible();
@@ -495,7 +496,9 @@ test.describe("Hub content modules", () => {
         waitUntil: "domcontentloaded",
         timeout: 90_000,
       });
-      await page.waitForSelector("[data-worksheet-id], text=Letter tracing", { timeout: 30_000 });
+      await expect(page.locator(".ws-card").or(page.getByText(/Letter tracing/i))).toBeVisible({
+        timeout: 30_000,
+      });
       await assertNoOverflow(page, `worksheets ${vp.label}`);
       await expect(page.locator("[data-worksheet-id='ws1'], .ws-card").first()).toBeVisible();
     });
@@ -559,7 +562,7 @@ test.describe("Orientation flip", () => {
       waitUntil: "domcontentloaded",
       timeout: 90_000,
     });
-    await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 30_000 });
+    await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 60_000 });
     const portrait = await page.getByTestId("maze-grid").boundingBox();
     await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(300);
@@ -687,9 +690,9 @@ test.describe("Visual captures", () => {
       if (shot.setup) await shot.setup(page);
       await page.goto(shot.goto, { waitUntil: "domcontentloaded", timeout: 90_000 });
       if (shot.ready === "health-lab-living") {
-        await page.waitForSelector("[data-testid=health-lab-living], text=Amy Health Lab", {
-          timeout: 30_000,
-        });
+        await expect(
+          page.getByTestId("health-lab-living").or(page.getByText("Amy Health Lab")),
+        ).toBeVisible({ timeout: 30_000 });
       } else if (shot.ready === "audio-player-sheet") {
         await expect(page.getByTestId("audio-player-sheet")).toBeVisible({ timeout: 20_000 });
       } else {

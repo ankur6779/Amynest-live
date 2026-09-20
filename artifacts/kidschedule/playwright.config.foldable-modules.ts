@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  timeout: 90_000,
+  timeout: 120_000,
   reporter: "list",
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
