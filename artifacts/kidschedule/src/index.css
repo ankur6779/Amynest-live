@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 @import "./styles/amynest-identity.css";
+@import "./styles/amynest-viewport.css";
 @import "./styles/living-app-chrome.css";
 
 :root {
@@ -2569,10 +2570,9 @@ body.has-tabbar {
 /* Shared page inset — keeps cards/tiles inside the viewport on mobile WebView */
 .amynest-page-inset {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--app-content-max, 720px);
   margin-inline: auto;
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-inline: var(--app-gutter-inline-start, 12px) var(--app-gutter-inline-end, 12px);
   box-sizing: border-box;
   min-width: 0;
 }
@@ -2584,21 +2584,17 @@ body.has-tabbar {
   min-width: 0;
   box-sizing: border-box;
   padding-top: 1rem;
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-inline: var(--app-gutter-inline-start, 12px) var(--app-gutter-inline-end, 12px);
 }
 
 @media (min-width: 768px) {
   .dashboard-page {
     padding-top: 2rem;
-    padding-left: max(2rem, env(safe-area-inset-left, 0px));
-    padding-right: max(2rem, env(safe-area-inset-right, 0px));
   }
 }
 
 .dashboard-inline-inset {
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-inline: var(--app-gutter-inline-start, 12px) var(--app-gutter-inline-end, 12px);
   box-sizing: border-box;
 }
 
@@ -2631,12 +2627,14 @@ body.has-tabbar {
 
 .app-header__bar {
   display: flex;
-  height: 3.5rem;
-  min-height: 3.5rem;
+  height: var(--app-header-bar-height, 3.5rem);
+  min-height: var(--app-header-bar-height, 3.5rem);
   align-items: center;
   justify-content: space-between;
   gap: 0.375rem;
-  padding: 0 0.75rem;
+  padding-block: 0;
+  padding-inline: var(--app-gutter-inline-start, 0.75rem) var(--app-gutter-inline-end, 0.75rem);
+  min-width: 0;
 }
 
 html.amynest-android-shell .main-container > aside,
@@ -2699,8 +2697,9 @@ html.amynest-android-shell .app-footer.tabbar,
 html.amynest-native-shell .app-footer.tabbar {
   position: fixed;
   bottom: 0;
-  height: 72px;
-  padding-bottom: 0;
+  height: auto;
+  min-height: var(--app-tabbar-height, 72px);
+  padding-bottom: var(--app-safe-bottom, env(safe-area-inset-bottom, 0px));
   margin: 0 !important;
   transform: none !important;
   display: flex !important;
@@ -2744,11 +2743,11 @@ html.amynest-native-shell .drawer-overlay {
 /* ── Mobile bottom nav + Ask Amy FAB (single source of truth — CSS only) ── */
 .app-footer {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: 0;
-  height: 72px;
-  padding-bottom: 0;
+  height: auto;
+  min-height: var(--app-tabbar-height, 72px);
+  padding-bottom: var(--app-safe-bottom, env(safe-area-inset-bottom, 0px));
   margin: 0 !important;
   box-sizing: border-box;
   background: rgba(10, 15, 30, 0.98);
@@ -2761,7 +2760,7 @@ html.amynest-native-shell .drawer-overlay {
 .app-footer__nav {
   display: flex;
   width: 100%;
-  min-height: 72px;
+  min-height: var(--app-tabbar-height, 72px);
   align-items: flex-end;
   box-sizing: border-box;
   pointer-events: auto;
@@ -2775,24 +2774,8 @@ html.amynest-native-shell .drawer-overlay {
 
 /*
  * Ask Amy FAB — viewport-driven geometry (phones, tablets, foldables).
- * Anchored to the usable viewport + tab bar, not a device-width pixel hack.
- * Label + icon are one cluster so the badge cannot hang past the screen edge.
+ * Tokens live in styles/amynest-viewport.css. Label + icon are one cluster.
  */
-:root {
-  --app-tabbar-height: 72px;
-  --amy-fab-nav-gap: clamp(8px, 1.2vh, 12px);
-  --amy-fab-gutter-min: 12px;
-  --amy-fab-gutter-max: 20px;
-  --amy-fab-gutter-inline: max(
-    clamp(var(--amy-fab-gutter-min), 3.2vw, var(--amy-fab-gutter-max)),
-    calc(env(safe-area-inset-right, 0px) + 8px)
-  );
-  --amy-fab-gutter-inline-start: max(
-    clamp(var(--amy-fab-gutter-min), 3.2vw, var(--amy-fab-gutter-max)),
-    calc(env(safe-area-inset-left, 0px) + 8px)
-  );
-}
-
 /* Ask Amy — anchored to footer top (immune to inflated --sab on viewport bottom). */
 .app-footer #amy-fab-floating,
 #amy-fab-floating.amy-fab-in-footer {
@@ -3657,35 +3640,24 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding-top: max(8px, env(safe-area-inset-top, 0px));
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-top: max(8px, var(--app-safe-top, env(safe-area-inset-top, 0px)));
+  padding-inline: var(--app-gutter-inline-start, 12px) var(--app-gutter-inline-end, 12px);
   background:
     radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.15), transparent 35%),
     radial-gradient(circle at 85% 10%, rgba(236, 72, 153, 0.12), transparent 35%),
     linear-gradient(180deg, #071126, #0b1730, #091426);
 }
 
-@media (min-width: 768px) {
-  .parent-hub-premium {
-    padding-left: max(24px, env(safe-area-inset-left, 0px));
-    padding-right: max(24px, env(safe-area-inset-right, 0px));
-  }
+.parent-hub-premium > * {
+  width: 100%;
+  max-width: var(--app-content-wide-max, 52rem);
+  margin-inline: auto;
 }
 
-/* Fold cover & ultra-narrow — preserve card legibility */
-@media (max-width: 360px) {
-  .parent-hub-premium {
-    padding-left: max(8px, env(safe-area-inset-left, 0px));
-    padding-right: max(8px, env(safe-area-inset-right, 0px));
-  }
-}
-
-/* Fold cover landscape — shorter viewport, tighter vertical rhythm */
 @media (orientation: landscape) and (max-height: 430px) {
   .parent-hub-premium {
-    padding-top: max(6px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    padding-top: max(6px, var(--app-safe-top, env(safe-area-inset-top, 0px)));
+    padding-bottom: max(8px, var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)));
   }
 
   .hub-group-panel {

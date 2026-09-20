@@ -23,6 +23,7 @@ export default defineConfig({
     "amy-audio-module-tile.spec.ts",
     "audio-lesson-pause-resume.spec.ts",
     "amy-fab-responsive.spec.ts",
+    "foldable-viewport-cert.spec.ts",
   ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

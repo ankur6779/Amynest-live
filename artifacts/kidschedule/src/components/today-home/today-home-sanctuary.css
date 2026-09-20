@@ -33,14 +33,18 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem 0.9rem 1.25rem;
-  padding-left: max(0.9rem, env(safe-area-inset-left));
-  padding-right: max(0.9rem, env(safe-area-inset-right));
+  width: 100%;
+  max-width: var(--app-content-max, 42rem);
+  margin-inline: auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-block: 1rem 1.25rem;
+  padding-inline: 0;
 }
 
 @media (min-width: 640px) {
   .th-shell-content {
-    padding: 1.25rem 1.15rem 1.5rem;
+    padding-block: 1.25rem 1.5rem;
   }
 }
 
@@ -78,6 +82,10 @@
   gap: 0.9rem;
   padding: 0.15rem 0 0.25rem;
   background: transparent;
+  width: 100%;
+  max-width: var(--app-content-max, 42rem);
+  margin-inline: auto;
+  min-width: 0;
 }
 
 /* Quiet family context — who today is for, not a filter toolbar */

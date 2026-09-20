@@ -8,7 +8,10 @@ import { AmyFab } from "@/components/amy-fab";
 const srcDir = resolve(import.meta.dirname, "..");
 
 function cssSource() {
-  return readFileSync(resolve(srcDir, "index.css"), "utf8");
+  return [
+    readFileSync(resolve(srcDir, "index.css"), "utf8"),
+    readFileSync(resolve(srcDir, "styles/amynest-viewport.css"), "utf8"),
+  ].join("\n");
 }
 
 function fabSource() {

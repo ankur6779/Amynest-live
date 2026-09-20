@@ -139,7 +139,7 @@ export function GamesDialogSurface({
           color: gameTheme.text,
           boxShadow: gameTheme.dialogShadow,
           border: `1px solid ${gameTheme.glassBorder}`,
-          maxHeight: "min(92vh, 100dvh)",
+          maxHeight: "min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)))",
           overflowY: "auto",
           ...panelStyle,
         }}

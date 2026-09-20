@@ -176,7 +176,7 @@ export function PlayerSheet({
           padding: "20px 20px calc(16px + var(--app-bottom-clearance, 48px))",
           color: "#fff",
           boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
-          maxHeight: "92vh",
+          maxHeight: "var(--app-sheet-max-height, 92dvh)",
           overflowY: "auto",
         }}
       >
