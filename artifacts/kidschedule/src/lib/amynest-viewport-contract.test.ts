@@ -43,6 +43,15 @@ describe("AmyNest viewport contract", () => {
     expect(sanctuary).toContain("--app-fab-clearance-inline");
   });
 
+  it("keeps PDF preview dialogs inside the dynamic viewport", () => {
+    const coloring = read("components/coloring-books.tsx");
+    const funsheets = read("components/fun-sheets.tsx");
+    expect(coloring).toContain("--app-dialog-max-height");
+    expect(coloring).not.toMatch(/h-\[85vh\]/);
+    expect(funsheets).toContain("--app-dialog-max-height");
+    expect(funsheets).not.toMatch(/h-\[85vh\]/);
+  });
+
   it("keeps dialogs and sheets inside the dynamic viewport", () => {
     const dialog = read("components/ui/dialog.tsx");
     const sheet = read("components/ui/sheet.tsx");

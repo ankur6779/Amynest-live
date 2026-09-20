@@ -33,6 +33,7 @@
     "test:e2e:gaming-hub-certification": "playwright test --config playwright.config.gaming-hub-certification.ts",
     "cert:gaming-hub": "tsx scripts/certify-gaming-hub-games.mts",
     "test:e2e:foldable-cert": "playwright test --config playwright.config.foldable-cert.ts",
+    "test:e2e:foldable-modules": "playwright test --config playwright.config.foldable-modules.ts",
     "test:e2e:amy-fab": "playwright test --config playwright.config.amy-fab.ts",
     "test:e2e:rooms": "playwright test --config playwright.config.rooms-living.ts",
     "test:e2e:health-lab": "playwright test --config playwright.config.health-lab.ts",
