@@ -48,6 +48,7 @@ import {
   resolvePipelineFeatureFlags,
   trackBirthSkyProductEvent,
 } from "../services/birth-sky/runtime-bridge.js";
+import { mayUseCurrentSnapshotForExport } from "../services/birth-sky/snapshot-generation-status.js";
 
 const router: IRouter = Router();
 router.use(requireBirthSkyAllowlist);
@@ -608,8 +609,13 @@ router.post("/birth-sky/conversations", async (req, res): Promise<void> => {
       )
       .limit(1);
     const snap = snaps[0];
-    if (!snap) {
-      res.status(409).json({ error: "snapshot_required" });
+    const exportGate = mayUseCurrentSnapshotForExport(profile.generationStatus, Boolean(snap));
+    if (!exportGate.ok || !snap) {
+      res.status(409).json({
+        error: "snapshot_stale",
+        generationStatus: exportGate.generationStatus,
+        regenerateRequired: true,
+      });
       return;
     }
     const id = randomUUID();

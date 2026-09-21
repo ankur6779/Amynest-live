@@ -28,7 +28,10 @@ import {
   plaintextBirthFields,
   setGenerationStatus,
 } from "../services/birth-sky/snapshot-service.js";
-import { shouldExposeCurrentSnapshot } from "../services/birth-sky/snapshot-generation-status.js";
+import {
+  mayUseCurrentSnapshotForExport,
+  shouldExposeCurrentSnapshot,
+} from "../services/birth-sky/snapshot-generation-status.js";
 import {
   sealBirthPlace,
   sealBirthTime,
@@ -413,6 +416,14 @@ router.get("/birth-sky/profiles/:profileId/export", async (req, res): Promise<vo
         and(eq(skySnapshotsTable.profileId, profileId), eq(skySnapshotsTable.isCurrent, true)),
       )
       .limit(1);
+    const mappedProfile = mapProfileRow(profile);
+    const exportGate = mayUseCurrentSnapshotForExport(
+      mappedProfile.generationStatus,
+      Boolean(snaps[0]),
+    );
+    // Never pair updated birth fields with a stale isCurrent sky after edit/regen failure.
+    const exposableSnap =
+      exportGate.ok && snaps[0] ? mapSnapshotRow(snaps[0]) : null;
     const childRows = await db
       .select()
       .from(childrenTable)
@@ -453,8 +464,8 @@ router.get("/birth-sky/profiles/:profileId/export", async (req, res): Promise<vo
     const bundle = buildBirthSkyExportBundle({
       exportType: exportType as "summary" | "astronomy" | "reflections" | "conversations",
       childFirstName: childName,
-      profile: mapProfileRow(profile),
-      snapshot: snaps[0] ? mapSnapshotRow(snaps[0]) : null,
+      profile: mappedProfile,
+      snapshot: exposableSnap,
       reflections: [],
       conversations,
     });
