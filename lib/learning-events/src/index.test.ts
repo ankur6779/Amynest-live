@@ -281,6 +281,30 @@ test("speech.practice_completed maps to word/phoneme observations", () => {
   const obs = toKnowledgeObservations(event!);
   assert.ok(obs.some((o) => o.nodeId === "word:lion" && o.modality === "spoken"));
   assert.ok(obs.some((o) => o.nodeId === "phoneme:l"));
+  // Must not target discovery/animal entity nodes (entity:lion would corrupt Animal World).
+  assert.equal(
+    obs.some((o) => o.nodeId === "entity:lion"),
+    false,
+  );
+});
+
+test("speech.practice_completed with animal word does not emit entity observations", () => {
+  const event = createLearningEventBus().publish(
+    speechPracticeEvent("completed", {
+      childId: 11,
+      confidence: 40,
+      metadata: { promptText: "cat", soundHints: ["k", "ae", "t"] },
+    }),
+  );
+  const obs = toKnowledgeObservations(event!);
+  assert.ok(obs.some((o) => o.nodeId === "word:cat" && o.modality === "failed"));
+  assert.ok(obs.some((o) => o.nodeId === "phoneme:c"));
+  assert.ok(obs.some((o) => o.nodeId === "phoneme:k"));
+  assert.ok(obs.some((o) => o.nodeId === "phoneme:t"));
+  assert.equal(
+    obs.some((o) => o.nodeId.startsWith("entity:")),
+    false,
+  );
 });
 
 test("story.chapter_completed maps to story/word/category observations", () => {

@@ -118,39 +118,35 @@ export function toKnowledgeObservations(
       .split(/\s+/)[0];
     const out: LearningObservationLike[] = [];
     const source = MODULE_TO_KG_SOURCE[event.payload.module] ?? "system";
+    const push = (nodeId: string) => {
+      out.push({
+        nodeId,
+        modality,
+        source,
+        at: event.payload.timestamp,
+        score,
+      });
+    };
     if (word) {
-      out.push({
-        nodeId: event.payload.conceptId ?? `word:${word}`,
-        modality,
-        source,
-        at: event.payload.timestamp,
-        score,
-      });
-      out.push({
-        nodeId: `entity:${word}`,
-        modality,
-        source,
-        at: event.payload.timestamp,
-        score,
-      });
+      // Speech practice owns word:/phoneme: nodes only.
+      // Never write entity:${word} — that collides with Animal World / discovery
+      // seeds (entity:cat, entity:dog, …) and corrupts mastery.
+      push(`word:${word}`);
       const letter = word[0];
-      if (letter) {
-        out.push({
-          nodeId: `phoneme:${letter}`,
-          modality,
-          source,
-          at: event.payload.timestamp,
-          score,
-        });
-      }
+      if (letter) push(`phoneme:${letter}`);
     } else if (event.payload.conceptId) {
-      out.push({
-        nodeId: event.payload.conceptId,
-        modality,
-        source,
-        at: event.payload.timestamp,
-        score,
-      });
+      push(event.payload.conceptId);
+    }
+
+    const hints = event.payload.metadata?.soundHints;
+    if (Array.isArray(hints)) {
+      for (const raw of hints) {
+        const letter = String(raw)
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z]/g, "")[0];
+        if (letter) push(`phoneme:${letter}`);
+      }
     }
     return out;
   }

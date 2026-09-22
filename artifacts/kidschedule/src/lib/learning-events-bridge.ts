@@ -105,15 +105,23 @@ function isBrowserOnline(): boolean {
 
 function kgSink(event: LearningEvent): void {
   if (!kgWriter) return;
-  if (!rememberApplied(`kg:${event.id}`)) return;
+  const applyKey = `kg:${event.id}`;
+  if (appliedIds.has(applyKey)) return;
+
   const obs = toKnowledgeObservations(event);
-  if (!obs.length) return;
+  if (!obs.length) {
+    // Nothing to write — mark applied so empty mappers do not retry forever.
+    rememberApplied(applyKey);
+    return;
+  }
   const childId = event.payload.childId;
   try {
     kgWriter(childId, obs);
   } catch {
-    /* never break bus */
+    // Leave unmarked so a later replay / re-seed can retry the write.
+    return;
   }
+  rememberApplied(applyKey);
 
   // Fan-out for UI / analytics — busOrigin blocks KG re-entry.
   if (

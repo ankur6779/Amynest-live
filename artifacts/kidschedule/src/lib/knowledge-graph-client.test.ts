@@ -3,10 +3,11 @@ import {
   getKnowledgeGraph,
   getKnowledgeRecommendations,
   recordEntityLearning,
+  recordSpeechCoachLearning,
   resetKnowledgeGraphClient,
 } from "./knowledge-graph-client";
 import { resetLearningEventBusForTests } from "./learning-events-bridge";
-import { entityId, phonemeId } from "@workspace/knowledge-graph";
+import { entityId, phonemeId, wordId } from "@workspace/knowledge-graph";
 
 describe("knowledge-graph-client", () => {
   beforeEach(() => {
@@ -47,5 +48,29 @@ describe("knowledge-graph-client", () => {
         ids.has("word:leaf") ||
         ids.has("speech:coach"),
     ).toBe(true);
+  });
+
+  it("speech practice lands on word/phoneme nodes without corrupting animal entities", () => {
+    const api = getKnowledgeGraph(303);
+    const animalBefore = api.getNodeState(entityId("cat"));
+    expect(api.getDocument().nodes[entityId("cat")]).toBeTruthy();
+    expect(animalBefore.spoken).toBe(false);
+
+    recordSpeechCoachLearning(303, {
+      promptText: "cat",
+      score: 92,
+      soundHints: ["k"],
+    });
+
+    const doc = getKnowledgeGraph(303).getDocument();
+    expect(doc.nodes[wordId("cat")]).toBeTruthy();
+    expect(doc.nodes[phonemeId("c")]).toBeTruthy();
+
+    const wordState = getKnowledgeGraph(303).getNodeState(wordId("cat"));
+    expect(wordState.spoken).toBe(true);
+
+    const animalAfter = getKnowledgeGraph(303).getNodeState(entityId("cat"));
+    expect(animalAfter.spoken).toBe(false);
+    expect(animalAfter.confidence).toBe(animalBefore.confidence);
   });
 });
