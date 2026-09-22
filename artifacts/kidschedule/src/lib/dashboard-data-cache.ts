@@ -181,9 +181,23 @@ function asUiOnlyCachedSubscription(cached: SubscriptionResponse): SubscriptionR
   };
 }
 
-export function readCachedSubscription(userId?: string | null): SubscriptionResponse | undefined {
+/** Raw last-success subscription row (may still show premium). Offline fallback only. */
+export function readPersistedSubscription(
+  userId?: string | null,
+): SubscriptionResponse | undefined {
   const cached = readJson<SubscriptionResponse>(scopedKey(SUBSCRIPTION_KEY, userId));
   if (!cached?.entitlements?.limits) return undefined;
+  return cached;
+}
+
+/**
+ * UI placeholder subscription — always FREE flags so paywalls/winback do not
+ * flash from stale cache before /api/subscription resolves. Do not use as the
+ * authoritative result of a failed live fetch (see readPersistedSubscription).
+ */
+export function readCachedSubscription(userId?: string | null): SubscriptionResponse | undefined {
+  const cached = readPersistedSubscription(userId);
+  if (!cached) return undefined;
   return asUiOnlyCachedSubscription(cached);
 }
 
@@ -274,6 +288,8 @@ export async function fetchSubscriptionResilient(
     return data;
   } catch (err) {
     console.warn("[dashboard] subscription fetch failed", err);
-    return readCachedSubscription(userId) ?? EMPTY_SUBSCRIPTION_RESPONSE;
+    // Preserve last-known premium on offline/transient failure. Returning the
+    // UI-stripped FREE placeholder here used to purge Learning Zone caches.
+    return readPersistedSubscription(userId) ?? EMPTY_SUBSCRIPTION_RESPONSE;
   }
 }

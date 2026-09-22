@@ -11,7 +11,10 @@ import {
   readCachedSubscription,
 } from "@/lib/dashboard-data-cache";
 import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
-import { clearLearningZonePremiumCaches } from "@/lib/learning-zone-premium-cache";
+import {
+  clearLearningZonePremiumCaches,
+  shouldClearLearningZonePremiumCaches,
+} from "@/lib/learning-zone-premium-cache";
 
 export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
@@ -131,14 +134,24 @@ export function useSubscription() {
   });
 
   useEffect(() => {
-    if (!isSignedIn) {
+    // Placeholder / UI-only FREE cache must never purge phonics/study/voice data.
+    // Only clear after a settled live (or offline-persisted) entitlement resolve.
+    if (
+      shouldClearLearningZonePremiumCaches({
+        isSignedIn: !!isSignedIn,
+        isFetched: !!query.isFetched,
+        isPlaceholderData: !!query.isPlaceholderData,
+        isPremium: query.data?.entitlements.isPremium,
+      })
+    ) {
       clearLearningZonePremiumCaches();
-      return;
     }
-    if (query.data && !query.data.entitlements.isPremium) {
-      clearLearningZonePremiumCaches();
-    }
-  }, [isSignedIn, query.data?.entitlements.isPremium, query.data]);
+  }, [
+    isSignedIn,
+    query.isFetched,
+    query.isPlaceholderData,
+    query.data?.entitlements.isPremium,
+  ]);
 
   const refresh = useCallback(() => {
     void qc.invalidateQueries({ queryKey: qkey });
@@ -304,7 +317,7 @@ export function useSubscription() {
       const body = (await safeJsonResponse<{ message?: string; error?: string }>(res).then((p) => (p.ok ? p.data : {})));
       return { ok: false, reason: body?.message ?? body?.error ?? "Could not cancel subscription." };
     } catch {
-      clearLearningZonePremiumCaches();
+      // Do not purge Learning Zone caches on a failed cancel attempt.
       refresh();
       return {
         ok: false,
