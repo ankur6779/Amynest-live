@@ -40,3 +40,5 @@ artifacts/kidschedule/playwright-report-stress/
 .env
 .env.*
 !.env*.example
+
+.cursor/cloud-secrets.local.env

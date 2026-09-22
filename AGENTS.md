@@ -23,6 +23,18 @@ DATABASE_URL=postgresql://amynest:amynest@localhost:5432/amynest_dev pnpm db:pus
 
 `.env.development` is created from `.env.development.example`. Minimum required: `DATABASE_URL` with a working PostgreSQL connection. Firebase vars (`VITE_FIREBASE_*`) are needed for auth flows but the app loads and API runs without them.
 
+Cloud Agents do **not** inherit the laptop `.env`. Put the same keys in [Cloud Agents → Secrets](https://cursor.com/dashboard/cloud-agents) as **Runtime Secrets** (API keys, tokens, `HETZNER_SSH_PRIVATE_KEY`) or **Environment Variables** (`HETZNER_HOST`, public `VITE_*` flags). `.cursor/cloud-bootstrap.sh` writes `~/.ssh/id_ed25519_hetzner` and `.env.development` from those injected vars at Build/start.
+
+Hetzner AI worker (from a Cloud Agent):
+
+```
+export HETZNER_HOST=167.233.39.146
+export HETZNER_SSH_KEY=~/.ssh/id_ed25519_hetzner
+ssh -i "$HETZNER_SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes root@$HETZNER_HOST 'hostname; docker ps --format "{{.Names}}"'
+```
+
+Use the passphrase-free deploy key stored as `HETZNER_SSH_PRIVATE_KEY` (same key as GitHub Actions). Do not paste production `DATABASE_URL` unless the task explicitly needs prod data. Dev default is `postgresql://amynest:amynest@localhost:5432/amynest_dev` — start Postgres with `docker compose --profile local up -d postgres` when Docker is available.
+
 ### Testing
 
 - **API tests:** `pnpm --filter @workspace/api-server test` (Node.js built-in test runner)
