@@ -5,10 +5,12 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import {
   configureLearningSync,
+  setLearningSyncUser,
   subscribeLearningSync,
   type SyncDiagnostics,
 } from "@/lib/learning-sync-engine";
@@ -17,12 +19,15 @@ import { startResilienceWatcher, type ResilienceReport } from "@/lib/resilience-
 import { recordTelemetry } from "@/lib/telemetry-engine";
 
 export function useLearningSyncBootstrap() {
+  const { userId, isSignedIn } = useAuth();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const boundUserId = isSignedIn ? (userId ?? null) : null;
 
   useEffect(() => {
     configureLearningSync({
       fetcher: authFetch,
+      userId: boundUserId,
       getApiUrl,
       onRewards: (events) => {
         publishRewardEvents(events);
@@ -30,6 +35,7 @@ export function useLearningSyncBootstrap() {
       },
     });
     const stop = startResilienceWatcher({
+      userId: boundUserId,
       onReport: (r) => {
         if (
           r.removedCorruptedPayload ||
@@ -50,12 +56,21 @@ export function useLearningSyncBootstrap() {
     return () => {
       stop();
     };
-  }, [authFetch, qc]);
+  }, [authFetch, boundUserId, qc]);
+
+  useEffect(() => {
+    setLearningSyncUser(boundUserId);
+  }, [boundUserId]);
 }
 
 export function useLearningResilienceReport(): ResilienceReport | null {
+  const { userId, isSignedIn } = useAuth();
+  const boundUserId = isSignedIn ? (userId ?? null) : null;
   const [report, setReport] = useState<ResilienceReport | null>(null);
-  useEffect(() => startResilienceWatcher({ onReport: setReport }), []);
+  useEffect(
+    () => startResilienceWatcher({ userId: boundUserId, onReport: setReport }),
+    [boundUserId],
+  );
   return report;
 }
 

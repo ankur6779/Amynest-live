@@ -3,6 +3,7 @@ import { clearDashboardCaches } from "@/lib/dashboard-data-cache";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
+import { setLearningSyncUser } from "@/lib/learning-sync-engine";
 
 const SESSION_UID_KEY = "amynest:session:uid:v1";
 
@@ -14,12 +15,17 @@ const SESSION_UID_KEY = "amynest:session:uid:v1";
  * Does not remove `amynest:device:id:v1`. The installation id is reused so
  * the backend can treat this install as one session; account ownership lives
  * in `user_devices`, not in the local id.
+ *
+ * Learning-sync / worksheet offline queues are user-scoped in localStorage —
+ * we only unbind the active learning-sync user so another account cannot
+ * flush or burn the prior user's pending writes.
  */
 export function clearUserSessionCaches(): void {
   clearOnboardingCompletionCache();
   clearOnboardingChatSession();
   clearOnboardingRunId();
   clearDashboardCaches();
+  setLearningSyncUser(null);
 
   if (typeof localStorage === "undefined") return;
   try {

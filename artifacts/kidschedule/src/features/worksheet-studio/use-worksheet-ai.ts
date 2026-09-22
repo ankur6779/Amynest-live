@@ -14,6 +14,7 @@ import {
 } from "@workspace/worksheet-studio";
 import { scoreWorksheet } from "@workspace/worksheet-studio";
 import { enqueueOfflineRequest } from "./worksheet-studio-analytics";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 
 type AuthFetch = (url: string, init?: RequestInit, timeoutMs?: number) => Promise<Response>;
 
@@ -27,6 +28,7 @@ async function fetchWithRetry(
   authFetch: AuthFetch,
   url: string,
   init: RequestInit,
+  userId?: string | null,
 ): Promise<Response> {
   let lastErr: unknown;
   for (let i = 0; i <= MAX_RETRIES; i++) {
@@ -48,7 +50,9 @@ async function fetchWithRetry(
     }
   }
   if (init.body && typeof init.body === "string") {
-    try { enqueueOfflineRequest(url, JSON.parse(init.body) as object); } catch { /* */ }
+    try {
+      enqueueOfflineRequest(url, JSON.parse(init.body) as object, userId);
+    } catch { /* */ }
   }
   throw lastErr;
 }
@@ -61,6 +65,7 @@ function entitlementMessage(status: number): string {
 }
 
 export function useWorksheetAi(authFetch: AuthFetch) {
+  const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [improving, setImproving] = useState<WorksheetImproveAction | null>(null);
   const mountedRef = useRef(true);
@@ -74,11 +79,16 @@ export function useWorksheetAi(authFetch: AuthFetch) {
         references: req.references?.length ? stripReferencesForApi(req.references) : undefined,
       };
       try {
-        const res = await fetchWithRetry(authFetch, "/api/worksheet-studio/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(apiBody),
-        });
+        const res = await fetchWithRetry(
+          authFetch,
+          "/api/worksheet-studio/generate",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(apiBody),
+          },
+          userId,
+        );
         if (ENTITLEMENT_STATUSES.has(res.status)) {
           toast.error(entitlementMessage(res.status));
           void import("@/features/teacher-os/teacher-os-analytics").then((m) => {
@@ -135,7 +145,7 @@ export function useWorksheetAi(authFetch: AuthFetch) {
         if (mountedRef.current) setLoading(false);
       }
     },
-    [authFetch],
+    [authFetch, userId],
   );
 
   const improve = useCallback(

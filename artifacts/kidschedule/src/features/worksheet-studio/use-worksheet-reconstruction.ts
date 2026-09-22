@@ -14,6 +14,7 @@ import {
 } from "@workspace/worksheet-studio";
 import { preprocessReconstructionSources } from "./reconstruction-preprocess";
 import { enqueueOfflineRequest } from "./worksheet-studio-analytics";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 
 type AuthFetch = (url: string, init?: RequestInit, timeoutMs?: number) => Promise<Response>;
 
@@ -32,7 +33,12 @@ const STAGE_LABELS: Record<ReconstructionProgressStage, string> = {
   opening: "Opening editor…",
 };
 
-async function fetchWithRetry(authFetch: AuthFetch, url: string, init: RequestInit): Promise<Response> {
+async function fetchWithRetry(
+  authFetch: AuthFetch,
+  url: string,
+  init: RequestInit,
+  userId?: string | null,
+): Promise<Response> {
   let lastErr: unknown;
   for (let i = 0; i <= MAX_RETRIES; i++) {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -53,12 +59,15 @@ async function fetchWithRetry(authFetch: AuthFetch, url: string, init: RequestIn
     }
   }
   if (init.body && typeof init.body === "string") {
-    try { enqueueOfflineRequest(url, JSON.parse(init.body) as object); } catch { /* */ }
+    try {
+      enqueueOfflineRequest(url, JSON.parse(init.body) as object, userId);
+    } catch { /* */ }
   }
   throw lastErr;
 }
 
 export function useWorksheetReconstruction(authFetch: AuthFetch) {
+  const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [stage, setStage] = useState<ReconstructionProgressStage | null>(null);
@@ -78,11 +87,16 @@ export function useWorksheetReconstruction(authFetch: AuthFetch) {
           sources: stripSourcesForReconstructionApi(sources),
           visionImages: visionImages.length ? visionImages : prepareVisionImagesForApi(sources),
         };
-        const res = await fetchWithRetry(authFetch, "/api/worksheet-studio/analyze-reconstruction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const res = await fetchWithRetry(
+          authFetch,
+          "/api/worksheet-studio/analyze-reconstruction",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+          userId,
+        );
         if (res.ok) {
           const data = await readResolvedApiJson<{ merged: ReconstructionAnalysis; source: string }>(
             res,
@@ -108,7 +122,7 @@ export function useWorksheetReconstruction(authFetch: AuthFetch) {
         setStage(null);
       }
     },
-    [authFetch],
+    [authFetch, userId],
   );
 
   const reconstruct = useCallback(
@@ -129,11 +143,16 @@ export function useWorksheetReconstruction(authFetch: AuthFetch) {
         setStage("reading_text");
         setStage("understanding");
         setStage("generating");
-        const res = await fetchWithRetry(authFetch, "/api/worksheet-studio/reconstruct", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(apiBody),
-        });
+        const res = await fetchWithRetry(
+          authFetch,
+          "/api/worksheet-studio/reconstruct",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(apiBody),
+          },
+          userId,
+        );
         setStage("validating");
         if (res.ok) {
           const data = await readResolvedApiJson<WorksheetReconstructResponse>(res, authFetch, { poll: AI_POLL });
@@ -159,7 +178,7 @@ export function useWorksheetReconstruction(authFetch: AuthFetch) {
         setStage(null);
       }
     },
-    [authFetch],
+    [authFetch, userId],
   );
 
   return { analyze, reconstruct, loading, analyzing, stage, stageLabel, merged, setMerged };
