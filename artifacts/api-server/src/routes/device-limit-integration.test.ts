@@ -50,4 +50,12 @@ describe("device limit integration wiring", () => {
     assert.ok(decideIdx > 0 && blockIdx > decideIdx);
     assert.ok(transferClaimIdx > blockIdx, "claim transfer must happen after the block return");
   });
+
+  it("replaceDevice transfers cross-user occupancy and locks device id", () => {
+    const src = readSource("../services/deviceLimitService.ts");
+    const replaceStart = src.indexOf("export async function replaceDevice");
+    const replaceBody = src.slice(replaceStart, replaceStart + 1600);
+    assert.match(replaceBody, /deviceid:\$\{params\.newDeviceId\}/);
+    assert.match(replaceBody, /await transferDeviceIfNeeded\(tx, params\.newDeviceId, params\.userId\)/);
+  });
 });

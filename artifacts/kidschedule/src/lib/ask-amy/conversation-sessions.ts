@@ -62,6 +62,17 @@ export function storageKeyForUser(userId: string | null | undefined): string {
   return `${STORAGE_PREFIX}${userId && userId.length > 0 ? userId : "local"}`;
 }
 
+/** Fresh workspace state when the signed-in user changes (clears in-memory thread). */
+export function prepareAmyAiSessionForUser(userId: string | null | undefined): {
+  store: AmyAiSessionStore;
+  current: AmyAiConversation;
+} {
+  return {
+    store: loadSessionStore(userId),
+    current: emptyConversation(),
+  };
+}
+
 export function loadSessionStore(userId: string | null | undefined): AmyAiSessionStore {
   if (typeof window === "undefined") return { conversations: [] };
   try {
