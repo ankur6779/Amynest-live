@@ -116,5 +116,7 @@ describe("concurrent device registration (simulated)", () => {
     );
     assert.match(registerBlock, /advisoryLockUser/);
     assert.match(replaceBlock, /advisoryLockUser/);
+    assert.match(replaceBlock, /deviceid:/);
+    assert.match(replaceBlock, /transferDeviceIfNeeded/);
   });
 });
