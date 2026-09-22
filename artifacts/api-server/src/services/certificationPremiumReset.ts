@@ -4,7 +4,8 @@
  * `provider=manual`, so a Play-synced row kept showing "AmyNest Premium is active".
  *
  * Idempotent via billing_audit_events. After this job runs, a later real
- * INITIAL_PURCHASE / native purchase_finalize can grant premium again.
+ * INITIAL_PURCHASE / RENEWAL / native purchase_finalize can grant premium again.
+ * Subscription reads must not re-wipe those post-reset store grants.
  */
 import {
   db,
@@ -20,6 +21,20 @@ export const CERTIFICATION_FORCE_FREE_EMAILS = ["champion6779@gmail.com"] as con
 export const CERTIFICATION_RESET_JOB_ID = "revoke_champion6779_2026_09_09";
 export const CERTIFICATION_RESET_EVENT = "certification_premium_reset";
 
+/**
+ * Events that mean a real store purchase/renewal (or a successful V2 mirror of one)
+ * landed after the ops reset. Includes CUSTOMER_SYNC because purchase_finalize /
+ * reconciliation stamp that default via buildSnapshotFromV2 when no webhook
+ * eventType is passed — without it, GET /subscription re-wipes immediately.
+ */
+const POST_RESET_PAID_EVENT_TYPES = new Set([
+  "INITIAL_PURCHASE",
+  "RENEWAL",
+  "PRODUCT_CHANGE",
+  "UNCANCELLATION",
+  "NON_RENEWING_PURCHASE",
+  "CUSTOMER_SYNC",
+]);
 const NEW_PURCHASE_EVENT_TYPES = new Set(["INITIAL_PURCHASE"]);
 const NEW_PURCHASE_SOURCES = new Set(["purchase_finalize"]);
 
@@ -55,6 +70,17 @@ export function shouldBlockStaleCertificationRevenueCatWrite(input: {
   if (input.eventType && NEW_PURCHASE_EVENT_TYPES.has(input.eventType)) return false;
   if (input.source && NEW_PURCHASE_SOURCES.has(input.source)) return false;
   return true;
+}
+
+/** True when the row already reflects a post-reset store grant we must not wipe. */
+export function shouldKeepPostResetPurchase(
+  resetAppliedAt: Date,
+  lastEventType: string | null | undefined,
+  lastEventAt: Date | null | undefined,
+): boolean {
+  if (!lastEventAt || lastEventAt.getTime() <= resetAppliedAt.getTime()) return false;
+  if (!lastEventType || lastEventType === "certification_reset") return false;
+  return POST_RESET_PAID_EVENT_TYPES.has(lastEventType);
 }
 
 export function freeSubscriptionResetValues(now: Date) {
@@ -140,13 +166,15 @@ export async function shouldBlockStaleCertificationRevenueCatWriteForUser(
     .where(eq(subscriptionsTable.userId, userId))
     .limit(1);
 
-  const forceFree =
-    emails.some((email) => isCertificationForceFreeEmail(email)) ||
-    sub?.lastEventType === "certification_reset";
+  // Email-scoped only — do not sticky-force-free solely from lastEventType, or a
+  // mis-targeted reset row could permanently block RC grants for the wrong user.
+  const forceFree = emails.some((email) => isCertificationForceFreeEmail(email));
   if (!forceFree) return false;
 
   const lastPaidEventAt =
-    sub?.lastEventType && NEW_PURCHASE_EVENT_TYPES.has(sub.lastEventType)
+    sub?.lastEventType &&
+    POST_RESET_PAID_EVENT_TYPES.has(sub.lastEventType) &&
+    sub.lastEventAt
       ? sub.lastEventAt
       : null;
 
@@ -188,15 +216,6 @@ async function resetUserIds(userIds: Iterable<string>, now: Date): Promise<strin
     if (updated.length > 0) resetIds.push(userId);
   }
   return resetIds;
-}
-
-function shouldKeepPostResetPurchase(
-  resetAppliedAt: Date,
-  lastEventType: string | null | undefined,
-  lastEventAt: Date | null | undefined,
-): boolean {
-  if (lastEventType !== "INITIAL_PURCHASE" || !lastEventAt) return false;
-  return lastEventAt.getTime() > resetAppliedAt.getTime();
 }
 
 export async function applyCertificationPremiumReset(opts?: {
