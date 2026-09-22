@@ -50,4 +50,14 @@ describe("device limit integration wiring", () => {
     assert.ok(decideIdx > 0 && blockIdx > decideIdx);
     assert.ok(transferClaimIdx > blockIdx, "claim transfer must happen after the block return");
   });
+
+  it("replaceDevice transfers physical-install ownership like register", () => {
+    const src = readSource("../services/deviceLimitService.ts");
+    const replaceBlock = src.slice(
+      src.indexOf("export async function replaceDevice"),
+      src.indexOf("export async function replaceDevice") + 800,
+    );
+    assert.match(replaceBlock, /deviceid:/);
+    assert.match(replaceBlock, /transferDeviceIfNeeded/);
+  });
 });
