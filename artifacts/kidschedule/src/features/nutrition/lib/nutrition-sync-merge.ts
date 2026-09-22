@@ -14,12 +14,14 @@
  *
  * ## Offline / queue
  * - Local edits always win until flushed; queue holds `{ dateKey, enqueuedAt }`.
- * - Flush sends canonical `dayChecklists[dateKey]` — never count-derived payloads.
- * - Failed PUTs remain queued; online listener retries.
+ * - Flush GETs the day, applies the same LWW rules as hydrate, then PUTs only when
+ *   local is strictly newer — never blind-overwrites a newer server checklist.
+ * - PUT includes `clientUpdatedAt` so the server can reject stale writers.
+ * - Failed PUTs remain queued; online listener hydrates (LWW) then flushes.
  *
  * ## Multi-device
  * - Each device maintains local `dayUpdatedAt`; server `updatedAt` is authoritative
- *   when newer. Devices converge on next hydrate after the winning write lands.
+ *   when newer. Devices converge on next hydrate / flush after the winning write lands.
  */
 
 export type MergeOutcome = "applied_server" | "kept_local" | "skipped_empty";
