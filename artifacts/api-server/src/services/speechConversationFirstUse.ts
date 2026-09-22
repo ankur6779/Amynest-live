@@ -5,10 +5,12 @@
  * Feature string is intentionally NOT in FREE_FEATURE_LIMITS so entitlements
  * never expose a fake quota.
  *
- * Authority: server Date.now() / UTC. Reinstall/login persist by userId.
+ * Authority: server Date.now() / UTC. Reinstall/login persist by subscription owner
+ * (identity alias), matching getOrCreateSubscription — not raw Firebase uid.
  */
 import { and, asc, eq } from "drizzle-orm";
 import { db, usageDailyTable } from "@workspace/db";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 
 export { conversationTrialWindow, FREE_CONVERSATION_TRIAL_DAYS } from "./speechConversationTrialWindow.js";
 
@@ -16,13 +18,18 @@ export { conversationTrialWindow, FREE_CONVERSATION_TRIAL_DAYS } from "./speechC
 export const SPEECH_CONVERSATION_FIRST_USE_FEATURE = "speech_conversation_first_use";
 export const SPEECH_CONVERSATION_FIRST_USE_DAY = "lifetime";
 
+async function ownerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
+
 async function readStampUnix(userId: string): Promise<number | null> {
+  const uid = await ownerUserId(userId);
   const rows = await db
     .select({ count: usageDailyTable.count })
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, uid),
         eq(usageDailyTable.day, SPEECH_CONVERSATION_FIRST_USE_DAY),
         eq(usageDailyTable.feature, SPEECH_CONVERSATION_FIRST_USE_FEATURE),
       ),
@@ -33,18 +40,19 @@ async function readStampUnix(userId: string): Promise<number | null> {
 }
 
 async function persistStampUnix(userId: string, unixSeconds: number): Promise<number> {
-  const existing = await readStampUnix(userId);
+  const uid = await ownerUserId(userId);
+  const existing = await readStampUnix(uid);
   if (existing) return existing;
   await db
     .insert(usageDailyTable)
     .values({
-      userId,
+      userId: uid,
       feature: SPEECH_CONVERSATION_FIRST_USE_FEATURE,
       day: SPEECH_CONVERSATION_FIRST_USE_DAY,
       count: unixSeconds,
     })
     .onConflictDoNothing();
-  const after = await readStampUnix(userId);
+  const after = await readStampUnix(uid);
   return after ?? unixSeconds;
 }
 
@@ -53,12 +61,13 @@ async function persistStampUnix(userId: string, unixSeconds: number): Promise<nu
  * already talked before this stamp existed. Kickoff-only (0s) has no row.
  */
 async function inferFirstUseFromConverseHistory(userId: string): Promise<number | null> {
+  const uid = await ownerUserId(userId);
   const rows = await db
     .select({ createdAt: usageDailyTable.createdAt })
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, uid),
         eq(usageDailyTable.feature, "speech_conversation_seconds"),
       ),
     )

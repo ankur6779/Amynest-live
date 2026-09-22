@@ -39,4 +39,12 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
   });
+
+  it("clears pending gift and referral deep-link codes", () => {
+    localStorage.setItem("amynest_pending_gift_code", JSON.stringify({ code: "GIFT-X", capturedForUid: "a" }));
+    localStorage.setItem("amynest_pending_referral_code", JSON.stringify({ code: "REF-X", capturedForUid: "a" }));
+    clearUserSessionCaches();
+    expect(localStorage.getItem("amynest_pending_gift_code")).toBeNull();
+    expect(localStorage.getItem("amynest_pending_referral_code")).toBeNull();
+  });
 });
