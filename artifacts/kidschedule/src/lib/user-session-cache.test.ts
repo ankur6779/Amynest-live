@@ -39,4 +39,43 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
   });
+
+  it("clears device-global gaming wallet and offline play queue on account switch", () => {
+    localStorage.setItem("amynest_points", "420");
+    localStorage.setItem("amynest_unlocked_games_v1", JSON.stringify(["maze-escape"]));
+    localStorage.setItem(
+      "amynest_game_play_log_v1",
+      JSON.stringify([{ id: "p1", date: "2026-09-01", pointsEarned: 10, perfect: false }]),
+    );
+    localStorage.setItem(
+      "amynest_skill_progress_v1",
+      JSON.stringify({ memory: { attempts: 1, correct: 1, plays: 1 } }),
+    );
+    localStorage.setItem(
+      "amynest_ledger",
+      JSON.stringify([{ date: "2026-09-01", childName: "A", activity: "game", points: 10 }]),
+    );
+    localStorage.setItem(
+      "amynest_game_play_sync_queue_v1",
+      JSON.stringify([
+        {
+          gameId: "maze-escape",
+          score: 5,
+          total: 8,
+          idempotencyKey: "play:maze-escape:prior-user",
+          queuedAt: Date.now(),
+          attempts: 0,
+        },
+      ]),
+    );
+
+    clearUserSessionCaches();
+
+    expect(localStorage.getItem("amynest_points")).toBeNull();
+    expect(localStorage.getItem("amynest_unlocked_games_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_game_play_log_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_skill_progress_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_ledger")).toBeNull();
+    expect(localStorage.getItem("amynest_game_play_sync_queue_v1")).toBeNull();
+  });
 });

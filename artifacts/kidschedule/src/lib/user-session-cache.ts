@@ -1,5 +1,7 @@
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { clearDashboardCaches } from "@/lib/dashboard-data-cache";
+import { clearPendingPlaySync } from "@/lib/game-finish";
+import { clearLocalGamingWallet } from "@/lib/gaming-wallet-storage";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
@@ -14,12 +16,17 @@ const SESSION_UID_KEY = "amynest:session:uid:v1";
  * Does not remove `amynest:device:id:v1`. The installation id is reused so
  * the backend can treat this install as one session; account ownership lives
  * in `user_devices`, not in the local id.
+ *
+ * Also clears device-global gaming wallet + offline play queue so the next
+ * account cannot syncWalletFromClient / flushPendingPlaySync prior progress.
  */
 export function clearUserSessionCaches(): void {
   clearOnboardingCompletionCache();
   clearOnboardingChatSession();
   clearOnboardingRunId();
   clearDashboardCaches();
+  clearLocalGamingWallet();
+  clearPendingPlaySync();
 
   if (typeof localStorage === "undefined") return;
   try {
