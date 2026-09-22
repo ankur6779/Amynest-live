@@ -17,6 +17,7 @@ import {
   finalizeOAuthCredentialSignIn,
   finishOAuthLoginFlow,
 } from "@/lib/oauth-session-finalize";
+import { decidePendingNativeOAuthBootstrap } from "@/lib/pending-native-oauth-guard";
 
 const FACEBOOK_TAG = "[amynest:facebook-auth]";
 const FACEBOOK_APP_ID = "2514850758945614";
@@ -261,12 +262,34 @@ export async function bootstrapPendingFacebookSignIn(): Promise<boolean> {
   }
   const {
     readPendingNativeFacebookAccessToken,
+    hasPendingNativeFacebookAccessToken,
     isFacebookSignInInFlight,
+    clearPendingNativeFacebookAuth,
   } = await import("@/lib/native-auth");
-  if (isFacebookSignInInFlight()) {
-    console.info(`${FACEBOOK_TAG} bootstrap skipped — sign-in in flight`);
+  const decision = decidePendingNativeOAuthBootstrap({
+    hasPendingToken: hasPendingNativeFacebookAccessToken(),
+    signInInFlight: isFacebookSignInInFlight(),
+    currentUser: getFirebaseAuth().currentUser,
+  });
+  if (decision === "skip") {
+    if (isFacebookSignInInFlight()) {
+      console.info(`${FACEBOOK_TAG} bootstrap skipped — sign-in in flight`);
+    }
     return false;
   }
+  if (decision === "skip_clear_stale") {
+    console.info(
+      `${FACEBOOK_TAG} bootstrap skipped — refusing to replace signed-in session`,
+    );
+    void clearPendingNativeFacebookAuth();
+    try {
+      delete window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN;
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
   const accessToken = readPendingNativeFacebookAccessToken();
   if (!accessToken) return false;
 
