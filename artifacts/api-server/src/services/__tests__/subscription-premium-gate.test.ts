@@ -6,6 +6,7 @@ import {
   isPremiumNow,
   isPremiumSubscriberNow,
   shouldPreserveActiveTrial,
+  shouldSkipHealStaleDowngrade,
 } from "../subscription-premium-gate.js";
 
 type SubRow = {
@@ -47,6 +48,20 @@ test("isPremiumNow accepts active with future currentPeriodEnd", () => {
       sub({
         status: "active",
         subscriptionState: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86_400_000),
+      }),
+    ),
+    true,
+  );
+});
+
+test("isPremiumNow accepts unmigrated RevenueCat row with FREE state and valid period", () => {
+  assert.equal(
+    isPremiumNow(
+      sub({
+        status: "active",
+        provider: "revenuecat",
+        subscriptionState: "FREE",
         currentPeriodEnd: new Date(Date.now() + 86_400_000),
       }),
     ),
