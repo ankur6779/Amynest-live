@@ -5,6 +5,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   searchConversations,
@@ -15,9 +16,11 @@ import {
 import { NEW_CHAT_TITLE } from "./conversation-title";
 
 const USER = "test-user";
+const OTHER_USER = "other-user";
 
 afterEach(() => {
   localStorage.removeItem(storageKeyForUser(USER));
+  localStorage.removeItem(storageKeyForUser(OTHER_USER));
 });
 
 describe("conversation-sessions", () => {
@@ -83,6 +86,20 @@ describe("conversation-sessions", () => {
     expect(store.conversations[0]?.title).toBe("Kitchen calm");
     store = deleteConversation(store, conv.id);
     expect(store.conversations).toHaveLength(0);
+  });
+
+  it("starts a blank active chat when binding to a user", () => {
+    const conv = appendMessage(emptyConversation(), { role: "user", content: "Secret from A" });
+    saveSessionStore(USER, { conversations: [conv] });
+
+    const forOther = prepareAmyAiSessionForUser(OTHER_USER);
+    expect(forOther.current.messages).toHaveLength(0);
+    expect(forOther.current.id).not.toBe(conv.id);
+
+    const forSame = prepareAmyAiSessionForUser(USER);
+    expect(forSame.store.conversations[0]?.title).toBe("Secret from A");
+    expect(forSame.current.messages).toHaveLength(0);
+    expect(forSame.current.id).not.toBe(conv.id);
   });
 
   it("round-trips localStorage", () => {
