@@ -2,6 +2,7 @@ import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { clearDashboardCaches } from "@/lib/dashboard-data-cache";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
+import { clearAllPtmPrepStorage } from "@/lib/ptm-prep-storage";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
 
 const SESSION_UID_KEY = "amynest:session:uid:v1";
@@ -20,6 +21,7 @@ export function clearUserSessionCaches(): void {
   clearOnboardingChatSession();
   clearOnboardingRunId();
   clearDashboardCaches();
+  clearAllPtmPrepStorage();
 
   if (typeof localStorage === "undefined") return;
   try {
