@@ -1,5 +1,5 @@
 import { parseApiJson } from "@/lib/safe-json-response";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   type ChildOlympiadStats,
@@ -7,6 +7,17 @@ import {
   parseRemoteStatsBlob,
   saveOlympiadStats,
 } from "@/lib/olympiad-local-stats";
+
+/** Never-edited local snapshot — unsafe to auto-push (can LWW-wipe server progress). */
+export function isVirginOlympiadStats(stats: ChildOlympiadStats): boolean {
+  return (
+    stats.clientUpdatedAt == null &&
+    stats.totalPoints === 0 &&
+    stats.streak === 0 &&
+    Object.keys(stats.daily).length === 0 &&
+    Object.keys(stats.weekly).length === 0
+  );
+}
 
 export function useOlympiadStatsSync(childId: number) {
   const authFetch = useAuthFetch();
@@ -76,25 +87,38 @@ export function useOlympiadStatsSync(childId: number) {
   return { pull, push, hydrate };
 }
 
+/**
+ * Keep auto-push behind a completed hydrate for this childId.
+ * Otherwise an empty/fresh local snapshot stamped with `now` can LWW-wipe
+ * richer server progress (slow GET, failed hydrate, or child switch).
+ */
 export function useOlympiadStatsAutoSync(
   childId: number,
   stats: ChildOlympiadStats,
   setStats: (s: ChildOlympiadStats) => void,
 ) {
   const { push, hydrate } = useOlympiadStatsSync(childId);
-  const hydrated = useRef(false);
+  const [hydrateReady, setHydrateReady] = useState(false);
+  const hydrateGen = useRef(0);
 
   useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-    void hydrate(stats).then((merged) => {
-      if (merged !== stats) setStats(merged);
+    const gen = ++hydrateGen.current;
+    setHydrateReady(false);
+    const local = stats;
+    void hydrate(local).then((merged) => {
+      if (gen !== hydrateGen.current) return;
+      // Apply non-virgin merges so the push effect sees server progress via props.
+      // Skip virgin apply — setStats stamps clientUpdatedAt and would make empty pushable.
+      if (!isVirginOlympiadStats(merged)) setStats(merged);
+      setHydrateReady(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [childId]);
 
   useEffect(() => {
+    if (!hydrateReady) return;
+    if (isVirginOlympiadStats(stats)) return;
     const t = setTimeout(() => void push(stats), 800);
     return () => clearTimeout(t);
-  }, [stats, push]);
+  }, [stats, push, hydrateReady]);
 }
