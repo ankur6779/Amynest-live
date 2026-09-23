@@ -36,6 +36,29 @@ export async function resolveSubscriptionOwnerUserId(
   return rows[0]?.internalUserId ?? firebaseUid;
 }
 
+/**
+ * All Firebase uids that share one sticky subscription identity.
+ * Includes the resolved owner and every alias that points at that owner.
+ * Used for occupancy counters (children / devices / routines) that must not
+ * remint when plan limits already resolve through getOrCreateSubscription.
+ */
+export async function listUserIdsForSubscriptionIdentity(
+  firebaseUid: string,
+  dbExec: DbExec = db,
+): Promise<string[]> {
+  const ownerUserId = await resolveSubscriptionOwnerUserId(firebaseUid, dbExec);
+  const aliases = await dbExec
+    .select({ firebaseUid: userIdentityAliasesTable.firebaseUid })
+    .from(userIdentityAliasesTable)
+    .where(eq(userIdentityAliasesTable.internalUserId, ownerUserId));
+
+  const ids = new Set<string>([ownerUserId, firebaseUid]);
+  for (const row of aliases) {
+    if (row.firebaseUid) ids.add(row.firebaseUid);
+  }
+  return [...ids];
+}
+
 async function findSubscription(userId: string, dbExec: DbExec = db): Promise<Subscription | null> {
   const rows = await dbExec
     .select()

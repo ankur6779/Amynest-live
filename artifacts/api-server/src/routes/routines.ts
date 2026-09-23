@@ -22,6 +22,7 @@ import {
   isPremiumNow,
   FREE_LIMITS,
 } from "../services/subscriptionService";
+import { listUserIdsForSubscriptionIdentity } from "../services/userIdentityService";
 import { routineGenerateGate } from "../middlewares/featureGate.js";
 import {
   acquireRoutineGenerateSlot,
@@ -1517,11 +1518,14 @@ async function isOverFreeRoutineLimit(
     .where(and(eq(routinesTable.childId, childId), eq(routinesTable.date, date)))
     .limit(1);
   if (existing.length > 0) return false;
+  // Count across sticky-alias identity so B→A cannot remint a full routinesMax
+  // while plan limits already resolve to A's subscription.
+  const identityUserIds = await listUserIdsForSubscriptionIdentity(userId);
   const [{ n }] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(routinesTable)
     .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
-    .where(eq(childrenTable.userId, userId));
+    .where(inArray(childrenTable.userId, identityUserIds));
   return (n ?? 0) >= FREE_LIMITS.routinesMax;
 }
 
@@ -2635,11 +2639,13 @@ router.post("/routines", async (req, res): Promise<void> => {
       allowedByOverride = existing.length > 0;
     }
     if (!allowedByOverride) {
+      // Same sticky-alias occupancy rule as isOverFreeRoutineLimit / childrenMax.
+      const identityUserIds = await listUserIdsForSubscriptionIdentity(userId);
       const [{ n }] = await db
         .select({ n: sql<number>`count(*)::int` })
         .from(routinesTable)
         .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
-        .where(eq(childrenTable.userId, userId));
+        .where(inArray(childrenTable.userId, identityUserIds));
       if ((n ?? 0) >= FREE_LIMITS.routinesMax) {
         res.status(402).json({
           error: "routine_limit_reached",
