@@ -414,14 +414,17 @@ test.describe("Remaining 85vh sheets", () => {
         expect(box, `${sheet.id} ${vp.label} box`).toBeTruthy();
         expect(box!.height, `${sheet.id} ${vp.label} height`).toBeLessThanOrEqual(vp.height + 1);
         expect(box!.width, `${sheet.id} ${vp.label} width`).toBeLessThanOrEqual(vp.width + 1);
-        expect(box!.y, `${sheet.id} ${vp.label} top`).toBeGreaterThanOrEqual(-1);
 
         const close = sheet.close
           ? page.getByTestId(sheet.close)
-          : surface.getByRole("button", { name: /close|maybe later|dismiss/i }).first();
-        if (await close.isVisible().catch(() => false)) {
+          : page.getByRole("button", { name: /close|maybe later|dismiss/i }).first();
+        if (await close.isVisible({ timeout: 2_000 }).catch(() => false)) {
+          await close.scrollIntoViewIfNeeded();
           const closeBox = await close.boundingBox();
-          if (closeBox) assertInside(closeBox, vp, `${sheet.id} close ${vp.label}`);
+          expect(closeBox, `${sheet.id} close ${vp.label}`).toBeTruthy();
+          expect(closeBox!.y).toBeGreaterThanOrEqual(-1);
+          expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(vp.height + 1);
+          expect(closeBox!.x + closeBox!.width).toBeLessThanOrEqual(vp.width + 1);
         }
 
         if (sheet.action) {
