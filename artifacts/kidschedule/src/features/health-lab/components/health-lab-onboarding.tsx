@@ -58,7 +58,7 @@ export function HealthLabGameOnboarding({
       gameId={gameId}
       fullBleed
       className={cn(
-        "health-lab-game-stage-scroll px-[clamp(0.75rem,4vw,1.25rem)]",
+        "health-lab-game-stage-scroll max-w-full min-w-0 px-[clamp(0.75rem,4vw,1.25rem)]",
         living && "hl-living-deep",
       )}
     >

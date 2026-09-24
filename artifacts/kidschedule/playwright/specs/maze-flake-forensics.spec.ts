@@ -2,16 +2,18 @@
  * Maze "guid was not bound" forensics.
  * Repeated viewport loads only — does not rewrite MazeEscape.
  *
- * CDP disconnects can hang Playwright actions until the runner timeout.
- * A local protocol budget lets this spec classify the hang instead of
- * dying as an unclassified 60s test timeout.
+ * CDP disconnects hang Playwright actions and kill the worker. This spec
+ * uses an isolated browser context, a protocol budget, and incremental
+ * JSON persistence so a renderer flake is classified instead of reported
+ * as an application failure.
  *
  * Run: pnpm --filter @workspace/kidschedule test:e2e:foldable-gap-closure -- maze-flake-forensics
  */
 import { test, expect, type Page, type ConsoleMessage } from "@playwright/test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const ARTIFACTS = "/opt/cursor/artifacts";
+const REPORT = `${ARTIFACTS}/maze-flake-forensics.json`;
 const REPEATS = 3;
 const LOAD_BUDGET_MS = 22_000;
 
@@ -39,8 +41,6 @@ type RunRecord = {
   playwrightError: string | null;
   classification: "PASS" | "APPLICATION_BUG" | "TEST_INFRASTRUCTURE_FLAKE";
 };
-
-const runs: RunRecord[] = [];
 
 function attachDiagnostics(page: Page) {
   const consoleErrors: string[] = [];
@@ -99,20 +99,6 @@ function classify(args: {
   return appHint ? "APPLICATION_BUG" : "TEST_INFRASTRUCTURE_FLAKE";
 }
 
-async function withProtocolBudget<T>(work: Promise<T>, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const budget = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error(`Protocol budget exceeded: ${label}`));
-    }, LOAD_BUDGET_MS);
-  });
-  try {
-    return await Promise.race([work, budget]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
-}
-
 function safePageClosed(page: Page): boolean {
   try {
     return page.isClosed();
@@ -121,35 +107,82 @@ function safePageClosed(page: Page): boolean {
   }
 }
 
+function persist(record: RunRecord) {
+  mkdirSync(ARTIFACTS, { recursive: true });
+  let runs: RunRecord[] = [];
+  if (existsSync(REPORT)) {
+    try {
+      const prev = JSON.parse(readFileSync(REPORT, "utf8")) as { runs?: RunRecord[] };
+      runs = Array.isArray(prev.runs) ? prev.runs : [];
+    } catch {
+      runs = [];
+    }
+  }
+  const idx = runs.findIndex((r) => r.label === record.label && r.repeat === record.repeat);
+  if (idx >= 0) runs[idx] = record;
+  else runs.push(record);
+  const verdict = runs.some((r) => r.classification === "APPLICATION_BUG")
+    ? "APPLICATION_BUG"
+    : runs.some((r) => r.classification === "TEST_INFRASTRUCTURE_FLAKE")
+      ? "TEST_INFRASTRUCTURE_FLAKE"
+      : "PASS";
+  writeFileSync(
+    REPORT,
+    JSON.stringify(
+      {
+        verdict,
+        repeats: REPEATS,
+        viewports: MAZE_VPS.map((vp) => vp.label),
+        failed: runs.filter((r) => !r.ok),
+        runs,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 test.describe.configure({ timeout: 45_000, retries: 0 });
 
 test.describe("Maze flake forensics", () => {
   for (const vp of MAZE_VPS) {
     for (let repeat = 1; repeat <= REPEATS; repeat++) {
-      test(`maze ${vp.label} #${repeat}`, async ({ page }) => {
+      test(`maze ${vp.label} #${repeat}`, async ({ browser }, testInfo) => {
         const started = Date.now();
+        const context = await browser.newContext({
+          baseURL: testInfo.project.use.baseURL,
+          viewport: { width: vp.width, height: vp.height },
+        });
+        const page = await context.newPage();
         const diag = attachDiagnostics(page);
-        await page.setViewportSize({ width: vp.width, height: vp.height });
 
         let playwrightError: string | null = null;
+        const load = (async () => {
+          await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
+            waitUntil: "domcontentloaded",
+            timeout: 18_000,
+          });
+          await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 12_000 });
+          await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 12_000 });
+          const grid = page.getByTestId("maze-grid");
+          await expect(grid).toBeVisible();
+          const box = await grid.boundingBox();
+          expect(box).toBeTruthy();
+          expect(box!.width).toBeGreaterThan(40);
+          expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
+        })();
+        load.catch(() => undefined);
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const budget = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            void context.close().catch(() => undefined);
+            reject(new Error(`Protocol budget exceeded: maze ${vp.label} #${repeat}`));
+          }, LOAD_BUDGET_MS);
+        });
+
         try {
-          await withProtocolBudget(
-            (async () => {
-              await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
-                waitUntil: "domcontentloaded",
-                timeout: 18_000,
-              });
-              await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 12_000 });
-              await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 12_000 });
-              const grid = page.getByTestId("maze-grid");
-              await expect(grid).toBeVisible();
-              const box = await grid.boundingBox();
-              expect(box).toBeTruthy();
-              expect(box!.width).toBeGreaterThan(40);
-              expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
-            })(),
-            `maze ${vp.label} #${repeat}`,
-          );
+          await Promise.race([load, budget]);
         } catch (err) {
           playwrightError = err instanceof Error ? err.message : String(err);
           const snap = diag.snapshot();
@@ -163,13 +196,14 @@ test.describe("Maze flake forensics", () => {
           if (classification === "APPLICATION_BUG") {
             throw err;
           }
-          test.info().annotations.push({
+          testInfo.annotations.push({
             type: "flake",
             description: `TEST-INFRASTRUCTURE FLAKE: ${playwrightError}`,
           });
         } finally {
+          if (timer) clearTimeout(timer);
           const snap = diag.snapshot();
-          const record: RunRecord = {
+          persist({
             label: vp.label,
             repeat,
             ok: playwrightError === null && !snap.crash,
@@ -187,33 +221,10 @@ test.describe("Maze flake forensics", () => {
               pageErrors: snap.pageErrors,
               consoleErrors: snap.consoleErrors,
             }),
-          };
-          runs.push(record);
+          });
+          await context.close().catch(() => undefined);
         }
       });
     }
   }
-
-  test.afterAll(() => {
-    mkdirSync(ARTIFACTS, { recursive: true });
-    const verdict = runs.some((r) => r.classification === "APPLICATION_BUG")
-      ? "APPLICATION_BUG"
-      : runs.some((r) => r.classification === "TEST_INFRASTRUCTURE_FLAKE")
-        ? "TEST_INFRASTRUCTURE_FLAKE"
-        : "PASS";
-    writeFileSync(
-      `${ARTIFACTS}/maze-flake-forensics.json`,
-      JSON.stringify(
-        {
-          verdict,
-          repeats: REPEATS,
-          viewports: MAZE_VPS.map((vp) => vp.label),
-          failed: runs.filter((r) => !r.ok),
-          runs,
-        },
-        null,
-        2,
-      ),
-    );
-  });
 });
