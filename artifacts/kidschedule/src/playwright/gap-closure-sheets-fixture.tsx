@@ -15,6 +15,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AuthContext,
+  type AuthContextValue,
+} from "@/lib/firebase-auth-context";
+
+const stubAuth: AuthContextValue = {
+  user: {
+    id: "playwright_user",
+    uid: "playwright_user",
+    firstName: "Playwright",
+    lastName: null,
+    fullName: "Playwright",
+    imageUrl: null,
+    emailAddresses: [],
+    primaryEmailAddress: null,
+    primaryPhoneNumber: null,
+    setProfileImage: async () => {},
+  },
+  isLoaded: true,
+  authStatus: "authenticated",
+  getToken: async () => "playwright-token",
+  signOut: async () => {},
+  addListener: () => () => {},
+};
 
 const params = new URLSearchParams(window.location.search);
 const sheet = params.get("sheet") ?? "subscription";
@@ -34,7 +58,7 @@ function RecipeDialog() {
   return (
     <Dialog open>
       <DialogContent
-        className="rounded-2xl max-w-lg max-h-[var(--app-dialog-max-height,90dvh)] overflow-y-auto"
+        className="rounded-2xl max-w-lg max-h-[min(90dvh,var(--app-dialog-max-height,90dvh))] overflow-y-auto"
         data-testid="routine-recipe-dialog"
       >
         <DialogHeader>
@@ -118,8 +142,10 @@ function Fixture() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <div data-testid="gap-closure-sheets-fixture" data-sheet={sheet}>
-      <Fixture />
-    </div>
+    <AuthContext.Provider value={stubAuth}>
+      <div data-testid="gap-closure-sheets-fixture" data-sheet={sheet}>
+        <Fixture />
+      </div>
+    </AuthContext.Provider>
   </StrictMode>,
 );

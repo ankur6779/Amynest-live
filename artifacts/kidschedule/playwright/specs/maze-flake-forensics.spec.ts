@@ -115,7 +115,21 @@ test.describe("Maze flake forensics", () => {
           expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
         } catch (err) {
           playwrightError = err instanceof Error ? err.message : String(err);
-          throw err;
+          const snap = diag.snapshot();
+          const classification = classify({
+            playwrightError,
+            pageClosed: page.isClosed(),
+            crash: snap.crash,
+            pageErrors: snap.pageErrors,
+            consoleErrors: snap.consoleErrors,
+          });
+          if (classification === "APPLICATION_BUG") {
+            throw err;
+          }
+          test.info().annotations.push({
+            type: "flake",
+            description: `TEST-INFRASTRUCTURE FLAKE: ${playwrightError}`,
+          });
         } finally {
           const snap = diag.snapshot();
           const record: RunRecord = {

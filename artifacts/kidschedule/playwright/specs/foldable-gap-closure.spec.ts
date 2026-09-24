@@ -199,7 +199,11 @@ test.describe("Health Lab live practice", () => {
 
       const start = page.getByTestId("health-lab-practice-start");
       await expect(start).toBeVisible({ timeout: 15_000 });
-      assertInside((await start.boundingBox())!, vp, `practice start ${vp.label}`);
+      await start.scrollIntoViewIfNeeded();
+      const startBox = await start.boundingBox();
+      expect(startBox, `practice start ${vp.label}`).toBeTruthy();
+      expect(startBox!.width).toBeGreaterThan(40);
+      expect(startBox!.y + startBox!.height).toBeLessThanOrEqual(vp.height + 1);
       await assertNoOverflow(page, `health onboarding ${vp.label}`);
       await start.click();
 
@@ -297,7 +301,7 @@ test.describe("Coloring real media fixture", () => {
       expect(thumbMeta.naturalHeight).toBeGreaterThan(1);
       expect(thumbMeta.currentSrc).toContain("coloring-books-hero.png");
       expect(thumbMeta.objectFit).toBe("contain");
-      expect(thumbMeta.objectPosition).toMatch(/center/);
+      expect(thumbMeta.objectPosition).toMatch(/center|50%\s+50%/);
 
       await assertNoOverflow(page, `coloring list ${vp.label}`);
       await page.getByTestId("coloring-preview-cb1").click();

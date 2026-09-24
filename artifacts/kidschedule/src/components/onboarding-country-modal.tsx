@@ -58,7 +58,7 @@ export function OnboardingCountryModal({
           })}
           className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
         />
-        <div className="max-h-[50vh] overflow-y-auto space-y-1 pr-1">
+        <div className="max-h-[min(50dvh,calc(var(--app-dialog-max-height,90dvh)-14rem))] overflow-y-auto space-y-1 pr-1">
           {list.map((c) => (
             <button
               key={c.code}

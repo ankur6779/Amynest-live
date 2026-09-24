@@ -6,6 +6,7 @@ export default defineConfig({
   testDir: "./playwright/specs",
   testMatch: ["foldable-gap-closure.spec.ts", "maze-flake-forensics.spec.ts"],
   fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   timeout: 120_000,

@@ -94,6 +94,7 @@ describe("AmyNest viewport contract", () => {
     const dialog = read("components/ui/dialog.tsx");
     const sheet = read("components/ui/sheet.tsx");
     expect(dialog).toContain("--app-dialog-max-height");
+    expect(dialog).toContain("min-h-0");
     expect(dialog).toContain("overflow-y-auto");
     expect(dialog).toContain("h-11 w-11");
     expect(sheet).toContain("--app-sheet-max-height");
