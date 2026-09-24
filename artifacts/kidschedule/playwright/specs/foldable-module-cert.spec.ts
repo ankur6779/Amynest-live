@@ -582,6 +582,8 @@ test.describe("Orientation flip", () => {
 });
 
 test.describe("Visual captures", () => {
+  // Same Chromium CDP "guid was not bound" flake as maze loads.
+  test.describe.configure({ retries: 1 });
   test("module screenshot set", async ({ page }) => {
     const shots: Array<{ file: string; goto: string; ready: string; setup?: (p: Page) => Promise<void>; size: Vp }> = [
       {
