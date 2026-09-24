@@ -41,7 +41,10 @@ export function OnboardingCountryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
+      <DialogContent
+        className="max-h-[var(--app-dialog-max-height,90dvh)] overflow-hidden sm:max-w-md"
+        data-testid="onboarding-country-modal"
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
@@ -55,7 +58,7 @@ export function OnboardingCountryModal({
           })}
           className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
         />
-        <div className="max-h-[50vh] overflow-y-auto space-y-1 pr-1">
+        <div className="max-h-[min(50dvh,calc(var(--app-dialog-max-height,90dvh)-14rem))] overflow-y-auto space-y-1 pr-1">
           {list.map((c) => (
             <button
               key={c.code}

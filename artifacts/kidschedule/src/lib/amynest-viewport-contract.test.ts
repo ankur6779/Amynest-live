@@ -55,6 +55,8 @@ describe("AmyNest viewport contract", () => {
     expect(shell).toContain("max-width: min(48rem, 100%)");
     expect(living).toContain(".health-lab-living .fe-breath");
     expect(living).toMatch(/\.health-lab-living \.fe-breath[\s\S]*inset: 0/);
+    const index = read("index.css");
+    expect(index).toMatch(/\.health-lab-game-stage-shell\.health-lab-game-stage-scroll \{[\s\S]*overflow-x: hidden/);
   });
 
   it("keeps PDF preview dialogs inside the dynamic viewport", () => {
@@ -66,10 +68,35 @@ describe("AmyNest viewport contract", () => {
     expect(funsheets).not.toMatch(/h-\[85vh\]/);
   });
 
+  it("caps remaining user dialogs and sheets with viewport tokens, not raw 85vh", () => {
+    const subscription = read("components/subscription-moment-sheet.tsx");
+    const country = read("components/onboarding-country-modal.tsx");
+    const recipe = read("pages/routines/detail.tsx");
+    const taskCheck = read("pages/routines/generate.tsx");
+    const curriculum = read("components/study-curriculum-visibility.tsx");
+    const inspector = read("components/amy-runtime-inspector/runtime-inspector-console.tsx");
+
+    expect(subscription).toContain("--app-sheet-max-height");
+    expect(subscription).not.toMatch(/max-h-\[85vh\]/);
+    expect(country).toContain("--app-dialog-max-height");
+    expect(country).not.toMatch(/max-h-\[85vh\]/);
+    expect(recipe).toContain("--app-dialog-max-height");
+    expect(recipe).not.toMatch(/max-h-\[85vh\]/);
+    expect(taskCheck).toContain("--app-sheet-max-height");
+    expect(taskCheck).not.toMatch(/max-h-\[85vh\]/);
+    expect(curriculum).toContain("--app-sheet-max-height");
+    expect(curriculum).not.toMatch(/h-\[85vh\]/);
+    expect(curriculum).not.toMatch(/85vh-120px/);
+
+    // Debug overlay only — not a user dialog/sheet.
+    expect(inspector).toMatch(/max-h-\[min\(85vh,720px\)\]/);
+  });
+
   it("keeps dialogs and sheets inside the dynamic viewport", () => {
     const dialog = read("components/ui/dialog.tsx");
     const sheet = read("components/ui/sheet.tsx");
     expect(dialog).toContain("--app-dialog-max-height");
+    expect(dialog).toContain("min-h-0");
     expect(dialog).toContain("overflow-y-auto");
     expect(dialog).toContain("h-11 w-11");
     expect(sheet).toContain("--app-sheet-max-height");

@@ -69,13 +69,13 @@ export function SubscriptionMomentSheet({
           />
 
           <motion.div
-            className="relative w-full max-w-md rounded-t-[28px] sm:rounded-[28px] border border-white/15 bg-[#0B0B1A] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md max-h-[var(--app-sheet-max-height,92dvh)] flex flex-col rounded-t-[28px] sm:rounded-[28px] border border-white/15 bg-[#0B0B1A] shadow-2xl overflow-hidden"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
           >
-            <div className="max-h-[85vh] overflow-y-auto px-6 pt-5 pb-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-4">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl" aria-hidden>{copy.emoji}</span>

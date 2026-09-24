@@ -259,6 +259,9 @@ test.describe("Home extra unusual viewports", () => {
 });
 
 test.describe("Gaming Hub viewport matrix", () => {
+  // One retry only: Chromium/Playwright CDP can disconnect with "guid was not bound"
+  // on large maze canvases. Application exceptions are not retried away — see
+  // maze-flake-forensics.spec.ts.
   test.describe.configure({ retries: 1, timeout: 45_000 });
   const gameVps = MODULE_VPS.filter((vp) =>
     ["320x568", "360x640", "390x844", "fold_cover", "fold_unfolded", "4_3", "landscape_844x390"].includes(
@@ -579,6 +582,8 @@ test.describe("Orientation flip", () => {
 });
 
 test.describe("Visual captures", () => {
+  // Same Chromium CDP "guid was not bound" flake as maze loads.
+  test.describe.configure({ retries: 1 });
   test("module screenshot set", async ({ page }) => {
     const shots: Array<{ file: string; goto: string; ready: string; setup?: (p: Page) => Promise<void>; size: Vp }> = [
       {
