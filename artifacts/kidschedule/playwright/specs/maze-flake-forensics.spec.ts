@@ -2,6 +2,10 @@
  * Maze "guid was not bound" forensics.
  * Repeated viewport loads only — does not rewrite MazeEscape.
  *
+ * CDP disconnects can hang Playwright actions until the runner timeout.
+ * A local protocol budget lets this spec classify the hang instead of
+ * dying as an unclassified 60s test timeout.
+ *
  * Run: pnpm --filter @workspace/kidschedule test:e2e:foldable-gap-closure -- maze-flake-forensics
  */
 import { test, expect, type Page, type ConsoleMessage } from "@playwright/test";
@@ -9,6 +13,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 const ARTIFACTS = "/opt/cursor/artifacts";
 const REPEATS = 3;
+const LOAD_BUDGET_MS = 22_000;
 
 const MAZE_VPS = [
   { width: 360, height: 640, label: "360x640" },
@@ -66,6 +71,13 @@ function attachDiagnostics(page: Page) {
   };
 }
 
+function isInfraMessage(message: string | null): boolean {
+  if (!message) return false;
+  return /guid was not bound|Target closed|Target page, context or browser has been closed|Protocol error|Inspector\.|Session closed|Connection closed|Protocol budget exceeded|Browser closed|page crashed/i.test(
+    message,
+  );
+}
+
 function classify(args: {
   playwrightError: string | null;
   pageClosed: boolean;
@@ -73,23 +85,43 @@ function classify(args: {
   pageErrors: string[];
   consoleErrors: string[];
 }): RunRecord["classification"] {
-  const infraHint =
-    /guid was not bound|Target closed|Target page, context or browser has been closed|Protocol error|Inspector\.|Session closed|Connection closed/i;
   const appHint =
     args.pageErrors.length > 0 ||
     args.consoleErrors.some((line) => !/Failed to load resource|net::ERR_|favicon|Download the React DevTools/i.test(line));
 
   if (!args.playwrightError && !args.crash && !args.pageClosed) return "PASS";
-  if (appHint && !infraHint.test(args.playwrightError ?? "") && !args.crash) {
+  if (appHint && !isInfraMessage(args.playwrightError) && !args.crash) {
     return "APPLICATION_BUG";
   }
-  if (args.crash || args.pageClosed || infraHint.test(args.playwrightError ?? "")) {
+  if (args.crash || args.pageClosed || isInfraMessage(args.playwrightError)) {
     return "TEST_INFRASTRUCTURE_FLAKE";
   }
   return appHint ? "APPLICATION_BUG" : "TEST_INFRASTRUCTURE_FLAKE";
 }
 
-test.describe.configure({ timeout: 60_000, retries: 0 });
+async function withProtocolBudget<T>(work: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const budget = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`Protocol budget exceeded: ${label}`));
+    }, LOAD_BUDGET_MS);
+  });
+  try {
+    return await Promise.race([work, budget]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function safePageClosed(page: Page): boolean {
+  try {
+    return page.isClosed();
+  } catch {
+    return true;
+  }
+}
+
+test.describe.configure({ timeout: 45_000, retries: 0 });
 
 test.describe("Maze flake forensics", () => {
   for (const vp of MAZE_VPS) {
@@ -101,24 +133,29 @@ test.describe("Maze flake forensics", () => {
 
         let playwrightError: string | null = null;
         try {
-          await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
-            waitUntil: "domcontentloaded",
-            timeout: 45_000,
-          });
-          await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 20_000 });
-          await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 20_000 });
-          const grid = page.getByTestId("maze-grid");
-          await expect(grid).toBeVisible();
-          const box = await grid.boundingBox();
-          expect(box).toBeTruthy();
-          expect(box!.width).toBeGreaterThan(40);
-          expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
+          await withProtocolBudget(
+            (async () => {
+              await page.goto("/playwright-gaming-hub-certification.html?mode=maze-easy&noStrictMode=1", {
+                waitUntil: "domcontentloaded",
+                timeout: 18_000,
+              });
+              await page.waitForSelector('[data-testid="gh-cert-maze"]', { timeout: 12_000 });
+              await page.waitForSelector('[data-testid="maze-grid"]', { timeout: 12_000 });
+              const grid = page.getByTestId("maze-grid");
+              await expect(grid).toBeVisible();
+              const box = await grid.boundingBox();
+              expect(box).toBeTruthy();
+              expect(box!.width).toBeGreaterThan(40);
+              expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
+            })(),
+            `maze ${vp.label} #${repeat}`,
+          );
         } catch (err) {
           playwrightError = err instanceof Error ? err.message : String(err);
           const snap = diag.snapshot();
           const classification = classify({
             playwrightError,
-            pageClosed: page.isClosed(),
+            pageClosed: safePageClosed(page),
             crash: snap.crash,
             pageErrors: snap.pageErrors,
             consoleErrors: snap.consoleErrors,
@@ -137,7 +174,7 @@ test.describe("Maze flake forensics", () => {
             repeat,
             ok: playwrightError === null && !snap.crash,
             durationMs: Date.now() - started,
-            pageClosed: page.isClosed(),
+            pageClosed: safePageClosed(page),
             crash: snap.crash,
             pageErrors: snap.pageErrors,
             consoleErrors: snap.consoleErrors,
@@ -145,7 +182,7 @@ test.describe("Maze flake forensics", () => {
             playwrightError,
             classification: classify({
               playwrightError,
-              pageClosed: page.isClosed(),
+              pageClosed: safePageClosed(page),
               crash: snap.crash,
               pageErrors: snap.pageErrors,
               consoleErrors: snap.consoleErrors,
