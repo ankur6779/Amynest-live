@@ -33,14 +33,18 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem 0.9rem 1.25rem;
-  padding-left: max(0.9rem, env(safe-area-inset-left));
-  padding-right: max(0.9rem, env(safe-area-inset-right));
+  width: 100%;
+  max-width: var(--app-content-max, 42rem);
+  margin-inline: auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-block: 1rem 1.25rem;
+  padding-inline: 0;
 }
 
 @media (min-width: 640px) {
   .th-shell-content {
-    padding: 1.25rem 1.15rem 1.5rem;
+    padding-block: 1.25rem 1.5rem;
   }
 }
 
@@ -55,6 +59,13 @@
   min-height: 10rem;
 }
 
+@media (max-height: 45rem) {
+  .th-shell .th-memory-mount .fe-memory {
+    max-height: min(28dvh, 10rem);
+    min-height: 6.5rem;
+  }
+}
+
 .th-shell .th-memory-mount .fe-memory img {
   object-fit: cover;
   object-position: center 38%;
@@ -67,7 +78,7 @@
     linear-gradient(180deg, #100d16 0%, #0a0810 42%, #030208 100%);
   background: var(--th-sanctuary-floor);
   color: rgba(244, 238, 230, 0.94);
-  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(7.5rem + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)));
   overflow-x: clip;
 }
 
@@ -78,6 +89,10 @@
   gap: 0.9rem;
   padding: 0.15rem 0 0.25rem;
   background: transparent;
+  width: 100%;
+  max-width: var(--app-content-max, 42rem);
+  margin-inline: auto;
+  min-width: 0;
 }
 
 /* Quiet family context — who today is for, not a filter toolbar */
@@ -289,6 +304,17 @@
   color: rgba(244, 238, 230, 0.9);
   border: 1px solid rgba(232, 212, 184, 0.18);
   box-shadow: none;
+}
+
+/*
+ * Short viewports where the content column and FAB share the same band:
+ * keep Begin today clear of the FAB cluster. Taller phones and wide tablets
+ * leave the CTA full-column because the FAB sits below or in the side gutter.
+ */
+@media (max-width: 54rem) and (max-height: 48rem) {
+  .th-hero-cta {
+    max-width: calc(100% - var(--app-fab-clearance-inline, 4.75rem));
+  }
 }
 
 /* Compact launchpad — sanctuary list, not a marketing grid */

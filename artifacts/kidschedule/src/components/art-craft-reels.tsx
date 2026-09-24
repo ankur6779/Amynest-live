@@ -645,7 +645,7 @@ export function ArtCraftReels() {
         {t("components.art_craft_reels.no_videos_available_right_now")}
       </p>;
   }
-  return <>
+  return <div data-testid="art-craft-reels">
       <style>{`
         @keyframes ac-spin { to { transform: rotate(360deg); } }
       `}</style>
@@ -721,5 +721,5 @@ export function ArtCraftReels() {
             ⚠ {error}
           </p>}
       </div>
-    </>;
+    </div>;
 }
