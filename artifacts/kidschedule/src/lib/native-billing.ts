@@ -149,6 +149,12 @@ export type NativeBilling = {
     userId?: string;
     transactionId?: string;
   }) => Promise<{ ok: boolean; error?: string }>;
+  /** Quality-user signals. Requires Android bridge ≥ 2.7.0. */
+  logQualityAnalytics?: (payload: {
+    event: string;
+    params?: Record<string, string>;
+    userId?: string;
+  }) => Promise<{ ok: boolean; error?: string }>;
 };
 
 /**
@@ -263,6 +269,22 @@ export function getNativeBilling(): NativeBilling | null {
           ...(payload.source ? { source: payload.source } : {}),
           ...(payload.userId ? { userId: payload.userId } : {}),
           ...(payload.transactionId ? { transactionId: payload.transactionId } : {}),
+        },
+        4_000,
+      );
+      if (result && typeof result === "object" && "ok" in result) {
+        return { ok: result.ok === true, error: result.error };
+      }
+      return { ok: false, error: "bridge_no_response" };
+    },
+    logQualityAnalytics: async (payload) => {
+      const result = await callAsync<{ ok?: boolean; error?: string }>(
+        bridge,
+        {
+          action: "logQualityAnalytics",
+          event: payload.event,
+          params: payload.params ?? {},
+          ...(payload.userId ? { userId: payload.userId } : {}),
         },
         4_000,
       );

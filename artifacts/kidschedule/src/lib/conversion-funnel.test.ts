@@ -6,6 +6,10 @@ vi.mock("@/lib/analytics", () => ({
   track: vi.fn(),
 }));
 
+vi.mock("@/lib/firebase-subscription-attribution", () => ({
+  trackFirebaseQualitySignal: vi.fn(),
+}));
+
 vi.mock("@/lib/subscription-funnel-storage", async () => {
   const actual = await vi.importActual<typeof import("@/lib/subscription-funnel-storage")>(
     "@/lib/subscription-funnel-storage",

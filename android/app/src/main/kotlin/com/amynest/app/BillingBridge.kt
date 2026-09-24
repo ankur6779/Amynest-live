@@ -137,6 +137,7 @@ class BillingBridge(
             "restore" -> restore(replyProxy, cbId)
             "getCustomerInfo" -> getCustomerInfo(replyProxy, cbId)
             "logSubscriptionAnalytics" -> logSubscriptionAnalytics(replyProxy, cbId, msg)
+            "logQualityAnalytics" -> logQualityAnalytics(replyProxy, cbId, msg)
             else -> resolveError(replyProxy, cbId, "unknown_action:$action")
         }
     }
@@ -297,9 +298,40 @@ class BillingBridge(
                     method = productId.ifBlank { "app" },
                     source = source,
                 )
-            else ->
-                FirebaseSubscriptionAnalytics.logSubscriptionConvert(ctx, source)
+            else -> {
+                Log.w(TAG, "unknown subscription analytics event skipped: $event")
+                resolve(replyProxy, cbId, JSONObject().put("ok", false).put("skipped", true).put("error", "unknown_event"))
+                return
+            }
         }
+        resolve(replyProxy, cbId, JSONObject().put("ok", true))
+    }
+
+    private fun logQualityAnalytics(
+        replyProxy: JavaScriptReplyProxy,
+        cbId: String,
+        msg: JSONObject,
+    ) {
+        val ctx = activityRef.get()?.applicationContext
+        if (ctx == null) {
+            resolve(replyProxy, cbId, JSONObject().put("ok", false).put("skipped", true))
+            return
+        }
+        val eventName = msg.optString("event")
+        val params = mutableMapOf<String, String>()
+        val rawParams = msg.optJSONObject("params")
+        if (rawParams != null) {
+            val keys = rawParams.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                params[key] = rawParams.optString(key)
+            }
+        }
+        val analyticsUserId = msg.optString("userId").takeIf { it.isNotBlank() }
+        if (analyticsUserId != null) {
+            FirebaseSubscriptionAnalytics.setUserId(ctx, analyticsUserId)
+        }
+        FirebaseSubscriptionAnalytics.logQualityEvent(ctx, eventName, params)
         resolve(replyProxy, cbId, JSONObject().put("ok", true))
     }
 
@@ -451,7 +483,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.6.0"
+        const val BRIDGE_VERSION = "2.7.0"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"

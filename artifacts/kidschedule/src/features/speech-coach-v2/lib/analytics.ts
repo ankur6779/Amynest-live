@@ -7,6 +7,16 @@ export function trackSpeechCoachV2SessionStart(props: {
   ageBand: string;
 }): void {
   track("speech_coach_v2_session_start", props);
+  void import("@/lib/firebase-subscription-attribution").then(({ trackFirebaseQualitySignal }) => {
+    trackFirebaseQualitySignal(
+      "speech_coach_started",
+      {
+        source: "speech_coach_v2",
+        age_band: props.ageBand,
+      },
+      { onceKey: `speech:${props.sessionId}` },
+    );
+  });
 }
 
 export function trackSpeechCoachV2SessionComplete(props: {

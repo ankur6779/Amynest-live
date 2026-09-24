@@ -38,6 +38,7 @@ vi.mock("@/lib/meta-attribution", () => ({
 vi.mock("@/lib/firebase-subscription-attribution", () => ({
   trackFirebaseBeginCheckout: vi.fn(),
   trackFirebaseSubscriptionPurchase: vi.fn(),
+  trackFirebaseQualitySignal: vi.fn(),
 }));
 
 describe("trackSubscriptionEvent purchase", () => {

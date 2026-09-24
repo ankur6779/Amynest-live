@@ -37,6 +37,7 @@ import { SettingsPanel } from "./settings-panel";
 import { PreSignupFunnelPanel } from "./pre-signup-funnel-panel";
 import { RevenueIntelligenceSection } from "./revenue-intelligence-section";
 import { ObservatoryPanel } from "./observatory-panel";
+import { AdsConversionHealthPanel } from "./ads-conversion-health-panel";
 import type {
   DecisionsSectionData,
   ExecutiveSectionData,
@@ -264,6 +265,12 @@ export function GosSectionContent({
         </div>
       );
     }
+    case "ads-health":
+      return (
+        <Section title="Google Ads Conversion Health">
+          <AdsConversionHealthPanel data={d as import("./gos-types").AdsConversionHealthPayload} />
+        </Section>
+      );
     case "campaigns": {
       const hub = d as {
         rows: import("./gos-types").CampaignHubRow[];

@@ -76,6 +76,21 @@ export function trackConversionFunnel(
   }
   const payload = { ...buildFunnelContext(), ...clean(props) };
   track(event as AnalyticsEventName, payload as never);
+  if (event === "onboarding_completed" || event === "first_plan_generated") {
+    void import("@/lib/firebase-subscription-attribution").then(({ trackFirebaseQualitySignal }) => {
+      trackFirebaseQualitySignal(
+        event,
+        {
+          source: typeof payload.source === "string" ? payload.source : undefined,
+          item_count: typeof payload.item_count === "number" ? payload.item_count : undefined,
+          mode: typeof payload.mode === "string" ? payload.mode : undefined,
+          discovery_film:
+            typeof payload.discovery_film === "boolean" ? payload.discovery_film : undefined,
+        },
+        { onceKey: opts?.onceKey ?? event },
+      );
+    });
+  }
   if (event === "first_plan_action_started") {
     markFirstPlanActionStarted();
     trackConversionFunnel("first_value_achieved", props, {

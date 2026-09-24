@@ -22,7 +22,8 @@ export type GosNavSection =
   | "predictions"
   | "settings"
   | "pre-signup"
-  | "observatory";
+  | "observatory"
+  | "ads-health";
 
 export type IntelligenceTab =
   | "insights"
@@ -209,6 +210,7 @@ export const GOS_NAV: Array<{ id: GosNavSection; label: string }> = [
   { id: "retention", label: "Retention" },
   { id: "revenue", label: "Revenue" },
   { id: "campaigns", label: "Campaigns" },
+  { id: "ads-health", label: "Ads Health" },
   { id: "pre-signup", label: "Pre-Signup" },
   { id: "experiments", label: "Experiments" },
   { id: "intelligence", label: "Intelligence" },
@@ -377,6 +379,59 @@ export type ObservatorySectionData = {
   observatory: GrowthObservatoryPayload;
   brief: DailyExecutiveBrief;
   operations?: GrowthOperationsPayload;
+};
+
+export type AdsConversionHealthRow = {
+  event: string;
+  label: string;
+  firebase: string;
+  ga4: string;
+  postgres: string;
+  googleAds: string;
+  primarySecondary: string;
+  volume7d: number | string;
+  volume30d: number | string;
+  uniqueUsers30d: number | string;
+  repeatRate: number | null | string;
+  lastSeen: string | null;
+  adsVolume7d: string;
+  adsVolume30d: string;
+  status: string;
+  recommendedAdsStatus: string;
+  firebaseEvent: string | null;
+  adsConversionActionId: string | null;
+};
+
+export type AdsFunnelRate = {
+  from: string;
+  to: string;
+  fromUsers: number;
+  toUsers: number;
+  ratePct: number | null;
+  status: string;
+};
+
+export type AdsConversionHealthPayload = {
+  generatedAt: string;
+  campaignId: string;
+  campaignUntouched: boolean;
+  reportingDelay: {
+    eventTime: string;
+    adsReportedTime: string;
+    attributionWindowDays: { click: number; view: number };
+    note: string;
+  };
+  rows: AdsConversionHealthRow[];
+  alerts: Array<{ id: string; category: string; title: string; message: string }>;
+  rates: AdsFunnelRate[];
+  qualitySignal: { event: string | null; reason: string; enoughData: boolean };
+  sources: {
+    postgres: string;
+    firebase: string;
+    ga4: string;
+    googleAdsVolumes: string;
+    revenueCat: string;
+  };
 };
 
 export type MetricChange = {

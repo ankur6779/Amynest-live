@@ -159,4 +159,44 @@ object FirebaseSubscriptionAnalytics {
             Log.w(TAG, "Failed to log sign_up", t)
         }
     }
+
+    /** Allowlisted AmyNest quality signals for Google Ads import. No PII. */
+    fun logQualityEvent(
+        context: Context,
+        eventName: String,
+        params: Map<String, String>,
+    ) {
+        if (eventName !in QUALITY_EVENT_NAMES) {
+            Log.w(TAG, "Rejected quality event $eventName")
+            return
+        }
+        try {
+            val analytics = FirebaseAnalytics.getInstance(context.applicationContext)
+            val bundle = Bundle()
+            for ((key, value) in params.entries.take(20)) {
+                if (key.isBlank() || BLOCKED_PARAM_KEYS.contains(key.lowercase())) continue
+                bundle.putString(key.take(40), value.take(100))
+            }
+            analytics.logEvent(eventName, bundle)
+            Log.d(TAG, "Logged quality event $eventName")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to log quality event $eventName", t)
+        }
+    }
+
+    private val QUALITY_EVENT_NAMES = setOf(
+        "onboarding_completed",
+        "first_plan_generated",
+        "start_trial",
+        "speech_coach_started",
+    )
+
+    private val BLOCKED_PARAM_KEYS = setOf(
+        "email",
+        "phone",
+        "name",
+        "child_name",
+        "user_name",
+        "address",
+    )
 }

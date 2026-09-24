@@ -66,6 +66,7 @@ const GOS_SECTIONS = new Set<GosSection>([
   "observatory",
   "operations",
   "revenue-intelligence",
+  "ads-health",
 ]);
 
 /** GET /api/admin/growth/dashboard?preset=last_7_days&start=&end= */

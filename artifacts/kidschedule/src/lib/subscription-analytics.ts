@@ -215,6 +215,26 @@ export function trackSubscriptionEvent(payload: SubscriptionAnalyticsPayload): v
     ...payload.extra,
   });
 
+  if (payload.event === "trial_started") {
+    const trialDays =
+      typeof payload.extra?.trial_days === "number"
+        ? payload.extra.trial_days
+        : typeof payload.extra?.trialDays === "number"
+          ? payload.extra.trialDays
+          : undefined;
+    void import("@/lib/firebase-subscription-attribution").then(({ trackFirebaseQualitySignal }) => {
+      trackFirebaseQualitySignal(
+        "trial_started",
+        {
+          plan: typeof payload.plan === "string" ? payload.plan : undefined,
+          source: payload.source,
+          trial_days: trialDays,
+        },
+        { onceKey: `trial:${payload.source ?? "app"}` },
+      );
+    });
+  }
+
   if (payload.event === "paywall_opened") {
     getAnalyticsService().trackFunnel("subscription", "paywall_viewed", {
       reason: payload.reason,

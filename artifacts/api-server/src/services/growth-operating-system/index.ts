@@ -21,6 +21,7 @@ import { loadGrowthOsPayload, updateSettings } from "./store.js";
 import { computeGrowthObservatory, computeDailyBrief } from "../growth-observatory/index.js";
 import { computeGrowthOperations } from "../growth-os-v2/index.js";
 import { computeRevenueIntelligence } from "../revenue-intelligence/index.js";
+import { computeAdsConversionHealth } from "./ads-conversion-health/index.js";
 import type { GrowthOsExperiment, GrowthOsSettings } from "./types.js";
 
 export type GosSection =
@@ -47,7 +48,8 @@ export type GosSection =
   | "pre-signup"
   | "observatory"
   | "operations"
-  | "revenue-intelligence";
+  | "revenue-intelligence"
+  | "ads-health";
 
 export async function loadGosSection(
   section: GosSection,
@@ -128,9 +130,11 @@ export async function loadGosSection(
     case "decisions":
       payload = await getDecisionCenterPayload(exec.recommendations);
       break;
-    case "alerts":
-      payload = await getAlertsWorkflowPayload(exec.alerts);
+    case "alerts": {
+      const adsHealth = await computeAdsConversionHealth();
+      payload = await getAlertsWorkflowPayload([...exec.alerts, ...adsHealth.alerts]);
       break;
+    }
     case "predictions":
       payload = {
         v1: exec.predictions,
@@ -192,6 +196,9 @@ export async function loadGosSection(
       break;
     case "revenue-intelligence":
       payload = await computeRevenueIntelligence(input);
+      break;
+    case "ads-health":
+      payload = await computeAdsConversionHealth();
       break;
     default:
       payload = { dashboard };

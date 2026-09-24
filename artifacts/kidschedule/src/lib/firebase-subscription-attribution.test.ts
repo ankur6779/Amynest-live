@@ -55,6 +55,8 @@ import {
   FIREBASE_SUBSCRIPTION_CONVERT_EVENT,
   trackFirebaseBeginCheckout,
   trackFirebaseSignUp,
+  trackFirebaseQualitySignal,
+  FIREBASE_QUALITY_EVENT_NAMES,
   trackFirebaseSubscriptionPurchase,
   setFirebaseAnalyticsUserId,
   resetFirebaseSubscriptionAnalyticsForTests,
@@ -71,6 +73,7 @@ describe("firebase-subscription-attribution", () => {
     isNativeAmyNestAndroidWrapper.mockReturnValue(false);
     getNativeBilling.mockReturnValue(null);
     waitForBillingBridge.mockResolvedValue(null);
+    delete window.__AMYNEST_BILLING;
   });
 
   afterEach(() => {
@@ -206,6 +209,50 @@ describe("firebase-subscription-attribution", () => {
       expect.anything(),
       FIREBASE_SIGN_UP_EVENT,
       expect.objectContaining({ method: "google", source: "onboarding" }),
+    );
+  });
+
+  it("forwards first_plan_generated to Firebase without PII keys", async () => {
+    await trackFirebaseQualitySignal("first_plan_generated", {
+      source: "routine_generate",
+      item_count: 6,
+      email: "hidden@example.com",
+    });
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_QUALITY_EVENT_NAMES.first_plan_generated,
+      expect.objectContaining({ source: "routine_generate", item_count: 6 }),
+    );
+    expect(logEvent.mock.calls[0]?.[2]).not.toHaveProperty("email");
+  });
+
+  it("maps trial_started to recommended start_trial and dedupes", async () => {
+    await trackFirebaseQualitySignal("trial_started", { plan: "monthly", source: "paywall" }, { onceKey: "trial:paywall" });
+    await trackFirebaseQualitySignal("trial_started", { plan: "monthly", source: "paywall" }, { onceKey: "trial:paywall" });
+    expect(logEvent).toHaveBeenCalledTimes(1);
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_QUALITY_EVENT_NAMES.trial_started,
+      expect.objectContaining({ plan: "monthly", source: "paywall" }),
+    );
+  });
+
+  it("does not send quality events through old native bridges", async () => {
+    const logSubscriptionAnalytics = vi.fn(async () => ({ ok: true }));
+    const logQualityAnalytics = vi.fn(async () => ({ ok: true }));
+    isNativeAmyNestAndroidWrapper.mockReturnValue(true);
+    window.__AMYNEST_BILLING = "2.6.0";
+    waitForBillingBridge.mockResolvedValue({ postMessage: vi.fn(), onmessage: null });
+    getNativeBilling.mockReturnValue({ logSubscriptionAnalytics, logQualityAnalytics });
+
+    await trackFirebaseQualitySignal("onboarding_completed", { source: "onboarding" });
+
+    expect(logQualityAnalytics).not.toHaveBeenCalled();
+    expect(logSubscriptionAnalytics).not.toHaveBeenCalled();
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_QUALITY_EVENT_NAMES.onboarding_completed,
+      expect.objectContaining({ source: "onboarding" }),
     );
   });
 });

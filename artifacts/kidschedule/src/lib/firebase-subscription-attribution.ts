@@ -260,15 +260,26 @@ export async function trackFirebaseBeginCheckout(
   await logWebFirebaseEvents([{ name: FIREBASE_BEGIN_CHECKOUT_EVENT, params }]);
 }
 
+/** Billing bridge versions that understand quality events (skip unknown→convert). */
+function nativeBridgeSupportsQualityEvents(): boolean {
+  return nativeBridgeAtLeast(2, 7, 0);
+}
+
 /** Billing bridge versions that understand `sign_up` (avoid 1.4.55 else→subscription_convert). */
 function nativeBridgeSupportsSignUp(): boolean {
+  return nativeBridgeAtLeast(2, 5, 2);
+}
+
+function nativeBridgeAtLeast(maj: number, min: number, patch: number): boolean {
   if (typeof window === "undefined") return false;
   const raw = window.__AMYNEST_BILLING;
   if (typeof raw !== "string" || !raw.trim()) return false;
   const parts = raw.split(".").map((p) => Number(p));
   if (parts.some((n) => Number.isNaN(n))) return false;
-  const [maj = 0, min = 0, patch = 0] = parts;
-  return maj > 2 || (maj === 2 && (min > 5 || (min === 5 && patch >= 2)));
+  const [foundMaj = 0, foundMin = 0, foundPatch = 0] = parts;
+  if (foundMaj !== maj) return foundMaj > maj;
+  if (foundMin !== min) return foundMin > min;
+  return foundPatch >= patch;
 }
 
 /** Log signup — Firebase `sign_up` for Google Ads app conversion optimization. */
@@ -296,7 +307,95 @@ export async function trackFirebaseSignUp(opts?: {
   await logWebFirebaseEvents([{ name: FIREBASE_SIGN_UP_EVENT, params }]);
 }
 
+export const FIREBASE_QUALITY_EVENT_NAMES = {
+  onboarding_completed: "onboarding_completed",
+  first_plan_generated: "first_plan_generated",
+  trial_started: "start_trial",
+  speech_coach_started: "speech_coach_started",
+} as const;
+
+export type FirebaseQualitySignal = keyof typeof FIREBASE_QUALITY_EVENT_NAMES;
+
+const qualityOnce = new Set<string>();
+
+const BLOCKED_QUALITY_PARAM_KEYS = new Set([
+  "email",
+  "phone",
+  "name",
+  "child_name",
+  "user_name",
+  "address",
+]);
+
+function cleanQualityParams(
+  params?: Record<string, string | number | boolean | undefined | null>,
+): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  if (!params) return out;
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    if (BLOCKED_QUALITY_PARAM_KEYS.has(key.toLowerCase())) continue;
+    if (typeof value === "boolean") {
+      out[key] = value ? "true" : "false";
+    } else if (typeof value === "number" && Number.isFinite(value)) {
+      out[key] = value;
+    } else if (typeof value === "string" && value.trim()) {
+      out[key] = value.slice(0, 100);
+    }
+  }
+  return out;
+}
+
+async function logNativeQualityEvent(
+  event: string,
+  params: Record<string, string | number>,
+): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  await waitForBillingBridge(4_000);
+  const billing = getNativeBilling();
+  if (!billing?.logQualityAnalytics) return false;
+  try {
+    const stringParams: Record<string, string> = {};
+    for (const [key, value] of Object.entries(params)) {
+      stringParams[key] = String(value);
+    }
+    const result = await billing.logQualityAnalytics({
+      event,
+      params: stringParams,
+      userId: currentAuthUserId() ?? undefined,
+    });
+    return result.ok === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Forward an existing AmyNest milestone to Firebase for future Ads import.
+ * Does not rename product analytics events. Dedupes per onceKey.
+ */
+export async function trackFirebaseQualitySignal(
+  signal: FirebaseQualitySignal,
+  params?: Record<string, string | number | boolean | undefined | null>,
+  opts?: { onceKey?: string },
+): Promise<void> {
+  const onceKey = opts?.onceKey ?? signal;
+  if (qualityOnce.has(onceKey)) return;
+  qualityOnce.add(onceKey);
+
+  const name = FIREBASE_QUALITY_EVENT_NAMES[signal];
+  const cleaned = cleanQualityParams(params);
+
+  if (shouldUseNativeAndroidFirebase() && nativeBridgeSupportsQualityEvents()) {
+    const nativeOk = await logNativeQualityEvent(name, cleaned);
+    if (nativeOk) return;
+  }
+
+  await logWebFirebaseEvents([{ name, params: cleaned }]);
+}
+
 /** Reset cached analytics instance (tests). */
 export function resetFirebaseSubscriptionAnalyticsForTests(): void {
   analyticsInstance = undefined;
+  qualityOnce.clear();
 }
