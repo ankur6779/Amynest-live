@@ -302,7 +302,7 @@ export function ColoringBooks({
           return <Card key={file.id} data-testid={`coloring-card-${file.id}`} className="group relative rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-border hover:shadow-[0_0_0_1px_rgba(244,63,94,0.25),0_10px_36px_-10px_rgba(244,63,94,0.30)] transition-all">
                   <CardContent className="p-3 min-w-0">
                     <div className="relative aspect-[3/4] w-full mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card ring-1 ring-primary dark:ring-primary flex items-center justify-center">
-                      <ThumbnailWithFallback src={file.thumbnailUrl} alt={file.name} />
+                      <ThumbnailWithFallback src={file.thumbnailUrl} alt={file.name} testId={`coloring-thumb-${file.id}`} />
                       {file.downloaded && <div className="absolute inset-x-2 top-2 rounded-full bg-emerald-600/90 px-2 py-1 text-center text-[10px] font-bold text-white shadow">
                           Downloaded
                         </div>}
@@ -360,6 +360,7 @@ export function ColoringBooks({
           </DialogHeader>
           {previewing && <div className="flex-1 w-full h-full bg-muted/30 overflow-hidden">
               <iframe key={previewing.id} src={previewing.previewUrl} title={previewing.name} className="w-full h-full border-0" allow="autoplay"
+          data-testid="coloring-preview-frame"
           // sandbox blocks Drive's "open in Drive" / download buttons
           // while still allowing scroll and the rendered PDF preview.
           sandbox="allow-scripts allow-same-origin" />
@@ -412,10 +413,12 @@ function DownloadWalletCard({ wallet }: { wallet: HubDownloadWallet }) {
 
 function ThumbnailWithFallback({
   src,
-  alt
+  alt,
+  testId,
 }: {
   src: string;
   alt: string;
+  testId?: string;
 }) {
   const {
     t
@@ -432,6 +435,6 @@ function ThumbnailWithFallback({
   return (
     // Drive thumbnails are CDN-hosted; loading="lazy" + a fallback covers the
     // few cases where Drive hasn't generated a thumbnail yet.
-    <img src={src} alt={alt} loading="lazy" onError={() => setErrored(true)} className="w-full h-full object-contain" />
+    <img src={src} alt={alt} loading="lazy" onError={() => setErrored(true)} className="w-full h-full object-contain object-center" data-testid={testId} />
   );
 }

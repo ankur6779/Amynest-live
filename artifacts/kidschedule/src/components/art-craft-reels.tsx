@@ -129,7 +129,7 @@ function ReelCard({
           </p>
         </div>}
 
-      <video ref={videoRef} src={resolveApiMediaUrl(video.streamUrl)} muted={muted} loop playsInline autoPlay={isActive} preload="auto" onCanPlay={() => setLoaded(true)} onError={() => {
+      <video ref={videoRef} data-testid="art-craft-reel-video" src={resolveApiMediaUrl(video.streamUrl)} muted={muted} loop playsInline autoPlay={isActive} preload="auto" onCanPlay={() => setLoaded(true)} onError={() => {
       setHasError(true);
       setLoaded(true);
     }} style={{
@@ -304,7 +304,7 @@ function ReelOverlay({
     onClose();
   }, [onClose]);
 
-  return <div style={{
+  return <div data-testid="art-craft-reel-overlay" style={{
     position: "fixed",
     inset: 0,
     zIndex: 9999,
@@ -326,7 +326,7 @@ function ReelOverlay({
       paddingTop: "max(14px, env(safe-area-inset-top, 0px))",
       pointerEvents: "none"
     }}>
-        <button type="button" onClick={handleCloseTap} style={{
+        <button type="button" data-testid="art-craft-reel-close" onClick={handleCloseTap} style={{
         pointerEvents: "auto",
         touchAction: "manipulation",
         WebkitTapHighlightColor: "transparent",
@@ -428,7 +428,7 @@ function ThumbnailCard({
   onPlay: () => void;
 }) {
   const title = displayName(video.name);
-  return <button onClick={onPlay} style={{
+  return <button data-testid={`art-craft-reel-card-${video.id}`} onClick={onPlay} style={{
     all: "unset",
     cursor: "pointer",
     borderRadius: 12,

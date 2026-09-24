@@ -593,7 +593,7 @@ function WorldPreviewSheet({
   );
 }
 
-function CurriculumExplorerSheet({
+export function CurriculumExplorerSheet({
   open,
   onOpenChange,
 }: {
@@ -606,8 +606,9 @@ function CurriculumExplorerSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        data-testid="curriculum-explorer-sheet"
         className={cn(
-          "h-[85vh] rounded-t-3xl border-t border-indigo-400/20",
+          "h-[min(85dvh,var(--app-sheet-max-height,92dvh))] max-h-[var(--app-sheet-max-height,92dvh)] rounded-t-3xl border-t border-indigo-400/20",
           "bg-gradient-to-b from-background via-indigo-950/20 to-background",
         )}
       >
@@ -619,7 +620,7 @@ function CurriculumExplorerSheet({
             {t("screens.study.curriculum.explorer_desc")}
           </SheetDescription>
         </SheetHeader>
-        <div className="overflow-y-auto max-h-[calc(85vh-120px)] pt-4 space-y-6">
+        <div className="overflow-y-auto max-h-[calc(var(--app-sheet-max-height,92dvh)-7.5rem)] pt-4 space-y-6">
           {CURRICULUM_EXPLORER.map((band) => (
             <div key={band.ageLabel}>
               <div className="flex items-center gap-2 mb-3 sticky top-0 bg-background/95 backdrop-blur py-1 z-10">

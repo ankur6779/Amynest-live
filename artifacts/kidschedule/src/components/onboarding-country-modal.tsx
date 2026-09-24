@@ -41,7 +41,10 @@ export function OnboardingCountryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
+      <DialogContent
+        className="max-h-[var(--app-dialog-max-height,90dvh)] overflow-hidden sm:max-w-md"
+        data-testid="onboarding-country-modal"
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}

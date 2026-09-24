@@ -3227,7 +3227,10 @@ export default function RoutineGenerate() {
 
       {/* ── Past Essential Task Check Dialog ─────────────────────────────────── */}
       {showTaskCheck && <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-card rounded-3xl shadow-2xl border border-border animate-in slide-in-from-bottom-4 duration-300 max-h-[85vh] flex flex-col">
+          <div
+            className="w-full max-w-sm bg-card rounded-3xl shadow-2xl border border-border animate-in slide-in-from-bottom-4 duration-300 max-h-[var(--app-sheet-max-height,92dvh)] flex flex-col"
+            data-testid="routine-task-check-sheet"
+          >
             <div className="bg-gradient-to-r from-primary to-primary rounded-t-3xl p-5 text-white shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">✅</span>

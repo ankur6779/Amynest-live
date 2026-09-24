@@ -2670,7 +2670,10 @@ export default function RoutineDetail() {
 
       {/* Recipe Dialog */}
       <Dialog open={recipeOpen} onOpenChange={setRecipeOpen}>
-        <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="rounded-2xl max-w-lg max-h-[var(--app-dialog-max-height,90dvh)] overflow-y-auto"
+          data-testid="routine-recipe-dialog"
+        >
           <DialogHeader>
             <DialogTitle className="font-quicksand flex items-center gap-2">
               <ChefHat className="h-5 w-5 text-primary" />
