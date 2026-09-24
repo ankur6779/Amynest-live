@@ -2791,8 +2791,15 @@ html.amynest-native-shell .drawer-overlay {
 
 /* Ask Amy FAB avatar — slightly larger so the mascot reads at a glance.
    Touch target comes from the Link min-h/min-w utilities. */
+:root {
+  --amynest-tabbar-height: 72px;
+  --amynest-fab-size: clamp(58px, 52px + 1.6vw, 70px);
+  --amynest-fab-gutter: calc(var(--amynest-fab-size) + 1.15rem);
+  --amynest-module-end-gap: 2.75rem;
+}
+
 .amy-fab-avatar {
-  --amy-fab-size: clamp(58px, 52px + 1.6vw, 70px);
+  --amy-fab-size: var(--amynest-fab-size);
   width: var(--amy-fab-size);
   height: var(--amy-fab-size);
   flex-shrink: 0;
@@ -2832,6 +2839,15 @@ html.amynest-native-shell .drawer-overlay {
   transform: none !important;
   z-index: 2000;
   margin: 0 !important;
+}
+
+/* Shared FAB corridor — keep mid-page CTAs out from under the Ask Amy button.
+   Desktop (lg) has no mobile tab bar / FAB overlay. */
+@media (max-width: 1023px) {
+  .amynest-fab-avoid {
+    padding-right: max(0px, var(--amynest-fab-gutter));
+    box-sizing: border-box;
+  }
 }
 
 .pb-app-safe {

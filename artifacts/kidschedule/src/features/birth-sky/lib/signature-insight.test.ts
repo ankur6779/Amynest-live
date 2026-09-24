@@ -24,5 +24,11 @@ describe("buildCosmicPortrait", () => {
     expect(a.parentingReminders).toHaveLength(3);
     expect(a.signatureParagraph.toLowerCase()).toContain("ankur");
     expect(a.amyReflection.toLowerCase()).not.toMatch(/will become|destined|fated/);
+    expect(a.currentSkyInfluence.toLowerCase()).toContain("in their birth sky:");
+    expect(a.currentSkyInfluence.toLowerCase()).toContain(
+      "birth-sky facts for reflection",
+    );
+    expect(a.currentSkyInfluence.toLowerCase()).toContain("not today's live weather");
+    expect(a.amyReflection.toLowerCase()).toContain("never a map of fate");
   });
 });

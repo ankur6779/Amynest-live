@@ -155,7 +155,7 @@ export function BirthSkyModuleShell({
 
         <main
           className={cn(
-            "relative z-10 mx-auto w-full max-w-lg flex-1 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.75rem)]",
+            "relative z-10 mx-auto w-full max-w-lg flex-1 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+var(--amynest-module-end-gap,2.75rem))]",
             hideTopBar && "pt-[calc(env(safe-area-inset-top,0px)+1.5rem)]",
           )}
         >
