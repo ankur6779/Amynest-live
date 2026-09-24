@@ -55,6 +55,8 @@ describe("AmyNest viewport contract", () => {
     expect(shell).toContain("max-width: min(48rem, 100%)");
     expect(living).toContain(".health-lab-living .fe-breath");
     expect(living).toMatch(/\.health-lab-living \.fe-breath[\s\S]*inset: 0/);
+    const index = read("index.css");
+    expect(index).toMatch(/\.health-lab-game-stage-shell\.health-lab-game-stage-scroll \{[\s\S]*overflow-x: clip/);
   });
 
   it("keeps PDF preview dialogs inside the dynamic viewport", () => {

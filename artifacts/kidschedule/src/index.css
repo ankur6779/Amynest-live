@@ -4673,7 +4673,7 @@ html.health-lab-immersive body {
 }
 
 .health-lab-game-stage-shell.health-lab-game-stage-scroll {
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }

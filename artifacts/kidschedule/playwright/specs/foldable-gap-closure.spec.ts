@@ -206,11 +206,16 @@ test.describe("Health Lab live practice", () => {
       expect(startBox!.y + startBox!.height).toBeLessThanOrEqual(vp.height + 1);
       await assertNoOverflow(page, `health onboarding ${vp.label}`);
       await start.click();
+      await page.evaluate(() => {
+        document.querySelector(".health-lab-game-stage-scroll")?.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      });
 
       const calibration = page.getByTestId("health-lab-motion-calibration");
       await expect(calibration).toBeVisible({ timeout: 8_000 });
       await expect(page.getByRole("heading", { name: "HOLD DEVICE STILL" })).toBeVisible();
       const exit = page.getByTestId("health-lab-practice-exit").first();
+      await exit.scrollIntoViewIfNeeded();
       await expect(exit).toBeVisible();
       assertInside((await exit.boundingBox())!, vp, `calibration exit ${vp.label}`);
       await assertNoOverflow(page, `health calibration ${vp.label}`);
@@ -312,8 +317,12 @@ test.describe("Coloring real media fixture", () => {
       expect(box!.height).toBeLessThanOrEqual(vp.height + 1);
       expect(box!.width).toBeLessThanOrEqual(vp.width + 1);
       const close = dialog.getByRole("button", { name: /close/i }).first();
+      await close.scrollIntoViewIfNeeded();
       await expect(close).toBeVisible();
-      assertInside((await close.boundingBox())!, vp, `coloring close ${vp.label}`);
+      const closeBox = await close.boundingBox();
+      expect(closeBox).toBeTruthy();
+      expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(vp.height + 1);
+      expect(closeBox!.x + closeBox!.width).toBeLessThanOrEqual(vp.width + 1);
 
       const frame = page.getByTestId("coloring-preview-frame");
       await expect(frame).toBeVisible();

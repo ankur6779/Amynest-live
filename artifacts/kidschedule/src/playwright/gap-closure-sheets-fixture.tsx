@@ -4,6 +4,7 @@
  */
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "../index.css";
 import "../i18n";
 import { SubscriptionMomentSheet } from "@/components/subscription-moment-sheet";
@@ -42,6 +43,9 @@ const stubAuth: AuthContextValue = {
 
 const params = new URLSearchParams(window.location.search);
 const sheet = params.get("sheet") ?? "subscription";
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+});
 
 const COUNTRIES = [
   { code: "IN", name: "India", flag: "🇮🇳" },
@@ -142,10 +146,12 @@ function Fixture() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthContext.Provider value={stubAuth}>
-      <div data-testid="gap-closure-sheets-fixture" data-sheet={sheet}>
-        <Fixture />
-      </div>
-    </AuthContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={stubAuth}>
+        <div data-testid="gap-closure-sheets-fixture" data-sheet={sheet}>
+          <Fixture />
+        </div>
+      </AuthContext.Provider>
+    </QueryClientProvider>
   </StrictMode>,
 );
