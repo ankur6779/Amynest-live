@@ -54,6 +54,10 @@ import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, getPreviousAgeBand, bandLabel } from "@/lib/age-bands";
 import {
+  agePartsFromTotalMonths,
+  resolveTotalAgeMonths,
+} from "@/lib/child-age-months";
+import {
   isHubSectionVisible,
   shouldRenderHubTileContent,
   shouldShowExploreSection,
@@ -941,8 +945,11 @@ function ParentingHubPage() {
   });
   const childList = (children ?? []) as any[];
   const effectiveChild = selectedChildId ? childList.find((c: any) => c.id === selectedChildId) ?? childList[0] : childList[0];
-  const ageGroup: AgeGroup | null = effectiveChild ? getAgeGroup(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
-  const totalAgeMonths = effectiveChild ? effectiveChild.age * 12 + ((effectiveChild as any).ageMonths ?? 0) : 0;
+  const totalAgeMonths = effectiveChild ? resolveTotalAgeMonths(effectiveChild) : 0;
+  const ageParts = agePartsFromTotalMonths(totalAgeMonths);
+  const ageGroup: AgeGroup | null = effectiveChild
+    ? getAgeGroup(ageParts.years, ageParts.months)
+    : null;
   const isInfant = totalAgeMonths < 24;
   const isTwoPlus = totalAgeMonths >= 24;
 
@@ -1320,7 +1327,9 @@ function ParentingHubPage() {
   }
 
   // ── Two-section layout: For You (current band) + Explore What's Next (2+ preview) ──
-  const currentBand: AgeBand | null = effectiveChild ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
+  const currentBand: AgeBand | null = effectiveChild
+    ? getAgeBand(ageParts.years, ageParts.months)
+    : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
   const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
   const previousBand: AgeBand | null = currentBand ? getPreviousAgeBand(currentBand) : null;
@@ -1935,10 +1944,9 @@ function ParentingHubPage() {
         </FeatureGate>;
     }
   }, {
-    // Coloring Books — Google-Drive-backed PDF library. Shows for age
-    // 2+ only (early-access tile in Section 2 covers the 0-2 band). Daily
-    // download cap (2/day per child) and the "never repeat" rule are
-    // enforced server-side in artifacts/api-server/src/routes/coloring.ts.
+    // Coloring Books — Google-Drive-backed PDF library. Full access from
+    // 24 months. Rooms V1 has no Section 2, so 0–23 month profiles get a
+    // preview card (downloads stay blocked by infantExploreMutationGate).
     id: "coloring-books",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
@@ -2403,6 +2411,11 @@ function ParentingHubPage() {
                         childName={effectiveChild.name}
                         activeTileId={activeTileId}
                         onSelectTile={onSelectTile}
+                        visibleTileIds={[
+                          ...forYouStandaloneFeatured.map((s) => s.id),
+                          ...todayTiles.map((s) => s.id),
+                          ...forYouGrid.map((s) => s.id),
+                        ]}
                       />
                     )
                   : undefined

@@ -99,5 +99,16 @@ describe("discovery registry", () => {
     expect(resolveChildTotalMonths([], 1)).toBeNull();
     expect(resolveChildTotalMonths([{ id: 2, age: 4, ageMonths: 0 }], 2)).toBe(48);
     expect(resolveChildTotalMonths([{ id: 2, age: 0, ageMonths: 7 }], 9)).toBe(7);
+    expect(resolveChildTotalMonths([{ id: 3, age: 1, ageMonths: 18 }], 3)).toBe(18);
+  });
+
+  it("registers Coloring and Curiosity as discoverable modules", () => {
+    const coloring = DISCOVERY_MODULES.find((m) => m.id === "coloring-books");
+    const curiosity = DISCOVERY_MODULES.find((m) => m.id === "curiosity");
+    expect(coloring?.classification).toBe("discovery");
+    expect(coloring?.href).toContain("coloring-books");
+    expect(isAgeEligible(coloring!.age, 8)).toBe(true);
+    expect(curiosity?.href).toBe("/answer-to-kids-how");
+    expect(curiosity?.age.unfiltered).toBe(true);
   });
 });
