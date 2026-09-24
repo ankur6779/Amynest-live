@@ -9,7 +9,9 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.webkit.JavaScriptExecutionException
 import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebViewOutcomeReceiver
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -537,6 +539,13 @@ class AuthBridge(
 
             override fun postMessage(message: ByteArray) {
                 postMessage(String(message, Charsets.UTF_8))
+            }
+
+            override fun executeJavaScript(
+                script: String,
+                receiver: WebViewOutcomeReceiver<String, JavaScriptExecutionException>?,
+            ) {
+                webView.evaluateJavascript(script) { result -> receiver?.onResult(result) }
             }
         })
     }

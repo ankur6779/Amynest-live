@@ -3,7 +3,6 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
 }
 
@@ -45,8 +44,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 104
-        versionName = "1.4.61"
+        versionCode = 105
+        versionName = "1.4.62"
         resValue(
             "string",
             "facebook_client_token",
@@ -98,12 +97,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 
     packaging {
@@ -195,16 +191,15 @@ tasks.register<Exec>("validateFacebookLoginConfig") {
 }
 
 dependencies {
-    // Core — Activity 1.9.3+ provides enableEdgeToEdge() (Android 15 Play guidance)
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.9.3")
-    // Material 1.14.0-alpha05 avoids deprecated setStatusBarColor/setNavigationBarColor
-    // inside BottomSheetDialog / EdgeToEdgeUtils (Play Console Android 15 recommendation).
-    implementation("com.google.android.material:material:1.14.0-alpha05")
+    // Core 1.17+ ships WindowCompat.enableEdgeToEdge (Play Android 15 official path).
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("androidx.activity:activity-ktx:1.13.0")
+    // 1.14.0 stable: DatePicker/EdgeToEdgeUtils skip setStatusBarColor on API 35+.
+    implementation("com.google.android.material:material:1.14.0")
 
     // WebView (for AmyNestPushNative + AmyNestBillingNative message listeners)
-    implementation("androidx.webkit:webkit:1.12.1")
+    implementation("androidx.webkit:webkit:1.17.1")
 
     // Google Play Billing via RevenueCat. SDK 9.x ships Play Billing Library 8.x
     // (Play Console requires billingclient >= 8.0.0). Do not add a direct

@@ -2649,7 +2649,7 @@ html.amynest-native-shell .app-header {
   display: block !important;
 }
 
-/* Capacitor iOS: optional notch clearance; Android WebView stays true edge-to-edge. */
+/* Capacitor iOS: notch clearance via env(safe-area-inset-*). */
 html.amynest-native-shell:not(.amynest-android-shell) .app-header {
   position: sticky;
   top: 0;
@@ -2659,12 +2659,13 @@ html.amynest-native-shell:not(.amynest-android-shell) .app-header {
   background: hsl(var(--background));
 }
 
+/* Android WebView: native WindowInsets → --amynest-safe-* (edge-to-edge, bars visible). */
 html.amynest-android-shell .app-header {
   position: sticky;
   top: 0;
-  padding-top: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding-top: var(--amynest-safe-top, env(safe-area-inset-top, 0px));
+  padding-left: var(--amynest-safe-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--amynest-safe-right, env(safe-area-inset-right, 0px));
   background: hsl(var(--background));
 }
 
@@ -2705,6 +2706,13 @@ html.amynest-native-shell .app-footer.tabbar {
   transform: none !important;
   display: flex !important;
   visibility: visible !important;
+}
+
+html.amynest-android-shell .app-footer,
+html.amynest-android-shell .app-footer.tabbar {
+  height: auto;
+  min-height: 72px;
+  padding-bottom: var(--amynest-safe-bottom, env(safe-area-inset-bottom, 0px));
 }
 
 html.amynest-android-shell .main-container main > .flex.flex-1,

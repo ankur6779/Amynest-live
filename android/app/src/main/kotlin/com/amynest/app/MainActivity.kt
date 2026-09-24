@@ -29,15 +29,14 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
@@ -170,15 +169,10 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Android 15+ / Play Console: use Activity.enableEdgeToEdge() instead of
-        // deprecated Window.setDecorFitsSystemWindows / status+nav bar color APIs.
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        // Official Android 15+ path (core 1.17+). Do not call Activity.enableEdgeToEdge()
+        // — Activity 1.9 EdgeToEdgeApi28 still sets LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES.
+        WindowCompat.enableEdgeToEdge(window)
 
         // Edge-to-edge: do not use deprecated SOFT_INPUT_ADJUST_RESIZE.
         // IME is handled via WindowInsets + visible-frame fallback below.
@@ -1163,10 +1157,45 @@ class MainActivity : AppCompatActivity() {
     /** Last IME height (physical px) pushed to the WebView; keeps work idempotent. */
     private var lastAppliedImePx: Int = -1
 
+    /** Last CSS-px safe-area tuple pushed to the WebView. */
+    private var lastSafeAreaCss: String = ""
+
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
         val imeBottomPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom.coerceAtLeast(0)
+        applySystemBarSafeArea(insets, imeBottomPx)
         applyImeBottomInset(imeBottomPx)
+    }
+
+    /**
+     * Forward status / nav / cutout insets to CSS. Do not pad the WebView for
+     * system bars — the inset boundary is the web chrome (header / tab bar)
+     * via `--amynest-safe-*` and `env(safe-area-inset-*)`.
+     */
+    private fun applySystemBarSafeArea(insets: WindowInsetsCompat, imeBottomPx: Int) {
+        val bars = insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+        )
+        val density = resources.displayMetrics.density.coerceAtLeast(1f)
+        val top = Math.round(bars.top / density)
+        val left = Math.round(bars.left / density)
+        val right = Math.round(bars.right / density)
+        // IME already resizes the WebView; keep nav inset at 0 while the keyboard is up.
+        val bottom = if (imeBottomPx > 0) 0 else Math.round(bars.bottom / density)
+        val key = "$top,$bottom,$left,$right"
+        if (key == lastSafeAreaCss) return
+        lastSafeAreaCss = key
+        val js =
+            "(function(){" +
+                "var r=document.documentElement;" +
+                "r.style.setProperty('--amynest-safe-top','${top}px');" +
+                "r.style.setProperty('--amynest-safe-bottom','${bottom}px');" +
+                "r.style.setProperty('--amynest-safe-left','${left}px');" +
+                "r.style.setProperty('--amynest-safe-right','${right}px');" +
+                "r.style.setProperty('--app-bottom-clearance','${bottom}px');" +
+                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+            "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
     }
 
     /**
@@ -1271,19 +1300,6 @@ class MainActivity : AppCompatActivity() {
                 "keyboardPackage:${JSONObject.quote(keyboardPackage)}}}));" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
-    }
-
-    private fun applyImmersiveFullscreen() {
-        supportActionBar?.hide()
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applyImmersiveFullscreen()
     }
 
     // ── Notification permission ──────────────────────────────────────────────
