@@ -51,20 +51,21 @@ export function AmyFab({ embedded = false }: AmyFabProps) {
   const fab = (
     <div
       id="amy-fab-floating"
+      data-testid="amy-fab-floating"
       data-tour="amy-fab"
       data-amynest-fab="active"
       className={embedded ? "amy-fab-floating amy-fab-in-footer" : "amy-fab-floating"}
     >
-      <div className="amy-fade-in">
+      <div className="amy-fade-in amy-fab-cluster">
         <Link
           href="/assistant"
           aria-label={t("components.amy_fab.ask_amy_ai")}
-          className="group relative flex min-h-16 min-w-16 items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+          className="amy-fab-hit group hover:scale-105 active:scale-95 transition-transform focus:outline-none"
         >
-          <AmyFabAvatar />
-          <span className="absolute -top-2 -right-1 bg-white text-[10px] font-black text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full shadow border border-border dark:border-border pointer-events-none">
+          <span data-testid="amy-fab-label" className="amy-fab-label">
             {t("components.amy_fab.amy_ai")}
           </span>
+          <AmyFabAvatar />
         </Link>
       </div>
     </div>
