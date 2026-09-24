@@ -43,13 +43,37 @@ const SHEET_VPS: Vp[] = [
 ];
 
 async function assertNoOverflow(page: Page, name: string) {
-  const metrics = await page.evaluate(() => ({
-    doc: document.documentElement.scrollWidth,
-    body: document.body.scrollWidth,
-    client: document.documentElement.clientWidth,
-  }));
-  expect(metrics.doc, `${name} document`).toBeLessThanOrEqual(metrics.client + 1);
-  expect(metrics.body, `${name} body`).toBeLessThanOrEqual(metrics.client + 1);
+  const metrics = await page.evaluate(() => {
+    const client = document.documentElement.clientWidth;
+    const offenders = [...document.querySelectorAll("*")]
+      .filter((el) => {
+        const node = el as HTMLElement;
+        return node.scrollWidth > client + 1 || node.getBoundingClientRect().right > client + 1;
+      })
+      .slice(0, 8)
+      .map((el) => {
+        const node = el as HTMLElement;
+        return {
+          tag: node.tagName,
+          cls: typeof node.className === "string" ? node.className.slice(0, 72) : "",
+          testid: node.getAttribute("data-testid"),
+          sw: node.scrollWidth,
+          right: Math.round(node.getBoundingClientRect().right),
+        };
+      });
+    return {
+      doc: document.documentElement.scrollWidth,
+      body: document.body.scrollWidth,
+      client,
+      offenders,
+    };
+  });
+  expect(metrics.doc, `${name} document ${JSON.stringify(metrics.offenders)}`).toBeLessThanOrEqual(
+    metrics.client + 1,
+  );
+  expect(metrics.body, `${name} body ${JSON.stringify(metrics.offenders)}`).toBeLessThanOrEqual(
+    metrics.client + 1,
+  );
 }
 
 function assertInside(

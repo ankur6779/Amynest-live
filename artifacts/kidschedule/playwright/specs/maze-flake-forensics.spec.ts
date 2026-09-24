@@ -143,6 +143,7 @@ function persist(record: RunRecord) {
 }
 
 test.describe.configure({ timeout: 45_000, retries: 0 });
+test.use({ trace: "off" });
 
 test.describe("Maze flake forensics", () => {
   for (const vp of MAZE_VPS) {

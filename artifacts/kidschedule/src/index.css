@@ -4575,8 +4575,8 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 100vw;
+  width: auto;
+  max-width: none;
   overflow: hidden;
   background: #0a0f2e;
   overscroll-behavior: none;
@@ -4615,6 +4615,8 @@ html.health-lab-immersive {
 
 html.health-lab-immersive body {
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .health-lab-immersive-layer {
