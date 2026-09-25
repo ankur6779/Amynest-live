@@ -44,8 +44,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 105
-        versionName = "1.4.62"
+        versionCode = 106
+        versionName = "1.4.63"
         resValue(
             "string",
             "facebook_client_token",
@@ -191,7 +191,8 @@ tasks.register<Exec>("validateFacebookLoginConfig") {
 }
 
 dependencies {
-    // Core 1.17+ ships WindowCompat.enableEdgeToEdge (Play Android 15 official path).
+    // Core 1.17+ WindowCompat.setDecorFitsSystemWindows (do not use enableEdgeToEdge —
+    // it still calls setStatusBarColor / setNavigationBarColor and R8-inlines into onCreate).
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-ktx:1.13.0")

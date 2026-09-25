@@ -170,9 +170,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Official Android 15+ path (core 1.17+). Do not call Activity.enableEdgeToEdge()
-        // — Activity 1.9 EdgeToEdgeApi28 still sets LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES.
-        WindowCompat.enableEdgeToEdge(window)
+        installStableEdgeToEdge()
 
         // Edge-to-edge: do not use deprecated SOFT_INPUT_ADJUST_RESIZE.
         // IME is handled via WindowInsets + visible-frame fallback below.
@@ -220,6 +218,27 @@ class MainActivity : AppCompatActivity() {
 
         // Defer non-lifecycle bridge wiring until after the first frame is scheduled.
         webView.post { installDeferredStartupComponents() }
+    }
+
+    /**
+     * Android 15+ safe edge-to-edge without WindowCompat.enableEdgeToEdge or
+     * Activity.EdgeToEdge.enable.
+     *
+     * Those helpers still invoke Window.setStatusBarColor / setNavigationBarColor
+     * and (on older API branches) LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES.
+     * R8 inlines WindowCompat.enableEdgeToEdge into onCreate, which is why
+     * Play's 105 scanner attributed those deprecated APIs to MainActivity.
+     *
+     * setDecorFitsSystemWindows(false) is the stable Core API that lets
+     * content draw behind system bars. Insets are forwarded to CSS variables
+     * (--amynest-safe-*, --app-bottom-clearance). Cutout mode is always via
+     * values-v30/themes.xml, not SHORT_EDGES.
+     */
+    private fun installStableEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.isAppearanceLightStatusBars = false
+        controller.isAppearanceLightNavigationBars = false
     }
 
     /** Billing/auth bridges that register lifecycle observers — onCreate only. */

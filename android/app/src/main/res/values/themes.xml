@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Edge-to-edge: do NOT set statusBarColor / navigationBarColor here —
-      Play Console flags those APIs as deprecated on Android 15+.
-      System bar styling is applied via WindowCompat.enableEdgeToEdge().
+      Do not call Window.setStatusBarColor / setNavigationBarColor from
+      application code. Do not use LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES.
+      Android 15+ ignores these color items (see values-v35). Pre-35 uses
+      transparent XML attributes so content can draw behind system bars
+      without the deprecated Java setters.
     -->
     <style name="Theme.AmyNest" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>
