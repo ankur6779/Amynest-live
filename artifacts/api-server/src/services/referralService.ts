@@ -18,6 +18,7 @@ import { createGiftToken } from "./giftTokenService";
 import { dispatchNotification } from "./notificationDispatchService";
 import { contentFingerprint } from "@workspace/notification-engine";
 import { logger } from "../lib/logger";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService";
 import {
   REFERRAL_REWARD_DAYS,
   REFERRAL_VALID_THRESHOLD,
@@ -167,7 +168,12 @@ export async function attributeReferral(
   if (!normalized) return { ok: false, reason: "invalid_code" };
   const referrer = await findUserByReferralCode(normalized);
   if (!referrer) return { ok: false, reason: "invalid_code" };
-  if (referrer.userId === referredUserId) return { ok: false, reason: "self_referral" };
+  // Sticky B→A aliases share one entitlement wallet — block self-farm via raw-uid mismatch.
+  const [referrerCanonical, referredCanonical] = await Promise.all([
+    resolveSubscriptionOwnerUserId(referrer.userId),
+    resolveSubscriptionOwnerUserId(referredUserId),
+  ]);
+  if (referrerCanonical === referredCanonical) return { ok: false, reason: "self_referral" };
 
   const existing = await db
     .select()
