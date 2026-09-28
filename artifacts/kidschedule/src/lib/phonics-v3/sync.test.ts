@@ -5,10 +5,13 @@ import {
   hydratePhonicsV3Progress,
   persistPhonicsV3Mastery,
   persistPhonicsV3Fluency,
+  persistPhonicsV3Mission,
+  loadPhonicsV3MissionLocal,
 } from "./sync";
 import { defaultMasteryState, recordMasteryEvent } from "./mastery-engine";
 import { defaultFluencyState, recordWordAttempt } from "./fluency-tracker";
 import { mergePhonicsV3Bundle } from "@workspace/phonics-v3-progress";
+import type { DailyReadingMission } from "@/lib/phonics-v2/daily-missions";
 
 const store = new Map<string, string>();
 
@@ -44,6 +47,23 @@ function mockServer(progress: ReturnType<typeof mergePhonicsV3Bundle> extends ne
     }
     return new Response(JSON.stringify({ error: "not_found" }), { status: 404 });
   });
+}
+
+function mission(dateKey: string, completedCount: number): DailyReadingMission {
+  const tasks = Array.from({ length: 3 }, (_, i) => ({
+    slot: "practice" as const,
+    id: `t${i}`,
+    emoji: "📖",
+    label: `Task ${i}`,
+    completed: i < completedCount,
+  }));
+  return {
+    dateKey,
+    tasks,
+    estimatedMinutes: 5,
+    streakDay: 1,
+    completed: completedCount >= 3,
+  };
 }
 
 describe("phonics-v3 sync", () => {
@@ -148,5 +168,98 @@ describe("phonics-v3 sync", () => {
     expect(a.words?.dog).toBeFalsy();
     expect(b.words?.dog).toBeTruthy();
     expect(b.words?.cat).toBeFalsy();
+  });
+
+  it("hydrate keeps server today mission over stale yesterday local (no nowMs stamp)", async () => {
+    const childId = 55;
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+    // Stale local: yesterday's empty mission with an OLD meta watermark.
+    // Pre-fix bundleFromLocal stamped nowMs() so this would beat server today.
+    store.set(`amynest:phonics-v2-mission:${childId}`, JSON.stringify(mission(yesterday, 0)));
+    store.set(
+      `amynest:phonics-v3-sync-meta:${childId}`,
+      JSON.stringify({ missions: 1_000 }),
+    );
+
+    const completedToday = mission(today, 3);
+    const server = mockServer({
+      mastery: null,
+      fluency: null,
+      stories: null,
+      missions: { payload: completedToday, clientUpdatedAt: 5_000 },
+      retention: null,
+    });
+
+    await hydratePhonicsV3Progress(childId, server);
+    const restored = loadPhonicsV3MissionLocal(childId);
+    expect(restored?.dateKey).toBe(today);
+    expect(restored?.tasks.filter((t) => t.completed)).toHaveLength(3);
+    expect(restored?.completed).toBe(true);
+  });
+
+  it("flush does not LWW-wipe completed today with virgin wrong-dateKey local", async () => {
+    const childId = 56;
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+    store.set(`amynest:phonics-v2-mission:${childId}`, JSON.stringify(mission(yesterday, 0)));
+    store.set(
+      `amynest:phonics-v3-sync-meta:${childId}`,
+      JSON.stringify({ missions: 1_000 }),
+    );
+    // Force a missions domain flush (as DailyMissionPanel virgin persist used to).
+    store.set(
+      `amynest:phonics-v3-sync-queue:${childId}`,
+      JSON.stringify([{ domain: "missions", clientUpdatedAt: Date.now() }]),
+    );
+
+    const completedToday = mission(today, 3);
+    const server = mockServer({
+      mastery: null,
+      fluency: null,
+      stories: null,
+      missions: { payload: completedToday, clientUpdatedAt: 5_000 },
+      retention: null,
+    });
+
+    const ok = await flushPhonicsV3SyncQueue(childId, server);
+    expect(ok).toBe(true);
+    const restored = loadPhonicsV3MissionLocal(childId);
+    expect(restored?.dateKey).toBe(today);
+    expect(restored?.tasks.filter((t) => t.completed)).toHaveLength(3);
+  });
+
+  it("real persist + hydrate on second device restores completed mission", async () => {
+    const childId = 57;
+    const today = new Date().toISOString().slice(0, 10);
+    const completedToday = mission(today, 3);
+
+    const server = mockServer({
+      mastery: null,
+      fluency: null,
+      stories: null,
+      missions: null,
+      retention: null,
+    });
+
+    persistPhonicsV3Mission(childId, completedToday);
+    await flushPhonicsV3SyncQueue(childId, server);
+
+    // Device B: only yesterday locally, then hydrate.
+    store.clear();
+    _resetPhonicsV3SyncForTests();
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    store.set(`amynest:phonics-v2-mission:${childId}`, JSON.stringify(mission(yesterday, 1)));
+    store.set(
+      `amynest:phonics-v3-sync-meta:${childId}`,
+      JSON.stringify({ missions: 100 }),
+    );
+
+    await hydratePhonicsV3Progress(childId, server);
+    const restored = loadPhonicsV3MissionLocal(childId);
+    expect(restored?.dateKey).toBe(today);
+    expect(restored?.completed).toBe(true);
   });
 });

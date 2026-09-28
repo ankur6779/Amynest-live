@@ -75,43 +75,57 @@ export function DailyMissionPanel({
   const [activeStory, setActiveStory] = useState<string | null>(null);
 
   useEffect(() => {
-    void hydratePhonicsV3Progress(childId, authFetch).catch((err) => {
-      console.warn("[phonics-v2] daily mission hydrate failed", err);
-    });
-  }, [childId, authFetch]);
+    let cancelled = false;
 
-  useEffect(() => {
-    const habit = loadPhonicsHabitState(childId);
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const cached = loadPhonicsV3MissionLocal(childId);
-    const existing = cached?.dateKey === dateKey ? cached : null;
-    const built =
-      existing ??
-      (mastery
-        ? {
-            dateKey,
-            ...buildAdaptiveDailyMission({
+    void (async () => {
+      // Await hydrate before bootstrapping/persisting. Fire-and-forget hydrate
+      // raced a virgin today persist that LWW-wiped completed missions from
+      // other devices (especially when local still held yesterday's dateKey).
+      try {
+        await hydratePhonicsV3Progress(childId, authFetch);
+      } catch (err) {
+        console.warn("[phonics-v2] daily mission hydrate failed", err);
+      }
+      if (cancelled) return;
+
+      const habit = loadPhonicsHabitState(childId);
+      const dateKey = new Date().toISOString().slice(0, 10);
+      const cached = loadPhonicsV3MissionLocal(childId);
+      const existing = cached?.dateKey === dateKey ? cached : null;
+      const built =
+        existing ??
+        (mastery
+          ? {
+              dateKey,
+              ...buildAdaptiveDailyMission({
+                childId,
+                items,
+                progress,
+                mastery,
+                retention,
+                streakDay: habit.weekly.practiceDays,
+                curriculumLevel: curriculumLevel ?? undefined,
+                letterGroupIndex: letterGroupIndex ?? undefined,
+                storyId: missionStoryId,
+              }),
+            }
+          : buildDailyReadingMission({
               childId,
               items,
               progress,
-              mastery,
-              retention,
               streakDay: habit.weekly.practiceDays,
-              curriculumLevel: curriculumLevel ?? undefined,
-              letterGroupIndex: letterGroupIndex ?? undefined,
-              storyId: missionStoryId,
-            }),
-          }
-        : buildDailyReadingMission({
-            childId,
-            items,
-            progress,
-            streakDay: habit.weekly.practiceDays,
-          }));
-    setMission(built);
-    if (!existing) persistPhonicsV3Mission(childId, built);
+            }));
+      if (cancelled) return;
+      setMission(built);
+      if (!existing) persistPhonicsV3Mission(childId, built);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     childId,
+    authFetch,
     items,
     progress,
     mastery,
