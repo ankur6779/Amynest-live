@@ -79,7 +79,9 @@ function bundleFromLocal(childId: number): PhonicsV3ProgressBundle {
   if (missionRaw) {
     try {
       const mission = JSON.parse(missionRaw) as DailyReadingMission;
-      missions = { payload: mission, clientUpdatedAt: nowMs() };
+      // Must use stored meta — stamping nowMs() here made stale/wrong-dateKey
+      // local missions win LWW over newer completed server rows on hydrate/flush.
+      missions = { payload: mission, clientUpdatedAt: readMeta(childId, "missions") };
     } catch {
       missions = null;
     }
