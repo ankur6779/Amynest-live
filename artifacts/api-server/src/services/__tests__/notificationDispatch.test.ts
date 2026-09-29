@@ -361,3 +361,41 @@ dbTest("A: existing proactive send blocks a different category via global daily 
   await cleanup(uid);
 });
 
+dbTest("stale tokens block proactive engagement but not routine_item", async () => {
+  const uid = `stale-txn-${Date.now()}`;
+  await cleanup(uid);
+  await getOrCreatePreferences(uid);
+  await db
+    .update(notificationPreferencesTable)
+    .set({ quietHoursStart: "00:00", quietHoursEnd: "00:00" })
+    .where(eq(notificationPreferencesTable.userId, uid));
+  const oldDate = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000);
+  await db.insert(pushTokensTable).values({
+    userId: uid,
+    token: `stale_txn_${Math.random()}`,
+    platform: "web",
+    lastSeenAt: oldDate,
+    createdAt: oldDate,
+  });
+
+  const proactive = await dispatchNotification({
+    userId: uid,
+    category: "engagement",
+    title: "Come back",
+    body: "Your next step is ready",
+    dedupKey: `eng-stale:${Date.now()}`,
+  });
+  assert.equal(proactive.status, "no_tokens");
+  assert.equal(proactive.reason, "stale_token");
+
+  const routineItem = await dispatchNotification({
+    userId: uid,
+    category: "routine_item",
+    title: "Brush teeth",
+    body: "Starting in 5 minutes",
+    dedupKey: `ri-stale:${Date.now()}`,
+  });
+  assert.notEqual(routineItem.reason, "stale_token");
+  await cleanup(uid);
+});
+
