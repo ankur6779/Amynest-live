@@ -76,6 +76,13 @@ describe("speechCoachV2 first-use freeze", () => {
       src.indexOf("export async function getActiveSessionForChild"),
     );
     assert.doesNotMatch(registerBlock, /chargeSpeechCoachV2FirstUseSeconds/);
+
+    const assertBlock = src.slice(
+      src.indexOf("export async function assertActiveSessionForToken"),
+      src.indexOf("export async function validateAndTouchSession"),
+    );
+    assert.doesNotMatch(assertBlock, /lastSeenAt:\s*new Date\(\)/);
+    assert.match(assertBlock, /ACTIVE_STALE_MS/);
   });
 
   it("routes refuse exhausted first-use without daily-reset copy", () => {
