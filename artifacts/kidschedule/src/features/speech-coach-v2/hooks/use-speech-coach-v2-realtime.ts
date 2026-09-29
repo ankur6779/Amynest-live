@@ -727,6 +727,7 @@ export function useSpeechCoachV2Realtime(options: UseSpeechCoachV2RealtimeOption
           err.code === "daily_limit_reached"
           || err.code === "monthly_limit_reached"
           || err.code === "session_limit_reached"
+          || err.code === "first_use_limit_reached"
         ) {
           onLimitReachedRef.current?.();
           setConnected(false, "disconnected");
