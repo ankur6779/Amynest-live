@@ -417,3 +417,31 @@ describe("world-evolution (presentation)", () => {
     expect(getAmyWorldStoryLine(state, "breath-control")).toBeTruthy();
   });
 });
+
+describe("health-lab multi-device merge CRDT", () => {
+  it("virgin NOW-stamp local does not wipe richer server unlocks on merge", async () => {
+    const { mergeHealthLabState } = await import("./health-lab-sync");
+    const rich = defaultHealthLabState(7);
+    rich.totalXp = 900;
+    rich.level = 4;
+    rich.prestige = 1;
+    rich.unlockedAvatarItems = ["hat", "cape"];
+    rich.personalBests = { "breath-control": 92 };
+    rich.avatarId = "scientist";
+    rich.wellnessScores = { ...rich.wellnessScores, calmness: 80 };
+
+    const virgin = defaultHealthLabState(7);
+    virgin.totalXp = 25;
+    virgin.level = 1;
+    virgin.totalSessions = 1;
+
+    const merged = mergeHealthLabState(virgin, rich, 1000, Date.now());
+    expect(merged.level).toBe(4);
+    expect(merged.prestige).toBe(1);
+    expect(merged.totalXp).toBe(900);
+    expect(merged.unlockedAvatarItems).toEqual(["hat", "cape"]);
+    expect(merged.personalBests["breath-control"]).toBe(92);
+    expect(merged.avatarId).toBe("scientist");
+    expect(merged.wellnessScores.calmness).toBe(80);
+  });
+});

@@ -128,6 +128,42 @@ test("Reinstall simulation: empty local + server profile restores fully", () => 
   assert.equal(profile.streakDays, 12);
 });
 
+test("Offline virgin device with NOW stamp cannot wipe Device A progress", () => {
+  const deviceA: Profile = {
+    ...baseProfile(1),
+    totalXp: 800,
+    coins: 40,
+    level: 4,
+    prestige: 0,
+    streakDays: 6,
+    unlockedAvatarItems: ["goggles", "lab-coat"],
+    personalBests: { "flamingo-balance": 88 },
+    wellnessScores: { balance: 75 },
+    avatarId: "scientist",
+    badges: [badge("first-challenge", 1000)],
+    gameHistory: [session("flamingo-balance", 1000, 50)],
+    completedQuests: ["daily-play"],
+  };
+  const virginB: Profile = {
+    ...baseProfile(1),
+    totalXp: 30,
+    coins: 5,
+    level: 1,
+    streakDays: 1,
+    gameHistory: [session("breath-control", 9000, 30)],
+  };
+
+  const { profile, winner } = mergeProfiles(deviceA, virginB, 2000, 9000);
+  assert.equal(winner, "merge");
+  assert.equal(profile.level, 4);
+  assert.equal(profile.totalXp, 800);
+  assert.deepEqual(profile.unlockedAvatarItems, ["goggles", "lab-coat"]);
+  assert.equal((profile.personalBests as Record<string, number>)["flamingo-balance"], 88);
+  assert.equal(profile.avatarId, "scientist");
+  assert.equal((profile.gameHistory as unknown[]).length, 2);
+  assert.ok((profile.completedQuests as string[]).includes("daily-play"));
+});
+
 test("No duplicate XP from replayed identical session timestamp", () => {
   const s = session("breath-control", 7777, 50);
   const server: Profile = { ...baseProfile(1), totalXp: 100, gameHistory: [s] };

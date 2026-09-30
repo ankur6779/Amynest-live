@@ -60,32 +60,135 @@ function writeMeta(childId: number, ts: number): void {
   }
 }
 
-function mergeState(
+function maxNum(...vals: Array<number | null | undefined>): number {
+  let best = 0;
+  for (const v of vals) {
+    const n = Number(v ?? 0);
+    if (Number.isFinite(n) && n > best) best = n;
+  }
+  return best;
+}
+
+function unionIds(...lists: Array<readonly string[] | undefined>): string[] {
+  const out = new Set<string>();
+  for (const list of lists) {
+    for (const id of list ?? []) {
+      if (id) out.add(id);
+    }
+  }
+  return [...out];
+}
+
+function unionNums(...lists: Array<readonly number[] | undefined>): number[] {
+  const out = new Set<number>();
+  for (const list of lists) {
+    for (const n of list ?? []) {
+      if (Number.isFinite(n)) out.add(n);
+    }
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+function maxRecord(
+  a: Record<string, number> | undefined,
+  b: Record<string, number> | undefined,
+): Record<string, number> {
+  const out: Record<string, number> = { ...(a ?? {}) };
+  for (const [k, v] of Object.entries(b ?? {})) {
+    if (!Number.isFinite(v)) continue;
+    out[k] = Math.max(Number(out[k] ?? 0), v);
+  }
+  return out;
+}
+
+/**
+ * Field-level CRDT when local watermark is newer.
+ * Blind `{...local, ...server}` let a virgin NOW-stamp wipe richer peer progress
+ * on the next flush; blind reverse spread wiped offline local advances on hydrate.
+ */
+export function mergeHealthLabState(
   local: HealthLabPersistedState,
   server: Partial<HealthLabPersistedState> | null,
   serverTs: number,
   localTs: number,
 ): HealthLabPersistedState {
   if (!server || Object.keys(server).length === 0) return local;
-  if (localTs >= serverTs) {
-    const historyMap = new Map<number, HealthLabPersistedState["gameHistory"][number]>();
-    for (const s of server.gameHistory ?? []) historyMap.set(s.timestamp, s);
-    for (const s of local.gameHistory) historyMap.set(s.timestamp, s);
-    const mergedHistory = [...historyMap.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-500);
-    const badgeMap = new Map<string, HealthLabPersistedState["badges"][number]>();
-    for (const b of server.badges ?? []) badgeMap.set(b.id, b);
-    for (const b of local.badges) badgeMap.set(b.id, b);
-    return {
-      ...local,
-      ...server,
-      totalXp: Math.max(local.totalXp, server.totalXp ?? 0),
-      coins: Math.max(local.coins, server.coins ?? 0),
-      streakDays: Math.max(local.streakDays, server.streakDays ?? 0),
-      gameHistory: mergedHistory,
-      badges: [...badgeMap.values()],
-    };
+  if (localTs < serverTs) {
+    return { ...defaultHealthLabState(local.childId), ...server, childId: local.childId } as HealthLabPersistedState;
   }
-  return { ...defaultHealthLabState(local.childId), ...server, childId: local.childId } as HealthLabPersistedState;
+
+  const historyMap = new Map<number, HealthLabPersistedState["gameHistory"][number]>();
+  for (const s of server.gameHistory ?? []) historyMap.set(s.timestamp, s);
+  for (const s of local.gameHistory) historyMap.set(s.timestamp, s);
+  const mergedHistory = [...historyMap.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-500);
+  const badgeMap = new Map<string, HealthLabPersistedState["badges"][number]>();
+  for (const b of server.badges ?? []) badgeMap.set(b.id, b);
+  for (const b of local.badges) badgeMap.set(b.id, b);
+
+  const serverRank = maxNum(server.prestige) * 1000 + maxNum(server.level, 1);
+  const localRank = maxNum(local.prestige) * 1000 + maxNum(local.level, 1);
+  const richer = localRank >= serverRank ? local : server;
+
+  const serverPlay = server.lastPlayDateKey ?? null;
+  const localPlay = local.lastPlayDateKey;
+  const lastPlayDateKey =
+    serverPlay && localPlay
+      ? serverPlay >= localPlay
+        ? serverPlay
+        : localPlay
+      : localPlay ?? serverPlay;
+
+  return {
+    ...defaultHealthLabState(local.childId),
+    ...local,
+    ...server,
+    childId: local.childId,
+    totalXp: Math.max(local.totalXp, server.totalXp ?? 0),
+    coins: Math.max(local.coins, server.coins ?? 0),
+    streakDays: Math.max(local.streakDays, server.streakDays ?? 0),
+    level: maxNum(local.level, server.level, 1) as HealthLabPersistedState["level"],
+    prestige: maxNum(local.prestige, server.prestige),
+    questStreakDays: maxNum(local.questStreakDays, server.questStreakDays),
+    totalSessions: maxNum(local.totalSessions, server.totalSessions),
+    weeklyChallengeProgress: maxNum(
+      local.weeklyChallengeProgress,
+      server.weeklyChallengeProgress,
+    ),
+    unlockedAvatarItems: unionIds(local.unlockedAvatarItems, server.unlockedAvatarItems),
+    gamesCompletedToday: unionIds(local.gamesCompletedToday, server.gamesCompletedToday),
+    streakMilestonesCelebrated: unionIds(
+      local.streakMilestonesCelebrated,
+      server.streakMilestonesCelebrated,
+    ),
+    personalBests: maxRecord(
+      local.personalBests as Record<string, number>,
+      server.personalBests as Record<string, number> | undefined,
+    ) as HealthLabPersistedState["personalBests"],
+    wellnessScores: {
+      ...defaultHealthLabState(local.childId).wellnessScores,
+      ...maxRecord(
+        local.wellnessScores as Record<string, number>,
+        server.wellnessScores as Record<string, number> | undefined,
+      ),
+    } as HealthLabPersistedState["wellnessScores"],
+    gameHistory: mergedHistory,
+    badges: [...badgeMap.values()],
+    avatarId: (richer.avatarId as HealthLabPersistedState["avatarId"]) ?? local.avatarId,
+    equippedItems: {
+      ...(defaultHealthLabState(local.childId).equippedItems),
+      ...((richer.equippedItems as HealthLabPersistedState["equippedItems"]) ?? local.equippedItems),
+    },
+    lastPlayDateKey,
+  };
+}
+
+function mergeState(
+  local: HealthLabPersistedState,
+  server: Partial<HealthLabPersistedState> | null,
+  serverTs: number,
+  localTs: number,
+): HealthLabPersistedState {
+  return mergeHealthLabState(local, server, serverTs, localTs);
 }
 
 export function configureHealthLabSync(fetcher: AuthFetchFn): void {
@@ -93,7 +196,9 @@ export function configureHealthLabSync(fetcher: AuthFetchFn): void {
   if (typeof window === "undefined") return;
   if (!onlineListenerAttached) {
     window.addEventListener("online", () => {
-      for (const id of hydrated) void flushHealthLabSync(id);
+      // Re-hydrate before flush so a virgin/offline local NOW-stamp cannot
+      // push empty defaults over richer server progress when connectivity returns.
+      for (const id of hydrated) void hydrateHealthLabProfile(id);
     });
     onlineListenerAttached = true;
   }
