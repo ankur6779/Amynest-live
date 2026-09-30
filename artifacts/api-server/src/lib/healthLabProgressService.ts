@@ -87,6 +87,150 @@ export const shopBodySchema = z.object({
   clientUpdatedAt: z.number().int().positive(),
 });
 
+function maxNum(...vals: unknown[]): number {
+  let best = 0;
+  for (const v of vals) {
+    const n = Number(v ?? 0);
+    if (Number.isFinite(n) && n > best) best = n;
+  }
+  return best;
+}
+
+function unionStringIds(...lists: unknown[]): string[] {
+  const out = new Set<string>();
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      if (typeof item === "string" && item.length > 0) out.add(item);
+    }
+  }
+  return [...out];
+}
+
+function maxRecord(
+  a: Record<string, number> | null | undefined,
+  b: Record<string, number> | null | undefined,
+): Record<string, number> {
+  const out: Record<string, number> = { ...(a ?? {}) };
+  for (const [k, v] of Object.entries(b ?? {})) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) continue;
+    out[k] = Math.max(Number(out[k] ?? 0), n);
+  }
+  return out;
+}
+
+function preferRicherAvatar(
+  server: Record<string, unknown>,
+  client: Record<string, unknown>,
+): { avatarId: unknown; equippedItems: unknown } {
+  const serverLevel = maxNum(server.level, 1);
+  const clientLevel = maxNum(client.level, 1);
+  const serverPrestige = maxNum(server.prestige);
+  const clientPrestige = maxNum(client.prestige);
+  const serverRank = serverPrestige * 1000 + serverLevel;
+  const clientRank = clientPrestige * 1000 + clientLevel;
+  if (clientRank > serverRank) {
+    return { avatarId: client.avatarId ?? server.avatarId, equippedItems: client.equippedItems ?? server.equippedItems };
+  }
+  return { avatarId: server.avatarId ?? client.avatarId, equippedItems: server.equippedItems ?? client.equippedItems };
+}
+
+/**
+ * Field-level CRDT merge when the newer timestamp wins.
+ * Blind `{...server, ...client}` would let a virgin/partial NOW-stamp client
+ * wipe level, avatar unlocks, personal bests, and wellness while only maxing XP.
+ */
+export function mergeProgressFields(
+  server: Record<string, unknown>,
+  client: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...server, ...client };
+
+  const serverHistory = (server.gameHistory as unknown[]) ?? [];
+  const clientHistory = (client.gameHistory as unknown[]) ?? [];
+  const byTs = new Map<number, unknown>();
+  for (const s of [...serverHistory, ...clientHistory]) {
+    const ts = (s as { timestamp?: number }).timestamp ?? 0;
+    byTs.set(ts, s);
+  }
+  merged.gameHistory = [...byTs.values()]
+    .sort((a, b) => ((a as { timestamp: number }).timestamp - (b as { timestamp: number }).timestamp))
+    .slice(-500);
+
+  const serverBadges = (server.badges as { id: string; unlockedAt: number }[]) ?? [];
+  const clientBadges = (client.badges as { id: string; unlockedAt: number }[]) ?? [];
+  const badgeMap = new Map<string, { id: string; unlockedAt: number }>();
+  for (const b of [...serverBadges, ...clientBadges]) badgeMap.set(b.id, b);
+  merged.badges = [...badgeMap.values()];
+
+  merged.totalXp = maxNum(server.totalXp, client.totalXp);
+  merged.coins = maxNum(server.coins, client.coins);
+  merged.streakDays = maxNum(server.streakDays, client.streakDays);
+  merged.level = maxNum(server.level, client.level, 1);
+  merged.prestige = maxNum(server.prestige, client.prestige);
+  merged.questStreakDays = maxNum(server.questStreakDays, client.questStreakDays);
+  merged.totalSessions = maxNum(server.totalSessions, client.totalSessions);
+  merged.weeklyChallengeProgress = maxNum(
+    server.weeklyChallengeProgress,
+    client.weeklyChallengeProgress,
+  );
+  merged.calmnessSnapshotsToday = maxNum(
+    server.calmnessSnapshotsToday,
+    client.calmnessSnapshotsToday,
+  );
+  merged.sessionBurstCount = maxNum(server.sessionBurstCount, client.sessionBurstCount);
+
+  merged.unlockedAvatarItems = unionStringIds(
+    server.unlockedAvatarItems,
+    client.unlockedAvatarItems,
+  );
+  merged.gamesCompletedToday = unionStringIds(
+    server.gamesCompletedToday,
+    client.gamesCompletedToday,
+  );
+  merged.streakMilestonesCelebrated = unionStringIds(
+    server.streakMilestonesCelebrated,
+    client.streakMilestonesCelebrated,
+  );
+  merged.completedQuests = unionStringIds(server.completedQuests, client.completedQuests);
+
+  merged.personalBests = maxRecord(
+    server.personalBests as Record<string, number> | undefined,
+    client.personalBests as Record<string, number> | undefined,
+  );
+  merged.wellnessScores = maxRecord(
+    server.wellnessScores as Record<string, number> | undefined,
+    client.wellnessScores as Record<string, number> | undefined,
+  );
+
+  const evo = new Map<string, unknown>();
+  for (const row of [
+    ...((server.avatarEvolutionHistory as unknown[]) ?? []),
+    ...((client.avatarEvolutionHistory as unknown[]) ?? []),
+  ]) {
+    const r = row as { level?: number; avatarId?: string; timestamp?: number };
+    const key = `${r.level ?? 0}:${r.avatarId ?? ""}:${r.timestamp ?? 0}`;
+    evo.set(key, row);
+  }
+  merged.avatarEvolutionHistory = [...evo.values()];
+
+  // Avatar/equip from the pre-merge richer side (higher level/prestige).
+  const richer = preferRicherAvatar(server, client);
+  merged.avatarId = richer.avatarId;
+  merged.equippedItems = richer.equippedItems;
+
+  const serverPlay = typeof server.lastPlayDateKey === "string" ? server.lastPlayDateKey : null;
+  const clientPlay = typeof client.lastPlayDateKey === "string" ? client.lastPlayDateKey : null;
+  if (serverPlay && clientPlay) {
+    merged.lastPlayDateKey = serverPlay >= clientPlay ? serverPlay : clientPlay;
+  } else {
+    merged.lastPlayDateKey = clientPlay ?? serverPlay;
+  }
+
+  return merged;
+}
+
 export function mergeProfiles(
   server: Record<string, unknown> | null,
   client: Record<string, unknown>,
@@ -97,26 +241,7 @@ export function mergeProfiles(
     return { profile: client, winner: "client" };
   }
   if (clientTs >= serverTs) {
-    const merged = { ...server, ...client };
-    const serverHistory = (server.gameHistory as unknown[]) ?? [];
-    const clientHistory = (client.gameHistory as unknown[]) ?? [];
-    const byTs = new Map<number, unknown>();
-    for (const s of [...serverHistory, ...clientHistory]) {
-      const ts = (s as { timestamp?: number }).timestamp ?? 0;
-      byTs.set(ts, s);
-    }
-    merged.gameHistory = [...byTs.values()]
-      .sort((a, b) => ((a as { timestamp: number }).timestamp - (b as { timestamp: number }).timestamp))
-      .slice(-500);
-    const serverBadges = (server.badges as { id: string; unlockedAt: number }[]) ?? [];
-    const clientBadges = (client.badges as { id: string; unlockedAt: number }[]) ?? [];
-    const badgeMap = new Map<string, { id: string; unlockedAt: number }>();
-    for (const b of [...serverBadges, ...clientBadges]) badgeMap.set(b.id, b);
-    merged.badges = [...badgeMap.values()];
-    merged.totalXp = Math.max(Number(server.totalXp ?? 0), Number(client.totalXp ?? 0));
-    merged.coins = Math.max(Number(server.coins ?? 0), Number(client.coins ?? 0));
-    merged.streakDays = Math.max(Number(server.streakDays ?? 0), Number(client.streakDays ?? 0));
-    return { profile: merged, winner: "merge" };
+    return { profile: mergeProgressFields(server, client), winner: "merge" };
   }
   return { profile: server, winner: "server" };
 }
