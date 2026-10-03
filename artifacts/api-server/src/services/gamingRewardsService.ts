@@ -21,6 +21,16 @@ import {
   getGameById,
 } from "@workspace/gaming-rewards";
 import { getEntitlements } from "./subscriptionService";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
+
+/**
+ * Keys gaming_wallet row to the sticky-alias subscription owner.
+ * getEntitlements already resolves B→A for premium/dailyLimit; without this,
+ * raw Firebase uid B gets an empty playLog and remints FREE/PREMIUM daily plays.
+ */
+async function walletOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
 
 function ensureStarters(unlocked: string[]): string[] {
   const set = new Set(unlocked);
@@ -69,10 +79,11 @@ export async function computeRoutineStreakDays(userId: string): Promise<number> 
 }
 
 export async function loadOrInitWallet(userId: string): Promise<GamingWallet> {
+  const ownerUserId = await walletOwnerUserId(userId);
   const rows = await db
     .select()
     .from(gamingWalletTable)
-    .where(eq(gamingWalletTable.userId, userId))
+    .where(eq(gamingWalletTable.userId, ownerUserId))
     .limit(1);
   if (rows[0]) return rows[0];
 
@@ -80,7 +91,7 @@ export async function loadOrInitWallet(userId: string): Promise<GamingWallet> {
   const [created] = await db
     .insert(gamingWalletTable)
     .values({
-      userId,
+      userId: ownerUserId,
       pointsBalance: 0,
       unlockedGames: starters,
       skills: {},
@@ -183,7 +194,7 @@ export async function syncWalletFromClient(
       ledger,
       updatedAt: new Date(),
     })
-    .where(eq(gamingWalletTable.userId, userId));
+    .where(eq(gamingWalletTable.userId, wallet.userId));
 
   return getWalletSnapshot(userId);
 }
@@ -227,7 +238,7 @@ export async function earnPoints(
       ledger: capLedger(ledger),
       updatedAt: new Date(),
     })
-    .where(eq(gamingWalletTable.userId, userId));
+    .where(eq(gamingWalletTable.userId, wallet.userId));
 
   return getWalletSnapshot(userId);
 }
@@ -280,7 +291,7 @@ export async function unlockGameForUser(
         ledger: capLedger(ledger),
         updatedAt: new Date(),
       })
-      .where(eq(gamingWalletTable.userId, userId));
+      .where(eq(gamingWalletTable.userId, wallet.userId));
   }
 
   return { snapshot: await getWalletSnapshot(userId), result };
@@ -376,7 +387,7 @@ export async function recordGamePlay(
       unlockedGames: unlocked,
       updatedAt: new Date(),
     })
-    .where(eq(gamingWalletTable.userId, userId));
+    .where(eq(gamingWalletTable.userId, wallet.userId));
 
   return {
     ok: true,
