@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   GAMES_MODULE_HREF,
+  MOMENTS_MAKE_SOFT,
   MOMENTS_QUIET_PATHS,
   MOMENTS_STREAM_TILE_ID,
   destinationIdForMomentsPath,
   isMomentsLivingV1Enabled,
   momentsDeepenCueForTile,
+  momentsMakeSoftForAge,
   momentsPathForTile,
   recommendMomentsAction,
   tileIdForMomentsPath,
@@ -75,5 +77,20 @@ describe("moments living-room", () => {
 
   it("exposes stable stream tile id", () => {
     expect(MOMENTS_STREAM_TILE_ID).toBe("__moments_stream__");
+  });
+
+  it("keeps Colour together visible when the Hub tile is eligible", () => {
+    expect(MOMENTS_MAKE_SOFT.map((s) => s.tileId)).toEqual([
+      "coloring-books",
+      "fun-sheets",
+    ]);
+    expect(
+      momentsMakeSoftForAge(["worksheets", "coloring-books"]).map((s) => s.tileId),
+    ).toEqual(["coloring-books"]);
+    expect(momentsMakeSoftForAge(["worksheets"]).map((s) => s.tileId)).toEqual([]);
+    expect(momentsMakeSoftForAge(null).map((s) => s.tileId)).toEqual([
+      "coloring-books",
+      "fun-sheets",
+    ]);
   });
 });

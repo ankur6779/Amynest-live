@@ -175,6 +175,7 @@ export function ParentHubRoomsShell({
   const askAmyLiving =
     Boolean(renderAskAmyStream) && isAskAmyLivingV1Enabled();
   const roomLivingEnabled = Boolean(renderRoomLivingStream);
+  const infantHubVisible = visibleTileIds.includes("infant-hub");
 
   const recommendation = useMemo(
     () => (activeRoom ? recommendForRoom(activeRoom, { isInfant }) : null),
@@ -197,6 +198,21 @@ export function ParentHubRoomsShell({
       return;
     }
     if (!focusTileId) {
+      // Rooms V1 used to land infants on Care living only — Infant Care
+      // modules (sleep / feed / cry) stayed behind the recommend click.
+      if (
+        activeRoom === "care" &&
+        isInfant &&
+        roomLivingEnabled &&
+        infantHubVisible
+      ) {
+        setOpenDestinationId("infant-care");
+        setSelectedTileId("infant-hub");
+        setGrowDeepenTileId(null);
+        setAskAmyPath(null);
+        setPathCompleted(true);
+        return;
+      }
       setOpenDestinationId(null);
       setSelectedTileId(null);
       setGrowDeepenTileId(null);
@@ -262,6 +278,7 @@ export function ParentHubRoomsShell({
     askAmyLiving,
     roomLivingEnabled,
     isInfant,
+    infantHubVisible,
   ]);
 
   const announceDeepen = (tileId: string | null) => {
@@ -370,6 +387,10 @@ export function ParentHubRoomsShell({
 
     const closing = selectedTileId === openTile;
     const destId = destinationIdForRoomLivingTile(room, tileId, { isInfant });
+    // Infant Care recommend must not hide sleep/feed/cry after auto-open.
+    if (room === "care" && isInfant && destId === "infant-care" && closing) {
+      return;
+    }
     setOpenDestinationId(closing ? null : destId);
     setSelectedTileId(closing ? null : openTile);
     setGrowDeepenTileId(null);

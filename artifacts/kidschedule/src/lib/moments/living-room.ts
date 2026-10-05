@@ -102,6 +102,15 @@ export const MOMENTS_MAKE_SOFT: readonly {
   },
 ] as const;
 
+/** Colouring / fun sheets shown on Moments even before Make is opened. */
+export function momentsMakeSoftForAge(
+  visibleTileIds?: readonly string[] | null,
+): readonly (typeof MOMENTS_MAKE_SOFT)[number][] {
+  if (!visibleTileIds) return MOMENTS_MAKE_SOFT;
+  const visible = new Set(visibleTileIds);
+  return MOMENTS_MAKE_SOFT.filter((soft) => visible.has(soft.tileId));
+}
+
 /** One recommended Moments act for a tired parent. */
 export function recommendMomentsAction(childName = "your child"): MomentsRecommend {
   return {

@@ -263,6 +263,26 @@ describe("Parent Hub Pack 4 living flow", () => {
     expect(screen.getByTestId("parent-hub-exit-panel")).toBeTruthy();
   });
 
+  it("auto-opens Infant Care modules for infants in the living Care room", () => {
+    render(
+      <ParentHubRoomsShell
+        childName="Aria"
+        childId={1}
+        isInfant
+        activeRoom="care"
+        onEnterRoom={vi.fn()}
+        onExitRoom={vi.fn()}
+        visibleTileIds={["infant-hub", "nutrition", "health-lab"]}
+        renderDestination={(id) => <div data-testid={`mod-${id}`}>{id}</div>}
+        renderRoomLivingStream={({ room }) => (
+          <div data-testid={`${room}-living-stream`}>Care living</div>
+        )}
+      />,
+    );
+    expect(screen.getByTestId("mod-infant-hub")).toBeTruthy();
+    expect(screen.getByTestId("care-living-stream")).toBeTruthy();
+  });
+
   it("Care recommends Infant Care for infants", () => {
     render(
       <ParentHubRoomsShell
