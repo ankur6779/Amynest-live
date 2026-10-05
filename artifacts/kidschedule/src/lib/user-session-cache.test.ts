@@ -39,4 +39,22 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
   });
+
+  it("clears gaming wallet mirrors so shared-tablet switch cannot sync them", () => {
+    localStorage.setItem("amynest_points", "80");
+    localStorage.setItem("amynest_unlocked_games_v1", JSON.stringify(["a", "b", "c"]));
+    localStorage.setItem("amynest_game_play_log_v1", JSON.stringify([{ id: "1" }]));
+    localStorage.setItem("amynest_skill_progress_v1", JSON.stringify({ memory: { attempts: 1, correct: 1, plays: 1 } }));
+    localStorage.setItem("amynest_ledger", JSON.stringify([{ points: 5 }]));
+    localStorage.setItem("amynest_gaming_wallet_owner_v1", "uid-a");
+
+    clearUserSessionCaches();
+
+    expect(localStorage.getItem("amynest_points")).toBeNull();
+    expect(localStorage.getItem("amynest_unlocked_games_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_game_play_log_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_skill_progress_v1")).toBeNull();
+    expect(localStorage.getItem("amynest_ledger")).toBeNull();
+    expect(localStorage.getItem("amynest_gaming_wallet_owner_v1")).toBeNull();
+  });
 });
