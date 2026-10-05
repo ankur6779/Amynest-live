@@ -7,13 +7,20 @@ import {
   syncGamingWallet,
   type ServerWalletSnapshot,
 } from "@/lib/gaming-wallet-api";
-import { applyWalletSnapshot, readLocalWalletPartial } from "@/lib/gaming-wallet-storage";
+import {
+  applyWalletSnapshot,
+  clearLocalGamingWallet,
+  localWalletBelongsTo,
+  readLocalWalletPartial,
+} from "@/lib/gaming-wallet-storage";
+import { readStoredSessionUid } from "@/lib/user-session-cache";
 
 const qkey = (userId: string | null) =>
   ["gaming-wallet", userId ?? "anon"] as const;
 
 /**
  * Hydrates localStorage from the server wallet (with one-time offline merge).
+ * Never POSTs a prior account's device-global mirrors under the signed-in user.
  */
 export function useGamingWallet() {
   const authFetch = useAuthFetch();
@@ -26,6 +33,10 @@ export function useGamingWallet() {
     enabled: !!isSignedIn,
     staleTime: 60_000,
     queryFn: async () => {
+      if (!localWalletBelongsTo(userId, readStoredSessionUid())) {
+        clearLocalGamingWallet();
+        return fetchGamingWallet(authFetch, userId);
+      }
       const local = readLocalWalletPartial();
       const hasLocal =
         local.pointsBalance > 0 ||
@@ -33,18 +44,18 @@ export function useGamingWallet() {
         local.playLog.length > 0;
       if (hasLocal) {
         try {
-          return await syncGamingWallet(authFetch);
+          return await syncGamingWallet(authFetch, userId);
         } catch {
-          return fetchGamingWallet(authFetch);
+          return fetchGamingWallet(authFetch, userId);
         }
       }
-      return fetchGamingWallet(authFetch);
+      return fetchGamingWallet(authFetch, userId);
     },
   });
 
   useEffect(() => {
-    if (query.data) applyWalletSnapshot(query.data);
-  }, [query.data]);
+    if (query.data) applyWalletSnapshot(query.data, userId);
+  }, [query.data, userId]);
 
   const refresh = useCallback(async () => {
     if (!isSignedIn) return;
