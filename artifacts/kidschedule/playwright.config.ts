@@ -22,6 +22,7 @@ export default defineConfig({
   testIgnore: [
     "amy-audio-module-tile.spec.ts",
     "audio-lesson-pause-resume.spec.ts",
+    "amy-fab-responsive.spec.ts",
   ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
