@@ -41,7 +41,7 @@ export function HeroSection({ onWatchDemo }: { onWatchDemo: () => void }) {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-purple-300/70">
-            Powered by patent-pending adaptive AI
+            Indian Patent Application No. 202611059355 filed
           </p>
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
             Parenting Is Hard.
@@ -444,8 +444,8 @@ export function TestimonialsSection() {
     <section id="testimonials" className="relative px-5 py-24 sm:py-32">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
-          title="Loved by Modern Families"
-          subtitle="Real stories from parents using AmyNest every day."
+          title="What AmyNest is built to help with"
+          subtitle="Product use cases — not customer testimonials."
           align="center"
         />
         <div className="mt-14 grid gap-6 sm:grid-cols-2">

@@ -12,7 +12,7 @@
 | Topic | Routine Engine health guarantees and adaptive orchestration |
 | Target Age | Toddler–teen (age-aware gaps) |
 | Target Parent | Parents serious about sleep-protecting schedules |
-| Objective | Explain certified dinner-to-bedtime health gaps and patent-pending adaptive orchestration |
+| Objective | Explain certified dinner-to-bedtime health gaps and adaptive adaptive orchestration |
 | Suggested Duration | 20s |
 | Suggested Emotion | Confidence |
 | Suggested Characters | Amy AI |
@@ -62,7 +62,7 @@ All hooks are product-free. Ranked by predicted retention.
 2. **Parenting Situation** — Dinner ran late again. Bedtime slipped. Nobody meant for sleep to lose — it just did.
 3. **Problem** — Late dinners quietly steal children’s sleep — and parents don’t see the gap.
 4. **Emotion** — Routine confidence when health logic protects bedtime.
-5. **Product Entry (only now)** — Only now does Amy appear — as a warm guide, not a pitch. AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as patent-pending.
+5. **Product Entry (only now)** — Only now does Amy appear — as a warm guide, not a pitch. AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as adaptive.
 6. **Transformation** — Generate a routine → Engine repairs dinner anchors to protect minimum dinner-end → bedtime gaps by age band. → Your child’s bedtime is protected by design — not luck.
 7. **Hope Close (final 3s)** — Protecting bedtime can feel like protecting childhood itself.
 8. **Soft CTA** — after hope lands
@@ -79,10 +79,10 @@ Healthy days need enforced dinner-to-sleep spacing by age — not hope.
 Routine confidence when health logic protects bedtime.
 
 ### Product Entry Beat
-Only now does Amy appear — as a warm guide, not a pitch. AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as patent-pending.
+Only now does Amy appear — as a warm guide, not a pitch. AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as adaptive.
 
 ### AmyNest Solution
-AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as patent-pending.
+AmyNest’s Routine Engine uses certified age-aware dinner-to-sleep health gaps and adaptive, context-aware orchestration described as adaptive.
 
 ### Real Feature Demonstration
 Generate a routine → Engine repairs dinner anchors to protect minimum dinner-end → bedtime gaps by age band.

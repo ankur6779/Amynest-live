@@ -1,0 +1,9 @@
+# FINAL ABSTRACT SUBMISSION DRAFT
+
+**Application:** 202611059355  
+**Word count:** 145 (common Indian practice ≤150; confirm Rule 13(7) as in force)  
+Not marketing copy. Not a performance claim.
+
+---
+
+A computer-implemented system generates an adaptive child-development routine and supplies an authoritative environmental classification to the routine-generation process. An explicit user environmental choice is designated immediately as authoritative in a synchronously readable data structure, while a deferred structure drives interface re-rendering. Where that choice is not already authoritative, concurrent generation triggers share at most one geolocation and meteorological retrieval. Received weather-code, temperature, precipitation and wind parameters are mapped to an outdoor-suitability classification. After resolution the synchronously readable structure is re-evaluated; a late-derived classification is discarded if a user-selected value became authoritative during the window, and is prevented from superseding that value. The designated authoritative classification is injected into the generation call chain independently of deferred interface commit. A hybrid engine provides a rule-based path operable without a language model and an optional language-model path.

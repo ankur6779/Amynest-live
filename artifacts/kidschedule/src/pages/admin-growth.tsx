@@ -45,6 +45,15 @@ export default function AdminGrowthPage() {
     void refetch();
   };
 
+  if (isLoading && !data) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 text-muted-foreground bg-background">
+        <Activity className="h-5 w-5 animate-pulse" />
+        <span>Checking admin access…</span>
+      </div>
+    );
+  }
+
   if (error instanceof Error && error.message === "not_admin") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center bg-background">
@@ -52,7 +61,7 @@ export default function AdminGrowthPage() {
         <p className="font-semibold">Admin access required</p>
         <p className="text-sm text-muted-foreground max-w-sm">
           Sign in with an account listed in <code>ADMIN_USER_IDS</code> or{" "}
-          <code>ADMIN_GROWTH_EMAILS</code> (e.g. demo@amynest.in).
+          <code>ADMIN_GROWTH_EMAILS</code>.
         </p>
         <Link href="/dashboard">
           <Button variant="outline">Back to app</Button>

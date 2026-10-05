@@ -245,7 +245,7 @@ function SuccessCard({ onReset }: { onReset: () => void }) {
       <div className="mt-6 flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5">
         <Heart className="h-4 w-4 text-pink-400 fill-pink-400 shrink-0" /> {/* audit-ok: brand accent pink on dark card */}
         <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">10,000+ parents</span> are shaping AmyNest with you
+          <span className="font-semibold text-foreground">Parents and caregivers</span> can shape AmyNest with feedback
         </p>
       </div>
 

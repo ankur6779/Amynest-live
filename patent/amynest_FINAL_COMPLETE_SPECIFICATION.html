@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8" />
+  <title>FINAL COMPLETE SPECIFICATION SUBMISSION DRAFT — App. 202611059355</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Times New Roman", Times, serif; color: #1a1a1a; line-height: 1.45; max-width: 940px; margin: 0 auto; padding: 28px 32px 80px; font-size: 12.5pt; }
+    h1 { font-size: 15.5pt; text-align: center; text-transform: uppercase; margin: 1.1em 0 .35em; }
+    h2 { font-size: 13.2pt; margin: 1.5em 0 .45em; border-bottom: 1px solid #c8c8c8; padding-bottom: .15em; }
+    h3 { font-size: 12.3pt; margin: 1.15em 0 .3em; }
+    h4 { font-size: 12pt; margin: .95em 0 .2em; font-style: italic; }
+    p { margin: .5em 0; text-align: justify; }
+    .center { text-align: center; } .small { font-size: 10pt; color: #444; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.4pt; margin: .75em 0 1em; }
+    th, td { border: 1px solid #bbb; padding: 5px 7px; vertical-align: top; } th { background: #f3f3f3; text-align: left; }
+    .banner { background: #111; color: #fff; padding: 12px 14px; font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.4; margin: 0 0 20px; }
+    ol.claims { padding-left: 1.6em; } ol.claims > li { margin: .85em 0; }
+    .fig { margin: 1.3em 0 1.7em; page-break-inside: avoid; }
+    .fig svg { width: 100%; height: auto; border: 1px solid #ccc; background: #fafafa; }
+    .figcaption { font-size: 10.4pt; font-style: italic; margin-top: .4em; }
+    ol.steps li { margin: .35em 0; }
+    @media print { body { padding: 10px 14px; } .banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  FINAL COMPLETE SPECIFICATION SUBMISSION DRAFT — NOT AN IPO UPLOAD UNTIL FORMAL CHECKS ARE COMPLETE<br />
+  Indian Patent Application No. <strong>202611059355</strong> · CBR 29076 · Provisional filing date 10 May 2026<br />
+  This document is a proposed complete specification under the Patents Act, 1970. It is not a grant, not an examination result, and not a Section 3(k) clearance.
+</div>
+
+<p class="center small">THE PATENTS ACT, 1970 &nbsp;|&nbsp; THE PATENTS RULES, 2003 &nbsp;|&nbsp; FORM 2 (Complete Specification)</p>
+<h1>A System and Method for Adaptive Child Development Routine Generation Using Context-Aware Environmental and Caregiver-Oriented Computational Processing</h1>
+
+<table>
+  <tr><th style="width:32%">Application number</th><td>202611059355</td></tr>
+  <tr><th>CBR / filing date</th><td>29076 · 10 May 2026, 17:07:00</td></tr>
+  <tr><th>Applicant / inventor</th><td>Ankur Raman</td></tr>
+  <tr><th>Specification type</th><td>Complete specification (proposed) following a provisional specification filed on 10 May 2026</td></tr>
+</table>
+
+<h2>1. Field of the Invention</h2>
+<p>The invention relates to computer-implemented child-development assistance systems, and more particularly to adaptive generation of a child development routine by hybrid processing comprising deterministic rule-based orchestration and optional generative language-model inference, together with environmental-condition integration, caregiver-oriented transformation, asynchronous state coordination, and deterministic constraint processing of generated routine artefacts.</p>
+<p>Operative enabling client environments comprise a web-browser frontend execution environment and a native mobile frontend execution environment. Wearable, voice-assistant, and offline local-inference environments are disclosed as alternative embodiments.</p>
+
+<h2>2. Background of the Invention</h2>
+<p>Existing digital tools, including general calendars, static parenting templates, and isolated rule-based schedulers, exhibit computational limitations when used to generate a daily routine that must remain consistent with environmental conditions and caregiver constraints:</p>
+<ol>
+  <li>static environmental handling, including default outdoor suitability when a user omits a manual environmental entry;</li>
+  <li>duplicate geolocation permission prompts and redundant meteorological queries when each routine-generation trigger starts a fresh network operation;</li>
+  <li>late-resolving environmental detections overwriting an explicit user environmental choice made during the detection window;</li>
+  <li>deferred user-interface state inside an asynchronous closure becoming stale relative to a synchronously readable reference, so that a generation payload omits a value that was just decided;</li>
+  <li>probabilistic language-model schedule errors, including school-hour activity placement, non-authentic dishes, dietary conflicts, and repeated meals, in the absence of deterministic post-processing;</li>
+  <li>absence of machine-controlled contextual transformation when environment, caregiver identity, or developmental band changes;</li>
+  <li>caregiver-oblivious instruction notes; and</li>
+  <li>static activity order ignoring a historically observed energy profile.</li>
+</ol>
+<p>This background identifies technical problems. It is not a prior-art search and does not assert that no prior art exists.</p>
+
+<h2>3. Objects of the Invention</h2>
+<p>It is an object of the invention to provide one or more of the following, none of which is essential unless recited in a claim:</p>
+<ol>
+  <li>to classify ambient outdoor suitability from geolocation and meteorological data before a routine-generation request is dispatched;</li>
+  <li>to share a single in-flight environmental detection among concurrent generation triggers;</li>
+  <li>to preserve an explicit user-selected environmental value against a late-resolving detection result;</li>
+  <li>to inject a designated authoritative environmental classification into a routine-generation call chain independently of deferred user-interface commit;</li>
+  <li>to generate a routine artefact from a deterministic rule-based path without invoking a language model, or from a generative module;</li>
+  <li>to apply deterministic constraint processing at least to a generative output, including temporal anchoring and school-block exclusion;</li>
+  <li>to adapt routine-item instruction notes according to a caregiver identity;</li>
+  <li>to provide region-, ingredient-, and allergy-aware meal options; and</li>
+  <li>to realise the classification function on web-browser and native-mobile clients.</li>
+</ol>
+
+<h2>4. Summary of the Invention</h2>
+<p>A computational orchestration system generates an adaptive child-development routine. Before generation, an ambient-condition classification module evaluates an explicit user-preference preservation state comprising a synchronously readable data structure and a deferred component-state data structure. Explicit user engagement with an environmental selection control immediately designates a user-selected environmental value as authoritative in the synchronously readable data structure. Where that value is not already authoritative, concurrent routine-generation triggers share at most one environmental detection operation and are prevented from initiating competing operations. Device coordinates are obtained through a platform-provided geolocation provider with a configurable timeout. A remote meteorological data service is queried for at least one of a weather-condition code, an ambient temperature, a precipitation value, and a wind-speed value. Those parameters are mapped to one of a fixed set of outdoor-suitability classifications. After the detection operation resolves, the synchronously readable data structure is re-evaluated. A derived classification is discarded, and is prevented from superseding the user-selected value, where that value became authoritative during the asynchronous resolution window. The designated authoritative classification—the user-selected value where that value is authoritative, otherwise the derived classification—is injected as a parameter into the routine-generation call chain independently of whether the deferred component-state data structure has been committed in a user-interface synchronisation cycle.</p>
+<p>A hybrid generation engine comprises a deterministic rule-based path operating on template activity pools and a generative artificial-intelligence module. The engine is configured to produce a routine artefact from the rule-based path without invoking the generative module, or from the generative module. Deterministic constraint processing operates on an output of the generative module and provides at least temporal anchoring of activity start times to a wake-time reference and exclusion of activity placement during mandatory school hours. Language-model vendor identity is not a limitation.</p>
+<p>Dependent embodiments include non-blocking degradation on detection failure; capture of a derived classification across an asynchronous confirmation dialogue; a three-way suitable / limited / unsuitable mapping; atomic update of the dual preference structures; web and native-mobile realisation; energy-profile re-ordering; caregiver rewriting of instruction notes; environmental-state-driven activity substitution; anti-repetition processing; and template meal anchors. Optional meal-option generation uses a constrained language-model prompt. A Jain dietary profile, where used, constrains that prompt.</p>
+
+<h2>5. Brief Description of the Drawings</h2>
+<ol>
+  <li><strong>Figure 1</strong> is a block diagram of the computational orchestration architecture, including client execution environments and a server-side orchestration engine.</li>
+  <li><strong>Figure 2</strong> is a flow diagram of the environmental synchronisation protocol, from a generation trigger through shared detection, classification, late-result reconciliation, and payload injection.</li>
+  <li><strong>Figure 3</strong> is a flow diagram of hybrid routine generation comprising a rule-based path and a generative path, followed by constraint processing.</li>
+  <li><strong>Figure 4</strong> is a block diagram of meal-slot anchoring and optional constrained meal-option generation.</li>
+  <li><strong>Figure 5</strong> is a block diagram of environmental-state-driven activity substitution.</li>
+  <li><strong>Figure 6</strong> is a state diagram of preference preservation and late-result discard.</li>
+  <li><strong>Figure 7</strong> is a block diagram of deterministic constraint and correction processing applied to a language-model routine artefact.</li>
+</ol>
+<p class="small">Figures 1 to 4 correspond to the subject-matter of the drawings filed with the provisional specification. Figures 5 to 7 illustrate the same filed written description. Convenience drawings in this draft are not Schedule II sheets.</p>
+
+<h2>6. Detailed Description</h2>
+<p>Service names, model names, frameworks, and source identifiers, where mentioned, are illustrative. The invention is not limited to a particular meteorological provider, language-model provider, operating system, or user-interface library.</p>
+
+<h3>6.1 Technical problem</h3>
+<p>In a client-server routine-generation system, an environmental suitability value must be available as a generation input at the moment a generation request is dispatched, while geolocation and meteorological retrieval are asynchronous and fallible; multiple generation triggers may fire concurrently; a user may explicitly engage an environmental selection control during an in-flight detection window; deferred user-interface state inside an asynchronous closure may be stale relative to a synchronously readable reference; and committing a classification only through a later user-interface re-render can omit the decided value from the payload actually sent to the generation process.</p>
+<p>Separately, a language-model inference engine produces probabilistic routine artefacts that may violate a stored wake time, school-hour blocks, allergy lists, cuisine constraints, and meal-slot uniqueness, and therefore cannot be treated as a correctness engine.</p>
+<p>The invention addresses these as computational consistency and concurrent-operation problems arising from asynchronous environmental input/output and concurrent routine-generation triggers. It is not claimed as a method of medical treatment or as parenting advice.</p>
+
+<h3>6.2 Technical solution</h3>
+<p>The solution is a coordinated computational protocol. The protocol maintains an explicit user-preference preservation state in two cooperating structures: a synchronously readable data structure that is authoritative within an execution turn, and a deferred component-state data structure that drives user-interface re-rendering. An explicit environmental choice is designated immediately as authoritative in the synchronously readable structure. Environmental detection is initiated only where that value is not already authoritative. Concurrent triggers share at most one environmental detection operation and cannot initiate competing operations. When asynchronous detection resolves, the synchronously readable structure is re-evaluated. A stale derived environmental classification is discarded and cannot supersede an explicit user-selected value. The designated authoritative environmental classification is then injected into the routine-generation call chain independently of deferred user-interface commit.</p>
+<p>The interaction among those elements is as follows. Authoritative state gates whether detection starts and which value is later injected. Asynchronous detection produces a candidate outdoor-suitability classification from geolocation and meteorological parameters. Concurrent-operation suppression prevents two detections from racing into the same session. Late revalidation reads the authoritative structure after the network operation returns. Stale-result rejection prevents a late-derived class from becoming the generation input after the user has made an explicit choice. Downstream payload propagation supplies the designated class to the generation process without waiting for a deferred user-interface synchronisation cycle that may still hold a stale value.</p>
+<p>These features are presented so that the technical problem, the computational mechanism, the interaction among the claimed components, and the resulting consistency effect can be assessed. This specification does not conclude that Section 3(k) of the Patents Act, 1970 is overcome. No specialised hardware is required or added for eligibility.</p>
+
+<h3>6.3 System architecture</h3>
+<p>Referring to Figure 1, the system comprises client execution environments (100) and a server-side orchestration engine (300) communicating through a typed application-programming-interface gateway. Clients include a web-browser environment (110) and a native mobile environment (120). Alternative embodiments (130–150) include wearable, voice-assistant, and local-inference clients.</p>
+<p>Engine (300) houses: an age-band classification engine (310); a hybrid generation engine (320) comprising a generative module (321) and a rule-based path (322); constraint and correction processing (330); meal enrichment (340); energy-profile re-ordering (350); caregiver transformation (360); and environmental substitution (370). A persistent store (400) holds profiles, analytics, and historical artefacts. External abstractions comprise a meteorological service (600), an interchangeable language-model inference engine (500), and optional speech synthesis (510).</p>
+<p>Client asynchronous state management comprises a synchronously readable reference (211) and a deferred component-state structure (212). A registry of pending asynchronous operations (220) holds at most one environmental detection operation.</p>
+
+<h3>6.4 Environmental synchronisation protocol</h3>
+<p>Referring to Figures 2 and 6, the ambient-condition classification module produces a single authoritative outdoor-suitability classification as an input to a routine-generation call chain while three events may race: concurrent generation triggers; an in-flight geolocation and meteorological retrieval; and explicit user engagement with an environmental selection control.</p>
+<p>The module maintains at least: a preference state that is either not yet designated by the user or already designated as authoritative; a user-selected classification or default, retained when the user value is authoritative or when detection fails; registry (220), empty or holding at most one detection operation; a derived classification belonging to a fixed outdoor-suitability set, or a null result; and, in a dependent embodiment, a pending-action closure that captures a derived classification across a confirmation dialogue.</p>
+<p>The protocol proceeds as follows.</p>
+<ol class="steps">
+  <li>A routine-generation trigger invokes ambient-condition classification immediately before the generation request.</li>
+  <li>If the synchronously readable data structure already indicates that a user-selected environmental value is authoritative, that value is designated as the authoritative environmental classification and no detection operation is initiated.</li>
+  <li>If a user-selected value is not already authoritative and registry (220) already holds an operation, the existing operation is awaited. A second geolocation permission dialogue and a second meteorological query are not opened.</li>
+  <li>If registry (220) is empty and a user-selected value is not already authoritative, a new detection is registered. Coordinates are obtained through a platform-provided geolocation provider with a configurable timeout, using a browser geolocation interface or a native operating-system location abstraction. Meteorological service (600) is queried for a weather-condition code, temperature, precipitation, and wind.</li>
+  <li>Received parameters are mapped deterministically to an outdoor-suitability classification. In one embodiment the fixed set comprises suitable, limited, and unsuitable classifications, mapped as follows: unsuitable where severe weather codes (thunderstorm, snow, rain showers, sustained rain) apply, or precipitation is at least 2 mm, or wind is at least 40 km/h, or temperature is at least 40°C or at most 0°C; limited where drizzle or fog applies, or precipitation is greater than 0 mm, or temperature is at least 35°C or at most 5°C, or wind is at least 25 km/h; and suitable otherwise, including clear, mainly clear, partly cloudy, overcast, or calm conditions.</li>
+  <li>After the operation resolves, the synchronously readable data structure is re-read. If a user-selected environmental value became authoritative during the asynchronous resolution window, the derived classification is discarded and does not supersede the user-selected value.</li>
+  <li>The designated authoritative classification—the user-selected value where that value is authoritative, otherwise the derived classification—is threaded as a parameter through the routine-generation call chain and inserted into the generation payload independently of whether the deferred component-state data structure has been committed in a user-interface synchronisation cycle.</li>
+  <li>In a dependent embodiment, if generation is suspended on an asynchronous confirmation dialogue, a derived classification is captured in a pending-action closure and re-injected upon confirmation.</li>
+  <li>In a further dependent embodiment, permission denial, network error, timeout, or abort yields a null classification without rethrow, and generation proceeds with an existing user-selected or default value.</li>
+  <li>On resolve or reject, registry (220) is cleared.</li>
+</ol>
+<p>A helper may update structures (211) and (212) atomically from a calling context so that the synchronous and deferred sentinels change together.</p>
+<p>Duplicate concurrent detections without a shared registry cause competing meteorological operations and race two classifications into the same session. Applying a late-derived result after the user has designated an explicit value produces a generation input that does not match the authoritative environmental state. Writing the class only into deferred user-interface state, then reading that state inside an asynchronous closure, can omit the decided value from the payload. Direct injection of the designated authoritative classification, together with dual-structure preference state, addresses that coordination failure.</p>
+<p>User-interface tokens such as yes, limited, and no may embody the same three-way outdoor-suitability set.</p>
+
+<h3>6.5 Method flow</h3>
+<p>A computer-implemented method corresponding to the protocol of section 6.4 comprises: receiving a routine-generation trigger; evaluating the dual-structure preference state; where a user-selected environmental value is already authoritative, designating that value and proceeding to injection; where it is not already authoritative, sharing or initiating at most one environmental detection operation; deriving an outdoor-suitability classification from received parameters when a detection result is available; re-evaluating the synchronously readable structure and discarding a derived classification that would supersede a user-selected value that became authoritative during the window; designating the authoritative classification; and injecting that designated classification into the generation payload independently of deferred user-interface commit. The method is a sequence of computational steps and is not merely the system of section 6.4 restated as a “method”.</p>
+
+<h3>6.6 Routine generation</h3>
+<p>Referring to Figure 3, two generation paths are disclosed through distinct interface endpoints. Not every module is required in every embodiment. The environmental synchronisation protocol of section 6.4 may be practised with either generation path.</p>
+<p>The deterministic rule-based path selects from age-band template activity pools. Inputs include age band, wake and sleep times, school times, mood, caregiver identity, environmental classification, parent goals, and ingredient inventory. A time cursor advances from wake to sleep. Mandatory anchors include meals, hygiene, school, toddler nap, and school-age homework. Remaining slots are filled from pools randomised by a date-seeded shuffle using at least a generation date and a child identifier. Caregiver identity may modulate bonding-density of selected activities. The rule-based path is a complete generation embodiment without invoking a language-model inference engine.</p>
+
+<h3>6.7 Hybrid and generative embodiment</h3>
+<p>A language-model inference engine is driven by a structured prompt comprising profile, date, age-band guidance, meal guidance, caregiver prompt, parent goals, mood, energy profile, prior-day categories, and environmental classification. The model is probabilistic and is not taught as a safety or correctness guarantee. No vendor name is essential. The hybrid engine produces a routine artefact from the rule-based path without invoking the generative module, or from the generative module. This specification does not present a later language-model-to-rules fallback architecture as the original generation architecture.</p>
+
+<h3>6.8 Deterministic constraint and correction processing</h3>
+<p>Referring to Figure 7, deterministic constraint processing operates on an output of the generative module and provides at least:</p>
+<ul>
+  <li>temporal anchoring, being a time-cascade of activity start times to an actual wake-time reference;</li>
+  <li>schedule-consistency enforcement excluding activity placement during mandatory school hours;</li>
+  <li>anti-repetition, whereby prior-day meal and activity categories are passed to the prompt and cross-checked in post-processing;</li>
+  <li>allergy and dietary filtering with substitution from a deterministic safe set;</li>
+  <li>cuisine authenticity validation against a regional canonical-name registry; and</li>
+  <li>cross-slot dish-name deduplication.</li>
+</ul>
+<p>Figure 3 of the provisional specification shows a constraint layer after both generation paths, and states that the generative path may receive the full chain. Independent Claim 18 recites correction of a probabilistic language-model output, consistent with the provisional claim directed to generative-artificial-intelligence outputs. This complete specification does not convert that method into a method of receiving a rule-based artefact.</p>
+
+<h3>6.9 Environmental adaptation</h3>
+<p>Referring to Figure 5, outdoor items are identified by a category set and keywords including park, playground, cycling, walk, garden, swim, run, jog, football, cricket, tennis, skating, and fresh air. Responsive to an unsuitable classification, an outdoor activity is substituted with a deterministic indoor equivalent and replacement notes. Responsive to a limited classification, the outdoor activity is retained, duration is reduced, and an indoor backup note is appended. Responsive to a suitable classification, items pass unchanged. The substitution is a pure, non-mutating function of the classification and the item list.</p>
+
+<h3>6.10 Caregiver transformation</h3>
+<p>A caregiver-adaptive transformation module receives a caregiver identity parameter selected from a plurality of caregiver profiles: first primary parent; second primary parent; both; grandparent; and babysitter. Each profile is associated with a rewriting policy. The module rewrites routine-item instruction notes according to the policy of the selected profile. A contextual-prompt appender may also steer a language-model call. A narrower embodiment rewrites presentation of instruction notes by title-prefix simplification.</p>
+
+<h3>6.11 Meal embodiments</h3>
+<p>Referring to Figure 4, Phase A anchors timed and labelled meal slots, including breakfast, snacks, lunch, dinner, and tiffin, to the child’s age band and wake and sleep times. Mandatory meal anchor blocks and meal names selected from age-band-specific template pools are also part of the rule-based path.</p>
+<p>Phase B is optional. A parent-supplied ingredient inventory is sanitised so that instruction-like wording is treated as ingredient names. A constrained natural-language prompt instructs a language-model inference engine to generate a predetermined number of distinct dish-name options per meal slot, using the supplied ingredients as primary components and constrained to regional cuisine, dietary restriction, and allergy parameters. An interpolation example is the ingredients “Paneer, Tomato” yielding “Paneer paratha with tomato chutney.” A cross-slot deduplication function ensures that no dish name appears in more than one meal slot of the same daily routine. A predetermined number of options is not limited to any particular integer.</p>
+<p>The regional cuisine parameter is selected from a set comprising at least North Indian, South Indian, Bengali, Western, Asian, and Pan-Indian. The prompt incorporates a region-specific description of canonical dishes, ingredients, and cooking techniques.</p>
+<p>Where the dietary restriction parameter is a Jain dietary profile, the prompt is constrained to exclude meat, fish, and eggs, to exclude root vegetables, and to exclude onion and garlic from suggested options. That constraint is a prompt constraint. This specification does not disclose a deterministic root-vegetable parser, and does not disclose code-level Jain enforcement, as an original embodiment.</p>
+
+<h3>6.12 Energy-profile re-ordering</h3>
+<p>When a predetermined minimum sample count of observations is available, a historically observed energy profile comprising at least a peak-focus window and a low-energy window is read, and activity time slots are reassigned accordingly: cognitive work toward a peak-focus window; rest, sensory, or free-play activity toward a low-energy window; and story or bonding activity toward a calm window, where such a calm window is stored. The process is a deterministic heuristic over stored completion analytics, not a trained neural network. A specific numeric sample-count threshold is not essential.</p>
+
+<h3>6.13 Age-band classification</h3>
+<p>A child is assigned to one of a plurality of developmental age bands from date of birth: Infant, 0–11 months; Toddler, 12–35 months; Preschool, 36–59 months; Early School, 60–119 months; and Pre-Teen, 120–180 months. Each band is associated with activity vocabulary constraints, meal guidance, sleep parameters, and structural templates. Age-band guidance is injected into a language-model prompt. A date-seeded shuffle randomises rule-based activity-pool ordering.</p>
+<p>Numerical sleep and meal examples associated with an age band are computational parameters, not medical advice.</p>
+
+<h3>6.14 Platform embodiments</h3>
+<p>The ambient-condition classification module is functionally identical across a web-browser frontend execution environment and a native mobile frontend execution environment. Platform variance is confined to the geolocation interface and permission handling. Product-shell names of particular native wrappers are not limitations of the claims.</p>
+
+<h3>6.15 Alternative embodiments</h3>
+<p>Alternative embodiments disclosed with the provisional specification include: wearable biometric inputs; biometric refinement of an energy profile; smart-home actuation; voice-assistant presentation and spoken preference flags; an offline local language-model with constraint processing preserved; emotional-state inference from caregiver-supplied mood input; multi-child interlocking; travel-mode substitution; and educational-progress ingest. Facial or biometric emotional inference, where mentioned, is an alternative and is not asserted as an operative original client. These alternatives are shown dashed in Figure 1.</p>
+<p>Rewards and engagement scoring by category-weighted points are optional and are not recited in the independent claims.</p>
+
+<h3>6.16 Later / current embodiments</h3>
+<p>The following features may be practised in a later or current embodiment. They are described here so that the complete specification records subsequent development. They are not presented as having been disclosed on 10 May 2026, and they are not recited as limitations of the priority-bearing independent claims:</p>
+<ul>
+  <li>dinner-to-bed minimum gaps of sixty, ninety, or one hundred twenty minutes;</li>
+  <li>air-quality-index outdoor-minute caps using numeric thresholds of 0, 15, and 20;</li>
+  <li>a United Arab Emirates outdoor-timing clock constraint;</li>
+  <li>deterministic meal-bank catalogues as a default meal-name source;</li>
+  <li>HTTP status 422 refusal to persist a generated artefact;</li>
+  <li>a language-model-to-rules fallback as a distinct generation architecture;</li>
+  <li>a trustScore metric;</li>
+  <li>learning-weight correlations, which in a current embodiment are prompt-level and not a trained neural network;</li>
+  <li>skipping generation for an infant younger than six months;</li>
+  <li>a named intelligence-pipeline function order;</li>
+  <li>vendor-specific language-model names; and</li>
+  <li>particular native-shell product names for hosting the web implementation on a mobile operating system.</li>
+</ul>
+<p>Later or current embodiments may appear in a complete specification. They are not entitled to the 10 May 2026 provisional date unless fair basis in the provisional specification is shown.</p>
+
+<h3>6.17 Advantages and technical effects</h3>
+<p>The following effects are supported by the written description, without numerical performance claims and without benchmarks:</p>
+<ul>
+  <li>maintaining an authoritative environmental state across an asynchronous resolution boundary;</li>
+  <li>preventing stale derived environmental data from superseding an explicit user-selected environmental value;</li>
+  <li>suppressing competing environmental detection operations for concurrent routine-generation triggers;</li>
+  <li>ensuring deterministic environmental input to downstream routine generation; and</li>
+  <li>avoiding dependence on a deferred user-interface synchronisation event for the generation input.</li>
+</ul>
+<p>Dependent embodiments further provide continuity of a captured classification across an asynchronous confirmation dialogue, and non-blocking degradation on detection failure. Hybrid-generation embodiments provide machine-controlled wake-time anchoring and school-block exclusion of language-model outputs, deterministic outdoor-to-indoor substitution, deterministic post-processing of probabilistic language-model outputs, and reproducible day-to-day variation via a seeded shuffle.</p>
+<p>A statement of reduced user-interface synchronisation latency appears in the provisional specification. That statement is not recited as a claim limitation and is not relied upon as a measured effect.</p>
+
+<h3>6.18 Industrial applicability</h3>
+<p>The invention is industrially applicable as computer-implemented software executed on conventional client devices and servers to generate and deliver a constrained daily-routine artefact for a child profile. It is not a method of medical treatment as claimed.</p>
+
+<h2>7. Claims</h2>
+<p class="small">I claim:</p>
+<ol class="claims">
+  <li>
+    A computer-implemented system for supplying an authoritative environmental classification to a routine-generation process, comprising:
+    <ol type="a">
+      <li>an explicit user-preference preservation state comprising a synchronously readable data structure and a deferred component-state data structure within an asynchronous state-management layer, wherein explicit user engagement with an environmental selection control immediately designates a user-selected environmental value as authoritative in the synchronously readable data structure;</li>
+      <li>a registry of pending asynchronous operations configured to hold at most one active environmental detection operation, such that, where a user-selected environmental value is not already authoritative, concurrent invocations of a routine-generation trigger share said operation and are prevented from initiating competing environmental detection operations;</li>
+      <li>a geolocation interface module configured to obtain device coordinates through a platform-provided geolocation provider with a configurable timeout;</li>
+      <li>an environmental data interface module configured to query a remote meteorological data service using said coordinates and to receive at least one of: a standard weather-condition code, an ambient temperature value, a precipitation value, and a wind-speed value;</li>
+      <li>an ambient-condition classification module configured to derive an outdoor-suitability classification from environmental parameters received from an environmental detection operation by mapping said parameters to one of a fixed set of outdoor-suitability classifications;</li>
+      <li>an explicit-preference preservation module configured, after an environmental detection operation resolves, to re-evaluate the synchronously readable data structure and, where a user-selected environmental value has become authoritative during the asynchronous resolution window, to discard the derived classification so that said derived classification does not supersede the user-selected environmental value; and</li>
+      <li>a payload injection module configured to designate as the authoritative environmental classification the user-selected environmental value where that value is authoritative, and otherwise the derived classification, and to inject the designated authoritative environmental classification as a parameter into a routine-generation call chain independently of whether the deferred component-state data structure has been committed in a user-interface synchronisation cycle.</li>
+    </ol>
+  </li>
+  <li>
+    The system of claim 1, wherein the geolocation interface module operates non-blockingly, catching exceptions including permission denial, network error, timeout, and abort signal, and returning a null classification on failure such that routine generation proceeds with an existing user-selected or default value.
+  </li>
+  <li>
+    The system of claim 1, wherein the routine-generation call chain comprises an asynchronous confirmation dialogue, and wherein a derived classification is captured in a pending-action closure prior to dialogue presentation and re-injected into the routine-generation payload upon dialogue confirmation.
+  </li>
+  <li>
+    The system of claim 1, wherein the fixed set of outdoor-suitability classifications comprises a suitable classification, a limited classification, and an unsuitable classification mapped according to weather-condition code, precipitation, wind speed, and temperature thresholds.
+  </li>
+  <li>
+    The system of claim 1, further comprising a helper configured to update the synchronously readable data structure and the deferred component-state data structure atomically from a calling context.
+  </li>
+  <li>
+    The system of claim 1, implemented across at least a web-browser frontend execution environment and a native mobile frontend execution environment, the ambient-condition classification module being functionally identical across said environments.
+  </li>
+  <li>
+    A computer-implemented method for supplying an authoritative environmental classification to a routine-generation process, comprising:
+    <ol type="a">
+      <li>receiving a routine-generation trigger;</li>
+      <li>evaluating an explicit user-preference preservation state comprising a synchronously readable data structure and a deferred component-state data structure;</li>
+      <li>where the synchronously readable data structure indicates that a user-selected environmental value is already authoritative, designating that user-selected environmental value as the authoritative environmental classification and proceeding to step (h);</li>
+      <li>where a user-selected environmental value is not already authoritative, querying a registry of pending asynchronous operations and either awaiting an existing pending environmental detection operation or initiating a new environmental detection operation, registering said new operation, and awaiting its resolution, concurrent triggers being prevented from initiating competing environmental detection operations;</li>
+      <li>upon resolution, deriving an outdoor-suitability classification from received environmental parameters when a detection result is available;</li>
+      <li>re-evaluating the synchronously readable data structure and, where a user-selected environmental value has become authoritative during the asynchronous resolution window, discarding the derived classification so that said derived classification does not supersede the user-selected environmental value;</li>
+      <li>designating as the authoritative environmental classification the user-selected environmental value where that value is authoritative, and otherwise the derived classification; and</li>
+      <li>injecting the designated authoritative environmental classification as a parameter into a routine-generation payload independently of whether the deferred component-state data structure has been committed in a user-interface synchronisation cycle.</li>
+    </ol>
+  </li>
+  <li>
+    The method of claim 7, wherein two or more concurrent invocations share a single environmental detection operation, thereby reducing redundant computational requests.
+  </li>
+  <li>
+    The method of claim 7, wherein step (h) injects the designated authoritative environmental classification into the generation payload without waiting for the deferred component-state data structure to commit.
+  </li>
+  <li>
+    A computer-implemented system for adaptive generation of a child development routine, comprising:
+    <ol type="a">
+      <li>an age-band classification engine configured to assign a child to one of a plurality of developmental age bands, each band associated with a distinct set of activity vocabulary constraints, meal guidance, sleep parameters, and structural templates;</li>
+      <li>a date-seeded shuffle function configured to randomise activity-pool ordering using a seed derived from at least a generation date and a child identifier;</li>
+      <li>a hybrid generation engine comprising a deterministic rule-based path operating on template activity pools and a generative artificial-intelligence module constrained by age-band guidance, the engine being configured to produce a routine artefact from the deterministic rule-based path without invoking the generative artificial-intelligence module, or from the generative artificial-intelligence module; and</li>
+      <li>deterministic constraint/correction processing configured to operate on an output of the generative artificial-intelligence module, providing at least temporal anchoring of activity start times to a wake-time reference and schedule-consistency enforcement excluding activity placement during mandatory school hours.</li>
+    </ol>
+  </li>
+  <li>
+    The system of claim 10, wherein the deterministic constraint/correction processing further provides allergy filtering, cuisine authenticity validation against a regional canonical-name registry, and cross-slot deduplication of dish names.
+  </li>
+  <li>
+    The system of claim 10, further comprising an energy-profile re-ordering module configured, when a predetermined minimum sample count of observations is available, to read a historically observed energy profile comprising at least a peak-focus window and a low-energy window and to reassign activity time slots accordingly.
+  </li>
+  <li>
+    The system of claim 10, further comprising a caregiver-adaptive transformation module configured to receive a caregiver identity parameter selected from a plurality of caregiver profiles and to rewrite routine-item instruction notes according to a rewriting policy associated with the selected profile.
+  </li>
+  <li>
+    The system of claim 10, further comprising an environmental-state-driven activity substitution module configured to substitute outdoor activities with deterministic indoor equivalents responsive to an unsuitable classification, to reduce activity duration and append an indoor backup note responsive to a limited classification, and to pass items unchanged responsive to a suitable classification.
+  </li>
+  <li>
+    The system of claim 10, further comprising an anti-repetition module configured to incorporate prior-day category frequencies into a prompt supplied to the generative artificial-intelligence module and to cross-check prior-day categories in post-processing.
+  </li>
+  <li>
+    The system of claim 10, wherein the deterministic rule-based path inserts mandatory meal anchor blocks and selects meal names from age-band-specific template pools.
+  </li>
+  <li>
+    The method of claim 7, comprising maintaining cooperatively the synchronously readable data structure and the deferred component-state data structure such that the synchronously readable data structure is authoritative within an asynchronous closure for explicit user-preference preservation while the deferred component-state data structure drives user-interface re-rendering.
+  </li>
+  <li>
+    A computer-implemented method for deterministic correction of probabilistic outputs of a language-model inference engine in child development routine generation, comprising:
+    <ol type="a">
+      <li>receiving a probabilistic routine output from the language-model inference engine;</li>
+      <li>applying temporal anchoring to align activity start times with a wake-time reference;</li>
+      <li>applying schedule-consistency enforcement to exclude activity placement during mandatory school hours;</li>
+      <li>applying allergy filtering to remove items conflicting with stored allergy parameters and to substitute deterministic safe alternatives;</li>
+      <li>applying cuisine authenticity validation against a regional canonical-name registry;</li>
+      <li>applying cross-slot deduplication to remove repeated dish names within the same routine; and</li>
+      <li>returning a corrected routine artefact for delivery to a client execution environment.</li>
+    </ol>
+  </li>
+  <li>
+    The method of claim 18, further comprising applying environmental-state-driven activity substitution responsive to a categorical outdoor-suitability classification.
+  </li>
+  <li>
+    A computer-implemented method for generating personalised meal options within a child development routine, comprising:
+    <ol type="a">
+      <li>anchoring meal-slot times and labels within a generated routine based on a child’s age band and wake-up and sleep times;</li>
+      <li>receiving a parent-supplied ingredient inventory and at least one of a regional cuisine parameter, a dietary restriction parameter, and an allergy list;</li>
+      <li>sanitising the parent-supplied ingredient inventory such that instruction-like wording therein is treated as ingredient names;</li>
+      <li>constructing a constrained natural-language prompt for a language-model inference engine instructing the engine to generate a predetermined number of distinct dish-name options per meal slot, using the supplied ingredients as primary components and constrained to the regional cuisine, dietary restriction, and allergy parameters; and</li>
+      <li>applying a cross-slot deduplication function ensuring no dish name appears in more than one meal slot within the same daily routine.</li>
+    </ol>
+  </li>
+  <li>
+    The method of claim 20, wherein the regional cuisine parameter is selected from a set comprising at least North Indian, South Indian, Bengali, Western, Asian, and Pan-Indian, and wherein the prompt incorporates a region-specific description of canonical dishes, ingredients, and cooking techniques.
+  </li>
+  <li>
+    The method of claim 20, wherein the dietary restriction parameter for a Jain dietary profile constrains the prompt to exclude meat, fish, and eggs, to exclude root vegetables, and to exclude onion and garlic from suggested options.
+  </li>
+</ol>
+
+<h2>8. Abstract</h2>
+<p>A computer-implemented system generates an adaptive child-development routine and supplies an authoritative environmental classification to the routine-generation process. An explicit user environmental choice is designated immediately as authoritative in a synchronously readable data structure, while a deferred structure drives interface re-rendering. Where that choice is not already authoritative, concurrent generation triggers share at most one geolocation and meteorological retrieval. Received weather-code, temperature, precipitation and wind parameters are mapped to an outdoor-suitability classification. After resolution the synchronously readable structure is re-evaluated; a late-derived classification is discarded if a user-selected value became authoritative during the window, and is prevented from superseding that value. The designated authoritative classification is injected into the generation call chain independently of deferred interface commit. A hybrid engine provides a rule-based path operable without a language model and an optional language-model path.</p>
+
+<h2>9. Drawings</h2>
+<p class="small">Figures 1 to 7. Convenience drawings. Schedule II formal sheets remain outstanding.</p>
+
+<div class="fig">
+  <p class="center"><strong>Figure 1 — Computational orchestration architecture</strong></p>
+  <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="504" fill="#fff" stroke="#333"/>
+    <text x="450" y="28" text-anchor="middle" font-size="14" font-family="Helvetica" font-weight="bold">CLIENT EXECUTION ENVIRONMENTS (100)</text>
+    <rect x="20" y="40" width="250" height="80" fill="#e8f0e8" stroke="#333"/><text x="145" y="65" text-anchor="middle" font-size="11" font-family="Helvetica" font-weight="bold">Web-browser (110)</text><text x="145" y="84" text-anchor="middle" font-size="10" font-family="Helvetica">Classification (200) · 211/212</text><text x="145" y="102" text-anchor="middle" font-size="10" font-family="Helvetica">Browser geolocation (230)</text>
+    <rect x="290" y="40" width="250" height="80" fill="#e8f0e8" stroke="#333"/><text x="415" y="65" text-anchor="middle" font-size="11" font-family="Helvetica" font-weight="bold">Native mobile (120)</text><text x="415" y="84" text-anchor="middle" font-size="10" font-family="Helvetica">OS location abstraction</text><text x="415" y="102" text-anchor="middle" font-size="10" font-family="Helvetica">Payload injection (260)</text>
+    <rect x="560" y="40" width="320" height="80" fill="#f7f7f7" stroke="#333" stroke-dasharray="6 4"/><text x="720" y="65" text-anchor="middle" font-size="11" font-family="Helvetica">Alternative 130–150</text><text x="720" y="84" text-anchor="middle" font-size="10" font-family="Helvetica">Wearable · voice · offline LM</text><text x="720" y="102" text-anchor="middle" font-size="10" font-family="Helvetica">alternative embodiments</text>
+    <rect x="20" y="138" width="520" height="40" fill="#eef4fb" stroke="#333"/><text x="280" y="163" text-anchor="middle" font-size="12" font-family="Helvetica">Typed API gateway — direct payload injection</text>
+    <rect x="560" y="138" width="320" height="40" fill="#fff3d6" stroke="#333"/><text x="720" y="163" text-anchor="middle" font-size="11" font-family="Helvetica">Meteo service (600)</text>
+    <rect x="20" y="196" width="860" height="210" fill="#f4f4fa" stroke="#333"/>
+    <text x="450" y="218" text-anchor="middle" font-size="13" font-family="Helvetica" font-weight="bold">SERVER ORCHESTRATION ENGINE (300)</text>
+    <rect x="36" y="232" width="155" height="58" fill="#fff" stroke="#333"/><text x="113" y="258" text-anchor="middle" font-size="10" font-family="Helvetica">Age-band (310)</text><text x="113" y="274" text-anchor="middle" font-size="9" font-family="Helvetica">5 bands · date seed</text>
+    <rect x="201" y="232" width="155" height="58" fill="#e8f0e8" stroke="#333"/><text x="278" y="258" text-anchor="middle" font-size="10" font-family="Helvetica">Rule path (322)</text><text x="278" y="274" text-anchor="middle" font-size="9" font-family="Helvetica">templates · anchors</text>
+    <rect x="366" y="232" width="165" height="58" fill="#f4f0fa" stroke="#333"/><text x="448" y="258" text-anchor="middle" font-size="10" font-family="Helvetica">GAI module (321)</text><text x="448" y="274" text-anchor="middle" font-size="9" font-family="Helvetica">interchangeable LM (500)</text>
+    <rect x="541" y="232" width="155" height="58" fill="#e8e0f4" stroke="#333"/><text x="618" y="258" text-anchor="middle" font-size="10" font-family="Helvetica">Correction (330)</text><text x="618" y="274" text-anchor="middle" font-size="9" font-family="Helvetica">Fig. 7</text>
+    <rect x="706" y="232" width="155" height="58" fill="#fff" stroke="#333"/><text x="783" y="258" text-anchor="middle" font-size="10" font-family="Helvetica">Meals (340)</text><text x="783" y="274" text-anchor="middle" font-size="9" font-family="Helvetica">Fig. 4</text>
+    <rect x="36" y="304" width="200" height="50" fill="#fff" stroke="#333"/><text x="136" y="326" text-anchor="middle" font-size="10" font-family="Helvetica">Substitution (370)</text><text x="136" y="342" text-anchor="middle" font-size="9" font-family="Helvetica">suitable/limited/unsuitable</text>
+    <rect x="248" y="304" width="200" height="50" fill="#fff" stroke="#333"/><text x="348" y="326" text-anchor="middle" font-size="10" font-family="Helvetica">Energy (350)</text><text x="348" y="342" text-anchor="middle" font-size="9" font-family="Helvetica">min. sample count</text>
+    <rect x="460" y="304" width="200" height="50" fill="#fff" stroke="#333"/><text x="560" y="326" text-anchor="middle" font-size="10" font-family="Helvetica">Caregiver (360)</text><text x="560" y="342" text-anchor="middle" font-size="9" font-family="Helvetica">5 profiles</text>
+    <rect x="672" y="304" width="188" height="50" fill="#fff" stroke="#333"/><text x="766" y="326" text-anchor="middle" font-size="10" font-family="Helvetica">Store (400)</text><text x="766" y="342" text-anchor="middle" font-size="9" font-family="Helvetica">profiles · analytics</text>
+    <text x="450" y="430" text-anchor="middle" font-size="11" font-family="Times">Two disclosed generation endpoints: rule-based path and generative module.</text>
+    <text x="450" y="470" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 1. Computational orchestration architecture. Alternative platforms dashed.</text>
+  </svg>
+  <p class="figcaption">Figure 1 — Computational orchestration architecture. Alternative platforms dashed.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 2 — Environmental synchronisation protocol</strong></p>
+  <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="484" fill="#fff" stroke="#333"/>
+    <rect x="300" y="18" width="300" height="32" fill="#e8f0e8" stroke="#333"/><text x="450" y="39" text-anchor="middle" font-size="12" font-family="Helvetica">1. Generation trigger</text>
+    <rect x="250" y="64" width="400" height="36" fill="#fff3d6" stroke="#333"/><text x="450" y="87" text-anchor="middle" font-size="11" font-family="Helvetica">2. Preference touched? (211 OR 212)</text>
+    <rect x="20" y="66" width="110" height="32" fill="#e8e0f4" stroke="#333"/><text x="75" y="86" text-anchor="middle" font-size="10" font-family="Helvetica">YES → user value</text>
+    <rect x="250" y="116" width="400" height="36" fill="#eef4fb" stroke="#333"/><text x="450" y="139" text-anchor="middle" font-size="11" font-family="Helvetica">3. Registry (220) populated? share in-flight</text>
+    <rect x="770" y="118" width="110" height="32" fill="#eef4fb" stroke="#333"/><text x="825" y="138" text-anchor="middle" font-size="10" font-family="Helvetica">YES → await</text>
+    <rect x="200" y="168" width="500" height="44" fill="#fff" stroke="#333"/><text x="450" y="186" text-anchor="middle" font-size="11" font-family="Helvetica">4. Geo + meteo query (register in 220)</text><text x="450" y="202" text-anchor="middle" font-size="10" font-family="Helvetica">code · temp · precip · wind</text>
+    <rect x="230" y="226" width="440" height="32" fill="#fff3d6" stroke="#333"/><text x="450" y="247" text-anchor="middle" font-size="11" font-family="Helvetica">5. Classify → suitable / limited / unsuitable</text>
+    <rect x="200" y="272" width="500" height="36" fill="#fdeeee" stroke="#333"/><text x="450" y="295" text-anchor="middle" font-size="11" font-family="Helvetica">6. Re-read 211 — discard if touched during window</text>
+    <rect x="20" y="274" width="110" height="32" fill="#e8e0f4" stroke="#333"/><text x="75" y="294" text-anchor="middle" font-size="10" font-family="Helvetica">discard</text>
+    <rect x="180" y="324" width="540" height="44" fill="#e8f0e8" stroke="#333"/><text x="450" y="342" text-anchor="middle" font-size="11" font-family="Helvetica">7. Inject classification into payload BEFORE UI commit</text><text x="450" y="358" text-anchor="middle" font-size="10" font-family="Helvetica">8. Optional pending-action re-inject after wake confirm</text>
+    <rect x="220" y="384" width="460" height="32" fill="#e8e0f4" stroke="#333"/><text x="450" y="405" text-anchor="middle" font-size="11" font-family="Helvetica">9. Dispatch payload → Figure 3 generation</text>
+    <text x="450" y="450" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 2. Concurrent-safe environmental detection and payload injection.</text>
+  </svg>
+  <p class="figcaption">Figure 2 — Generation trigger, preference test, shared detection, classification, late-result discard, and payload injection.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 3 — Hybrid generation</strong></p>
+  <svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="344" fill="#fff" stroke="#333"/>
+    <rect x="40" y="20" width="820" height="36" fill="#eef4fb" stroke="#333"/><text x="450" y="43" text-anchor="middle" font-size="12" font-family="Helvetica">Inputs after Fig. 2: profile · age · wake/sleep · school · caregiver · env class · ingredients · mood</text>
+    <rect x="280" y="70" width="340" height="32" fill="#fff3d6" stroke="#333"/><text x="450" y="91" text-anchor="middle" font-size="12" font-family="Helvetica">Path selector — two filed endpoints</text>
+    <rect x="50" y="118" width="360" height="70" fill="#e8f0e8" stroke="#333"/><text x="230" y="148" text-anchor="middle" font-size="13" font-family="Helvetica" font-weight="bold">Rule-based path (322)</text><text x="230" y="168" text-anchor="middle" font-size="10" font-family="Helvetica">templates · seeded shuffle · anchors</text>
+    <rect x="490" y="118" width="360" height="70" fill="#f4f0fa" stroke="#333"/><text x="670" y="148" text-anchor="middle" font-size="13" font-family="Helvetica" font-weight="bold">GAI module (321)</text><text x="670" y="168" text-anchor="middle" font-size="10" font-family="Helvetica">optional LM — not a safety engine</text>
+    <rect x="100" y="206" width="700" height="56" fill="#e8e0f4" stroke="#333"/><text x="450" y="228" text-anchor="middle" font-size="12" font-family="Helvetica" font-weight="bold">Deterministic constraint / correction (330)</text><text x="450" y="246" text-anchor="middle" font-size="10" font-family="Helvetica">Filed Fig. 3: applied to both paths; AI path may receive the full chain</text>
+    <text x="450" y="292" text-anchor="middle" font-size="11" font-family="Times">Constraint processing follows the selected generation path.</text>
+    <text x="450" y="328" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 3. Hybrid generation: rule-based path or generative module, then constraint processing.</text>
+  </svg>
+  <p class="figcaption">Figure 3 — Rule-based path or generative module, then constraint processing.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 4 — Meal embodiments</strong></p>
+  <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="284" fill="#fff" stroke="#333"/>
+    <rect x="40" y="20" width="820" height="40" fill="#e8f0e8" stroke="#333"/><text x="450" y="45" text-anchor="middle" font-size="12" font-family="Helvetica">Phase A — slot anchoring (also inherent in §6.4.1 meal anchors)</text>
+    <rect x="40" y="76" width="200" height="55" fill="#fff3d6" stroke="#333"/><text x="140" y="108" text-anchor="middle" font-size="11" font-family="Helvetica">Food style incl. Jain</text>
+    <rect x="250" y="76" width="200" height="55" fill="#fff3d6" stroke="#333"/><text x="350" y="108" text-anchor="middle" font-size="11" font-family="Helvetica">Region</text>
+    <rect x="460" y="76" width="200" height="55" fill="#fff3d6" stroke="#333"/><text x="560" y="108" text-anchor="middle" font-size="11" font-family="Helvetica">Sanitised inventory</text>
+    <rect x="670" y="76" width="190" height="55" fill="#fff3d6" stroke="#333"/><text x="765" y="108" text-anchor="middle" font-size="11" font-family="Helvetica">Allergy + age</text>
+    <rect x="40" y="146" width="820" height="50" fill="#f4f0fa" stroke="#333"/><text x="450" y="168" text-anchor="middle" font-size="12" font-family="Helvetica">Phase B (optional) — constrained LM prompt → N dish names / slot</text><text x="450" y="186" text-anchor="middle" font-size="10" font-family="Helvetica">Jain shown in filed Fig. 4 as prompt constraint · cross-slot dedup</text>
+    <text x="450" y="224" text-anchor="middle" font-size="11" font-family="Times">Phase B is optional. Template meal anchors are a separate rule-path embodiment.</text>
+    <text x="450" y="258" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 4. Meal-slot anchoring and optional constrained meal-option generation.</text>
+  </svg>
+  <p class="figcaption">Figure 4 — Meal-slot anchoring and optional constrained meal-option generation.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 5 — Environmental substitution</strong></p>
+  <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="184" fill="#fff" stroke="#333"/>
+    <rect x="30" y="30" width="180" height="70" fill="#eef4fb" stroke="#333"/><text x="120" y="70" text-anchor="middle" font-size="11" font-family="Helvetica">Outdoor items (category + keywords)</text>
+    <rect x="230" y="30" width="200" height="70" fill="#fdeeee" stroke="#333"/><text x="330" y="60" text-anchor="middle" font-size="12" font-family="Helvetica">unsuitable</text><text x="330" y="78" text-anchor="middle" font-size="10" font-family="Helvetica">indoor lookup + notes</text>
+    <rect x="450" y="30" width="200" height="70" fill="#fff3d6" stroke="#333"/><text x="550" y="60" text-anchor="middle" font-size="12" font-family="Helvetica">limited</text><text x="550" y="78" text-anchor="middle" font-size="10" font-family="Helvetica">shorter + backup note</text>
+    <rect x="670" y="30" width="200" height="70" fill="#e8f0e8" stroke="#333"/><text x="770" y="60" text-anchor="middle" font-size="12" font-family="Helvetica">suitable</text><text x="770" y="78" text-anchor="middle" font-size="10" font-family="Helvetica">passthrough</text>
+    <text x="450" y="130" text-anchor="middle" font-size="11" font-family="Times">Deterministic outdoor-suitability substitution.</text>
+    <text x="450" y="162" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 5. Environmental-state-driven activity substitution.</text>
+  </svg>
+  <p class="figcaption">Figure 5 — Unsuitable, limited, and suitable substitution rules.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 6 — Preference-preservation state machine</strong></p>
+  <svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="194" fill="#fff" stroke="#333"/>
+    <rect x="40" y="40" width="150" height="44" fill="#e8f0e8" stroke="#333"/><text x="115" y="67" text-anchor="middle" font-size="11" font-family="Helvetica">UNTouched</text>
+    <rect x="250" y="40" width="190" height="44" fill="#fff3d6" stroke="#333"/><text x="345" y="67" text-anchor="middle" font-size="11" font-family="Helvetica">Detection in-flight</text>
+    <rect x="510" y="24" width="160" height="36" fill="#e8e0f4" stroke="#333"/><text x="590" y="47" text-anchor="middle" font-size="11" font-family="Helvetica">User touches</text>
+    <rect x="510" y="72" width="160" height="36" fill="#fdeeee" stroke="#333"/><text x="590" y="95" text-anchor="middle" font-size="11" font-family="Helvetica">Discard late result</text>
+    <rect x="250" y="120" width="190" height="40" fill="#e8f0e8" stroke="#333"/><text x="345" y="145" text-anchor="middle" font-size="11" font-family="Helvetica">Inject classification</text>
+    <rect x="40" y="120" width="150" height="40" fill="#e8e0f4" stroke="#333"/><text x="115" y="145" text-anchor="middle" font-size="11" font-family="Helvetica">Keep user value</text>
+    <text x="450" y="180" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 6. Preference preservation and late-result discard.</text>
+  </svg>
+  <p class="figcaption">Figure 6 — Authoritative user value and discard of a late derived result.</p>
+</div>
+<div class="fig">
+  <p class="center"><strong>Figure 7 — Constraint and correction processing</strong></p>
+  <svg viewBox="0 0 900 160" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="8" width="884" height="144" fill="#fff" stroke="#333"/>
+    <rect x="16" y="28" width="120" height="50" fill="#f4f0fa" stroke="#333"/><text x="76" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">LM artefact</text>
+    <rect x="148" y="28" width="110" height="50" fill="#e8e0f4" stroke="#333"/><text x="203" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">Wake anchor</text>
+    <rect x="270" y="28" width="110" height="50" fill="#e8e0f4" stroke="#333"/><text x="325" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">School block</text>
+    <rect x="392" y="28" width="110" height="50" fill="#e8e0f4" stroke="#333"/><text x="447" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">Anti-repeat</text>
+    <rect x="514" y="28" width="110" height="50" fill="#e8e0f4" stroke="#333"/><text x="569" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">Allergy/diet</text>
+    <rect x="636" y="28" width="110" height="50" fill="#e8e0f4" stroke="#333"/><text x="691" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">Cuisine</text>
+    <rect x="758" y="28" width="120" height="50" fill="#e8f0e8" stroke="#333"/><text x="818" y="58" text-anchor="middle" font-size="10" font-family="Helvetica">Slot dedup</text>
+    <text x="450" y="108" text-anchor="middle" font-size="11" font-family="Times">Deterministic correction of a language-model routine artefact.</text>
+    <text x="450" y="132" text-anchor="middle" font-size="10" font-family="Times italic" fill="#444">Figure 7. Constraint and correction processing.</text>
+  </svg>
+  <p class="figcaption">Figure 7 — Temporal anchoring, school-block exclusion, anti-repetition, allergy and cuisine checks, and slot deduplication.</p>
+</div>
+
+<p class="center small" style="margin-top:2em">
+  End of FINAL COMPLETE SPECIFICATION SUBMISSION DRAFT<br />
+  Indian Patent Application No. 202611059355 · CBR 29076 · 10 May 2026
+</p>
+</body>
+</html>

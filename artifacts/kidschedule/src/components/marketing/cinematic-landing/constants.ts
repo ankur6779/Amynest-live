@@ -21,10 +21,10 @@ export const AMY_QUESTIONS = [
 ] as const;
 
 export const STATS = [
-  { value: 10000, suffix: "+", label: "Parenting Recommendations" },
-  { value: 95, suffix: "%", label: "Parent Satisfaction" },
   { value: 24, suffix: "/7", label: "AI Guidance" },
-  { value: 100, suffix: "+", label: "Learning Experiences" },
+  { value: 0, suffix: "–12", label: "Ages supported" },
+  { value: 1, suffix: "", label: "Parenting app" },
+  { value: 4, suffix: "", label: "Parent Hub rooms" },
 ] as const;
 
 export const GAMING_STATS = [
@@ -37,27 +37,27 @@ export const GAMING_STATS = [
 
 export const TESTIMONIALS = [
   {
-    quote: "Routines finally stick — Amy nudges us at the right moment without feeling robotic.",
+    quote: "Daily routines that adapt to mood, caregiver, and environment.",
     topic: "Better routines",
-    author: "Priya M.",
-    role: "Mom of 2",
+    author: "Product capability",
+    role: "Not a customer review",
   },
   {
-    quote: "The emotional support cards feel like a calm friend on hard parenting days.",
+    quote: "Parent Hub rooms for help, understanding, care, and moments.",
     topic: "Reduced parenting stress",
-    author: "James R.",
-    role: "Dad of 3",
+    author: "Product capability",
+    role: "Not a customer review",
   },
   {
-    quote: "My daughter asks for phonics and math games — screen time that actually builds skills.",
+    quote: "Learning, phonics, and play tools in one app for ages 0–12.",
     topic: "Improved learning habits",
-    author: "Ananya K.",
-    role: "Mom of 1",
+    author: "Product capability",
+    role: "Not a customer review",
   },
   {
-    quote: "We log wins and tough moments — patterns help Amy guide us with real consistency.",
+    quote: "Progress, insights, and plans you can return to each day.",
     topic: "Stronger consistency at home",
-    author: "David L.",
-    role: "Dad of 2",
+    author: "Product capability",
+    role: "Not a customer review",
   },
 ] as const;

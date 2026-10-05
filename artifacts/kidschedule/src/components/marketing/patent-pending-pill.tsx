@@ -11,10 +11,10 @@ export function PatentPendingPill({ className = "" }: { className?: string }) {
       }}
     >
       <Award className="h-3 w-3 shrink-0 text-purple-300" aria-hidden />
-      Patent-Pending Adaptive AI
+      Patent application pending in India
     </span>
   );
 }
 
 export const PATENT_TRUST_LINE =
-  "Powered by patent-pending context-aware AI — provisional patent filed.";
+  "Indian Patent Application No. 202611059355 filed. Not granted.";

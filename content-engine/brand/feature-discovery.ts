@@ -243,7 +243,7 @@ function seedCharacterBibleMappings(out: Map<string, DiscoveredFeature>): void {
       title: "Daily Routines",
       pillar: "routine",
       character: "amy-girl",
-      keywords: ["routine", "habit", "patent pending"],
+      keywords: ["routine", "habit", "adaptive routines"],
     },
     {
       id: "audio-lessons",

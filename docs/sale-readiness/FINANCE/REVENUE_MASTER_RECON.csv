@@ -1,0 +1,11 @@
+source,period_start,period_end,transaction_id,date,gross,tax,fees,refund,net,currency,product,subscription,status,verified,notes
+RevenueCat,2026-04-19,2026-09-24,,lifetime_rollup,26.14,UNVERIFIED,UNVERIFIED,UNVERIFIED,,USD,mixed,premium,lifetime_gross,YES,get-revenue-metric revenue — RC analytics not a txn list
+RevenueCat,2026-04-19,2026-09-24,,lifetime_rollup,,,,,16.83,USD,mixed,premium,lifetime_proceeds,YES,get-revenue-metric proceeds — RC analytics
+RevenueCat,2026-09-24,2026-09-24,,point_in_time,5,,,,5,USD,mixed,premium,mrr_3_active,YES,overview_metrics — RC analytics
+GooglePlay,2026-05-01,2026-05-31,,,199,0.20,29.85,,not_final_net,INR,amynest_monthly,AmyNest Monthly,charged,YES,VERIFIED GROSS; fee+TDS shown; source ZIP not in repo; May duplicate not double-counted; no store order ID in repo
+GooglePlay,2026-06-01,2026-06-30,,,199,0.20,29.85,,not_final_net,INR,AmyNest subscription,seller_verified,charged,YES,VERIFIED GROSS; source ZIP not in repo; no store order ID in repo
+GooglePlay,2026-07-01,2026-07-31,,,199,0.20,29.85,,not_final_net,INR,AmyNest subscription,seller_verified,charged,YES,VERIFIED GROSS; source ZIP not in repo; no store order ID in repo
+GooglePlay,2026-08-01,2026-08-31,,,199,0.20,29.85,,not_final_net,INR,AmyNest subscription,seller_verified,charged,YES,VERIFIED GROSS; source ZIP not in repo; no store order ID in repo
+GooglePlay,2026-09-01,2026-09-30,,, ,,,,,INR,,,EXCLUDED,NO,September 2026 Google Play financial report was not yet generated and is excluded
+AppStoreConnect,2026-06-01,2026-06-30,,2026-07-30,1079.79,0,0,,1080.31,INR,AmyNest App Store,seller_verified,Paid,YES,Report header June 2026; payment date shown 30 Jul 2026; proceeds from financial_report (2).csv; 1599 superseded; no Apple transaction ID in CSV
+Razorpay,,,,,,, ,,,,INR,,,SELLER_STATEMENT,NO,Razorpay is not currently used for AmyNest transactions based on seller statement — not an independent zero export

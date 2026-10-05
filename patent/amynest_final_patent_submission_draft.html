@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AmyNest — Final Patent Submission Draft for Counsel Review (App. No. 202611059355)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.7;
+    color: #111;
+    background: #f4f4f4;
+  }
+  .page {
+    background: #fff;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 18px auto;
+    padding: 22mm 22mm 22mm 25mm;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  }
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0; width: 100%; padding: 20mm 20mm 20mm 25mm; }
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+  }
+  h1 { font-size: 16pt; text-transform: uppercase; text-align: center; letter-spacing: 1px; margin-bottom: 8px; }
+  h2 { font-size: 13pt; text-transform: uppercase; margin: 22px 0 8px; border-bottom: 1px solid #333; padding-bottom: 3px; letter-spacing: 0.5px; }
+  h3 { font-size: 12pt; margin: 16px 0 6px; font-weight: bold; }
+  h4 { font-size: 11pt; margin: 12px 0 4px; font-style: italic; }
+  p  { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 10px 22px; }
+  li { margin-bottom: 5px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11pt; }
+  th { background: #222; color: #fff; padding: 6px 10px; text-align: left; font-size: 10.5pt; }
+  td { border: 1px solid #bbb; padding: 6px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  code { font-family: "Courier New", monospace; font-size: 9.5pt; background: #f0f0f0; padding: 1px 4px; border-radius: 2px; }
+  .center { text-align: center; }
+  .italic { font-style: italic; }
+  .small { font-size: 9.5pt; color: #555; }
+  .claim-block { margin: 10px 0; padding: 8px 12px; border-left: 3px solid #333; }
+  .claim-num { font-weight: bold; display: inline-block; min-width: 32px; }
+  .highlight-box {
+    border: 1.5px solid #333;
+    padding: 12px 16px;
+    margin: 14px 0;
+    background: #fafafa;
+  }
+  .warn-box {
+    border: 2px solid #8a1c1c;
+    padding: 12px 16px;
+    margin: 14px 0;
+    background: #fff8f8;
+  }
+  .cover-divider { border: none; border-top: 2px solid #111; margin: 14px 0; }
+  .chart-wrap { text-align: center; margin: 20px 0; }
+  .chart-wrap svg { max-width: 100%; height: auto; }
+  .chart-caption { text-align: center; font-size: 10pt; font-style: italic; margin-top: 6px; color: #444; }
+  #printBtn {
+    position: fixed; top: 18px; right: 24px;
+    background: #1a1a2e; color: #fff;
+    border: none; padding: 10px 22px;
+    font-size: 13px; font-family: sans-serif;
+    border-radius: 6px; cursor: pointer;
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+<button id="printBtn" class="no-print" onclick="window.print()">Print / Save PDF</button>
+
+<!-- PAGE 1 COVER -->
+<div class="page">
+  <div class="warn-box">
+    <p class="center" style="margin-bottom:6px;"><strong>COUNSEL HANDOFF DRAFT — NOT THE 10 MAY 2026 IPO UPLOAD</strong></p>
+    <p class="small" style="margin-bottom:8px; text-align:center;">
+      Indian Patent Application No. <strong>202611059355</strong> was allotted (CBR 29076, 10 May 2026 17:07).
+      This HTML is a <strong>14 September 2026 technical submission draft</strong> for a registered Indian Patent Agent.
+      It is <strong>not</strong> a grant, not an examination result, and <strong>must not be represented as the specification originally filed</strong>.
+      The uploaded Form 2 / specification is <strong>not in this repository</strong> — download from IPO → Application 202611059355 → View Uploaded Documents.
+    </p>
+    <p class="small" style="margin-bottom:0; text-align:center;">
+      Correct public wording (counsel to confirm): “Indian Patent Application No. 202611059355 filed” / “patent application pending”.
+      Never: “patented”, “patent granted”, “patent approved”.
+    </p>
+  </div>
+  <div style="margin-top: 12mm; text-align: center;">
+    <p class="small italic">FOR REVIEW BY A REGISTERED INDIAN PATENT AGENT</p>
+    <p class="small italic">Under The Patents Act, 1970 (as amended) and The Patents Rules, 2003</p>
+    <hr class="cover-divider" />
+    <h1 style="font-size: 13pt; margin-top: 16px;">TECHNICAL SPECIFICATION — FINAL SUBMISSION DRAFT</h1>
+    <p style="margin-top:8px; font-size: 11pt; font-weight: bold;">(Proposed Complete / amended disclosure for counsel — not an IPO filing action)</p>
+    <hr class="cover-divider" style="margin-top: 16px;" />
+    <p style="margin-top: 18px; font-size: 12.5pt; font-weight: bold; line-height: 1.5;">
+      A SYSTEM AND METHOD FOR DETERMINISTIC, CONTEXT-CONSTRAINED
+      CHILD DEVELOPMENT ROUTINE GENERATION WITH A SHARED
+      VALIDATION PIPELINE AND OPTIONAL LANGUAGE-MODEL AUGMENTATION
+    </p>
+    <p class="small" style="margin-top:8px;">Filed title (CBR remarks, 10 May 2026 — do not rewrite the legal title without counsel):<br/>
+    <em>A System and Method for Adaptive Child Development Routine Generation Using Context-Aware Environmental and Caregiver-Oriented Computational Processing</em></p>
+    <hr class="cover-divider" style="margin-top: 16px;" />
+    <table style="margin-top: 18px; width: 100%; font-size: 10.5pt;">
+      <tr><td style="width:42%; border:none; font-weight:bold;">DOCUMENT ROLE:</td>
+          <td style="border:none;">Counsel handoff / proposed Form 2 content aligned to production code</td></tr>
+      <tr><td style="border:none; font-weight:bold;">APPLICATION NO. (VERIFIED CBR):</td>
+          <td style="border:none;">202611059355</td></tr>
+      <tr><td style="border:none; font-weight:bold;">CBR / DATE / DOCKET:</td>
+          <td style="border:none;">29076 · 10 May 2026 17:07 · Docket 64202</td></tr>
+      <tr><td style="border:none; font-weight:bold;">TEMP REF:</td>
+          <td style="border:none;">TEMP/E-1/64767/2026-DEL</td></tr>
+      <tr><td style="border:none; font-weight:bold;">FORM ON CBR ROW:</td>
+          <td style="border:none;">FORM 1 (fee ₹1,600 Full). Form 2 upload not verified in this repository.</td></tr>
+      <tr><td style="border:none; font-weight:bold;">APPLICANT ON CBR:</td>
+          <td style="border:none;">Ankur Raman — assignee not stated. PATENT COUNSEL TO VERIFY inventorship/assignment vs AmyWorld.</td></tr>
+      <tr><td style="border:none; font-weight:bold;">ADDRESS ON CBR:</td>
+          <td style="border:none;">h no 590/81 Indrapuri colony near sgpgj raibareli road (HTML draft had 5900/81 — reconcile)</td></tr>
+      <tr><td style="border:none; font-weight:bold;">GRANT / EXAMINATION:</td>
+          <td style="border:none;">Not established. Application pending only.</td></tr>
+      <tr><td style="border:none; font-weight:bold;">FILED FORM 2 IN REPO:</td>
+          <td style="border:none;"><strong>FILED DOCUMENT NOT LOCALLY AVAILABLE — IPO PORTAL RECONCILIATION REQUIRED</strong></td></tr>
+      <tr><td style="border:none; font-weight:bold;">PROVISIONAL VS COMPLETE:</td>
+          <td style="border:none;">Not proven from CBR alone (Form 1 + ₹1,600). Counsel must read uploaded specification.</td></tr>
+      <tr><td style="border:none; font-weight:bold;">THIS DRAFT DATE:</td>
+          <td style="border:none;">14 September 2026 — derived from production engine + v2 technical corrections</td></tr>
+    </table>
+    <p class="small" style="margin-top: 14px;"><strong>CONFIDENTIAL — FOR PATENT AGENT REVIEW ONLY</strong></p>
+  </div>
+</div>
+
+<!-- PAGE 2 TOC + ABSTRACT -->
+<div class="page page-break">
+  <h2>Table of Contents</h2>
+  <table>
+    <tr><th>Section</th><th>Title</th></tr>
+    <tr><td>0</td><td>IPO filing reconciliation (App. 202611059355) — filed Form 2 not in repo</td></tr>
+    <tr><td>1</td><td>Field of the Invention</td></tr>
+    <tr><td>2</td><td>Background and problem statement</td></tr>
+    <tr><td>3</td><td>Objects of the Invention</td></tr>
+    <tr><td>4</td><td>Summary of the Invention</td></tr>
+    <tr><td>5</td><td>Brief Description of the Drawings</td></tr>
+    <tr><td>6</td><td>Detailed Description (architecture, pipeline, weather, AQI, country, meals, family intelligence, dinner repair, safety, optional LLM, fallback, platforms)</td></tr>
+    <tr><td>7</td><td>Indicative claims for counsel review (not legally final)</td></tr>
+    <tr><td>8</td><td>Abstract</td></tr>
+    <tr><td>9</td><td>Drawings (Figures 1–8)</td></tr>
+    <tr><td>10</td><td>Industrial applicability; Notes for Counsel; forms checklist</td></tr>
+  </table>
+
+  <h2>8. Abstract (indicative)</h2>
+  <div class="highlight-box">
+    <p style="margin-bottom:0;">
+      A computer-implemented system generates a personalised daily child-development routine from
+      caregiver and child context using a <strong>rules-first deterministic generator</strong> and a
+      subsequent <strong>deterministic intelligence pipeline</strong> implemented in application logic
+      (not a language model). Inputs include age band, wake and sleep times, school windows, caregiver
+      identity, outdoor-suitability class, meal constraints, and optional previous-day signals.
+      A candidate schedule is assembled from age-band templates and meal banks, then processed by
+      ordered software passes that apply country time-windows, weather and air-quality substitution,
+      school-block exclusion, load and energy heuristics, timeline integrity, and dinner-to-sleep gap
+      repair. A validation gate refuses delivery of a trust-invalid routine. An optional language-model
+      module may draft a candidate schedule or additional meal-option names; any such draft enters the
+      <strong>same</strong> deterministic pipeline and safety gate, and on failure the system falls back
+      to rules-based generation. Concurrent-safe environmental detection on the client preserves an
+      explicit caregiver weather choice against late-arriving geolocation results. Implemented client
+      environments are a web application, an iOS native shell executing that web application, and an
+      Android WebView shell. Wearable, voice-assistant, and on-device inference environments are
+      described only as alternative or future embodiments.
+    </p>
+  </div>
+  <p class="small">This abstract does not assert novelty, patentability, or grant.</p>
+</div>
+
+<div class="page page-break">
+  <h2>0. IPO filing reconciliation — Application No. 202611059355</h2>
+  <div class="warn-box">
+    <p style="margin-bottom:0;"><strong>FILED DOCUMENT NOT LOCALLY AVAILABLE — IPO PORTAL RECONCILIATION REQUIRED.</strong>
+    This repository does not contain the Form 2 / specification / claims PDF that was uploaded to IPO for Application No. 202611059355.
+    Counsel must download: IPO e-filing → Application 202611059355 → View Uploaded Documents.
+    Do not treat this HTML, v2, or the May Chrome print-out as proven identical to the IPO upload.</p>
+  </div>
+  <p>Verified from applicant-supplied IPO CBR screenshots (14 September 2026 viewing of portal):</p>
+  <table>
+    <tr><th>Item</th><th>Value</th><th>Establishes</th></tr>
+    <tr><td>Application No.</td><td>202611059355</td><td>Application allotted</td></tr>
+    <tr><td>CBR</td><td>29076 · 10 May 2026 17:07 · Docket 64202</td><td>Fee receipt</td></tr>
+    <tr><td>Reference</td><td>TEMP/E-1/64767/2026-DEL</td><td>Delhi e-filing temp number</td></tr>
+    <tr><td>Form on CBR row</td><td>FORM 1 · Full · ₹1,600</td><td>Application form fee paid — <strong>not</strong> grant</td></tr>
+    <tr><td>Title (CBR remarks)</td><td>Adaptive Child Development Routine Generation Using Context-Aware Environmental and Caregiver-Oriented Computational Processing</td><td>Legal title of the application</td></tr>
+    <tr><td>Applicant shown</td><td>Ankur Raman</td><td>Applicant of record on CBR</td></tr>
+    <tr><td>Provisional vs complete</td><td>Not proven by CBR row alone</td><td>Read uploaded Form 2</td></tr>
+    <tr><td>Examination / grant</td><td>Not shown</td><td>Do not say patented</td></tr>
+  </table>
+  <p>
+    Nearest local drafts (priority date relevance is a legal question): git commit <code>1d9617e1e</code> (8 May 2026)
+    updated <code>patent/amynest_patent_package.html</code> to a Provisional Form 2-style document with applicant Ankur Raman
+    and the same title as the CBR. A Chrome print PDF dated 8 May 2026 21:24 of a <em>different</em> HTML
+    (Complete Specification, attorney placeholders, Expo/OpenAI GPT-4o-mini) exists in Downloads and is
+    <strong>not</strong> proven to be the IPO upload. This 14 September draft is later than both.
+  </p>
+  <p class="small">If the 10 May filing was a provisional, Complete Specification timing under Section 9(1) is counsel’s calendar (typically twelve months from the actual priority date). This draft does not compute or certify that deadline.</p>
+</div>
+
+<!-- FIELD BACKGROUND OBJECTS -->
+<div class="page page-break">
+  <h2>1. Field of the Invention</h2>
+  <p>
+    The present invention relates to computer-implemented systems for generating personalised daily
+    routines for a child in a family or caregiver setting. More particularly, it relates to
+    deterministic, constraint-based schedule generation and subsequent software-pipeline processing
+    that coordinate age and developmental constraints, meal and sleep timing, school hours, weather
+    and air-quality context, country-specific time windows, previous-day completion signals, caregiver
+    identity, and safety validation. The field includes optional machine-assisted content augmentation
+    in which a language-model inference engine may propose candidate content that is then subjected to
+    the same deterministic processing. The field is not limited to any particular language-model vendor.
+  </p>
+
+  <h2>2. Background of the Invention and problem statement</h2>
+  <p>
+    Generating a coherent daily routine for a child is a multi-constraint computational problem.
+    A usable schedule must simultaneously respect developmental age (including infant feeding
+    structure), wake and bedtime, school attendance and travel, meal timing including a physiologically
+    relevant dinner-to-sleep interval, outdoor suitability given weather and air quality, household
+    diet and allergies, who is caring for the child that day, fixed appointments, and what happened
+    yesterday (sleep quality, mood, completion). Static calendar templates do not adapt these
+    constraints. General-purpose language models can emit fluent activity lists but do not, by
+    themselves, enforce dinner-to-sleep geometry, country dinner windows, air-quality outdoor caps,
+    or refuse an unsafe artefact. A technical system is required that (i) can generate a complete
+    routine <em>without</em> calling a language model, (ii) can optionally accept a language-model
+    draft, and (iii) in either case applies the same deterministic constraint, repair, and validation
+    machinery before delivery.
+  </p>
+  <p>
+    A further technical problem arises at the client: automatic environmental detection (geolocation
+    and meteorological lookup) is asynchronous. If a caregiver explicitly selects an outdoor-suitability
+    value while detection is in flight, a late result must not overwrite that choice, and concurrent
+    generate actions must not launch duplicate network lookups.
+  </p>
+
+  <h2>3. Objects of the Invention</h2>
+  <ul>
+    <li>To provide rules-based, deterministic generation of an age-banded daily routine as the primary production path.</li>
+    <li>To provide a deterministic intelligence pipeline, distinct from any language model, that applies ordered constraint, personalization-heuristic, and repair passes to a candidate routine.</li>
+    <li>To enforce age-dependent minimum dinner-end to bedtime gaps and country-specific dinner and sleep windows.</li>
+    <li>To enforce outdoor-duration and substitution policies from weather classification and, separately, from air-quality index (AQI) policy.</li>
+    <li>To refuse delivery (including HTTP 422 on applicable endpoints) of a routine that fails blocking trust validation.</li>
+    <li>To support optional language-model augmentation of a candidate schedule or meal-option names, always followed by the same pipeline and validation, with fallback to rules-based generation on failure.</li>
+    <li>To provide concurrent-safe environmental detection that preserves explicit caregiver preference and shares in-flight retrieval.</li>
+    <li>To incorporate previous-day and historical signals into subsequent generation without requiring neural-network training.</li>
+    <li>To operate on implemented clients comprising a web application, an iOS Capacitor web shell, and an Android WebView shell.</li>
+  </ul>
+</div>
+
+<!-- SUMMARY -->
+<div class="page page-break">
+  <h2>4. Summary of the Invention</h2>
+  <p>
+    In a primary embodiment, routine generation proceeds as:
+  </p>
+  <p class="center"><strong>
+    Inputs → input resolution → deterministic / rules-based generation → deterministic intelligence pipeline
+    (including dinner-anchor repair) → safety / validation → output (or rejection)
+  </strong></p>
+  <p>
+    In an alternative embodiment, a language-model inference engine produces a candidate artefact that
+    is then processed by the <strong>same</strong> deterministic intelligence pipeline and safety gate.
+    If validation fails or the language-model call fails, the system falls back to rules-based generation.
+    The language model does not execute the pipeline, does not guarantee safety, and is not required
+    for generation.
+  </p>
+  <p>
+    According to a first aspect, a computational orchestration system comprises: (a) one or more client
+    execution environments as implemented (web application; iOS native shell executing the web
+    application; Android WebView shell) communicating with (b) a server-side engine exposing a typed
+    application programming interface including at least <code>POST /routines/generate</code> (primary)
+    and <code>POST /routines/generate-ai</code> (optional augmentation).
+  </p>
+  <p>
+    According to a second aspect, an ambient-condition classification module on the client performs
+    concurrent-safe environmental detection using a synchronously readable reference and a deferred
+    component-state flag (<code>weatherTouchedRef</code> / <code>weatherTouched</code>), a registry
+    holding at most one in-flight detection Promise, mapping of meteorological parameters to an
+    outdoor-suitability class (<code>yes</code> / <code>limited</code> / <code>no</code>, corresponding
+    to suitable / limited / unsuitable), discard of late results if the caregiver touched the control,
+    and injection of the class into the generation payload (<code>weatherForCall</code>) before
+    user-interface state commit, including re-injection after a wake-time confirmation dialog.
+  </p>
+  <p>
+    According to a third aspect, a rules-based generator (<code>generateRuleBasedRoutine</code>)
+    assembles a day from age-band templates using a date-seeded shuffle (<code>dateSeed(date, childName)</code>),
+    meal banks, school and travel blocks, and caregiver bonding-density modulation.
+  </p>
+  <p>
+    According to a fourth aspect, a deterministic intelligence pipeline
+    (<code>runRoutineIntelligencePipeline</code>), which is application logic and not a language model,
+    applies ordered passes including family-intelligence preparation, behaviour signature, schedule /
+    meal / weather / culture processing, emotion-adaptive polish, completion/freshness/autonomy,
+    load balancing, energy heuristic, preservation of fixed and special items, timeline integrity,
+    dinner-anchor repair, explainability metadata, and personalization-memory persistence. The
+    scheduler is not re-run after the initial placement pass. Exclusive-infant paths (age 0 to less
+    than 6 months) skip late polish passes except sleep/feeding validation.
+  </p>
+  <p>
+    According to a fifth aspect, dinner-anchor repair (<code>repairDinnerAnchor</code>) enforces a
+    single dinner block ending at least a minimum gap before bedtime: 60 minutes if age is less than
+    48 months; 90 minutes if age is less than 156 months; otherwise 120 minutes; within a
+    country-profile dinner window; with overlap repair and re-application.
+  </p>
+  <p>
+    According to a sixth aspect, a safety architecture distinct from language-model inference comprises
+    at least: (i) <code>enforceRoutineSafety</code> combining AQI outdoor-duration enforcement and
+    blocking trust validation (sleep anchor; dinner-before-bed for ages ≥ 36 months; infant feeding
+    structure); (ii) a deterministic meal-option sanitizer; (iii) client-side caregiver simplification
+    (<code>simplifyForHandler</code>); (iv) refusal to return or persist a trust-invalid routine
+    (HTTP 422 on applicable routes). An optional advisory validator on a separate safety route is not
+    the generate choke-point.
+  </p>
+  <p>
+    According to a seventh aspect, optional language-model augmentation drafts a candidate or meal-option
+    names; output is processed by the pipeline and safety gate; providers are substitutable.
+  </p>
+  <p>
+    Wearable devices, voice-assistant interfaces, smart-home actuation, and offline/local-model
+    inference are <strong>not</strong> present-tense implemented embodiments. They are disclosed only
+    as alternative or future implementations in Section 6.18.
+  </p>
+</div>
+
+<!-- DRAWINGS BRIEF -->
+<div class="page page-break">
+  <h2>5. Brief Description of the Drawings</h2>
+  <ul>
+    <li><strong>Figure 1</strong> — System architecture: implemented clients, API gateway, rules generator, deterministic intelligence pipeline, safety gate; optional language-model and meteorological services; future platforms shown dashed.</li>
+    <li><strong>Figure 2</strong> — Certified production pipeline (rules-first).</li>
+    <li><strong>Figure 3</strong> — Concurrent-safe weather handshake.</li>
+    <li><strong>Figure 4</strong> — Rules-based generation and deterministic meal banks.</li>
+    <li><strong>Figure 5</strong> — Optional language-model path entering the same pipeline, with fallback.</li>
+    <li><strong>Figure 6</strong> — Safety / validation boundary (AQI, trust, meal sanitizer, 422).</li>
+    <li><strong>Figure 7</strong> — Dinner-anchor repair (60/90/120 minute gaps; country window).</li>
+    <li><strong>Figure 8</strong> — Previous-day signals, energy profile, family-intelligence persistence.</li>
+  </ul>
+  <p class="small">Figures are technical illustrations in this HTML draft. Formal IPO Schedule II drawing sheets remain for the patent professional / draftsman.</p>
+
+  <h2>6. Detailed Description of the Invention</h2>
+  <p>
+    Function names, HTTP paths, and numeric thresholds below are taken from the production
+    implementation (certified June 2026). They illustrate enablement. Compatible substitutions
+    (other databases, other meteorological providers, other language-model providers, other client
+    shells executing the same web application) do not depart from the architecture. Third-party
+    services (including language-model APIs, Open-Meteo, browser geolocation, Capacitor, Android
+    WebView, Firebase, RevenueCat) are infrastructure, not proprietary inventive elements.
+  </p>
+  <p>
+    As used herein, <strong>deterministic intelligence pipeline</strong> means ordered application
+    logic (<code>runRoutineIntelligencePipeline</code>). It is not a language model, not a neural
+    network, and not “AI generation.” Product marketing may use the word “intelligence”; this
+    specification does not treat that word as synonymous with a language model.
+  </p>
+
+  <h3>6.1 System architecture (Figure 1)</h3>
+  <p>
+    Implemented client environments: (1) a web-browser application; (2) an iOS application implemented
+    as a Capacitor native shell executing the same bundled web application; (3) an Android application
+    implemented as a WebView wrapper loading the production web application. All three present the
+    same routine-generation user interface. The server exposes <code>POST /routines/generate</code>
+    (certified primary) and <code>POST /routines/generate-ai</code> (optional). A persistent data
+    layer stores child profiles, routines, outcome/completion records, and personalization memory.
+    Optional external services: a meteorological API (illustratively Open-Meteo; substitutable) and
+    a language-model inference API (illustratively accessed via a JSON-chat helper; vendor-substitutable).
+  </p>
+</div>
+
+<div class="page page-break">
+  <h3>6.2 Input resolution</h3>
+  <p>
+    <code>resolveRoutineGenerationInputs</code> sanitizes and defaults wake, sleep, school start/end,
+    outdoor class, mood, special plans, and fridge-inventory strings. Missing times receive safe
+    defaults. The resolved structure is the input to both the rules-based generator and the pipeline
+    wrapper <code>runIntelligencePipelineOnItems</code>.
+  </p>
+  <p>
+    Additional request context, not all of which is required, includes: child identifier and name,
+    age in years and months, caregiver key (mom, dad, both, grandparent, babysitter), diet type,
+    regional cuisine / food style, allergies, parent goals, school-meal mode, fixed activities,
+    country code from the parent profile, and optional previous-day signals.
+  </p>
+  <p>
+    Age grouping used by the generator includes at least: infant (&lt;12 months), toddler (&lt;36),
+    preschool (&lt;60), early school (&lt;120), and pre-teen. A feeding-focused grouping further
+    distinguishes exclusive infant 0–6 months. A separate safety-library age-band classifier may be
+    used on an advisory safety route; it is not the generate choke-point. PATENT COUNSEL: two
+    classifiers exist; do not conflate them into a single named “engine” without specifying which
+    path is claimed.
+  </p>
+
+  <h3>6.3 Concurrent-safe weather handshake (Figure 3)</h3>
+  <p>
+    Immediately before a generate request, if automatic detection is enabled and the caregiver has
+    not touched the outdoor control, the client invokes <code>ensureWeatherDetected</code>.
+  </p>
+  <ol>
+    <li>If <code>weatherTouched</code> or <code>weatherTouchedRef</code> is set, return the current user value.</li>
+    <li>If an in-flight Promise exists in <code>weatherDetectInFlightRef</code>, await it (at most one detection).</li>
+    <li>Otherwise start <code>detectWeatherOutdoorFromBrowser</code>: geolocation with configurable timeout (illustratively 5000 ms), then a meteorological query for temperature, precipitation, wind speed, and weather code.</li>
+    <li>Map to <code>yes</code> / <code>limited</code> / <code>no</code> (suitable / limited / unsuitable): storms, heavy rain/snow, precipitation ≥ 2 mm, wind ≥ 40 km/h, temperature ≥ 40°C or ≤ 0°C → <code>no</code>; drizzle/fog/light precipitation, temperature ≥ 35°C or ≤ 5°C, wind ≥ 25 km/h → <code>limited</code>; otherwise <code>yes</code>.</li>
+    <li>After resolution, if the ref is now touched, discard the detection and keep the user value.</li>
+    <li>Thread the class as <code>weatherForCall</code> into the generate call before React state commit. On wake-confirm, re-inject from <code>pendingAction.weatherForCall</code>.</li>
+    <li>Any exception (permission, timeout, abort, network) returns null; generation proceeds with the existing value.</li>
+  </ol>
+  <p>
+    A server-side generate occupancy semaphore (maximum concurrent generate slots) is an operational
+    capacity control. It is <strong>not</strong> the client in-flight weather registry and is not
+    required as a limitation of the weather claims.
+  </p>
+
+  <h3>6.4 Rules-based generation (Figure 2, Figure 4) — primary path</h3>
+  <p>
+    <code>POST /routines/generate</code> calls <code>generateRuleBasedRoutine</code>. This is the
+    certified production generator. It does not call a language model.
+  </p>
+  <p>
+    The engine fills a time cursor from wake to sleep with mandatory anchors (hygiene, meals, school
+    and travel where applicable, nap for younger bands, bedtime) and remaining slots from
+    age-band activity pools. Pool order is randomized by a seeded shuffle
+    <code>dateSeed(date, childName)</code> so the same date and name reproduce the same shuffle
+    (the seed material in production is the child’s name concatenated with the date, not the numeric
+    child identifier). Caregiver identity modulates bonding-density (extra bonding for both parents;
+    substitute grandparent/babysitter reduces demanding outdoor/cooking and may force effective
+    weather to <code>limited</code>). After template assembly, historical energy-profile reordering
+    may run (<code>applyEnergyCurveToItems</code>; no-op unless sampleCount ≥ 3), then environmental
+    enrichments (hydration/UV hints), then the deterministic intelligence pipeline.
+  </p>
+  <p>
+    If blocking fixed-activity conflicts exist and are not confirmed, generation returns without
+    producing a routine. If the pipeline’s trust validation fails, the endpoint returns HTTP 422
+    and does not expose the artefact.
+  </p>
+</div>
+
+<div class="page page-break">
+  <h3>6.5 Deterministic intelligence pipeline (Figure 2)</h3>
+  <p>
+    <code>runRoutineIntelligencePipeline</code> is software. It does not invoke a language model.
+    <code>scheduleRoutineItems</code> is not re-run after the initial placement pass. Late passes
+    polish in place. Order implemented:
+  </p>
+  <ol>
+    <li><code>prepareFamilyIntelligenceInput</code> — trajectory, predictive hints, enrich previous-day context; computes a heuristic <code>trustScore</code> (bounded 0–100 from consistency/regulation trends and readiness; not a neural-network confidence).</li>
+    <li>Build behaviour history from the outcome store using enriched context.</li>
+    <li><code>deriveChildBehaviorSignature</code> and <code>deriveBehavioralState</code> (country, day type, activity bias; optional reduce-study hint).</li>
+    <li>Schedule / meals / weather / difficulty / culture / optimization / realism processing, including weather-driven activity substitution and AQI-aware outdoor policy in context.</li>
+    <li><code>adaptRoutineForEmotion</code> (uses caregiver-supplied mood and related state — not facial recognition).</li>
+    <li><code>runAdaptiveCompletionPass</code> (continuity → freshness → autonomy heuristics from history).</li>
+    <li><code>applyDailyLoadBalancing</code>.</li>
+    <li><code>enforceEnergyCurve</code> (heuristic evening downgrade distinct from historical peak/low window swaps).</li>
+    <li>Preserve fixed activities and special-plan items.</li>
+    <li><code>enforceFinalTimelineIntegrity</code> including conflict resolution. Overlap resolution also runs inside earlier polish passes as a safety net, not as a second scheduler.</li>
+    <li>Decision-enforced final pass.</li>
+    <li><code>refreshExplainabilityMetadata</code> (single parent-facing explainability pass).</li>
+    <li><code>persistRoutinePersonalizationMemory</code> and <code>finalizeFamilyIntelligenceMoat</code>.</li>
+  </ol>
+  <p>
+    Exclusive infant phase: <code>isExclusiveInfantPhase</code> is true when age in months is ≥ 0 and
+    &lt; 6. That path uses infant feeding/care assembly, sleep-boundary and overlap repair, and
+    feeding/sleep trust validation; it skips late polish steps 5–12 except sleep validation, as
+    implemented.
+  </p>
+  <p>
+    Dinner-anchor repair (Section 6.10) runs inside the pipeline (including re-run after overlap
+    resolution, and after UAE outdoor hard-constraint when country is AE).
+  </p>
+
+  <h3>6.6 Weather-driven activity substitution</h3>
+  <p>
+    Outdoor items are identified by category and keyword tests. For class <code>no</code> (unsuitable),
+    outdoor items are substituted with indoor equivalents. For <code>limited</code>, duration is
+    reduced (illustratively halved on the AI-item weather adjustment tests) and indoor backup notes
+    may be appended. For <code>yes</code> (suitable), items pass unless another constraint (AQI, UAE
+    heat window, substitute caregiver) applies. Functions are non-mutating with respect to caller
+    arrays (they return new item lists).
+  </p>
+
+  <h3>6.7 AQI (air quality) — distinct from weather</h3>
+  <p>
+    AQI is a numeric environmental input, not the three-class weather handshake. Categories
+    (US EPA–aligned bands in code): ≤50 good; ≤100 moderate; ≤200 sensitive; ≤300 unhealthy;
+    above 300 more severe. Hard outdoor duration caps from AQI: if AQI &gt; 300, 0 minutes outdoor;
+    if AQI ≥ 200, 15 minutes; if AQI ≥ 150, 20 minutes. AQI 150–200 is treated as exposure mode
+    <code>limited</code>. Country culture profiles may further adjust exposure mode. Rainy-condition
+    text may cap outdoor blocks at 10 minutes. <code>enforceOutdoorDurationLimits</code> trims or
+    splits outdoor blocks. Language-model inference does not perform this enforcement.
+  </p>
+</div>
+
+<div class="page page-break">
+  <h3>6.8 Country-specific schedule windows</h3>
+  <p>
+    <code>routine-country-profile.ts</code> defines launch profiles. Implemented country codes:
+    US, UK, AU, NZ, AT, AE, IN. Each profile includes wake, sleep, and dinner minute-windows,
+    school-end range, and cultural intensity flags (extracurricular, outdoor, academic, independence)
+    plus a meal-pattern label. These are configuration tables, not universal human truths.
+  </p>
+  <p>Verified examples (clock times from code minute windows):</p>
+  <table>
+    <tr><th>Country</th><th>Sleep window (code)</th><th>Dinner window (code)</th></tr>
+    <tr><td>India (IN)</td><td>21:30–22:30 (9:30–10:30 PM)</td><td>20:00–22:00</td></tr>
+    <tr><td>UAE (AE)</td><td>21:30–23:00 (9:30–11:00 PM)</td><td>20:00–22:30</td></tr>
+    <tr><td>USA (US)</td><td>20:00–21:30</td><td>17:30–19:30 (5:30–7:30 PM)</td></tr>
+  </table>
+  <p>
+    UAE outdoor hard constraint: outdoor activities starting before 18:30 are shifted into an evening
+    window (<code>enforceUaeOutdoorHardConstraint</code>). Do not treat this 18:30 rule as applying
+    to all countries.
+  </p>
+
+  <h3>6.9 Meals (Figure 4)</h3>
+  <p>
+    <strong>Default production source:</strong> deterministic meal banks keyed by diet family
+    (vegetarian / eggetarian / non-vegetarian) and slot (breakfast, lunch, dinner, snacks, tiffin),
+    further specialized by region. Selection uses the date+name seed and optional fridge-inventory
+    interpolation (<code>mealFromItems</code>). Infant/toddler feeding uses age-feeding banks and
+    on-demand feeding notes, not adult meal names.
+  </p>
+  <p>
+    Meal slots are anchored to wake/sleep/age (<code>anchorMealSlots</code>).
+  </p>
+  <p>
+    <strong>Optional augmentation:</strong> a focused language-model call may request a predetermined
+    number of dish-name options per slot (illustratively exactly four in the enrich prompt). If the
+    model returns fewer than four valid names for a slot, that slot is left unchanged. Instruction-like
+    wording in a parent-supplied fridge list is treated as ingredient names in the prompt.
+    Cross-slot variety and diet/allergy checks are applied by <code>sanitizeMealOptionsInRoutineItems</code>
+    with priority Safety &gt; Diet &gt; Structure &gt; Variety. Jain, vegan, vegetarian, eggetarian,
+    pescatarian, gluten-free, and high-protein modes are encoded. Deterministic sanitizer treatment
+    of Jain currently shares the vegetarian meat/egg exclusion branch; onion/garlic/root-vegetable
+    Jain constraints are additionally stated in language-model diet prompts. PATENT COUNSEL: do not
+    claim a deterministic regex root-vegetable filter unless later implemented; disclose prompt-level
+    Jain rules as an embodiment of constrained generation.
+  </p>
+
+  <h3>6.10 Dinner-anchor repair (Figure 7)</h3>
+  <p>
+    <code>getMinimumDinnerSleepGap(ageMonths)</code>: if age is null, 90 minutes; if &lt; 48 months,
+    60 minutes; if &lt; 156 months, 90 minutes; otherwise 120 minutes. <code>repairDinnerAnchor</code>
+    ensures a dinner candidate exists (promoting an evening meal if needed, or inserting), places it
+    in the country dinner window, and requires dinner end + minimum gap ≤ bedtime. After overlap
+    resolution the repair is re-run. Dinner is required for applicable ages
+    (<code>dinnerRequiredForAge</code>). Trust validation for ages ≥ 36 months includes
+    dinner-before-bed. This geometry is certified production health policy, not a language-model output.
+  </p>
+
+  <h3>6.11 Safety architecture (Figure 6)</h3>
+  <p>Safety is deterministic. Layers:</p>
+  <ol>
+    <li><strong>Generate/partial-regenerate choke:</strong> <code>enforceRoutineSafety</code> =
+        optional AQI outdoor clamp + <code>runBlockingTrustValidation</code> (sleep last/anchor,
+        dinner-before-bed ≥36 months, infant feeding/age-safe meals). Callers must not return or
+        persist when <code>valid</code> is false. Full pipeline endpoints may skip re-mutating AQI
+        (<code>skipAqiEnforcement</code>) after the pipeline already applied AQI, then re-assert trust.</li>
+    <li><strong>Meal sanitizer</strong> as in 6.9.</li>
+    <li><strong>Client:</strong> <code>simplifyForHandler</code> removes skip-categories, caps activity
+        count, and prefixes “Easy:” or “Step:” on non-essential <em>activity titles</em> for
+        grandparent/babysitter — not a general rewrite of instruction notes.</li>
+    <li><strong>Optional advisory route:</strong> <code>validateRoutine</code> from a safety library,
+        used by a separate HTTP safety endpoint / parent UI — not the generate choke-point.</li>
+    <li><strong>Partial regenerate</strong> is disallowed below 36 months
+        (<code>PARTIAL_REGEN_MIN_AGE_MONTHS</code>); those ages must use full safe generation.</li>
+  </ol>
+  <p>The language model does not guarantee safety.</p>
+</div>
+
+<div class="page page-break">
+  <h3>6.12 Family intelligence and personalization (Figure 8)</h3>
+  <p>
+    Previous-day context may include sleep quality, mood score, and activity-completion percentage
+    from the most recent signal, plus yesterday’s meal names and activity categories from the stored
+    routine. On the optional language-model path these are inserted into the prompt. On the
+    rules-first path they enrich pipeline context (freshness, completion, emotion, load).
+  </p>
+  <p>
+    Historical energy profile: peak-focus and low-energy windows derived from completion analytics.
+    <code>applyEnergyCurveToItems</code> swaps at most one learning item into the peak window and
+    one rest item into the low window when sampleCount ≥ 3; otherwise it is a no-op.
+  </p>
+  <p>
+    Learning weights: deterministic correlations of past behaviours and 14-day slot completion
+    (<code>computeLearningWeights</code>), producing category weights in [−1, +1] and per-hour
+    completion rates. These are personalization state. They are injected into the optional
+    language-model prompt. This is not neural-network training.
+  </p>
+  <p>
+    Family-intelligence profile stores trajectory, personalization memory, predictive hints, and
+    heuristic trustScore, then finalizes insights after the pipeline. Persistence is child- and
+    date-scoped. If childId is absent, preparation is a no-op.
+  </p>
+
+  <h3>6.13 Optional language-model augmentation (Figure 5)</h3>
+  <p>
+    <code>POST /routines/generate-ai</code> may request a JSON schedule from a language-model
+    inference engine using a structured prompt (profile, age-band guidance, caregiver, weather class,
+    previous meals/categories, energy profile, learning weights, fridge, diet, allergies). The
+    resulting items are energy-curved, weather-adjusted, passed through
+    <code>runIntelligencePipelineOnItems</code> (the same pipeline), school-block sanitized, and
+    <code>enforceRoutineSafety</code>. On trust failure the implementation throws and falls back to
+    rules-based generation. Meal-option enrich is a separate optional model call (Section 6.9).
+    No specific vendor is essential.
+  </p>
+
+  <h3>6.14 Fallback</h3>
+  <p>
+    (a) Language-model path validation failure → rules-based generation. (b) Exception on the
+    rules path → emergency deterministic fallback generator which still applies dinner repair.
+    (c) Weather detection failure → existing/default outdoor class. (d) Meal enrich parse failure
+    → items unchanged for those slots.
+  </p>
+
+  <h3>6.15 Persistence and explainability</h3>
+  <p>
+    A generated routine is returned to the client for preview; persistence occurs on user save to
+    the routines store. Parent-facing adaptation strings are finalized from pipeline traces
+    (weather, energy, school, hydration). Explainability metadata is attached in a single late pass.
+  </p>
+
+  <h3>6.16 Regeneration</h3>
+  <p>
+    Full regeneration repeats Section 6.4 or 6.13. Partial regeneration of selected items is gated
+    by age ≥ 36 months and must pass <code>enforceRoutineSafety</code> before overwrite; on failure
+    the stored routine is left unchanged.
+  </p>
+
+  <h3>6.17 Caregiver adaptation</h3>
+  <p>
+    Implemented mechanisms: (i) template bonding-density and weather downgrade for substitutes;
+    (ii) <code>simplifyForHandler</code> title prefix and category skip; (iii) caregiver-specific
+    language-model prompt appendages on the optional AI path. The system does not implement a
+    general post-hoc rewriter of all instruction notes for every caregiver.
+  </p>
+
+  <h3>6.18 Alternative and future embodiments (not presently implemented)</h3>
+  <p>
+    Without limiting the claims to implemented clients, the following are expressly contemplated as
+    <strong>alternative or future</strong> embodiments and are <strong>not</strong> described as
+    currently shipping: wearable or smartwatch generation; biometric heart-rate inputs; voice-assistant
+    spoken generation; offline on-device language-model inference; smart-home actuation of lighting
+    or climate from routine slots; facial-expression emotion inference; fully interlocking multi-child
+    household resource scheduling beyond existing per-child generation and shared family-routine
+    helpers. If later implemented, they should use the same deterministic pipeline and safety gate.
+  </p>
+
+  <h3>6.19 Third-party services</h3>
+  <p>
+    Meteorological lookup, device geolocation, language-model APIs, mobile shells (Capacitor, WebView),
+    authentication, and billing providers are substitutable infrastructure. The invention is the
+    orchestration, constraint, repair, and validation architecture, not ownership of those services.
+  </p>
+</div>
+
+<!-- CLAIMS -->
+<div class="page page-break">
+  <h2>7. Indicative Claims</h2>
+  <p class="small italic">
+    Formal claims are not mandatory on an Indian provisional. These indicative claims are aligned to
+    the production architecture for the Complete Specification. A registered patent professional must
+    finalise wording, Section 3(k) positioning, and claim independence. Markers “PATENT COUNSEL REVIEW REQUIRED”
+    identify legal judgement, not missing code.
+  </p>
+
+  <h3>Category A — Concurrent-safe environmental detection</h3>
+  <div class="claim-block">
+    <p><span class="claim-num">1. (I)</span>
+    A computer-implemented computational orchestration system for adaptive routine generation, comprising:
+    (a) an explicit user-preference preservation state flag comprising a synchronously readable data structure
+    and a deferred component-state data structure, both transitioned to a touched state upon explicit user
+    engagement with an environmental selection control;
+    (b) a registry of pending asynchronous operations configured to hold at most one active environmental
+    detection operation, such that concurrent invocations of a routine-generation trigger share said operation;
+    (c) a geolocation interface module configured to obtain device coordinates with a configurable timeout;
+    (d) an environmental data interface module configured to query a meteorological data service using said
+    coordinates and to receive at least one of a weather-condition code, temperature, precipitation, and wind speed;
+    (e) an ambient-condition classification module configured to map received parameters to one of a fixed set
+    of outdoor-suitability classifications (including a three-class set corresponding to suitable / limited / unsuitable);
+    (f) an explicit-preference preservation module configured to re-evaluate the synchronously readable structure
+    after detection resolves and to discard the derived classification where the flag has transitioned to touched
+    during the asynchronous resolution window;
+    (g) a direct payload injection module configured to thread the derived or preserved classification through
+    the routine-generation call chain prior to a user-interface synchronisation cycle.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">2. (D:1)</span>
+    The system of claim 1, wherein the geolocation interface operates non-blockingly, catching permission denial,
+    network error, timeout, and abort, and returning a null classification on failure such that generation proceeds
+    with an existing user-selected or default value.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">3. (D:1)</span>
+    The system of claim 1, wherein the call chain comprises an asynchronous confirmation dialog, and wherein the
+    derived classification is captured in a pending-action closure and re-injected upon confirmation.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">4. (D:1)</span>
+    The system of claim 1, implemented across two or more of: a web-browser frontend; an iOS native-shell
+    frontend executing the web application; and an Android WebView frontend; the ambient-condition classification
+    module being functionally identical across said implemented environments.
+    <br/><span class="small">[v1 listed wearable, voice-assistant, and offline inference as if implemented. Those are Section 6.18 alternatives only. PATENT COUNSEL REVIEW REQUIRED on Markush form.]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">5. (I)</span>
+    A computer-implemented method for environmental-state synchronisation in a routine-generation pipeline,
+    comprising steps corresponding to claim 1(a)–(g), including sharing a single in-flight detection operation
+    and injecting the classification into the generation payload before user-interface synchronisation.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">5A. (D:5)</span>
+    The method of claim 5, wherein concurrent invocations share a single environmental detection operation.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">5B. (D:5)</span>
+    The method of claim 5, wherein the classification is transmitted into the generation payload without waiting
+    for deferred component-state commit.
+    </p>
+  </div>
+</div>
+
+<div class="page page-break">
+  <h3>Category B — Deterministic generation, pipeline, and optional augmentation</h3>
+  <div class="claim-block">
+    <p><span class="claim-num">6. (I)</span>
+    A computer-implemented system for generation of a child development routine, comprising:
+    (a) an age-band classification configured to assign a child to a developmental age band associated with
+    activity vocabulary, meal guidance, sleep parameters, and structural templates;
+    (b) a date-seeded shuffle function using a seed derived from at least a generation date and a child
+    identifier (including a child name);
+    (c) a deterministic rules-based generation engine operating on template activity pools and meal banks
+    as a primary generator that does not require a language model;
+    (d) a deterministic intelligence pipeline, implemented as application logic distinct from any language
+    model, operative on a candidate routine artefact whether that artefact originated from the rules-based
+    engine or from an optional language-model draft, providing at least temporal anchoring relative to wake
+    time, school-hours exclusion, allergy and diet filtering, and timeline integrity;
+    (e) a dinner-anchor repair module enforcing an age-dependent minimum interval between dinner end and bedtime;
+    (f) a validation gate that refuses delivery of a trust-invalid routine artefact;
+    (g) optionally, a language-model augmentation module whose outputs are inputs to (d) and (f) and which
+    is not required for (c).
+    <br/><span class="small">[v1 6c/6d treated GAI as co-equal core and correction as LLM-only. PATENT COUNSEL REVIEW REQUIRED on independence and 3(k).]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">7. (D:6)</span>
+    The system of claim 6, further comprising an energy-profile re-ordering module that reads a historically
+    observed energy profile comprising a peak-focus window and a low-energy window and reassigns activity
+    time slots when a minimum observation sample count is available (illustratively at least three samples).
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">8. (D:6)</span>
+    The system of claim 6, further comprising a caregiver-adaptive transformation module that receives a
+    caregiver identity selected from a plurality of profiles and transforms the routine by one or more of:
+    modulating bonding-density in template assembly; filtering or capping activities; prefixing activity
+    titles with simplified-instruction markers; and, when the optional language-model path is used,
+    appending caregiver-specific prompt constraints.
+    <br/><span class="small">[v1 claimed rewrite of instruction notes. Production prefixes activity titles and changes templates/prompts. PATENT COUNSEL REVIEW REQUIRED.]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">8A. (D:6)</span>
+    The system of claim 6, further comprising environmental-state-driven activity substitution responsive
+    to outdoor-suitability class: substituting outdoor activities with indoor equivalents for an unsuitable
+    class; reducing duration and/or appending an indoor backup for a limited class; and passing items
+    unchanged for a suitable class subject to other constraints including AQI and locale heat windows.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">8B. (D:6)</span>
+    The system of claim 6, wherein the dinner-anchor repair module enforces a minimum dinner-end to bedtime
+    gap of 60 minutes when age is less than 48 months, 90 minutes when age is less than 156 months, and
+    120 minutes otherwise, within a country-profile dinner window.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">8C. (D:6)</span>
+    The system of claim 6, further comprising an AQI outdoor-duration enforcement module applying numeric
+    caps including: no outdoor minutes when AQI exceeds 300; a reduced cap when AQI is at least 200;
+    and a further reduced cap when AQI is at least 150; distinct from the three-class weather handshake
+    of claim 1.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">8D. (D:6)</span>
+    The system of claim 6, wherein previous-day completion, mood, or sleep-quality signals are incorporated
+    into subsequent generation via the deterministic intelligence pipeline and, when the optional
+    language-model path is used, via prompt constraints; without requiring neural-network training.
+    </p>
+  </div>
+</div>
+
+<div class="page page-break">
+  <h3>Category C — Meals</h3>
+  <div class="claim-block">
+    <p><span class="claim-num">9. (I)</span>
+    A computer-implemented method for generating personalised meal content within a child development
+    routine, comprising:
+    (a) anchoring meal slot times and labels based on age band and wake and sleep times;
+    (b) receiving at least one of a parent-supplied ingredient inventory, a regional cuisine parameter,
+    a dietary restriction parameter, and an allergy list;
+    (c) selecting dish names for said slots from deterministic meal banks using a seed derived from date
+    and child identifier, optionally interpolating parent-supplied ingredients;
+    (d) optionally constructing a constrained prompt for a language-model inference engine to propose
+    additional distinct dish-name options per slot, and using those options only when they satisfy a
+    count and sanitizer check;
+    (e) applying a deterministic sanitizer enforcing diet and allergy constraints and variety rules;
+    (f) treating instruction-like wording in a parent-supplied inventory as ingredient names.
+    <br/><span class="small">[v1 made LLM four-options the whole method. Banks are the production default. PATENT COUNSEL REVIEW REQUIRED.]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">10. (D:9)</span>
+    The method of claim 9, wherein the regional cuisine parameter is selected from a set comprising at
+    least North Indian, South Indian, Bengali, Western, Asian, and Pan-Indian, and may include further
+    styles such as Middle Eastern or mixed.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">11. (D:9)</span>
+    The method of claim 9, wherein a Jain dietary profile constrains language-model prompts, when used,
+    to exclude meat, fish, eggs, onion, garlic, and root vegetables, and wherein the deterministic
+    sanitizer excludes meat, fish, and eggs for Jain in the vegetarian sanitizer branch.
+    <br/><span class="small">PATENT COUNSEL REVIEW REQUIRED: do not equate prompt constraints with a full deterministic root-vegetable parser unless later implemented.</span>
+    </p>
+  </div>
+
+  <h3>Category D — Platforms, state coordination, candidate correction</h3>
+  <div class="claim-block">
+    <p><span class="claim-num">12. (I)</span>
+    A multi-platform routine-generation architecture comprising a server-side computational orchestration
+    engine and at least two implemented client execution environments selected from a web-browser frontend,
+    an iOS native-shell frontend executing the web application, and an Android WebView frontend, wherein
+    the ambient-condition classification module, the deterministic intelligence pipeline, and the meal
+    generation of any preceding claim provide functionally identical behaviour across said implemented
+    clients.
+    <br/><span class="small">[v1 included wearable/voice/offline as if implemented.]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">13. (I)</span>
+    A computer-implemented method of asynchronous state coordination comprising maintaining cooperatively
+    a synchronously readable reference and a deferred component-state structure such that the reference is
+    authoritative within an asynchronous closure for explicit user-preference preservation while the
+    deferred structure drives user-interface re-rendering.
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">14. (I)</span>
+    A computer-implemented method for deterministic processing of a candidate child-development routine
+    artefact, comprising: receiving a candidate artefact from a rules-based generator or optionally from
+    a language-model inference engine; applying temporal anchoring to a wake-time reference; applying
+    school-hours exclusion; applying allergy and diet filtering; applying dinner-anchor repair including
+    an age-dependent dinner-to-sleep gap; applying environmental substitution; validating blocking trust
+    constraints; and either delivering the corrected artefact or refusing delivery.
+    <br/><span class="small">[v1 required an LLM output as step (a).]</span>
+    </p>
+  </div>
+  <div class="claim-block">
+    <p><span class="claim-num">15. (D:14)</span>
+    The method of claim 14, further comprising falling back to rules-based generation when a
+    language-model candidate fails validation or the language-model invocation fails.
+    </p>
+  </div>
+</div>
+
+<!-- NOTES FOR COUNSEL -->
+<div class="page page-break">
+  <h2>10. Industrial applicability and notes for counsel</h2>
+  <h3>10.0 Industrial applicability</h3>
+  <p>
+    The system is industrially applicable as a computer-implemented parenting/caregiver scheduling
+    product delivered as a web application and native-shell clients, generating daily child routines
+    under documented constraints. This sentence is not a patentability conclusion.
+  </p>
+  <h3>10.1 Filing status</h3>
+  <p>
+    Indian Patent Application No. <strong>202611059355</strong> (CBR 29076, 10 May 2026). Status:
+    <strong>filed application; grant and examination outcome not established.</strong>
+    Permissible candidate public wording (counsel to confirm): “Indian Patent Application No. 202611059355 filed”
+    or “patent application pending.” Never “patented” / “granted” / “approved.”
+    This HTML is <strong>not</strong> the 10 May uploaded specification.
+    Product UI still contains generic “patent pending” strings (not edited in this task).
+  </p>
+  <h3>10.2 Ownership</h3>
+  <p>
+    Inventor and applicant names are copied from the prior draft (Ankur Raman) for continuity.
+    AmyWorld / AmyNest branding appears in the product; no assignment instrument is in this repository.
+    Workspace license metadata includes MIT. Counsel must verify inventorship, applicant entity, and
+    assignment. This draft does not create an assignment.
+  </p>
+  <h3>10.3 Section 3(k)</h3>
+  <p>
+    Technical effects described for counsel’s consideration include: suppression of duplicate
+    environmental network operations; prevention of late asynchronous overwrite of explicit user
+    state; deterministic dinner-to-sleep geometry independent of language-model sampling; AQI
+    outdoor caps; and refuse-to-deliver validation. Whether these suffice under Section 3(k) is a
+    legal question. This document makes no patentability conclusion.
+  </p>
+  <h3>10.4 Drawings formality</h3>
+  <p>
+    Figures 1–8 below are HTML/SVG enablement figures. IPO Schedule II 1:1 numbered sheets must be
+    prepared by a draftsman for any Complete Specification / drawing filing.
+  </p>
+  <h3>10.5 Forms checklist (evidence in this package)</h3>
+  <table>
+    <tr><th>Item</th><th>Status in this repository / user evidence</th></tr>
+    <tr><td>Form 1</td><td>CBR shows FORM 1 paid — upload binary not in repo</td></tr>
+    <tr><td>Form 2 / specification</td><td><strong>Not locally available</strong> — download from IPO</td></tr>
+    <tr><td>Claims as filed</td><td>Unknown until Form 2 downloaded</td></tr>
+    <tr><td>Abstract as filed</td><td>Unknown until Form 2 downloaded</td></tr>
+    <tr><td>Drawings Schedule II</td><td>Not complete (HTML/SVG only in drafts)</td></tr>
+    <tr><td>CBR / fee ₹1,600</td><td>User-supplied portal screenshot</td></tr>
+    <tr><td>Form 5 inventorship</td><td>Not in repo</td></tr>
+    <tr><td>Form 28 / startup</td><td>Not in repo</td></tr>
+    <tr><td>Assignment to AmyWorld</td><td>Not in repo</td></tr>
+    <tr><td>This draft as Complete Spec</td><td>Proposed only — counsel decides amendment vs new matter vs 12-month complete spec</td></tr>
+  </table>
+</div>
+
+<!-- FIGURE 1 -->
+<div class="page page-break">
+  <h2>9. Drawings</h2>
+  <h3 class="center">Figure 1 — System architecture (implemented)</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="20" y="20" width="640" height="90" rx="8" fill="#e8eaf6" stroke="#3f51b5" stroke-width="1.5"/>
+    <text x="340" y="42" text-anchor="middle" font-weight="bold" fill="#1a237e">IMPLEMENTED CLIENTS (same web generate UI)</text>
+    <rect x="40" y="55" width="180" height="40" rx="4" fill="#fff" stroke="#3f51b5"/>
+    <text x="130" y="80" text-anchor="middle">Web browser</text>
+    <rect x="250" y="55" width="180" height="40" rx="4" fill="#fff" stroke="#3f51b5"/>
+    <text x="340" y="80" text-anchor="middle">iOS Capacitor web shell</text>
+    <rect x="460" y="55" width="180" height="40" rx="4" fill="#fff" stroke="#3f51b5"/>
+    <text x="550" y="80" text-anchor="middle">Android WebView</text>
+
+    <rect x="20" y="130" width="640" height="220" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+    <text x="340" y="152" text-anchor="middle" font-weight="bold" fill="#1b5e20">SERVER ORCHESTRATION (deterministic core)</text>
+    <rect x="40" y="170" width="140" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="110" y="190" text-anchor="middle" font-size="10">API gateway</text>
+    <text x="110" y="206" text-anchor="middle" font-size="9">/routines/generate</text>
+    <rect x="200" y="170" width="140" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="270" y="190" text-anchor="middle" font-size="10">Input resolution</text>
+    <text x="270" y="206" text-anchor="middle" font-size="9">resolveRoutine…</text>
+    <rect x="360" y="170" width="140" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="430" y="190" text-anchor="middle" font-size="10">Rules generator</text>
+    <text x="430" y="206" text-anchor="middle" font-size="9">PRIMARY</text>
+    <rect x="520" y="170" width="120" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="580" y="190" text-anchor="middle" font-size="10">Meal banks</text>
+    <text x="580" y="206" text-anchor="middle" font-size="9">deterministic</text>
+    <rect x="40" y="240" width="300" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="190" y="260" text-anchor="middle" font-size="10">Deterministic intelligence pipeline</text>
+    <text x="190" y="276" text-anchor="middle" font-size="9">NOT a language model</text>
+    <rect x="360" y="240" width="140" height="50" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="430" y="260" text-anchor="middle" font-size="10">Dinner repair</text>
+    <text x="430" y="276" text-anchor="middle" font-size="9">60 / 90 / 120 min</text>
+    <rect x="520" y="240" width="120" height="50" rx="4" fill="#fff" stroke="#c62828"/>
+    <text x="580" y="260" text-anchor="middle" font-size="10">Safety gate</text>
+    <text x="580" y="276" text-anchor="middle" font-size="9">trust + AQI</text>
+    <rect x="40" y="305" width="600" height="30" rx="4" fill="#fff" stroke="#2e7d32"/>
+    <text x="340" y="325" text-anchor="middle" font-size="10">Persistent store: profiles, routines, outcomes, personalization memory</text>
+
+    <rect x="20" y="370" width="310" height="70" rx="8" fill="#fff8e1" stroke="#f9a825" stroke-dasharray="6 4"/>
+    <text x="175" y="392" text-anchor="middle" font-weight="bold" fill="#f57f17" font-size="10">OPTIONAL (substitutable)</text>
+    <text x="175" y="412" text-anchor="middle" font-size="10">Language-model API — candidate draft only</text>
+    <text x="175" y="428" text-anchor="middle" font-size="9">Meteorological API (e.g. Open-Meteo)</text>
+    <rect x="350" y="370" width="310" height="70" rx="8" fill="#fafafa" stroke="#9e9e9e" stroke-dasharray="6 4"/>
+    <text x="505" y="392" text-anchor="middle" font-weight="bold" fill="#616161" font-size="10">NOT IMPLEMENTED (future / alternative)</text>
+    <text x="505" y="412" text-anchor="middle" font-size="10">wearable · voice assistant · on-device LLM</text>
+    <text x="505" y="428" text-anchor="middle" font-size="9">smart-home actuation · biometric HR</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 1 — Implemented architecture. Dashed boxes are optional services or unimplemented future embodiments. The language model is not the primary generator.</p>
+</div>
+
+<!-- FIGURE 2 -->
+<div class="page page-break">
+  <h3 class="center">Figure 2 — Certified production pipeline (rules-first)</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 560" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#222"/></marker></defs>
+    <rect x="160" y="10" width="320" height="40" rx="6" fill="#1b5e20"/><text x="320" y="35" text-anchor="middle" fill="#fff" font-weight="bold">UI inputs + optional weather handshake</text>
+    <line x1="320" y1="50" x2="320" y2="70" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="70" width="320" height="36" rx="6" fill="#fff" stroke="#222"/><text x="320" y="93" text-anchor="middle">POST /routines/generate</text>
+    <line x1="320" y1="106" x2="320" y2="124" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="124" width="320" height="36" rx="6" fill="#fff" stroke="#222"/><text x="320" y="147" text-anchor="middle">resolveRoutineGenerationInputs</text>
+    <line x1="320" y1="160" x2="320" y2="178" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="178" width="320" height="44" rx="6" fill="#2e7d32"/><text x="320" y="196" text-anchor="middle" fill="#fff" font-weight="bold">generateRuleBasedRoutine</text>
+    <text x="320" y="212" text-anchor="middle" fill="#fff" font-size="9">PRIMARY — templates + meal banks + dateSeed</text>
+    <line x1="320" y1="222" x2="320" y2="240" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="240" width="320" height="36" rx="6" fill="#fff" stroke="#222"/><text x="320" y="263" text-anchor="middle">energy curve (if samples ≥ 3) + env enrich</text>
+    <line x1="320" y1="276" x2="320" y2="294" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="294" width="320" height="50" rx="6" fill="#1565c0"/><text x="320" y="314" text-anchor="middle" fill="#fff" font-weight="bold">runRoutineIntelligencePipeline</text>
+    <text x="320" y="332" text-anchor="middle" fill="#fff" font-size="9">deterministic application logic — not an LLM</text>
+    <line x1="320" y1="344" x2="320" y2="362" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="362" width="320" height="36" rx="6" fill="#fff" stroke="#222"/><text x="320" y="385" text-anchor="middle">repairDinnerAnchor (inside pipeline)</text>
+    <line x1="320" y1="398" x2="320" y2="416" stroke="#222" marker-end="url(#arr)"/>
+    <rect x="160" y="416" width="320" height="44" rx="6" fill="#b71c1c"/><text x="320" y="434" text-anchor="middle" fill="#fff" font-weight="bold">Trust validation</text>
+    <text x="320" y="450" text-anchor="middle" fill="#fff" font-size="9">fail → HTTP 422; success → JSON output</text>
+    <line x1="320" y1="460" x2="320" y2="478" stroke="#222" marker-end="url(#arr)"/>
+    <ellipse cx="320" cy="508" rx="150" ry="28" fill="#222"/><text x="320" y="513" text-anchor="middle" fill="#fff">Client preview → user save → persistence</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 2 — Certified rules-first production path. Scheduler is not re-run after initial placement; dinner repair runs inside the pipeline.</p>
+</div>
+
+<!-- FIGURE 3 weather -->
+<div class="page page-break">
+  <h3 class="center">Figure 3 — Concurrent-safe weather handshake</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="170" y="10" width="300" height="36" rx="6" fill="#1a237e"/><text x="320" y="33" text-anchor="middle" fill="#fff">Generate trigger</text>
+    <rect x="170" y="70" width="300" height="50" rx="6" fill="#fff" stroke="#1a237e"/>
+    <text x="320" y="90" text-anchor="middle">weatherTouched or Ref set?</text>
+    <text x="320" y="108" text-anchor="middle" font-size="9">YES → return user value</text>
+    <rect x="170" y="145" width="300" height="50" rx="6" fill="#fff" stroke="#1a237e"/>
+    <text x="320" y="165" text-anchor="middle">In-flight Promise exists?</text>
+    <text x="320" y="183" text-anchor="middle" font-size="9">YES → await shared detection (at most one)</text>
+    <rect x="170" y="220" width="300" height="50" rx="6" fill="#fff" stroke="#1a237e"/>
+    <text x="320" y="240" text-anchor="middle">Geo + meteorological query</text>
+    <text x="320" y="258" text-anchor="middle" font-size="9">map → yes / limited / no  (suitable / limited / unsuitable)</text>
+    <rect x="170" y="295" width="300" height="50" rx="6" fill="#fff" stroke="#c62828"/>
+    <text x="320" y="315" text-anchor="middle">If touched during wait: DISCARD result</text>
+    <text x="320" y="333" text-anchor="middle" font-size="9">Else inject weatherForCall before UI commit</text>
+    <rect x="170" y="370" width="300" height="50" rx="6" fill="#fff" stroke="#1a237e"/>
+    <text x="320" y="390" text-anchor="middle">Wake-confirm: re-inject pendingAction.weatherForCall</text>
+    <text x="320" y="408" text-anchor="middle" font-size="9">Failure → null; proceed with existing/default</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 3 — Explicit preference preservation and shared in-flight retrieval. Not a language-model function.</p>
+</div>
+
+<!-- FIGURE 4 meals/rules -->
+<div class="page page-break">
+  <h3 class="center">Figure 4 — Rules-based generation and meal banks</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="20" y="20" width="180" height="70" rx="6" fill="#e8f5e9" stroke="#2e7d32"/>
+    <text x="110" y="48" text-anchor="middle" font-weight="bold">Age-band templates</text>
+    <text x="110" y="68" text-anchor="middle" font-size="9">activity pools</text>
+    <rect x="230" y="20" width="180" height="70" rx="6" fill="#e8f5e9" stroke="#2e7d32"/>
+    <text x="320" y="48" text-anchor="middle" font-weight="bold">dateSeed shuffle</text>
+    <text x="320" y="68" text-anchor="middle" font-size="9">date + childName</text>
+    <rect x="440" y="20" width="180" height="70" rx="6" fill="#e8f5e9" stroke="#2e7d32"/>
+    <text x="530" y="48" text-anchor="middle" font-weight="bold">Meal banks</text>
+    <text x="530" y="68" text-anchor="middle" font-size="9">veg / egg / nonveg × slot</text>
+    <rect x="120" y="120" width="400" height="50" rx="6" fill="#2e7d32"/>
+    <text x="320" y="150" text-anchor="middle" fill="#fff" font-weight="bold">generateRuleBasedRoutine — primary day assembly</text>
+    <rect x="40" y="200" width="260" height="70" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-dasharray="5 3"/>
+    <text x="170" y="228" text-anchor="middle" font-weight="bold">OPTIONAL LLM meal enrich</text>
+    <text x="170" y="248" text-anchor="middle" font-size="9">exactly-N names / slot if valid</text>
+    <rect x="340" y="200" width="260" height="70" rx="6" fill="#ffebee" stroke="#c62828"/>
+    <text x="470" y="228" text-anchor="middle" font-weight="bold">Deterministic sanitizer</text>
+    <text x="470" y="248" text-anchor="middle" font-size="9">Safety &gt; Diet &gt; Structure &gt; Variety</text>
+    <rect x="120" y="300" width="400" height="50" rx="6" fill="#1565c0"/>
+    <text x="320" y="330" text-anchor="middle" fill="#fff">Into shared intelligence pipeline</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 4 — Deterministic meal banks are the default. Language-model dish-name enrich is optional and sanitized.</p>
+</div>
+
+<!-- FIGURE 5 -->
+<div class="page page-break">
+  <h3 class="center">Figure 5 — Optional language-model path and fallback</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="20" y="30" width="250" height="80" rx="6" fill="#2e7d32"/>
+    <text x="145" y="62" text-anchor="middle" fill="#fff" font-weight="bold">PRIMARY</text>
+    <text x="145" y="82" text-anchor="middle" fill="#fff" font-size="10">Rules-based candidate</text>
+    <rect x="370" y="30" width="250" height="80" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-dasharray="6 3"/>
+    <text x="495" y="58" text-anchor="middle" font-weight="bold">OPTIONAL</text>
+    <text x="495" y="76" text-anchor="middle" font-size="10">POST /routines/generate-ai</text>
+    <text x="495" y="94" text-anchor="middle" font-size="9">LLM draft (substitutable vendor)</text>
+    <rect x="170" y="160" width="300" height="70" rx="6" fill="#1565c0"/>
+    <text x="320" y="188" text-anchor="middle" fill="#fff" font-weight="bold">SAME deterministic pipeline</text>
+    <text x="320" y="208" text-anchor="middle" fill="#fff" font-size="9">runRoutineIntelligencePipeline + dinner repair</text>
+    <rect x="170" y="260" width="300" height="50" rx="6" fill="#b71c1c"/>
+    <text x="320" y="290" text-anchor="middle" fill="#fff">enforceRoutineSafety — valid?</text>
+    <rect x="40" y="340" width="220" height="50" rx="6" fill="#2e7d32"/>
+    <text x="150" y="370" text-anchor="middle" fill="#fff">YES → deliver artefact</text>
+    <rect x="380" y="340" width="220" height="50" rx="6" fill="#fff" stroke="#2e7d32"/>
+    <text x="490" y="362" text-anchor="middle" font-size="10">NO / LLM fail</text>
+    <text x="490" y="378" text-anchor="middle" font-size="10">→ rules-based fallback</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 5 — The language model does not run the pipeline and does not guarantee safety. Failure falls back to rules.</p>
+</div>
+
+<!-- FIGURE 6 -->
+<div class="page page-break">
+  <h3 class="center">Figure 6 — Safety and validation boundary</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="40" y="20" width="560" height="40" rx="6" fill="#222"/><text x="320" y="45" text-anchor="middle" fill="#fff">Candidate routine (rules or optional LLM)</text>
+    <rect x="40" y="90" width="170" height="70" rx="6" fill="#ffebee" stroke="#c62828"/><text x="125" y="118" text-anchor="middle" font-weight="bold">AQI caps</text><text x="125" y="140" text-anchor="middle" font-size="9">0 / 15 / 20 min bands</text>
+    <rect x="235" y="90" width="170" height="70" rx="6" fill="#ffebee" stroke="#c62828"/><text x="320" y="118" text-anchor="middle" font-weight="bold">Trust validators</text><text x="320" y="140" text-anchor="middle" font-size="9">sleep · dinner · infant</text>
+    <rect x="430" y="90" width="170" height="70" rx="6" fill="#ffebee" stroke="#c62828"/><text x="515" y="118" text-anchor="middle" font-weight="bold">Meal sanitizer</text><text x="515" y="140" text-anchor="middle" font-size="9">diet · allergy · variety</text>
+    <rect x="120" y="190" width="400" height="50" rx="6" fill="#b71c1c"/><text x="320" y="220" text-anchor="middle" fill="#fff">enforceRoutineSafety — valid?</text>
+    <rect x="40" y="270" width="250" height="50" rx="6" fill="#2e7d32"/><text x="165" y="300" text-anchor="middle" fill="#fff">Deliver / persist</text>
+    <rect x="350" y="270" width="250" height="50" rx="6" fill="#fff" stroke="#b71c1c"/><text x="475" y="300" text-anchor="middle">Refuse (HTTP 422)</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 6 — Deterministic safety. A separate advisory safety HTTP route is not this choke-point. The LLM is not the safety authority.</p>
+</div>
+
+<!-- FIGURE 7 -->
+<div class="page page-break">
+  <h3 class="center">Figure 7 — Dinner-anchor repair</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="160" y="15" width="320" height="40" rx="6" fill="#222"/><text x="320" y="40" text-anchor="middle" fill="#fff">Candidate items + sleepMins + country + ageMonths</text>
+    <rect x="40" y="80" width="180" height="70" rx="6" fill="#e3f2fd" stroke="#1565c0"/><text x="130" y="108" text-anchor="middle" font-weight="bold">&lt;48 mo</text><text x="130" y="128" text-anchor="middle">gap ≥ 60 min</text>
+    <rect x="230" y="80" width="180" height="70" rx="6" fill="#e3f2fd" stroke="#1565c0"/><text x="320" y="108" text-anchor="middle" font-weight="bold">&lt;156 mo</text><text x="320" y="128" text-anchor="middle">gap ≥ 90 min</text>
+    <rect x="420" y="80" width="180" height="70" rx="6" fill="#e3f2fd" stroke="#1565c0"/><text x="510" y="108" text-anchor="middle" font-weight="bold">else</text><text x="510" y="128" text-anchor="middle">gap ≥ 120 min</text>
+    <rect x="120" y="175" width="400" height="50" rx="6" fill="#fff" stroke="#1565c0"/><text x="320" y="205" text-anchor="middle">Place/promote one dinner in country dinner window</text>
+    <rect x="120" y="245" width="400" height="50" rx="6" fill="#fff" stroke="#1565c0"/><text x="320" y="275" text-anchor="middle">Require dinner end + gap ≤ bedtime; re-run after overlap</text>
+    <rect x="120" y="315" width="400" height="40" rx="6" fill="#1565c0"/><text x="320" y="340" text-anchor="middle" fill="#fff">AE: additionally shift outdoor starts to ≥ 18:30</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 7 — Gaps and the 18:30 UAE outdoor shift are from production code. The language model does not compute these gaps.</p>
+</div>
+
+<!-- FIGURE 8 -->
+<div class="page page-break">
+  <h3 class="center">Figure 8 — Personalization and previous-day signals</h3>
+  <div class="chart-wrap">
+  <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="11">
+    <rect x="20" y="20" width="190" height="80" rx="6" fill="#fff" stroke="#6a1b9a"/><text x="115" y="50" text-anchor="middle" font-weight="bold">Outcomes</text><text x="115" y="70" text-anchor="middle" font-size="9">complete / skip / sleep / mood</text>
+    <rect x="225" y="20" width="190" height="80" rx="6" fill="#fff" stroke="#6a1b9a"/><text x="320" y="50" text-anchor="middle" font-weight="bold">Energy profile</text><text x="320" y="70" text-anchor="middle" font-size="9">peak / low; ≥3 samples</text>
+    <rect x="430" y="20" width="190" height="80" rx="6" fill="#fff" stroke="#6a1b9a"/><text x="525" y="50" text-anchor="middle" font-weight="bold">Learning weights</text><text x="525" y="70" text-anchor="middle" font-size="9">14-day correlations [−1,+1]</text>
+    <rect x="120" y="130" width="400" height="60" rx="6" fill="#6a1b9a"/><text x="320" y="155" text-anchor="middle" fill="#fff" font-weight="bold">Family intelligence prepare</text><text x="320" y="175" text-anchor="middle" fill="#fff" font-size="9">hints · heuristic trustScore · memory</text>
+    <rect x="40" y="220" width="270" height="70" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="175" y="248" text-anchor="middle">Rules path: pipeline context</text><text x="175" y="268" text-anchor="middle" font-size="9">freshness / completion / emotion</text>
+    <rect x="330" y="220" width="270" height="70" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-dasharray="5 3"/><text x="465" y="248" text-anchor="middle">Optional LLM path: prompt</text><text x="465" y="268" text-anchor="middle" font-size="9">previous meals / categories / weights</text>
+  </svg>
+  </div>
+  <p class="chart-caption">Figure 8 — Heuristic personalization and historical signals. Not neural-network training. Persist after generation via family-intelligence finalize.</p>
+</div>
+
+<div class="page page-break">
+  <h2>Disclaimer</h2>
+  <p>
+    This document is a technical submission draft for a registered Indian Patent Agent. It aligns a
+    proposed disclosure with the production AmyNest routine-generation implementation as of
+    14 September 2026. Indian Patent Application No. 202611059355 is a filed application per CBR 29076;
+    this draft is <strong>not</strong> that filing, not a grant, not an examination result, and not a
+    certification of novelty, inventive step, or patentability. Indicative claims are not legally final.
+  </p>
+  <p class="small">Companion records: patent/amynest_patent_filing_record.md; patent/amynest_filed_vs_current_claim_traceability.md; patent/amynest_final_patent_submission_change_log.md. v1 HTML and v2 HTML are preserved and not overwritten.</p>
+  <p style="margin-top:24px;">Technical editor (not a patent agent): 14 September 2026.</p>
+</div>
+
+</body>
+</html>

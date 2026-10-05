@@ -36,7 +36,7 @@ const sections = [{
   body: `You may enter information about your children (such as name, age, and interests) to personalise the Service. You represent that you are the parent or legal guardian of any child whose data you enter. We handle child data in accordance with our Privacy Policy. We do not knowingly allow children to create accounts or submit personal information directly.`
 }, {
   title: "10. Intellectual Property",
-  body: `All content, features, and functionality of the Service — including text, graphics, logos, icons, and software — are the exclusive property of AmyWorld and are protected by applicable intellectual property laws. You may not copy, reproduce, distribute, or create derivative works without our express written permission. Content you create using the Service (such as saved routines) remains yours; you grant us a limited licence to store and process it to deliver the Service.`
+  body: `All content, features, and functionality of the Service — including text, graphics, logos, icons, and software — are operated under the AmyWorld name and are protected by applicable intellectual property laws to the extent such rights exist. Legal ownership of the software and related IP is not independently documented in this policy. You may not copy, reproduce, distribute, or create derivative works without express written permission. Content you create using the Service (such as saved routines) remains yours; you grant us a limited licence to store and process it to deliver the Service.`
 }, {
   title: "11. Privacy",
   body: `Your use of the Service is also governed by our Privacy Policy, available at amynest.in/privacy. By using the Service you consent to the collection and use of your information as described in the Privacy Policy.`

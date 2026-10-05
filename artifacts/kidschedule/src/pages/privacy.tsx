@@ -16,7 +16,7 @@ const PRIVACY_CONTENT = {
   operatorName: LEGAL_ORGANIZATION_NAME,
   ownership: PRIVACY_OPERATOR_STATEMENT,
   intro:
-    'AmyNest ("the App") is operated by AmyNest AI ("we", "us"), a product of AmyWorld. This policy explains what information we collect when you use the App and how we handle it.',
+    'AmyNest ("the App") is operated by AmyNest AI ("we", "us") under the AmyWorld name. This policy explains what information we collect when you use the App and how we handle it. It does not by itself prove that AmyWorld is a registered legal owner.',
   sections: [
     {
       heading: "1. Information we collect",
