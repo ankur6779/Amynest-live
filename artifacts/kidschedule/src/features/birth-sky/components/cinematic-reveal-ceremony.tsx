@@ -237,9 +237,16 @@ export function AmyAstroCinematicRevealCeremony({
         )}
       >
         {showSilhouette ? (
-          <AmyAstroCosmicPortrait childName={childName} reducedMotion={reducedMotion} />
+          <AmyAstroCosmicPortrait
+            childName={childName}
+            reducedMotion={reducedMotion}
+            presentation="ceremony"
+          />
         ) : (
-          <div className="h-[280px] w-[280px]" />
+          <div
+            className="amy-astro-portrait-frame amy-astro-portrait-frame--ceremony"
+            aria-hidden
+          />
         )}
       </div>
 

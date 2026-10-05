@@ -648,6 +648,7 @@ export function BirthSkyDashboardPage({
         <AmyAstroTodaysSkyCard content={todaysSky} reducedMotion={reduced} />
 
         <AmyAstroCosmicPortraitCard
+          key={profile.profileId}
           childName={childName}
           portrait={portrait}
           reducedMotion={reduced}
