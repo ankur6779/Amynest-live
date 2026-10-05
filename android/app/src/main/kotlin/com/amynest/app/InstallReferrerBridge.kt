@@ -9,52 +9,27 @@ import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 /**
- * Fetches Google Play Install Referrer on cold start and injects attribution
- * data into the WebView as `window.__AMYNEST_INSTALL_REFERRER`.
+ * Fetches Google Play Install Referrer independently of the WebView, persists
+ * it in native prefs, then injects `window.__AMYNEST_INSTALL_REFERRER`.
  */
 class InstallReferrerBridge(
     context: Context,
-    webView: WebView,
+    webView: WebView? = null,
 ) {
     private val contextRef = WeakReference(context.applicationContext)
     private val webViewRef = WeakReference(webView)
 
     fun fetchAndInject() {
         val ctx = contextRef.get() ?: return
-        try {
-            val client = InstallReferrerClient.newBuilder(ctx).build()
-            client.startConnection(object : InstallReferrerStateListener {
-                override fun onInstallReferrerSetupFinished(responseCode: Int) {
-                    when (responseCode) {
-                        InstallReferrerClient.InstallReferrerResponse.OK -> {
-                            try {
-                                val response = client.installReferrer
-                                val payload = JSONObject()
-                                    .put("referrer", response.installReferrer ?: "")
-                                    .put("clickTimestamp", response.referrerClickTimestampSeconds)
-                                    .put("installTimestamp", response.installBeginTimestampSeconds)
-                                    .put("instantExperienceLaunched", response.googlePlayInstantParam)
-                                injectReferrer(payload)
-                                Log.d(TAG, "Install referrer injected")
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to read install referrer: ${e.message}")
-                            } finally {
-                                client.endConnection()
-                            }
-                        }
-                        else -> {
-                            Log.w(TAG, "Install referrer unavailable: code=$responseCode")
-                            client.endConnection()
-                        }
-                    }
-                }
-
-                override fun onInstallReferrerServiceDisconnected() {
-                    Log.d(TAG, "Install referrer service disconnected")
-                }
-            })
-        } catch (e: Exception) {
-            Log.w(TAG, "Install referrer client failed: ${e.message}")
+        NativeAnalyticsSpine.cachedReferrerJson(ctx)?.let { cached ->
+            injectReferrer(cached)
+        }
+        queryPlayReferrer(ctx) { payload ->
+            if (payload != null) {
+                NativeAnalyticsSpine.onReferrer(ctx, payload)
+                injectReferrer(payload)
+                Log.d(TAG, "Install referrer stored and injected")
+            }
         }
     }
 
@@ -73,8 +48,61 @@ class InstallReferrerBridge(
     companion object {
         private const val TAG = "InstallReferrer"
 
+        fun prefetch(context: Context) {
+            val ctx = context.applicationContext
+            queryPlayReferrer(ctx) { payload ->
+                if (payload != null) {
+                    NativeAnalyticsSpine.onReferrer(ctx, payload)
+                    Log.d(TAG, "Install referrer prefetched before WebView")
+                }
+            }
+        }
+
         fun fetchOn(activity: android.app.Activity, webView: WebView) {
             InstallReferrerBridge(activity, webView).fetchAndInject()
+        }
+
+        private fun queryPlayReferrer(
+            ctx: Context,
+            onResult: (JSONObject?) -> Unit,
+        ) {
+            try {
+                val client = InstallReferrerClient.newBuilder(ctx).build()
+                client.startConnection(object : InstallReferrerStateListener {
+                    override fun onInstallReferrerSetupFinished(responseCode: Int) {
+                        when (responseCode) {
+                            InstallReferrerClient.InstallReferrerResponse.OK -> {
+                                try {
+                                    val response = client.installReferrer
+                                    val payload = JSONObject()
+                                        .put("referrer", response.installReferrer ?: "")
+                                        .put("clickTimestamp", response.referrerClickTimestampSeconds)
+                                        .put("installTimestamp", response.installBeginTimestampSeconds)
+                                        .put("instantExperienceLaunched", response.googlePlayInstantParam)
+                                    onResult(payload)
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Failed to read install referrer: ${e.message}")
+                                    onResult(null)
+                                } finally {
+                                    client.endConnection()
+                                }
+                            }
+                            else -> {
+                                Log.w(TAG, "Install referrer unavailable: code=$responseCode")
+                                client.endConnection()
+                                onResult(null)
+                            }
+                        }
+                    }
+
+                    override fun onInstallReferrerServiceDisconnected() {
+                        Log.d(TAG, "Install referrer service disconnected")
+                    }
+                })
+            } catch (e: Exception) {
+                Log.w(TAG, "Install referrer client failed: ${e.message}")
+                onResult(null)
+            }
         }
     }
 }

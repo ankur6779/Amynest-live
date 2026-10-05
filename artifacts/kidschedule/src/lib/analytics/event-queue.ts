@@ -160,4 +160,8 @@ export class AnalyticsEventQueue {
   pendingCount(): number {
     return this.memory.length;
   }
+
+  hasEvent(name: string): boolean {
+    return this.memory.some((event) => event.name === name);
+  }
 }

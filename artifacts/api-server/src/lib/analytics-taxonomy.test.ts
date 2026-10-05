@@ -67,6 +67,59 @@ describe("analytics taxonomy", () => {
     assert.equal(r.valid, true);
   });
 
+  it("persists Ads attribution fields on first_open and install_source", () => {
+    const first = validateAnalyticsEvent("first_open", {
+      cold: true,
+      gclid: "gclid-1",
+      campaign_id: "23986249354",
+      event_key: "device-1:first_open",
+      anonymous_id: "device:device-1",
+    });
+    assert.equal(first.valid, true);
+    if (first.valid) {
+      assert.equal(first.props.gclid, "gclid-1");
+      assert.equal(first.props.campaign_id, "23986249354");
+    }
+    const install = validateAnalyticsEvent("install_source", {
+      source: "google_ads",
+      gclid: "gclid-1",
+      gbraid: "gb",
+      wbraid: "wb",
+      campaign_id: "23986249354",
+    });
+    assert.equal(install.valid, true);
+    if (install.valid) {
+      assert.equal(install.props.gclid, "gclid-1");
+      assert.equal(install.props.campaign_id, "23986249354");
+    }
+  });
+
+  it("persists Ads attribution and transaction id on purchase events", () => {
+    const upgrade = validateAnalyticsEvent("upgrade_completed", {
+      source: "play",
+      transaction_id: "GPA.123",
+      gclid: "gclid-1",
+      campaign_id: "23986249354",
+    });
+    assert.equal(upgrade.valid, true);
+    if (upgrade.valid) {
+      assert.equal(upgrade.props.gclid, "gclid-1");
+      assert.equal(upgrade.props.transaction_id, "GPA.123");
+      assert.equal(upgrade.props.campaign_id, "23986249354");
+    }
+    const funnel = validateAnalyticsEvent("subscription_funnel_event", {
+      step: "purchase_success",
+      gclid: "gclid-1",
+      transaction_id: "GPA.123",
+      campaign_id: "23986249354",
+    });
+    assert.equal(funnel.valid, true);
+    if (funnel.valid) {
+      assert.equal(funnel.props.gclid, "gclid-1");
+      assert.equal(funnel.props.transaction_id, "GPA.123");
+    }
+  });
+
   it("validates first-value activation events", () => {
     assert.equal(isKnownAnalyticsEvent("dashboard_view"), true);
     assert.equal(isKnownAnalyticsEvent("routine_cta_clicked"), true);

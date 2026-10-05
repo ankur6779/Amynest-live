@@ -26,6 +26,7 @@ export type InstallAttribution = {
   playReferrer?: string;
   playClickTimestamp?: number;
   playInstallTimestamp?: number;
+  campaignId?: string;
   capturedAt: string;
 };
 
@@ -78,6 +79,9 @@ function parseReferrerQuery(referrer: string): Partial<InstallAttribution> {
     if (gclid) result.gclid = gclid;
     if (gbraid) result.gbraid = gbraid;
     if (wbraid) result.wbraid = wbraid;
+    const campaignId = params.get("campaign_id") ?? params.get("campaignid");
+    if (campaignId) result.campaignId = campaignId;
+    else if (utmCampaign && /^\d{6,}$/.test(utmCampaign)) result.campaignId = utmCampaign;
   } catch {
     /* ignore malformed referrer strings */
   }
@@ -108,6 +112,9 @@ function parseUtmFromUrl(): Partial<InstallAttribution> {
   if (wbraid) result.wbraid = wbraid;
   if (fbclid) result.fbclid = fbclid;
   if (ref) result.ref = ref;
+  const campaignId = params.get("campaign_id") ?? params.get("campaignid");
+  if (campaignId) result.campaignId = campaignId;
+  else if (utmCampaign && /^\d{6,}$/.test(utmCampaign)) result.campaignId = utmCampaign;
   result.landingPath = window.location.pathname;
   return result;
 }
@@ -128,6 +135,7 @@ function mergePlayReferrer(existing: InstallAttribution, play: PlayInstallReferr
     gclid: fromReferrer.gclid ?? existing.gclid,
     gbraid: fromReferrer.gbraid ?? existing.gbraid,
     wbraid: fromReferrer.wbraid ?? existing.wbraid,
+    campaignId: fromReferrer.campaignId ?? existing.campaignId,
   };
 }
 
@@ -161,6 +169,7 @@ function buildInstallSourcePayload(attr: InstallAttribution) {
     fbclid: attr.fbclid,
     gbraid: attr.gbraid,
     wbraid: attr.wbraid,
+    campaign_id: attr.campaignId,
     ref: attr.ref,
     landing_path: attr.landingPath,
     play_referrer: attr.playReferrer,

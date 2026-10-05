@@ -44,7 +44,30 @@ function detectBrowser(): string {
   return "unknown";
 }
 
+function readNativeAppVersion(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const w = window as Window & {
+    __AMYNEST_APP_VERSION?: string;
+    __AMYNEST_DEVICE_INFO?: { app_version?: string };
+    AmyNestAppNative?: { getVersionName?: () => string };
+  };
+  if (typeof w.__AMYNEST_APP_VERSION === "string" && w.__AMYNEST_APP_VERSION.trim()) {
+    return w.__AMYNEST_APP_VERSION.trim().slice(0, 32);
+  }
+  const fromInfo = w.__AMYNEST_DEVICE_INFO?.app_version;
+  if (typeof fromInfo === "string" && fromInfo.trim()) return fromInfo.trim().slice(0, 32);
+  try {
+    const native = w.AmyNestAppNative?.getVersionName?.();
+    if (typeof native === "string" && native.trim()) return native.trim().slice(0, 32);
+  } catch {
+    /* bridge not ready */
+  }
+  return undefined;
+}
+
 export function resolveAppVersion(): string {
+  const native = readNativeAppVersion();
+  if (native) return native;
   const fromEnv = import.meta.env.VITE_APP_VERSION as string | undefined;
   if (fromEnv?.trim()) return fromEnv.trim().slice(0, 32);
   return import.meta.env.DEV ? "dev" : "unknown";

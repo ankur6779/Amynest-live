@@ -576,6 +576,17 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
         ...(event.cancel_reason ? { cancel_reason: event.cancel_reason } : {}),
       });
     }
+    if (event.type === "INITIAL_PURCHASE" && event.transaction_id && userId) {
+      const { recordServerPurchaseTruth } = await import("../services/serverPurchaseTruthService.js");
+      void recordServerPurchaseTruth({
+        canonicalUserId: userId,
+        transactionId: event.transaction_id,
+        productId: event.product_id ?? undefined,
+        store: event.store ?? undefined,
+        providerEventId: eventId,
+        conversionAt: eventAt,
+      });
+    }
 
     res.json({ ok: true, eventId, applied: { userId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });
     return;

@@ -34,4 +34,6 @@
 -keep class com.amynest.app.PreSignupBootReceiver { *; }
 -keep class com.amynest.app.NotificationSounds { *; }
 -keep class com.amynest.app.NotificationChannels { *; }
--keep class com.amynest.app.FirebaseSubscriptionAnalytics { *; }
+-keep class com.amynest.app.InstallReferrerBridge { *; }
+-keep class com.amynest.app.NativeAnalyticsSpine { *; }
+-keep class com.amynest.app.WebViewOrigins { *; }

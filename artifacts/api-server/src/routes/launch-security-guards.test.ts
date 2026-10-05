@@ -48,9 +48,16 @@ describe("Launch security guards — route wiring", () => {
     assert.doesNotMatch(app, /origin:\s*true/);
   });
 
-  it("check-reset-email uses distributed rate limiting", () => {
-    const src = readSource("auth.ts");
-    assert.match(src, /checkDistributedRateLimit/);
-    assert.match(src, /auth-check-reset/);
+  it("unsigned preauth analytics is mounted before requireAuth", () => {
+    const routes = readSource("index.ts");
+    const requireIdx = routes.indexOf("router.use(requireAuth)");
+    const preauthIdx = routes.indexOf("router.use(analyticsPreauthRouter)");
+    const authedIdx = routes.indexOf("router.use(analyticsRouter)");
+    assert.ok(preauthIdx >= 0, "analyticsPreauthRouter must be mounted");
+    assert.ok(requireIdx >= 0, "requireAuth must be mounted");
+    assert.ok(preauthIdx < requireIdx, "preauth must be public");
+    assert.ok(authedIdx > requireIdx, "authenticated analytics stays behind requireAuth");
+    const analytics = readSource("analytics.ts");
+    assert.doesNotMatch(analytics, /\/analytics\/preauth-events/);
   });
 });

@@ -841,8 +841,8 @@ function ClientTelemetryBootstrap() {
   const appOpenTrackedRef = useRef(false);
 
   useEffect(() => {
-    getAnalyticsService().setAuthFetch(authFetch);
-  }, [authFetch]);
+    getAnalyticsService().setAuthFetch(isSignedIn ? authFetch : null);
+  }, [authFetch, isSignedIn]);
 
   // P1: first_open + install_source before sign-in (preauth flush).
   useEffect(() => {

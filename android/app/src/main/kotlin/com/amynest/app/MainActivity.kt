@@ -204,6 +204,7 @@ class MainActivity : AppCompatActivity() {
             permissionRequester = { askNotificationPermission() },
         )
         pushBridge.install(webView)
+        NativeAnalyticsSpine.installDocumentStart(webView, this)
         injectStartupFunnelEvent(webView, "webview_created")
 
         // PaywallActivityLauncher registers Activity Result observers — must run in
@@ -550,6 +551,7 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
 
                 injectStartupFunnelEvent(view, "webview_page_finished", """{"url":${JSONObject.quote(url)}}""")
+                NativeAnalyticsSpine.markNativeFirstOpenSentInPage(view, this@MainActivity)
                 scheduleDeferredNotificationPermission(url)
                 markWebContentReadyIfAmyNestHost(url)
 
@@ -919,7 +921,14 @@ class MainActivity : AppCompatActivity() {
             info.put("device_model", Build.MODEL ?: "unknown")
             info.put("manufacturer", Build.MANUFACTURER ?: "unknown")
             info.put("android_version", Build.VERSION.RELEASE ?: "unknown")
-            info.put("webview_version", android.webkit.WebView.getCurrentWebViewPackage()?.versionName ?: "unknown")
+            info.put(
+                "webview_version",
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    android.webkit.WebView.getCurrentWebViewPackage()?.versionName ?: "unknown"
+                } else {
+                    "unknown"
+                },
+            )
             info.put("app_version", BuildConfig.VERSION_NAME)
             info.put("build_number", BuildConfig.VERSION_NAME)
             info.put("platform", "android")

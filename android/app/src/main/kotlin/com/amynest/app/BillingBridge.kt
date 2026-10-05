@@ -2,6 +2,7 @@ package com.amynest.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -89,6 +90,7 @@ class BillingBridge(
                         resolveError(replyProxy, cbId, err.message ?: "login_failed")
                     },
                     onSuccess = { _, _ ->
+                        if (ctx != null) persistAppUserId(ctx, userId)
                         resolve(replyProxy, cbId, JSONObject().put("ok", true))
                     },
                 )
@@ -99,6 +101,7 @@ class BillingBridge(
                 val ctx = activityRef.get()?.applicationContext
                 if (ctx != null) {
                     FirebaseSubscriptionAnalytics.setUserId(ctx, null)
+                    clearPersistedAppUserId(ctx)
                 }
                 if (!isReady()) {
                     resolve(replyProxy, cbId, JSONObject().put("ok", true))
@@ -155,7 +158,7 @@ class BillingBridge(
             Purchases.sharedInstance.logInWith(
                 userId,
                 onError = { err -> Log.w(TAG, "logIn error: ${err.message}") },
-                onSuccess = { _, _ -> },
+                onSuccess = { _, _ -> persistAppUserId(activityRef.get() ?: return@logInWith, userId) },
             )
         } catch (t: Throwable) {
             Log.w(TAG, "logIn threw", t)
@@ -181,6 +184,38 @@ class BillingBridge(
             resolveError(replyProxy, cbId, "package_id_required")
             return
         }
+        val identified = persistedAppUserId(activity)
+        if (identified.isNullOrBlank()) {
+            resolveError(replyProxy, cbId, "authenticated_identity_required")
+            return
+        }
+        val current = try {
+            Purchases.sharedInstance.appUserID
+        } catch (_: Throwable) {
+            ""
+        }
+        if (current != identified) {
+            Purchases.sharedInstance.logInWith(
+                identified,
+                onError = { err ->
+                    resolveError(replyProxy, cbId, "rc_identity_required:${err.message ?: "login_failed"}")
+                },
+                onSuccess = { _, _ ->
+                    persistAppUserId(activity, identified)
+                    startStorePurchase(replyProxy, cbId, activity, packageIdentifier)
+                },
+            )
+            return
+        }
+        startStorePurchase(replyProxy, cbId, activity, packageIdentifier)
+    }
+
+    private fun startStorePurchase(
+        replyProxy: JavaScriptReplyProxy,
+        cbId: String,
+        activity: Activity,
+        packageIdentifier: String,
+    ) {
         Purchases.sharedInstance.getOfferingsWith(
             onError = { err -> resolvePurchasesError(replyProxy, cbId, err) },
             onSuccess = { offerings ->
@@ -496,8 +531,32 @@ class BillingBridge(
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
+        private const val IDENTITY_PREFS = "amynest_billing_identity"
+        private const val KEY_APP_USER_ID = "rc_app_user_id"
 
         private val ALLOWED_ORIGINS: Set<String> = WebViewOrigins.productionOriginRules()
+
+        fun persistedAppUserId(context: Context): String? {
+            val value = context.getSharedPreferences(IDENTITY_PREFS, Context.MODE_PRIVATE)
+                .getString(KEY_APP_USER_ID, null)
+            if (value.isNullOrBlank() || value.startsWith("\$RCAnonymousID")) return null
+            return value
+        }
+
+        fun persistAppUserId(context: Context, userId: String) {
+            if (userId.isBlank() || userId.startsWith("\$RCAnonymousID")) return
+            context.getSharedPreferences(IDENTITY_PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_APP_USER_ID, userId)
+                .apply()
+        }
+
+        fun clearPersistedAppUserId(context: Context) {
+            context.getSharedPreferences(IDENTITY_PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_APP_USER_ID)
+                .apply()
+        }
 
         /**
          * Installs billing bridge with WebMessageListener plus a JavascriptInterface

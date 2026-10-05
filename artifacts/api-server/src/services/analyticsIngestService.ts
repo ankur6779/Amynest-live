@@ -7,6 +7,7 @@
  * Pure measurement — this path never influences routine generation.
  */
 import { db, analyticsEventsTable, type InsertAnalyticsEvent } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 import {
   validateAnalyticsEvent,
   ANALYTICS_MAX_PROPS_BYTES,
@@ -76,8 +77,25 @@ export async function ingestAnalyticsEvents(
   };
 
   const rows: InsertAnalyticsEvent[] = [];
+  let skipFirstOpen = false;
+  if (events.some((ev) => ev.name === "first_open")) {
+    const existing = await db
+      .select({ id: analyticsEventsTable.id })
+      .from(analyticsEventsTable)
+      .where(
+        and(
+          eq(analyticsEventsTable.userId, ctx.userId),
+          eq(analyticsEventsTable.eventName, "first_open"),
+        ),
+      )
+      .limit(1);
+    skipFirstOpen = existing.length > 0;
+  }
 
   for (const ev of events) {
+    if (ev.name === "first_open" && skipFirstOpen) {
+      continue;
+    }
     const rawProps = ev.props ?? {};
 
     // Guard against oversized payloads before schema validation.
@@ -119,6 +137,9 @@ export async function ingestAnalyticsEvents(
       appVersion: (ev.appVersion ?? ctx.appVersion)?.slice(0, 32) ?? null,
       clientTs: toDateOrNull(ev.clientTs),
     });
+    if (result.name === "first_open") {
+      skipFirstOpen = true;
+    }
   }
 
   if (rows.length > 0) {

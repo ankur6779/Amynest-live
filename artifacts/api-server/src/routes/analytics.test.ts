@@ -16,6 +16,7 @@ import type { AddressInfo } from "node:net";
 import { db, analyticsEventsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import analyticsRouter from "./analytics";
+import analyticsPreauthRouter from "./analytics-preauth";
 import analyticsAdminRouter from "./analytics-admin";
 import { resetAnalyticsQuality } from "../services/analyticsIngestService";
 import { isDbIntegrationAvailable } from "../test/db-integration.js";
@@ -45,6 +46,7 @@ before(async () => {
     };
     next();
   });
+  app.use(analyticsPreauthRouter);
   app.use(analyticsRouter);
   app.use(analyticsAdminRouter);
 
@@ -151,7 +153,7 @@ describe("analytics routes — smoke", { skip: !dbIntegrationOk }, () => {
       body: JSON.stringify({
         platform: "android",
         events: [
-          { name: "first_open", props: { cold: true } },
+          { name: "first_open", props: { cold: true, user_id: "attacker-uid", revenue: 499 } },
           { name: "install_source", props: { source: "google_ads", gclid: "test-gclid" } },
           { name: "routine_viewed", props: { routineId: 1, dateMode: "today" } },
         ],
@@ -162,9 +164,11 @@ describe("analytics routes — smoke", { skip: !dbIntegrationOk }, () => {
       accepted: number;
       rejected: number;
       rejectedPreauthPolicy: number;
+      ack?: boolean;
     };
     assert.equal(body.accepted, 2);
     assert.equal(body.rejectedPreauthPolicy, 1);
+    assert.equal(body.ack, true);
 
     const rows = await db
       .select()
@@ -173,7 +177,113 @@ describe("analytics routes — smoke", { skip: !dbIntegrationOk }, () => {
     assert.equal(rows.length, 2);
     const names = rows.map((r) => r.eventName).sort();
     assert.deepEqual(names, ["first_open", "install_source"]);
+    assert.ok(rows.every((r) => r.userId === deviceUserId));
+    const firstOpen = rows.find((r) => r.eventName === "first_open");
+    assert.equal((firstOpen?.props as { user_id?: string; revenue?: number } | null)?.user_id, undefined);
+    assert.equal((firstOpen?.props as { revenue?: number } | null)?.revenue, undefined);
+    const install = rows.find((r) => r.eventName === "install_source");
+    assert.equal((install?.props as { gclid?: string } | null)?.gclid, "test-gclid");
     await db.delete(analyticsEventsTable).where(eq(analyticsEventsTable.userId, deviceUserId));
+  });
+
+  it("accepts anonymous onboarding/paywall events on preauth", async () => {
+    const deviceId = `preauthfunnel${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+    const deviceUserId = `device:${deviceId}`;
+    const res = await fetch(`${baseUrl}/analytics/preauth-events`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-amynest-device-id": deviceId,
+      },
+      body: JSON.stringify({
+        platform: "android",
+        events: [
+          { name: "onboarding_completed", props: { auth_state: "guest" } },
+          { name: "first_plan_generated", props: { mode: "guest" } },
+          { name: "paywall_view", props: { reason: "preview" } },
+          { name: "checkout_started", props: { plan: "monthly" } },
+          { name: "speech_coach_v2_session_start", props: {} },
+        ],
+      }),
+    });
+    assert.equal(res.status, 202);
+    const body = (await res.json()) as { accepted: number; rejectedPreauthPolicy: number };
+    assert.equal(body.accepted, 5);
+    assert.equal(body.rejectedPreauthPolicy, 0);
+    const rows = await db
+      .select()
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.userId, deviceUserId));
+    assert.equal(rows.length, 5);
+    await db.delete(analyticsEventsTable).where(eq(analyticsEventsTable.userId, deviceUserId));
+  });
+
+  it("dedupes first_open for the same user id", async () => {
+    const res1 = await fetch(`${baseUrl}/analytics/events`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        platform: "android",
+        events: [{ name: "first_open", props: { cold: true, event_key: `${TEST_USER}:first_open` } }],
+      }),
+    });
+    const res2 = await fetch(`${baseUrl}/analytics/events`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        platform: "android",
+        events: [{ name: "first_open", props: { cold: true, event_key: `${TEST_USER}:first_open` } }],
+      }),
+    });
+    assert.equal(res1.status, 202);
+    assert.equal(res2.status, 202);
+    const rows = await db
+      .select()
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.userId, TEST_USER));
+    assert.equal(rows.filter((r) => r.eventName === "first_open").length, 1);
+  });
+
+  it("stitches device-scoped events onto the authenticated user", async () => {
+    const deviceId = `stitchdev${randomUUID().replace(/-/g, "").slice(0, 18)}`;
+    const deviceUserId = `device:${deviceId}`;
+    const pre = await fetch(`${baseUrl}/analytics/preauth-events`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-amynest-device-id": deviceId,
+      },
+      body: JSON.stringify({
+        platform: "android",
+        events: [{ name: "first_open", props: { cold: true } }],
+      }),
+    });
+    assert.equal(pre.status, 202);
+
+    const authed = await fetch(`${baseUrl}/analytics/events`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-amynest-device-id": deviceId,
+      },
+      body: JSON.stringify({
+        platform: "android",
+        events: [{ name: "app_open", props: { cold: false } }],
+      }),
+    });
+    assert.equal(authed.status, 202);
+
+    const leftover = await db
+      .select()
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.userId, deviceUserId));
+    assert.equal(leftover.length, 0);
+    const stitched = await db
+      .select()
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.userId, TEST_USER));
+    assert.ok(stitched.some((r) => r.eventName === "first_open"));
+    assert.ok(stitched.some((r) => r.eventName === "app_open"));
   });
 
   it("forbids non-admins from the readouts", async () => {

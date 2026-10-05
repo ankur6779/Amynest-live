@@ -4,10 +4,7 @@ import { getAuth } from "../lib/auth";
 import { getRequestId, sendStructuredApiError } from "../lib/safe-api-response";
 import { ANALYTICS_MAX_BATCH } from "@workspace/analytics-taxonomy";
 import { ingestAnalyticsEvents } from "../services/analyticsIngestService";
-import {
-  ingestPreauthAnalyticsEvents,
-  isValidPreauthDeviceId,
-} from "../services/preauthAnalyticsService";
+import { stitchDeviceAnalyticsIdentity } from "../services/analyticsIdentityStitchService";
 import { DEVICE_ID_HEADER } from "../services/deviceLimitService";
 import { logger } from "../lib/logger";
 import { recordApiDomainOutcome } from "../lib/api-domain-metrics";
@@ -54,6 +51,11 @@ router.post("/analytics/events", async (req, res): Promise<void> => {
   }
 
   try {
+    const rawDeviceId = req.headers[DEVICE_ID_HEADER];
+    const deviceId = typeof rawDeviceId === "string" ? rawDeviceId.trim() : "";
+    if (deviceId) {
+      await stitchDeviceAnalyticsIdentity(deviceId, userId);
+    }
     const summary = await ingestAnalyticsEvents(parsed.data.events, {
       userId,
       platform: parsed.data.platform,
@@ -75,56 +77,6 @@ router.post("/analytics/events", async (req, res): Promise<void> => {
     sendStructuredApiError(res, 500, {
       code: "server_error",
       message: err instanceof Error ? err.message : "analytics ingest failed",
-      requestId,
-    });
-    recordApiDomainOutcome("analytics", false, Date.now() - started, "server_error");
-  }
-});
-
-/**
- * POST /api/analytics/preauth-events
- * Device-scoped ingest for install/open events before Firebase sign-in.
- * Requires x-amynest-device-id; only pre-auth allowlisted events are stored.
- */
-router.post("/analytics/preauth-events", async (req, res): Promise<void> => {
-  const started = Date.now();
-  const rawDeviceId = req.headers[DEVICE_ID_HEADER];
-  const deviceId = typeof rawDeviceId === "string" ? rawDeviceId.trim() : "";
-  if (!isValidPreauthDeviceId(deviceId)) {
-    recordApiDomainOutcome("analytics", false, Date.now() - started, "missing_device_id");
-    res.status(400).json({ error: "missing_device_id" });
-    return;
-  }
-
-  const parsed = BatchSchema.safeParse(req.body);
-  if (!parsed.success) {
-    recordApiDomainOutcome("analytics", false, Date.now() - started, "invalid_body");
-    res.status(400).json({ error: "invalid_body", issues: parsed.error.issues });
-    return;
-  }
-
-  try {
-    const summary = await ingestPreauthAnalyticsEvents(parsed.data.events, {
-      deviceId,
-      platform: parsed.data.platform,
-      appVersion: parsed.data.appVersion ?? parsed.data.buildNumber,
-    });
-    recordApiDomainOutcome("analytics", true, Date.now() - started);
-    res.status(202).json({ ok: true, ...summary });
-  } catch (err) {
-    const requestId = getRequestId(req);
-    logger.error(
-      {
-        err,
-        evt: "analytics.preauth_ingest_failed",
-        deviceId: deviceId.slice(0, 8),
-        requestId,
-      },
-      "preauth analytics ingest failed",
-    );
-    sendStructuredApiError(res, 500, {
-      code: "server_error",
-      message: err instanceof Error ? err.message : "preauth analytics ingest failed",
       requestId,
     });
     recordApiDomainOutcome("analytics", false, Date.now() - started, "server_error");

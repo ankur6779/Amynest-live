@@ -116,8 +116,17 @@ export class SessionManager {
   shouldEmitFirstOpen(): boolean {
     if (typeof localStorage === "undefined") return false;
     if (localStorage.getItem(FIRST_OPEN_KEY)) return false;
-    localStorage.setItem(FIRST_OPEN_KEY, "1");
+    if (typeof window !== "undefined") {
+      const nativeSent = (window as Window & { __AMYNEST_NATIVE_FIRST_OPEN_SENT?: boolean })
+        .__AMYNEST_NATIVE_FIRST_OPEN_SENT;
+      if (nativeSent) return false;
+    }
     return true;
+  }
+
+  markFirstOpenDelivered(): void {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(FIRST_OPEN_KEY, "1");
   }
 
   clearAppOpenGuard(): void {

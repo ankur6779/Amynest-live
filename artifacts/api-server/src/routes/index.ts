@@ -16,6 +16,7 @@ import customActivitiesRouter from "./custom-activities";
 import routinesRouter from "./routines";
 import routineFeedbackRouter from "./routine-feedback";
 import analyticsRouter from "./analytics";
+import analyticsPreauthRouter from "./analytics-preauth";
 import adminDlqRouter from "./admin-dlq";
 import analyticsAdminRouter from "./analytics-admin";
 import behaviorsRouter from "./behaviors";
@@ -192,6 +193,9 @@ router.use(appVersionPolicyRouter);
 router.use(appVersionAnalyticsRouter);
 router.use(speechCoachV2DebugRouter);
 router.use(openaiRealtimeInfraRouter);
+// Unsigned first_open / install_source before Firebase login. Must stay
+// ahead of requireAuth; the handler itself is allowlisted + rate-limited.
+router.use(analyticsPreauthRouter);
 router.use(requireAuth);
 router.use(driveRouter);
 router.use(worksheetsRouter);

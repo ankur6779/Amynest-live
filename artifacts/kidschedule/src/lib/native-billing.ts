@@ -162,6 +162,27 @@ export type NativeBilling = {
  * Capacitor and the Android wrapper. No-op in a plain browser. Never throws —
  * sign-out must not depend on the billing bridge being healthy.
  */
+/**
+ * Bind RevenueCat to the authenticated AmyNest user immediately after
+ * Firebase Auth — not when the billing paywall hook later becomes ready.
+ */
+export async function syncIdentifiedRevenueCatUser(userId: string): Promise<void> {
+  if (!userId || userId.startsWith("device:") || userId.startsWith("$RCAnonymousID:")) return;
+  try {
+    if (isCapacitorIOS()) {
+      const { initIOSBilling } = await import("@/lib/native-billing-ios");
+      await initIOSBilling(userId);
+      return;
+    }
+    if (isWrapperPresent()) {
+      await waitForBillingBridge(2_000);
+      await getNativeBilling()?.setUserId(userId);
+    }
+  } catch {
+    /* identity sync is best-effort; purchase still re-checks natively */
+  }
+}
+
 export async function resetNativeBillingIdentity(): Promise<void> {
   try {
     if (isCapacitorIOS()) {

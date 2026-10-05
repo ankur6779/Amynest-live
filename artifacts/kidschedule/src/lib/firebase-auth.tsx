@@ -106,6 +106,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           void setFirebaseAnalyticsUserId(uid);
         },
       );
+      void import("@/lib/native-billing").then(({ syncIdentifiedRevenueCatUser }) => {
+        void syncIdentifiedRevenueCatUser(uid);
+      });
     } else if (authStatus === "unauthenticated") {
       void import("@/lib/firebase-subscription-attribution").then(
         ({ setFirebaseAnalyticsUserId }) => {

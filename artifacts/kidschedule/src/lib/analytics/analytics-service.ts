@@ -40,7 +40,10 @@ function attachInstallAttribution(props: Record<string, unknown>): void {
           utmSource?: string;
           utmMedium?: string;
           utmCampaign?: string;
+          campaignId?: string;
           gclid?: string;
+          gbraid?: string;
+          wbraid?: string;
           fbclid?: string;
           ref?: string;
           playReferrer?: string;
@@ -58,7 +61,11 @@ function attachInstallAttribution(props: Record<string, unknown>): void {
     if (attr?.utmMedium && !props.utm_medium) props.utm_medium = attr.utmMedium;
     if (attr?.utmCampaign && !props.utm_campaign) props.utm_campaign = attr.utmCampaign;
     if (attr?.gclid && !props.gclid) props.gclid = attr.gclid;
+    if (attr?.gbraid && !props.gbraid) props.gbraid = attr.gbraid;
+    if (attr?.wbraid && !props.wbraid) props.wbraid = attr.wbraid;
     if (attr?.fbclid && !props.fbclid) props.fbclid = attr.fbclid;
+    if (attr?.utmCampaign && !props.utm_campaign) props.utm_campaign = attr.utmCampaign;
+    if (attr?.campaignId && !props.campaign_id) props.campaign_id = attr.campaignId;
   } catch {
     if (!props.install_source) props.install_source = "unknown";
   }
@@ -76,6 +83,7 @@ export class AnalyticsService {
   private currentPath = "";
   private lifecycleCleanup: (() => void) | null = null;
   private onlineCleanup: (() => void) | null = null;
+  private firstOpenAwaitingAck = false;
 
   /** Dedupe guard — prevents duplicate emitters for the same logical action */
   private readonly recentFingerprints = new Map<string, number>();
@@ -390,7 +398,19 @@ export class AnalyticsService {
     if (!this.session.shouldEmitAppOpen()) return;
     const cold = this.session.shouldEmitFirstOpen();
     if (cold) {
-      this.track("first_open", { cold: true }, { dedupe: false });
+      const deviceId = getOrCreateDeviceId();
+      this.firstOpenAwaitingAck = true;
+      this.track(
+        "first_open",
+        {
+          cold: true,
+          event_key: `${deviceId}:first_open`,
+          anonymous_id: `device:${deviceId}`,
+          device_id: deviceId,
+          auth_state: detectAuthState() === "authenticated" ? "authenticated" : "guest",
+        },
+        { dedupe: false },
+      );
     }
     this.track("app_open", {}, { dedupe: false });
     this.track("session_start", {}, { dedupe: false });
@@ -398,6 +418,10 @@ export class AnalyticsService {
 
   async flush(authFetch?: AuthFetchFn): Promise<void> {
     await this.queue.flush(authFetch);
+    if (this.firstOpenAwaitingAck && !this.queue.hasEvent("first_open")) {
+      this.session.markFirstOpenDelivered();
+      this.firstOpenAwaitingAck = false;
+    }
   }
 
   pendingCount(): number {

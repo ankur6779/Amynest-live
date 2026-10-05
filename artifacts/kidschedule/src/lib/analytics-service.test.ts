@@ -118,4 +118,36 @@ describe("AnalyticsService", () => {
     expect(names).toContain("first_open");
     expect(names.filter((n) => n === "app_open")).toHaveLength(1);
   });
+
+  it("does not mark first_open delivered until ingest succeeds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    );
+    const service = getAnalyticsService();
+    service.trackAppOpen();
+    await service.flush();
+    expect(localStorage.getItem("amynest_analytics_first_open")).toBeNull();
+    expect(service.pendingCount()).toBeGreaterThan(0);
+
+    const okFetch = makeFetch();
+    await service.flush(okFetch);
+    expect(localStorage.getItem("amynest_analytics_first_open")).toBe("1");
+    vi.unstubAllGlobals();
+  });
+
+  it("falls back to preauth when the authenticated ingest returns 401", async () => {
+    const authFetch = vi.fn(async () => new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 }));
+    const preauthFetch = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", preauthFetch);
+    const service = getAnalyticsService();
+    service.track("first_open", { cold: true });
+    await service.flush(authFetch);
+    expect(authFetch).toHaveBeenCalled();
+    expect(preauthFetch).toHaveBeenCalled();
+    expect(String(preauthFetch.mock.calls[0][0])).toContain("/api/analytics/preauth-events");
+    vi.unstubAllGlobals();
+  });
 });

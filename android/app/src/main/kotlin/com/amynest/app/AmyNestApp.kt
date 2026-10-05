@@ -31,6 +31,8 @@ class AmyNestApp : Application() {
         initFirebaseAnalytics()
         initFacebookSdk()
         initRevenueCat()
+        NativeAnalyticsSpine.bootstrap(this)
+        InstallReferrerBridge.prefetch(this)
         NotifCategory.createAll(this)
     }
 
@@ -58,10 +60,13 @@ class AmyNestApp : Application() {
     private fun initRevenueCat() {
         try {
             Purchases.logLevel = if (BuildConfig.DEBUG) LogLevel.DEBUG else LogLevel.WARN
-            Purchases.configure(
-                PurchasesConfiguration.Builder(this, BillingBridge.RC_API_KEY).build()
-            )
-            Log.d(TAG, "RevenueCat initialised")
+            val builder = PurchasesConfiguration.Builder(this, BillingBridge.RC_API_KEY)
+            val persistedUserId = BillingBridge.persistedAppUserId(this)
+            if (!persistedUserId.isNullOrBlank()) {
+                builder.appUserID(persistedUserId)
+            }
+            Purchases.configure(builder.build())
+            Log.d(TAG, "RevenueCat initialised identified=${!persistedUserId.isNullOrBlank()}")
         } catch (t: Throwable) {
             Log.e(TAG, "RevenueCat init failed", t)
         }

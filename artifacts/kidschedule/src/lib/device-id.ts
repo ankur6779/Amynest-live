@@ -17,6 +17,43 @@ export const DEVICE_BROWSER_HEADER = "x-amynest-browser";
 export const DEVICE_OS_HEADER = "x-amynest-os";
 export const DEVICE_APP_VERSION_HEADER = "x-amynest-app-version";
 
+type NativeAnalyticsWindow = Window & {
+  __AMYNEST_NATIVE_DEVICE_ID?: string;
+  __AMYNEST_RESOLVED_DEVICE_ID?: string;
+  __AMYNEST_APP_VERSION?: string;
+  __AMYNEST_DEVICE_INFO?: { app_version?: string };
+  AmyNestAppNative?: { getVersionName?: () => string };
+};
+
+function nativeWindow(): NativeAnalyticsWindow | null {
+  if (typeof window === "undefined") return null;
+  return window as NativeAnalyticsWindow;
+}
+
+function readNativeDeviceId(): string | null {
+  const w = nativeWindow();
+  const id = w?.__AMYNEST_RESOLVED_DEVICE_ID || w?.__AMYNEST_NATIVE_DEVICE_ID;
+  if (typeof id === "string" && id.length >= 8) return id;
+  return null;
+}
+
+function readNativeAppVersion(): string | null {
+  const w = nativeWindow();
+  if (!w) return null;
+  if (typeof w.__AMYNEST_APP_VERSION === "string" && w.__AMYNEST_APP_VERSION.trim()) {
+    return w.__AMYNEST_APP_VERSION.trim();
+  }
+  const fromInfo = w.__AMYNEST_DEVICE_INFO?.app_version;
+  if (typeof fromInfo === "string" && fromInfo.trim()) return fromInfo.trim();
+  try {
+    const native = w.AmyNestAppNative?.getVersionName?.();
+    if (typeof native === "string" && native.trim()) return native.trim();
+  } catch {
+    /* bridge not ready */
+  }
+  return null;
+}
+
 function randomId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -58,6 +95,8 @@ export function detectOS(): string {
 }
 
 export function getAppVersion(): string {
+  const native = readNativeAppVersion();
+  if (native) return native;
   const fromEnv = import.meta.env.VITE_APP_VERSION;
   if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
   return "web";
@@ -102,6 +141,11 @@ function safeWrite(key: string, value: string): void {
 export function getOrCreateDeviceId(): string {
   const existing = safeRead(DEVICE_ID_KEY);
   if (existing && existing.length >= 8) return existing;
+  const native = readNativeDeviceId();
+  if (native) {
+    safeWrite(DEVICE_ID_KEY, native);
+    return native;
+  }
   const id = randomId();
   safeWrite(DEVICE_ID_KEY, id);
   return id;
