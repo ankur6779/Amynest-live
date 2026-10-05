@@ -196,9 +196,11 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
   };
 
   /** Home chrome comes from HubModulePageShell in-app; standalone hosts need a local bar.
+   * Living home already has a Care back control — a second header with GAMES_HEADER_SHELL
+   * `-mx-3` bleed overflows the fixture viewport (horizontal_scroll ~12px).
    * Games use their own top bar inside a fixed viewport — never stack a second header. */
   const showHeader =
-    (view === "home" && standalone) ||
+    (view === "home" && standalone && !living) ||
     view === "progress" ||
     view === "dashboard" ||
     view === "shop";
@@ -215,6 +217,7 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
           className={cn(
             GAMES_HEADER_SHELL,
             living ? "border-[rgba(232,212,184,0.2)] bg-[rgba(8,6,12,0.72)]" : "border-violet-500/20",
+            standalone && "!mx-0",
           )}
         >
           <div className="mx-auto flex max-w-lg items-center gap-3">

@@ -10,7 +10,8 @@
   min-height: 0;
   height: auto;
   width: 100%;
-  max-width: 48rem;
+  max-width: min(48rem, 100%);
+  box-sizing: border-box;
   margin: 0 auto;
   color: rgba(255, 252, 248, 0.96);
   padding-top: max(8px, env(safe-area-inset-top, 0px));
@@ -23,6 +24,10 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.health-lab-living .fe-breath {
+  inset: 0;
 }
 
 .health-lab-living .fe-ambient img {
