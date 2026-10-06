@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { cn } from "@/lib/utils";
+import { resolveStorySessionStartPositionSec } from "@/lib/story-progress-position";
 interface StoryFlowPlayerProps {
   story: StoryDto;
   storyIndex: number;
@@ -93,7 +94,13 @@ export function StoryFlowPlayer({
     const handlePlay = () => {
       if (!startedRef.current) {
         startedRef.current = true;
-        onProgress(story.id, v.currentTime, {
+        // Autoplay can fire before resume seek completes — don't POST ~0 and
+        // wipe a saved mid-story Continue Watching row.
+        const positionSec = resolveStorySessionStartPositionSec(
+          v.currentTime,
+          story.positionSec,
+        );
+        onProgress(story.id, positionSec, {
           durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
           startedSession: true
         });
