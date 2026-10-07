@@ -29,6 +29,7 @@ describe("game-finish durability (GA)", () => {
       perfect: false,
       pointsEarned: 10,
       isSignedIn: true,
+      userId: "user-a",
       authFetch: (async () => new Response(null, { status: 500 })) as typeof fetch,
       idempotencyKey: "play:pattern-match:test-1",
     });
@@ -62,6 +63,7 @@ describe("game-finish durability (GA)", () => {
       perfect: false,
       pointsEarned: 9,
       isSignedIn: true,
+      userId: "user-a",
       authFetch: (async () => new Response(null, { status: 200 })) as typeof fetch,
       idempotencyKey: "play:maze-escape:offline-1",
     });
@@ -77,12 +79,14 @@ describe("game-finish durability (GA)", () => {
       score: 5,
       total: 8,
       idempotencyKey: "play:maze-escape:dup",
+      ownerUserId: "user-a",
     });
     enqueuePlaySync({
       gameId: "maze-escape",
       score: 5,
       total: 8,
       idempotencyKey: "play:maze-escape:dup",
+      ownerUserId: "user-a",
     });
     expect(getPendingPlaySyncCount()).toBe(1);
   });
@@ -98,14 +102,85 @@ describe("game-finish durability (GA)", () => {
       score: 7,
       total: 8,
       idempotencyKey: "play:number-match:flush-1",
+      ownerUserId: "user-a",
     });
-    const { flushed, remaining } = await flushPendingPlaySync(async () => new Response("{}"));
+    const { flushed, remaining } = await flushPendingPlaySync(
+      async () => new Response("{}"),
+      "user-a",
+    );
     expect(flushed).toBe(1);
     expect(remaining).toBe(0);
     expect(recordGamingPlay).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ idempotencyKey: "play:number-match:flush-1" }),
     );
+  });
+
+  it("does not POST another account's deferred plays on shared-tablet switch", async () => {
+    recordGamingPlay.mockResolvedValue({
+      wallet: {} as never,
+      pointsEarned: 12,
+      perfect: true,
+    });
+    enqueuePlaySync({
+      gameId: "pattern-match",
+      score: 8,
+      total: 8,
+      idempotencyKey: "play:pattern-match:user-a-offline",
+      ownerUserId: "user-a",
+    });
+    const { flushed, remaining } = await flushPendingPlaySync(
+      async () => new Response("{}"),
+      "user-b",
+    );
+    expect(flushed).toBe(0);
+    expect(remaining).toBe(1);
+    expect(recordGamingPlay).not.toHaveBeenCalled();
+    expect(getPendingPlaySyncCount()).toBe(1);
+  });
+
+  it("discards legacy unscoped queue entries instead of attributing them", async () => {
+    recordGamingPlay.mockResolvedValue({
+      wallet: {} as never,
+      pointsEarned: 5,
+      perfect: false,
+    });
+    localStorage.setItem(
+      "amynest_game_play_sync_queue_v1",
+      JSON.stringify([
+        {
+          gameId: "card-flip",
+          score: 4,
+          total: 8,
+          idempotencyKey: "play:card-flip:legacy",
+          queuedAt: Date.now(),
+          attempts: 0,
+        },
+      ]),
+    );
+    const { flushed, remaining } = await flushPendingPlaySync(
+      async () => new Response("{}"),
+      "user-b",
+    );
+    expect(flushed).toBe(0);
+    expect(remaining).toBe(0);
+    expect(recordGamingPlay).not.toHaveBeenCalled();
+  });
+
+  it("does not enqueue unscoped poison when signed-in without userId", async () => {
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+    const out = await durableFinishGame({
+      gameId: "speed-math",
+      score: 5,
+      total: 8,
+      perfect: false,
+      pointsEarned: 9,
+      isSignedIn: true,
+      authFetch: (async () => new Response(null, { status: 200 })) as typeof fetch,
+      idempotencyKey: "play:speed-math:no-uid",
+    });
+    expect(out.syncPending).toBe(true);
+    expect(getPendingPlaySyncCount()).toBe(0);
   });
 
   it("recovers from corrupted sync queue JSON", async () => {
@@ -116,6 +191,7 @@ describe("game-finish durability (GA)", () => {
       score: 4,
       total: 8,
       idempotencyKey: "play:odd-one-out:recover",
+      ownerUserId: "user-a",
     });
     expect(getPendingPlaySyncCount()).toBe(1);
   });

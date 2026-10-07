@@ -73,6 +73,7 @@ describe("GA reliability — offline queue", () => {
       perfect: false,
       pointsEarned: 11,
       isSignedIn: true,
+      userId: "user-a",
       authFetch: (async () => {
         throw new Error("should not be called offline");
       }) as typeof fetch,
