@@ -101,7 +101,7 @@ export default function GamesPage() {
   const { isPremium } = useSubscription();
   const hubUsage = useFeatureUsage();
   const authFetch = useAuthFetch();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const { wallet: serverWallet, refresh: refreshWallet } = useGamingWallet();
   const [points, setPoints] = useState<number>(getTotalPoints());
   const [unlockedTick, setUnlockedTick] = useState(0);
@@ -171,19 +171,20 @@ export default function GamesPage() {
   }, [showGamingPreview]);
 
   // Best-effort drain of deferred play syncs when hub opens / comes online.
+  // Owner-scoped: never flush another account's offline finishes under this auth.
   useEffect(() => {
-    if (showGamingPreview || !isSignedIn) return;
-    void flushPendingPlaySync(authFetch).then((r) => {
+    if (showGamingPreview || !isSignedIn || !userId) return;
+    void flushPendingPlaySync(authFetch, userId).then((r) => {
       if (r.flushed > 0) void refreshWallet();
     });
     const onOnline = () => {
-      void flushPendingPlaySync(authFetch).then((r) => {
+      void flushPendingPlaySync(authFetch, userId).then((r) => {
         if (r.flushed > 0) void refreshWallet();
       });
     };
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
-  }, [showGamingPreview, isSignedIn, authFetch, refreshWallet]);
+  }, [showGamingPreview, isSignedIn, userId, authFetch, refreshWallet]);
 
   useEffect(() => {
     setPoints(getTotalPoints());
@@ -421,6 +422,7 @@ export default function GamesPage() {
           perfect,
           pointsEarned: earnedEstimate,
           isSignedIn,
+          userId,
           authFetch: isSignedIn ? authFetch : undefined,
           idempotencyKey: session.idempotencyKey,
         });

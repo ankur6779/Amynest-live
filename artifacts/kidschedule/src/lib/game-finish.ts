@@ -1,6 +1,10 @@
 /**
  * Durable game finish — never lose a completed session.
  * Mastery is always local-first; wallet sync is best-effort + idempotent.
+ *
+ * Pending play POSTs are stamped with the Firebase uid that earned them so a
+ * shared-tablet account switch cannot flush User A's offline finishes into
+ * User B's wallet (points / playLog / skills / daily limit).
  */
 import { recordPlay } from "@/lib/games";
 import { recordMasterySession } from "@/lib/game-mastery";
@@ -16,6 +20,8 @@ export interface PendingPlaySync {
   idempotencyKey: string;
   queuedAt: number;
   attempts: number;
+  /** Firebase uid that earned this play. Required for flush under that auth. */
+  ownerUserId?: string;
 }
 
 export interface DurableFinishInput {
@@ -25,6 +31,8 @@ export interface DurableFinishInput {
   perfect: boolean;
   pointsEarned: number;
   isSignedIn: boolean;
+  /** Required when signed in so deferred plays cannot flush under another account. */
+  userId?: string | null;
   authFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   /** Stable per finish — retries must reuse the same key. */
   idempotencyKey?: string;
@@ -106,10 +114,14 @@ export function getPendingPlaySyncCount(): number {
 }
 
 /**
- * Flush pending server play records. Best-effort; never throws to callers.
+ * Flush pending server play records for `currentUserId` only.
+ * Foreign-owned and legacy unscoped entries are never POSTed under this auth
+ * (unscoped legacy is dropped to prevent shared-tablet pollution).
+ * Best-effort; never throws to callers.
  */
 export async function flushPendingPlaySync(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  currentUserId?: string | null,
 ): Promise<{ flushed: number; remaining: number }> {
   if (isLikelyOffline()) {
     return { flushed: 0, remaining: readQueue().length };
@@ -118,10 +130,26 @@ export async function flushPendingPlaySync(
   const queue = readQueue();
   if (queue.length === 0) return { flushed: 0, remaining: 0 };
 
+  const ownerId = typeof currentUserId === "string" ? currentUserId.trim() : "";
+  if (!ownerId) {
+    // Without a signed-in uid we must not attribute plays to anyone.
+    return { flushed: 0, remaining: queue.length };
+  }
+
   const remaining: PendingPlaySync[] = [];
   let flushed = 0;
 
   for (const item of queue) {
+    const itemOwner =
+      typeof item.ownerUserId === "string" ? item.ownerUserId.trim() : "";
+    // Legacy unscoped entries: discard (do not POST under the wrong account).
+    if (!itemOwner) continue;
+    // Keep other users' deferred plays for when they sign back in.
+    if (itemOwner !== ownerId) {
+      remaining.push(item);
+      continue;
+    }
+
     try {
       await recordGamingPlay(authFetch, {
         gameId: item.gameId,
@@ -150,6 +178,10 @@ export async function durableFinishGame(
   const { gameId, score, total, perfect } = input;
   let pointsEarned = input.pointsEarned;
   const idempotencyKey = input.idempotencyKey ?? newIdempotencyKey(gameId);
+  const ownerUserId =
+    typeof input.userId === "string" && input.userId.trim()
+      ? input.userId.trim()
+      : undefined;
 
   // 1) Learning progress must never depend on the network.
   recordMasterySession({
@@ -165,10 +197,15 @@ export async function durableFinishGame(
     return { pointsEarned, perfect, syncPending: false, idempotencyKey };
   }
 
+  // Signed-in finishes without a uid must not enqueue unscoped poison.
+  const canQueue = Boolean(ownerUserId);
+
   // 3) Known offline — skip failing fetch; queue for reconnect.
   if (isLikelyOffline()) {
     recordPlay(gameId, score, total, perfect, pointsEarned);
-    enqueuePlaySync({ gameId, score, total, idempotencyKey });
+    if (canQueue) {
+      enqueuePlaySync({ gameId, score, total, idempotencyKey, ownerUserId });
+    }
     return {
       pointsEarned,
       perfect,
@@ -187,7 +224,7 @@ export async function durableFinishGame(
       idempotencyKey,
     });
     pointsEarned = out.pointsEarned;
-    void flushPendingPlaySync(input.authFetch);
+    void flushPendingPlaySync(input.authFetch, ownerUserId);
     return {
       pointsEarned,
       perfect: out.perfect,
@@ -196,7 +233,9 @@ export async function durableFinishGame(
     };
   } catch (e) {
     recordPlay(gameId, score, total, perfect, pointsEarned);
-    enqueuePlaySync({ gameId, score, total, idempotencyKey });
+    if (canQueue) {
+      enqueuePlaySync({ gameId, score, total, idempotencyKey, ownerUserId });
+    }
     return {
       pointsEarned,
       perfect,
