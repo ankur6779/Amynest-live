@@ -38,6 +38,16 @@ const smartStudyPremiumGate = hubModuleGate("hub_smart_study", {
   denyStatus: 403,
 });
 
+/** Same ADMIN_USER_IDS allowlist as analytics-admin / audio-health. */
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
 const countrySchema = z.enum(["IN", "US", "UK", "AU", "NZ", "CA", "AE", "BD"]);
 const dateSchema = z
   .string()
@@ -686,6 +696,10 @@ router.post("/content/system/meta/tick", async (req, res): Promise<void> => {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
 
   const bodySchema = z.object({ force: z.boolean().optional() });
   const parsed = bodySchema.safeParse(req.body ?? {});
@@ -694,11 +708,15 @@ router.post("/content/system/meta/tick", async (req, res): Promise<void> => {
   res.json({ ok: true, ...result });
 });
 
-// POST /api/content/system/override — human override layer
+// POST /api/content/system/override — human override layer (admin only)
 router.post("/content/system/override", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
     return;
   }
 
