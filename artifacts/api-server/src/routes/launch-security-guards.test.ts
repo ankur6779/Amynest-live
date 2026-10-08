@@ -60,4 +60,17 @@ describe("Launch security guards — route wiring", () => {
     const analytics = readSource("analytics.ts");
     assert.doesNotMatch(analytics, /\/analytics\/preauth-events/);
   });
+
+  it("content system meta/tick and override require ADMIN_USER_IDS", () => {
+    const src = readSource("content-orchestration.ts");
+    assert.match(src, /function isAdminUser\(/);
+    assert.match(src, /ADMIN_USER_IDS/);
+    for (const path of ["/content/system/meta/tick", "/content/system/override"]) {
+      const routeIdx = src.indexOf(`"${path}"`);
+      assert.ok(routeIdx >= 0, `${path} route must exist`);
+      const window = src.slice(routeIdx, routeIdx + 700);
+      assert.match(window, /isAdminUser\(userId\)/);
+      assert.match(window, /status\(403\).*forbidden|error:\s*"forbidden"/);
+    }
+  });
 });
