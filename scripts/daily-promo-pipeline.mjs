@@ -71,10 +71,27 @@ function appendLog(entry) {
 
 const { file, dryRun, promoDir } = parseArgs(process.argv.slice(2));
 const entry = todayEntry();
-const videoPath = file || newestMp4(promoDir);
+let videoPath = file || newestMp4(promoDir);
 
 if (!videoPath || !existsSync(videoPath)) {
-  console.error(`No MP4 found. Put videos in:\n  ${promoDir}\nOr pass --file=/path/to/video.mp4`);
+  const buildScript = join(scriptsDir, "build-daily-promo-video.mjs");
+  console.log("No promo MP4 found — building today's themed Short…");
+  try {
+    const built = execFileSync(process.execPath, [buildScript], {
+      encoding: "utf8",
+      env: process.env,
+    });
+    process.stdout.write(built);
+    const match = built.match(/BUILT_VIDEO=(\S+)/);
+    videoPath = match?.[1] ?? "";
+  } catch (err) {
+    console.error(`Build failed. Put videos in:\n  ${promoDir}\nOr pass --file=/path/to/video.mp4`);
+    throw err;
+  }
+}
+
+if (!videoPath || !existsSync(videoPath)) {
+  console.error(`No MP4 found after build. Put videos in:\n  ${promoDir}\nOr pass --file=/path/to/video.mp4`);
   process.exit(1);
 }
 
