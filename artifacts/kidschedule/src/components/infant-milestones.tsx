@@ -7,7 +7,10 @@ import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, Ch
 import { getApiUrl } from "@/lib/api";
 import { trackMilestoneViewed, trackMilestoneCompleted } from "@/lib/infant-hub-analytics";
 import { MilestoneCelebrationSheet } from "@/components/infant/milestone-celebration-sheet";
-import { milestoneProgressKey, saveMilestoneProgress } from "@/lib/infant-milestone-progress";
+import {
+  loadMilestoneProgress,
+  saveMilestoneProgress,
+} from "@/lib/infant-milestone-progress";
 
 // ─── Milestone Data Model ─────────────────────────────────────────────────────
 type MState = "not_started" | "in_progress" | "achieved";
@@ -463,78 +466,17 @@ async function saveRemoteMilestone(
   }
 }
 
-// Map from old MilestoneTracker IDs → new BuddyMilestone IDs (only direct equivalents)
-const OLD_TO_NEW_ID: Record<string, string> = {
-  m0_lift_head: "b03_head_lift",
-  m0_eye_track: "b03_eye_track",
-  m0_social_smile: "b03_social_smile",
-  m0_coo: "b03_coo",
-  m3_roll_front: "b36_roll",
-  m3_laughs: "b36_laugh",
-  m3_reach: "b36_reach",
-  m3_babble: "b36_babble",
-  m3_head_steady: "b36_head_steady",
-  m6_sit: "b612_sit",
-  m6_bye_wave: "b612_wave",
-  m6_object_perm: "b612_object_perm",
-  m9_crawl: "b612_crawl",
-  m9_pull_stand: "b612_pull_stand",
-  m9_pincer: "b612_pincer",
-  m9_mama_dada: "b612_mama",
-  m12_walk: "b1224_walk",
-  m12_words: "b1224_words",
-  m12_commands: "b1224_one_step",
-  m12_scribble: "b1224_scribble",
-  m18_words50: "b1224_words",
-  m18_two_word: "b1224_two_word",
-  m18_body_parts: "b1224_body_parts",
-  m18_pretend: "b1224_pretend"
-};
 function loadProgress(childId: number, childName: string): Stored {
-  const key = milestoneProgressKey(childId);
-  const legacyKey = `amynest:milestones:${childName}`;
-  try {
-    let raw = localStorage.getItem(key);
-    if (!raw) {
-      const legacyRaw = localStorage.getItem(legacyKey);
-      if (legacyRaw) {
-        localStorage.setItem(key, legacyRaw);
-        raw = legacyRaw;
-      }
-    }
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return {};
-    const out: Stored = {};
-    let migrated = false;
-    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-      // Resolve old → new ID where applicable
-      const newKey = OLD_TO_NEW_ID[k];
-      const targetKey = newKey ?? k;
-      if (newKey) migrated = true;
-      if (typeof v === "boolean") {
-        // Old boolean shape from legacy MilestoneTracker
-        out[targetKey] = {
-          state: v ? "achieved" : "not_started",
-          updatedAt: Date.now()
-        };
-        migrated = true;
-      } else if (v && typeof v === "object" && "state" in v) {
-        out[targetKey] = v as {
-          state: MState;
-          updatedAt: number;
-        };
-      }
-    }
-
-    // Persist migrated shape so we only do this once
-    if (migrated) {
-      saveMilestoneProgress(childId, out);
-    }
-    return out;
-  } catch {
-    return {};
+  const loaded = loadMilestoneProgress(childId, childName);
+  const out: Stored = {};
+  for (const [id, entry] of Object.entries(loaded)) {
+    if (!entry?.state) continue;
+    out[id] = {
+      state: entry.state as MState,
+      updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0,
+    };
   }
+  return out;
 }
 function saveProgress(childId: number, data: Stored) {
   saveMilestoneProgress(childId, data);

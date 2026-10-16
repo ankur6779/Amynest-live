@@ -1,5 +1,6 @@
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { clearDashboardCaches } from "@/lib/dashboard-data-cache";
+import { clearAllInfantMilestoneProgressStorage } from "@/lib/infant-milestone-progress";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
@@ -20,6 +21,7 @@ export function clearUserSessionCaches(): void {
   clearOnboardingChatSession();
   clearOnboardingRunId();
   clearDashboardCaches();
+  clearAllInfantMilestoneProgressStorage();
 
   if (typeof localStorage === "undefined") return;
   try {

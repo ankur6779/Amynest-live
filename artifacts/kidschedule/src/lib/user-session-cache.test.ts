@@ -39,4 +39,16 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
   });
+
+  it("clears infant milestone progress keys on account switch", () => {
+    localStorage.setItem("amynest:milestones:child:9", JSON.stringify({ x: 1 }));
+    localStorage.setItem("amynest:milestones:Aarav", JSON.stringify({ y: 1 }));
+    localStorage.setItem("amynest:milestones_reached", "keep-retention");
+
+    clearUserSessionCaches();
+
+    expect(localStorage.getItem("amynest:milestones:child:9")).toBeNull();
+    expect(localStorage.getItem("amynest:milestones:Aarav")).toBeNull();
+    expect(localStorage.getItem("amynest:milestones_reached")).toBe("keep-retention");
+  });
 });
