@@ -1,5 +1,6 @@
 import { ACTIVE_CHILD_STORAGE_KEY } from "@/lib/coach-age-nav";
 import { clearDashboardCaches } from "@/lib/dashboard-data-cache";
+import { clearLocalGamingWallet } from "@/lib/gaming-wallet-storage";
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
 import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
@@ -11,6 +12,9 @@ const SESSION_UID_KEY = "amynest:session:uid:v1";
  * Required after account deletion or when Firebase uid changes — otherwise
  * stale onboarding/children data blocks child add and skips onboarding.
  *
+ * Also clears device-global gaming wallet mirrors so a shared-tablet account
+ * switch cannot POST User A's points/unlocks/skills under User B's auth.
+ *
  * Does not remove `amynest:device:id:v1`. The installation id is reused so
  * the backend can treat this install as one session; account ownership lives
  * in `user_devices`, not in the local id.
@@ -20,6 +24,7 @@ export function clearUserSessionCaches(): void {
   clearOnboardingChatSession();
   clearOnboardingRunId();
   clearDashboardCaches();
+  clearLocalGamingWallet();
 
   if (typeof localStorage === "undefined") return;
   try {

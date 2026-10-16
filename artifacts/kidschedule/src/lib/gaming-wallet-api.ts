@@ -15,23 +15,28 @@ export interface ServerWalletSnapshot extends WalletSnapshotPayload {
   isPremium: boolean;
 }
 
-async function parseWalletResponse(res: Response): Promise<ServerWalletSnapshot> {
+async function parseWalletResponse(
+  res: Response,
+  ownerUserId?: string | null,
+): Promise<ServerWalletSnapshot> {
   const data = await parseApiJson<{ wallet: ServerWalletSnapshot }>(res);
-  applyWalletSnapshot(data.wallet);
+  applyWalletSnapshot(data.wallet, ownerUserId);
   return data.wallet;
 }
 
 export async function fetchGamingWallet(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  ownerUserId?: string | null,
 ): Promise<ServerWalletSnapshot | null> {
   const res = await authFetch(getApiUrl("/api/gaming-rewards/wallet"));
   if (res.status === 401) return null;
   if (!res.ok) throw new Error(`gaming wallet ${res.status}`);
-  return parseWalletResponse(res);
+  return parseWalletResponse(res, ownerUserId);
 }
 
 export async function syncGamingWallet(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  ownerUserId?: string | null,
 ): Promise<ServerWalletSnapshot> {
   const local = readLocalWalletPartial();
   const res = await authFetch(getApiUrl("/api/gaming-rewards/sync"), {
@@ -40,7 +45,7 @@ export async function syncGamingWallet(
     body: JSON.stringify(local),
   });
   if (!res.ok) throw new Error(`gaming sync ${res.status}`);
-  return parseWalletResponse(res);
+  return parseWalletResponse(res, ownerUserId);
 }
 
 export async function earnGamingPoints(
@@ -52,6 +57,7 @@ export async function earnGamingPoints(
     source: "routine" | "bonus" | "dev";
     idempotencyKey?: string;
   },
+  ownerUserId?: string | null,
 ): Promise<ServerWalletSnapshot> {
   const res = await authFetch(getApiUrl("/api/gaming-rewards/earn"), {
     method: "POST",
@@ -59,12 +65,13 @@ export async function earnGamingPoints(
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`gaming earn ${res.status}`);
-  return parseWalletResponse(res);
+  return parseWalletResponse(res, ownerUserId);
 }
 
 export async function unlockGamingGame(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   gameId: string,
+  ownerUserId?: string | null,
 ): Promise<{ wallet: ServerWalletSnapshot; via?: string }> {
   const res = await authFetch(getApiUrl("/api/gaming-rewards/unlock"), {
     method: "POST",
@@ -77,16 +84,17 @@ export async function unlockGamingGame(
     via?: string;
   }>(res);
   if (!res.ok) {
-    if (data.wallet) applyWalletSnapshot(data.wallet);
+    if (data.wallet) applyWalletSnapshot(data.wallet, ownerUserId);
     throw new Error(data.reason ?? `gaming unlock ${res.status}`);
   }
-  applyWalletSnapshot(data.wallet!);
+  applyWalletSnapshot(data.wallet!, ownerUserId);
   return { wallet: data.wallet!, via: data.via };
 }
 
 export async function recordGamingPlay(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   body: { gameId: string; score: number; total: number; idempotencyKey?: string },
+  ownerUserId?: string | null,
 ): Promise<{ wallet: ServerWalletSnapshot; pointsEarned: number; perfect: boolean }> {
   const res = await authFetch(getApiUrl("/api/gaming-rewards/play"), {
     method: "POST",
@@ -100,11 +108,11 @@ export async function recordGamingPlay(
     perfect: boolean;
   }>(res);
   if (!res.ok) {
-    if (data.wallet) applyWalletSnapshot(data.wallet);
+    if (data.wallet) applyWalletSnapshot(data.wallet, ownerUserId);
     throw new Error(data.reason ?? `gaming play ${res.status}`);
   }
   const wallet = data.wallet!;
-  applyWalletSnapshot(wallet);
+  applyWalletSnapshot(wallet, ownerUserId);
   return {
     wallet,
     pointsEarned: data.pointsEarned,
