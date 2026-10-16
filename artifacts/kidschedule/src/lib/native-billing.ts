@@ -70,11 +70,14 @@ type Pending = { resolve: (v: unknown) => void };
 
 const pending = new Map<string, Pending>();
 let cbCounter = 0;
-let listenerInstalled = false;
 
+/**
+ * Re-bind every call — document_start polyfill and WebMessageListener each create
+ * a distinct `AmyNestBillingNative` object. A one-shot install left replies on the
+ * dead polyfill after `amynest-billing-bridge-ready` swapped in the real bridge
+ * (same class of bug AuthBridge already fixed in native-auth.ts).
+ */
 function installListener(bridge: WebMessageListenerObject) {
-  if (listenerInstalled) return;
-  listenerInstalled = true;
   bridge.onmessage = (event) => {
     let payload: { cbId?: string };
     try {
