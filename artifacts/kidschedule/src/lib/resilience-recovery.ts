@@ -3,14 +3,14 @@
  *
  * Self-heals the client when local state goes bad:
  *  - corrupted localStorage payload for the learning sync queue
- *  - stale pending entries that have been retried too long
+ *  - pending entries that already exhausted retry attempts (matches sync engine)
  *  - duplicate retries clogging the queue
  *  - reward desync (queue empty but rewards pending)
  *  - network flapping (rapid online/offline transitions)
  *
  * Pure helpers + one orchestrator (`runResilienceSweep`). Does NOT call the
  * network — it only reshapes local state so the sync engine can recover on
- * the next flush.
+ * the next flush. Never drops never-retried offline work by wall-clock age.
  */
 
 import {
@@ -22,7 +22,12 @@ import { recordTelemetry } from "./telemetry-engine";
 const SYNC_STORAGE_KEY = "amynest:learning-sync:v1";
 const REWARD_BUS_STORAGE_KEY = "amynest:reward-bus:last";
 
-const STALE_PENDING_MS = 30 * 60 * 1000;
+/**
+ * Only drop entries the sync engine has already given up on.
+ * Do NOT prune by wall-clock `at` age — offline completions sit with
+ * attempts=0 for hours (travel / airplane) and must survive boot/focus
+ * sweeps until a successful flush. Matching learning-sync-engine's cap.
+ */
 const MAX_ATTEMPTS = 8;
 
 export interface ResilienceReport {
@@ -74,7 +79,7 @@ function writeSyncStorage(parsed: PersistedSyncShape): void {
   }
 }
 
-/** Strip queue entries that look stale or duplicated. Returns the report fields. */
+/** Strip exhausted / duplicated queue entries. Returns the report fields. */
 function pruneStaleAndDuplicates(parsed: PersistedSyncShape): {
   removedStaleEntries: number;
   removedDuplicateEntries: number;
@@ -82,16 +87,14 @@ function pruneStaleAndDuplicates(parsed: PersistedSyncShape): {
   if (!parsed.queue || !Array.isArray(parsed.queue)) {
     return { removedStaleEntries: 0, removedDuplicateEntries: 0 };
   }
-  const now = Date.now();
   let staleRemoved = 0;
   const seen = new Set<string>();
   const filtered: NonNullable<PersistedSyncShape["queue"]> = [];
   for (const item of parsed.queue) {
     if (!item || typeof item !== "object") continue;
-    const itemAtMs = typeof item.at === "string" ? Date.parse(item.at) : NaN;
     const attempts = typeof item.attempts === "number" ? item.attempts : 0;
-    const tooOld = Number.isFinite(itemAtMs) && now - itemAtMs > STALE_PENDING_MS;
-    if (tooOld || attempts >= MAX_ATTEMPTS) {
+    // Exhausted retries only — never drop by completion-time age (offline).
+    if (attempts >= MAX_ATTEMPTS) {
       staleRemoved += 1;
       continue;
     }
