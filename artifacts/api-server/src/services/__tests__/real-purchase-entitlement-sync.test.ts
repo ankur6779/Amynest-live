@@ -10,6 +10,7 @@ import {
   isStatePremium,
   productIdToPlan,
 } from "../subscriptionStateService.js";
+import { shouldApplyEmptyRevenueCatSnapshot } from "../rcCustomerService.js";
 import { isPremiumNow, isPremiumSubscriberNow } from "../subscription-premium-gate.js";
 import { isDbIntegrationAvailable } from "../../test/db-integration.js";
 
@@ -206,6 +207,18 @@ describe("real Play purchase entitlement sync — source contracts", () => {
     assert.match(finalize, /postRevenueCatSync\(authFetch, "purchase_finalize"\)/);
     assert.match(finalize, /postRevenueCatSync\(authFetch, "restore"\)/);
     assert.doesNotMatch(finalize, /purpose: "restore" \}/);
+  });
+
+  it("purchase_finalize must not write FREE from empty V2 entitlements (webhook race)", () => {
+    assert.equal(shouldApplyEmptyRevenueCatSnapshot("purchase_finalize"), false);
+    assert.equal(shouldApplyEmptyRevenueCatSnapshot("restore"), true);
+    assert.equal(shouldApplyEmptyRevenueCatSnapshot("reconciliation"), true);
+    assert.equal(shouldApplyEmptyRevenueCatSnapshot("webhook"), true);
+    assert.equal(shouldApplyEmptyRevenueCatSnapshot("manual_recovery"), true);
+
+    const sync = readRepoFile("artifacts/api-server/src/services/rcCustomerService.ts");
+    assert.match(sync, /shouldApplyEmptyRevenueCatSnapshot\(source\)/);
+    assert.match(sync, /purchase_finalize empty entitlements — skipping FREE write/);
   });
 
   it("analytics purchase_success stays an observer after subscriber confirmation", () => {

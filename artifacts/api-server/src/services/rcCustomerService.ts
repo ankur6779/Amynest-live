@@ -251,13 +251,33 @@ function buildSnapshotFromV2(
   };
 }
 
+export type RevenueCatSyncSource =
+  | "purchase_finalize"
+  | "restore"
+  | "webhook"
+  | "reconciliation"
+  | "manual_recovery";
+
+/**
+ * Empty V2 active_entitlements during `purchase_finalize` almost always means
+ * store→RC propagation lag (or a transient miss), not a real revocation.
+ * Writing FREE here races the webhook: INITIAL_PURCHASE can land first, then
+ * an empty finalize pull wipes the just-paid ACTIVE row.
+ *
+ * Revocation belongs to webhook EXPIRATION/REFUND (and restore/reconcile paths
+ * that intentionally mirror an empty customer).
+ */
+export function shouldApplyEmptyRevenueCatSnapshot(source: RevenueCatSyncSource): boolean {
+  return source !== "purchase_finalize";
+}
+
 /**
  * Pull the latest RevenueCat subscriber record and mirror premium state into
  * our DB. Used after a native purchase so the client does not have to wait
  * for the webhook round-trip.
  */
 export async function syncRevenueCatSubscription(userId: string, opts: {
-  source?: "purchase_finalize" | "restore" | "webhook" | "reconciliation" | "manual_recovery";
+  source?: RevenueCatSyncSource;
   providerEventId?: string | null;
   eventType?: string | null;
 } = {}): Promise<{
@@ -318,18 +338,36 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
     const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
     if (!activeEnt && !activeSubscription) {
+      const source = opts.source ?? "purchase_finalize";
       logger.warn(
         {
           userId,
+          source,
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
           subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      if (!shouldApplyEmptyRevenueCatSnapshot(source)) {
+        logger.warn(
+          { userId, source, appliedUserId: canonicalUserId },
+          "[rcSync] purchase_finalize empty entitlements — skipping FREE write (await webhook/retry)",
+        );
+        return {
+          synced: true,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          appliedUserId: canonicalUserId,
+          reason: "no_active_entitlement",
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
-        source: opts.source ?? "purchase_finalize",
+        source,
         providerEventId: opts.providerEventId,
       });
       return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId, reason: "no_active_entitlement" };
