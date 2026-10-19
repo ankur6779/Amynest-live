@@ -37,6 +37,41 @@ describe("premium identity certification guardrails", () => {
     assert.doesNotMatch(route, /applyRevenueCatSnapshot\(rawRevenueCatUserId/);
   });
 
+  it("Razorpay activate/bonus/verify write the alias owner, not the raw Firebase uid", () => {
+    const service = readRepoFile("artifacts/api-server/src/services/subscriptionService.ts");
+    const route = readRepoFile("artifacts/api-server/src/routes/subscription.ts");
+
+    const activateIdx = service.indexOf("export async function activateSubscription");
+    const activateEnd = service.indexOf("export async function", activateIdx + 1);
+    const activateSlice = service.slice(
+      activateIdx,
+      activateEnd > activateIdx ? activateEnd : activateIdx + 5000,
+    );
+    assert.match(activateSlice, /resolveSubscriptionOwnerUserId\(userId/);
+    assert.match(activateSlice, /where\(eq\(subscriptionsTable\.userId, subscriptionOwnerUserId\)\)/);
+    assert.doesNotMatch(activateSlice, /where\(eq\(subscriptionsTable\.userId, userId\)\)/);
+
+    const bonusIdx = service.indexOf("export async function extendBonusPremium");
+    const bonusEnd = service.indexOf("/** Generic per-feature usage read", bonusIdx);
+    const bonusSlice = service.slice(
+      bonusIdx,
+      bonusEnd > bonusIdx ? bonusEnd : bonusIdx + 1200,
+    );
+    assert.match(bonusSlice, /resolveSubscriptionOwnerUserId\(userId/);
+    assert.match(bonusSlice, /where\(eq\(subscriptionsTable\.userId, subscriptionOwnerUserId\)\)/);
+    assert.doesNotMatch(bonusSlice, /where\(eq\(subscriptionsTable\.userId, userId\)\)/);
+
+    assert.match(route, /const notedUserId = sub\?\.notes\?\.userId/);
+    assert.match(
+      route,
+      /const userId = await resolveSubscriptionOwnerUserId\(notedUserId, tx\)/,
+    );
+    assert.match(
+      route,
+      /const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId\(userId\)/,
+    );
+  });
+
   it("D/E/I: native billing never configures, purchases, or restores with raw Firebase uid fallback", () => {
     const hook = readRepoFile("artifacts/kidschedule/src/hooks/use-native-billing.ts");
 
