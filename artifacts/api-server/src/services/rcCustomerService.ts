@@ -251,6 +251,29 @@ function buildSnapshotFromV2(
   };
 }
 
+const RC_GRANT_EVENT_TYPES = new Set([
+  "INITIAL_PURCHASE",
+  "RENEWAL",
+  "UNCANCELLATION",
+  "PRODUCT_CHANGE",
+  "SUBSCRIPTION_EXTENDED",
+  "TRANSFER",
+]);
+
+/** Defer FREE writes when RC APIs lag behind grant webhooks/purchases. */
+export function shouldWriteFreeSnapshotOnMissingEntitlement(
+  source: string,
+  eventType?: string | null,
+): boolean {
+  if (source === "webhook" && eventType && RC_GRANT_EVENT_TYPES.has(eventType)) {
+    return false;
+  }
+  if (source === "purchase_finalize") {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Pull the latest RevenueCat subscriber record and mirror premium state into
  * our DB. Used after a native purchase so the client does not have to wait
@@ -318,18 +341,33 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
     const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
     if (!activeEnt && !activeSubscription) {
+      const source = opts.source ?? "purchase_finalize";
       logger.warn(
         {
           userId,
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
           subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
+          source,
+          eventType: opts.eventType ?? null,
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      if (!shouldWriteFreeSnapshotOnMissingEntitlement(source, opts.eventType)) {
+        return {
+          synced: false,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          appliedUserId: canonicalUserId,
+          reason: "no_active_entitlement",
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
-        source: opts.source ?? "purchase_finalize",
+        source,
         providerEventId: opts.providerEventId,
       });
       return { synced: true, isPremium: false, verifiedCustomer: true, activeEntitlement: false, dbUpdated: true, apiPremium: applied.isPremium, appliedUserId: canonicalUserId, reason: "no_active_entitlement" };

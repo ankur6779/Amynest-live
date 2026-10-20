@@ -4,73 +4,36 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
 import {
-  STORAGE_KEY_DRAFT,
-  STORAGE_KEY_HISTORY,
-  STORAGE_KEY_REMINDERS,
-  type PtmPrepSyncPayload,
-  type PtmReminder,
-  type PtmSession,
+  loadPtmPrepLocal,
+  writePtmPrepLocal,
+} from "@/lib/ptm-prep-storage";
+import type {
+  PtmPrepSyncPayload,
+  PtmReminder,
+  PtmSession,
 } from "@workspace/ptm-prep";
-
-function loadLocal(): PtmPrepSyncPayload {
-  if (typeof window === "undefined") {
-    return { draft: null, history: [], reminders: [], clientUpdatedAt: 0 };
-  }
-  try {
-    const draftRaw = window.localStorage.getItem(STORAGE_KEY_DRAFT);
-    const historyRaw = window.localStorage.getItem(STORAGE_KEY_HISTORY);
-    const remindersRaw = window.localStorage.getItem(STORAGE_KEY_REMINDERS);
-    return {
-      draft: draftRaw ? (JSON.parse(draftRaw) as PtmSession) : null,
-      history: historyRaw ? (JSON.parse(historyRaw) as PtmSession[]) : [],
-      reminders: remindersRaw ? (JSON.parse(remindersRaw) as PtmReminder[]) : [],
-      clientUpdatedAt: Number(window.localStorage.getItem("amynest.ptm_prep.client_updated_at.v1") ?? 0),
-    };
-  } catch {
-    return { draft: null, history: [], reminders: [], clientUpdatedAt: 0 };
-  }
-}
-
-function writeLocal(payload: PtmPrepSyncPayload): void {
-  if (typeof window === "undefined") return;
-  try {
-    if (payload.draft) {
-      window.localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(payload.draft));
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY_DRAFT);
-    }
-    window.localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(payload.history));
-    window.localStorage.setItem(STORAGE_KEY_REMINDERS, JSON.stringify(payload.reminders));
-    window.localStorage.setItem(
-      "amynest.ptm_prep.client_updated_at.v1",
-      String(payload.clientUpdatedAt),
-    );
-  } catch {
-    /* ignore quota errors */
-  }
-}
 
 export function usePtmPrepSync() {
   const authFetch = useAuthFetch();
-  const { isSignedIn } = useAuth();
-  const syncedRef = useRef(false);
+  const { isSignedIn, userId } = useAuth();
+  const syncGenRef = useRef(0);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false);
 
   const pullFromServer = useCallback(async (): Promise<PtmPrepSyncPayload | null> => {
-    if (!isSignedIn) return null;
+    if (!isSignedIn || !userId) return null;
     try {
       const res = await authFetch(getApiUrl("/api/ptm-prep/sync"));
       if (!res.ok) return null;
-      return (await parseApiJson<PtmPrepSyncPayload>(res));
+      return await parseApiJson<PtmPrepSyncPayload>(res);
     } catch {
       return null;
     }
-  }, [authFetch, isSignedIn]);
+  }, [authFetch, isSignedIn, userId]);
 
   const pushToServer = useCallback(
     async (payload: PtmPrepSyncPayload) => {
-      if (!isSignedIn) return;
+      if (!isSignedIn || !userId) return;
       try {
         await authFetch(getApiUrl("/api/ptm-prep/sync"), {
           method: "PUT",
@@ -81,54 +44,71 @@ export function usePtmPrepSync() {
         /* offline — local copy remains source of truth until next push */
       }
     },
-    [authFetch, isSignedIn],
+    [authFetch, isSignedIn, userId],
   );
 
   const schedulePush = useCallback(
     (payload: PtmPrepSyncPayload) => {
+      if (!userId) return;
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
       pushTimerRef.current = setTimeout(() => {
         void pushToServer(payload);
       }, 1200);
     },
-    [pushToServer],
+    [pushToServer, userId],
   );
 
   const persist = useCallback(
     (draft: PtmSession | null, history: PtmSession[], reminders: PtmReminder[]) => {
-      const local = loadLocal();
+      if (!userId) return emptyForSignedOut();
+      const local = loadPtmPrepLocal(userId);
       const payload: PtmPrepSyncPayload = {
         draft,
         history,
         reminders,
         clientUpdatedAt: Math.max(local.clientUpdatedAt, Date.now()),
       };
-      writeLocal(payload);
+      writePtmPrepLocal(userId, payload);
       schedulePush(payload);
       return payload;
     },
-    [schedulePush],
+    [schedulePush, userId],
   );
 
   useEffect(() => {
-    if (syncedRef.current) return;
-    syncedRef.current = true;
+    const gen = ++syncGenRef.current;
+    setReady(false);
+    if (pushTimerRef.current) {
+      clearTimeout(pushTimerRef.current);
+      pushTimerRef.current = null;
+    }
+
     void (async () => {
-      if (isSignedIn) {
+      if (isSignedIn && userId) {
         const server = await pullFromServer();
+        if (gen !== syncGenRef.current) return;
         if (server) {
-          const local = loadLocal();
+          const local = loadPtmPrepLocal(userId);
           const winner =
             server.clientUpdatedAt >= local.clientUpdatedAt ? server : local;
-          writeLocal(winner);
+          writePtmPrepLocal(userId, winner);
           if (winner.clientUpdatedAt > server.clientUpdatedAt) {
             await pushToServer(winner);
           }
         }
       }
+      if (gen !== syncGenRef.current) return;
       setReady(true);
     })();
-  }, [isSignedIn, pullFromServer, pushToServer]);
 
-  return { persist, pullFromServer, ready };
+    return () => {
+      syncGenRef.current += 1;
+    };
+  }, [isSignedIn, userId, pullFromServer, pushToServer]);
+
+  return { persist, pullFromServer, ready, userId };
+}
+
+function emptyForSignedOut(): PtmPrepSyncPayload {
+  return { draft: null, history: [], reminders: [], clientUpdatedAt: 0 };
 }

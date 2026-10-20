@@ -10,6 +10,7 @@ import {
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import { and, eq, sql } from "drizzle-orm";
 import { isPremiumSubscriberNow } from "./subscription-premium-gate.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -208,11 +209,12 @@ async function emitBankAnalytics(
 }
 
 export async function getPremiumDownloadWallet(userId: string): Promise<PremiumDownloadWallet> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId);
   return db.transaction(async (tx) => {
     const [locked] = await tx
       .select()
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId))
+      .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
       .limit(1)
       .for("update");
 
@@ -228,7 +230,7 @@ export async function getPremiumDownloadWallet(userId: string): Promise<PremiumD
       lastRefreshAt: refreshed.lastDownloadRefreshAt,
     });
 
-    void emitBankAnalytics(userId, "premium_download_bank_refreshed", wallet, {
+    void emitBankAnalytics(subscriptionOwnerUserId, "premium_download_bank_refreshed", wallet, {
       source: "wallet_read",
     }).catch(() => undefined);
     return wallet;
@@ -236,12 +238,13 @@ export async function getPremiumDownloadWallet(userId: string): Promise<PremiumD
 }
 
 export async function reservePremiumDownload(userId: string): Promise<PremiumDownloadReserve> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId);
   return db.transaction(async (tx) => {
     const now = new Date();
     const [locked] = await tx
       .select()
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.userId, userId))
+      .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
       .limit(1)
       .for("update");
 
@@ -272,7 +275,7 @@ export async function reservePremiumDownload(userId: string): Promise<PremiumDow
       await tx
         .update(subscriptionsTable)
         .set({ downloadBankBalance: bankAfter, updatedAt: now })
-        .where(eq(subscriptionsTable.userId, userId));
+        .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
     }
 
     const wallet = walletFromState({
@@ -281,7 +284,7 @@ export async function reservePremiumDownload(userId: string): Promise<PremiumDow
       lastRefreshAt: refreshed.lastDownloadRefreshAt,
     });
 
-    void emitBankAnalytics(userId, "premium_download_bank_used", wallet, {
+    void emitBankAnalytics(subscriptionOwnerUserId, "premium_download_bank_used", wallet, {
       debit_source: source,
     }).catch(() => undefined);
     return { ok: true, source, wallet };
@@ -289,11 +292,12 @@ export async function reservePremiumDownload(userId: string): Promise<PremiumDow
 }
 
 export async function refundPremiumDownloadBankDebit(userId: string): Promise<void> {
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId);
   await db
     .update(subscriptionsTable)
     .set({
       downloadBankBalance: sql`LEAST(${PREMIUM_DOWNLOAD_BANK.maxBank}, ${subscriptionsTable.downloadBankBalance} + 1)`,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
 }
