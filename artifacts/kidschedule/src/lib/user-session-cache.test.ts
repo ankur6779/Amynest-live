@@ -39,4 +39,12 @@ describe("clearUserSessionCaches", () => {
     clearUserSessionCaches();
     expect(localStorage.getItem("amynest:device:id:v1")).toBe("install-device-keep");
   });
+
+  it("clears push registration markers so the next account can rebind FCM", () => {
+    localStorage.setItem("notify_device_registered_at", String(Date.now()));
+    localStorage.setItem("notify_nudge_dismissed_until", String(Date.now() + 86_400_000));
+    clearUserSessionCaches();
+    expect(localStorage.getItem("notify_device_registered_at")).toBeNull();
+    expect(localStorage.getItem("notify_nudge_dismissed_until")).toBeNull();
+  });
 });

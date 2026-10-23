@@ -3,9 +3,11 @@ import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import { canUseBrowserServiceWorkers } from "@/lib/native-shell";
 import {
   awaitNativePushBridge,
   ensureNativePushReady,
+  getBrowserNotificationPermission,
   getNativePushBridge,
   getNativePushToken,
   initCapacitorIOSPush,
@@ -15,11 +17,11 @@ import {
   resetCapacitorIOSPushState,
   waitForDeliverableIosPushToken,
 } from "@/lib/native-push-bridge";
+import { PUSH_REGISTERED_AT_KEY } from "@/lib/push-session";
 
-const REGISTERED_KEY = "notify_device_registered_at";
 function markRegistered() {
   try {
-    localStorage.setItem(REGISTERED_KEY, String(Date.now()));
+    localStorage.setItem(PUSH_REGISTERED_AT_KEY, String(Date.now()));
   } catch { /* ignore */ }
 }
 
@@ -86,9 +88,49 @@ export function usePushRegistration(): void {
       }
     })();
 
-    if (!isNativeCapShell && !isAmyNestWrapper()) return undefined;
-
     let cancelled = false;
+
+    // Web / installed PWA: OS permission may already be granted from a prior
+    // account on this browser. Re-bind the FCM token to the current user so
+    // the previous account's private child notifications stop arriving here.
+    if (!isNativeCapShell && !isAmyNestWrapper()) {
+      const registerWebToken = async () => {
+        if (getBrowserNotificationPermission() !== "granted") return;
+        if (!canUseBrowserServiceWorkers()) return;
+        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
+        if (!vapidKey) return;
+        try {
+          const { getWebPushToken } = await import("@/lib/firebase");
+          const token = await getWebPushToken(vapidKey);
+          if (!token || cancelled) return;
+          const key = `${userId}::${token}`;
+          if (lastKeyRef.current === key) return;
+          const res = await authFetch(getApiUrl("/api/push/register"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token,
+              platform: "web",
+              deviceName: navigator.userAgent.slice(0, 100),
+            }),
+          });
+          if (res.ok) {
+            lastKeyRef.current = key;
+            markRegistered();
+            try {
+              window.dispatchEvent(new CustomEvent("amynest-push-registered"));
+            } catch { /* ignore */ }
+          }
+        } catch {
+          /* best-effort */
+        }
+      };
+
+      void registerWebToken();
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const runIosPushRegistration = async (): Promise<void> => {
       await initCapacitorIOSPush();

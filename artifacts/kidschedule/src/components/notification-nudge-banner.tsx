@@ -6,13 +6,15 @@ import { getApiUrl } from "@/lib/api";
 import { useWebPush } from "@/hooks/use-web-push";
 import { ensureNativePushReady, getBrowserNotificationPermission, getNativePushBridge, isCapacitorIOS, registerNativePushToken, requestNativePushPermission, syncCapacitorPushRegistrationWithOs, type NativePushPermission } from "@/lib/native-push-bridge";
 import { useTranslation } from "react-i18next";
-const DISMISS_KEY = "notify_nudge_dismissed_until";
-const REGISTERED_KEY = "notify_device_registered_at";
+import {
+  PUSH_NUDGE_DISMISS_KEY,
+  PUSH_REGISTERED_AT_KEY,
+} from "@/lib/push-session";
 const SNOOZE_DAYS = 3;
 const REVERIFY_DAYS = 7;
 function isDismissed(): boolean {
   try {
-    const raw = localStorage.getItem(DISMISS_KEY);
+    const raw = localStorage.getItem(PUSH_NUDGE_DISMISS_KEY);
     if (!raw) return false;
     return Date.now() < parseInt(raw, 10);
   } catch {
@@ -21,22 +23,22 @@ function isDismissed(): boolean {
 }
 function snooze() {
   try {
-    localStorage.setItem(DISMISS_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
+    localStorage.setItem(PUSH_NUDGE_DISMISS_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
   } catch (e) { console.error("REAL ERROR:", e); }
 }
 function clearDismiss() {
   try {
-    localStorage.removeItem(DISMISS_KEY);
+    localStorage.removeItem(PUSH_NUDGE_DISMISS_KEY);
   } catch (e) { console.error("REAL ERROR:", e); }
 }
 function markRegistered() {
   try {
-    localStorage.setItem(REGISTERED_KEY, String(Date.now()));
+    localStorage.setItem(PUSH_REGISTERED_AT_KEY, String(Date.now()));
   } catch (e) { console.error("REAL ERROR:", e); }
 }
 function isRecentlyRegistered(): boolean {
   try {
-    const raw = localStorage.getItem(REGISTERED_KEY);
+    const raw = localStorage.getItem(PUSH_REGISTERED_AT_KEY);
     if (!raw) return false;
     const ts = parseInt(raw, 10);
     return Date.now() - ts < REVERIFY_DAYS * 86400000;

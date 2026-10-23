@@ -26,6 +26,11 @@ export function clearUserSessionCaches(): void {
     localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
     localStorage.removeItem(SESSION_UID_KEY);
     localStorage.removeItem("amynest_onboarding_session");
+    // Push registration markers are device-global; leaving them after logout
+    // hides the reconnect nudge for the next account and keeps the prior
+    // user's FCM binding sticky on web/PWA (no native auto-rebind).
+    localStorage.removeItem("notify_device_registered_at");
+    localStorage.removeItem("notify_nudge_dismissed_until");
   } catch {
     /* private mode */
   }
