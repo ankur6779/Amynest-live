@@ -421,33 +421,37 @@ export async function computeAndPersistSnapshot(params: {
   const cacheKey = ephemeris.buildCacheKey(input);
   const fallbackUsed = Boolean(astronomy.metadata?.fallbackUsed);
 
-  // Never persist a null/empty snapshot — only insert when astronomy is complete.
-  await db
-    .update(skySnapshotsTable)
-    .set({ isCurrent: false })
-    .where(eq(skySnapshotsTable.profileId, params.profileId));
-
+  // Atomically retire prior isCurrent rows and insert the new pointer — never leave
+  // the profile with zero active snapshots if INSERT fails after deactivate.
   const snapshotId = randomUUID();
   const snapshotVersion = `ss_${snapshotId}`;
-  const [row] = await db
-    .insert(skySnapshotsTable)
-    .values({
-      id: snapshotId,
-      profileId: params.profileId,
-      userId: params.userId,
-      cacheKey,
-      snapshotVersion,
-      engineVersion,
-      mode,
-      astronomy,
-      isCurrent: true,
-      computedAt: new Date(),
-    })
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    await tx
+      .update(skySnapshotsTable)
+      .set({ isCurrent: false })
+      .where(eq(skySnapshotsTable.profileId, params.profileId));
 
-  if (!row) {
-    throw new Error("snapshot_persist_failed");
-  }
+    const [inserted] = await tx
+      .insert(skySnapshotsTable)
+      .values({
+        id: snapshotId,
+        profileId: params.profileId,
+        userId: params.userId,
+        cacheKey,
+        snapshotVersion,
+        engineVersion,
+        mode,
+        astronomy,
+        isCurrent: true,
+        computedAt: new Date(),
+      })
+      .returning();
+
+    if (!inserted) {
+      throw new Error("snapshot_persist_failed");
+    }
+    return inserted;
+  });
 
   await setGenerationStatus(params.profileId, "READY");
 
