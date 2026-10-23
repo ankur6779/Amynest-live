@@ -140,6 +140,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
+    // Unbind FCM while the ID token is still valid — otherwise User A's
+    // routine/infant pushes (child names) keep landing on this install after
+    // User B signs in (web/PWA has no native auto-rebind).
+    try {
+      const { unregisterCurrentPushTokens } = await import("@/lib/push-session");
+      await unregisterCurrentPushTokens();
+    } catch (err) {
+      console.warn("[firebase-auth] push unregister failed:", err);
+    }
     try {
       const { releaseCurrentDeviceSession } = await import("@/lib/device-registration");
       await releaseCurrentDeviceSession();

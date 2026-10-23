@@ -12,12 +12,27 @@ function read(relative: string): string {
 describe("sign-out and account-switch device wiring", () => {
   it("releases the active device session before Firebase sign-out", () => {
     const src = read("./firebase-auth.tsx");
+    const unregisterIdx = src.indexOf("unregisterCurrentPushTokens");
     const releaseIdx = src.indexOf("releaseCurrentDeviceSession");
     const signOutIdx = src.indexOf("await fbSignOut");
-    expect(releaseIdx).toBeGreaterThan(0);
+    expect(unregisterIdx).toBeGreaterThan(0);
+    expect(releaseIdx).toBeGreaterThan(unregisterIdx);
     expect(signOutIdx).toBeGreaterThan(releaseIdx);
     expect(src).toMatch(/resetNativeBillingIdentity/);
     expect(src).toMatch(/clearUserSessionCaches/);
+  });
+
+  it("clears device-global push registration markers on session cache wipe", () => {
+    const src = read("./user-session-cache.ts");
+    expect(src).toMatch(/notify_device_registered_at/);
+    expect(src).toMatch(/notify_nudge_dismissed_until/);
+  });
+
+  it("auto-rebinds web FCM tokens when a signed-in user already granted permission", () => {
+    const src = read("../hooks/use-push-registration.ts");
+    expect(src).toMatch(/getBrowserNotificationPermission\(\) !== "granted"/);
+    expect(src).toMatch(/platform: "web"/);
+    expect(src).toMatch(/getWebPushToken/);
   });
 
   it("re-registers the installation when the authenticated uid changes", () => {
