@@ -1,5 +1,6 @@
 import type { Response as ExpressResponse } from "express";
 import { logger } from "../lib/logger.js";
+import { ResponseClosedError, waitForWritableDrain } from "../lib/wait-for-writable.js";
 import {
   getElevenLabsApiKey,
   isElevenLabsFallbackEnabled,
@@ -75,11 +76,14 @@ async function serveBufferChunked(
 
   let offset = 0;
   while (offset < buffer.byteLength) {
+    if (res.destroyed || res.writableEnded) {
+      throw new ResponseClosedError();
+    }
     const end = Math.min(offset + CHUNK_WRITE_BYTES, buffer.byteLength);
     const ok = res.write(buffer.subarray(offset, end));
     offset = end;
     if (!ok) {
-      await new Promise<void>((resolve) => res.once("drain", resolve));
+      await waitForWritableDrain(res);
     }
   }
   res.end();
@@ -117,27 +121,53 @@ async function streamUpstreamToClient(
   let firstAudioMs = 0;
   const streamStarted = performance.now();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value?.length) continue;
-    if (firstAudioMs === 0) firstAudioMs = Math.round(performance.now() - streamStarted);
-    total += value.byteLength;
-    if (total > MAX_BUFFER_BYTES) {
-      reader.cancel().catch(() => {});
-      throw new Error("elevenlabs_audio_too_large");
+  let clientOpen = !(res.destroyed || res.writableEnded);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.length) continue;
+      if (firstAudioMs === 0) firstAudioMs = Math.round(performance.now() - streamStarted);
+      total += value.byteLength;
+      if (total > MAX_BUFFER_BYTES) {
+        throw new Error("elevenlabs_audio_too_large");
+      }
+      const buf = Buffer.from(value);
+      chunks.push(buf);
+      fanout?.chunks.push(buf);
+      for (const waiter of fanout?.waiters ?? []) {
+        waiter.resolve(buf);
+      }
+      if (!clientOpen) continue;
+      try {
+        if (res.destroyed || res.writableEnded) {
+          throw new ResponseClosedError();
+        }
+        if (!res.write(buf)) {
+          await waitForWritableDrain(res);
+        }
+      } catch (err) {
+        if (!(err instanceof ResponseClosedError)) throw err;
+        clientOpen = false;
+        logger.info(
+          { evt: "elevenlabs.tts_client_aborted", cacheKey },
+          "ElevenLabs TTS client aborted; continuing buffer for cache",
+        );
+      }
     }
-    const buf = Buffer.from(value);
-    chunks.push(buf);
-    fanout?.chunks.push(buf);
-    for (const waiter of fanout?.waiters ?? []) {
-      waiter.resolve(buf);
+    if (clientOpen && !res.writableEnded) {
+      res.end();
     }
-    if (!res.write(buf)) {
-      await new Promise<void>((resolve) => res.once("drain", resolve));
+  } catch (err) {
+    reader.cancel().catch(() => {});
+    if (fanout) {
+      fanout.done = true;
+      fanout.error = err instanceof Error ? err : new Error(String(err));
+      for (const waiter of fanout.waiters) waiter.resolve(null);
+      fanout.waiters.length = 0;
     }
+    throw err;
   }
-  res.end();
   if (fanout) {
     fanout.done = true;
     for (const waiter of fanout.waiters) waiter.resolve(null);
@@ -162,8 +192,11 @@ async function streamLiveFanoutToClient(res: ExpressResponse, fanout: LiveFanout
     res.setHeader("Transfer-Encoding", "chunked");
   }
   for (const chunk of fanout.chunks) {
+    if (res.destroyed || res.writableEnded) {
+      throw new ResponseClosedError();
+    }
     if (!res.write(chunk)) {
-      await new Promise<void>((resolve) => res.once("drain", resolve));
+      await waitForWritableDrain(res);
     }
   }
   if (fanout.done) {
@@ -171,12 +204,15 @@ async function streamLiveFanoutToClient(res: ExpressResponse, fanout: LiveFanout
     return;
   }
   while (!fanout.done) {
+    if (res.destroyed || res.writableEnded) {
+      throw new ResponseClosedError();
+    }
     const chunk = await new Promise<Buffer | null>((resolve) => {
       fanout.waiters.push({ resolve });
     });
     if (chunk == null) break;
     if (!res.write(chunk)) {
-      await new Promise<void>((resolve) => res.once("drain", resolve));
+      await waitForWritableDrain(res);
     }
   }
   if (!res.writableEnded) res.end();

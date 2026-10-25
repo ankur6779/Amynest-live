@@ -1,5 +1,6 @@
 import type { Response as ExpressResponse } from "express";
 import { logger } from "../lib/logger.js";
+import { ResponseClosedError, waitForWritableDrain } from "../lib/wait-for-writable.js";
 import type { SynthesizeMode } from "./ttsCacheService.js";
 import { readCachedAudio } from "./ttsCacheService.js";
 import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
@@ -85,22 +86,44 @@ async function streamBufferToClient(
   const reader = upstream.body.getReader();
   const chunks: Buffer[] = [];
   let total = 0;
+  let clientOpen = !(res.destroyed || res.writableEnded);
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value?.length) continue;
-    total += value.byteLength;
-    if (total > MAX_BUFFER_BYTES) {
-      reader.cancel().catch(() => {});
-      throw new Error("openai_audio_too_large");
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.length) continue;
+      total += value.byteLength;
+      if (total > MAX_BUFFER_BYTES) {
+        throw new Error("openai_audio_too_large");
+      }
+      chunks.push(Buffer.from(value));
+      if (!clientOpen) continue;
+      try {
+        if (res.destroyed || res.writableEnded) {
+          throw new ResponseClosedError();
+        }
+        if (!res.write(value)) {
+          await waitForWritableDrain(res);
+        }
+      } catch (err) {
+        if (!(err instanceof ResponseClosedError)) throw err;
+        // Primary client aborted under backpressure — keep buffering for
+        // cache + concurrent callers sharing this inflight generation.
+        clientOpen = false;
+        logger.info(
+          { evt: "openai.tts_client_aborted", cacheKey },
+          "OpenAI TTS client aborted; continuing buffer for cache",
+        );
+      }
     }
-    chunks.push(Buffer.from(value));
-    if (!res.write(value)) {
-      await new Promise<void>((resolve) => res.once("drain", resolve));
+    if (clientOpen && !res.writableEnded) {
+      res.end();
     }
+  } catch (err) {
+    reader.cancel().catch(() => {});
+    throw err;
   }
-  res.end();
 
   const buffer = Buffer.concat(chunks);
   if (!buffer.byteLength) throw new Error("openai_empty_audio");

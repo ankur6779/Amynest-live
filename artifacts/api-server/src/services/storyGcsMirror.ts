@@ -7,6 +7,7 @@ import { db, storyContentTable, type StoryContent } from "@workspace/db";
 import { fetchDriveStream } from "../lib/googleDrive";
 import { getGcsBucketId, readEnv } from "../lib/env";
 import { logger } from "../lib/logger";
+import { ResponseClosedError, waitForWritableDrain } from "../lib/wait-for-writable.js";
 import {
   gcsObjectExists,
   legacyGcsConfigured,
@@ -289,16 +290,21 @@ export async function streamStoryVideo(
   const pump = async () => {
     try {
       while (true) {
+        if (res.destroyed || res.writableEnded) {
+          throw new ResponseClosedError();
+        }
         const { done, value } = await reader.read();
         if (done) break;
         if (!res.write(value)) {
-          await new Promise((resolve) => res.once("drain", resolve));
+          await waitForWritableDrain(res);
         }
       }
       res.end();
     } catch {
-      reader.cancel();
-      res.destroy();
+      reader.cancel().catch(() => {});
+      if (!res.writableEnded && !res.destroyed) {
+        res.destroy();
+      }
     }
   };
   await pump();
