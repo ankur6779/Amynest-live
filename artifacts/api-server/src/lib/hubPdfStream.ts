@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { fetchDriveStream } from "./googleDrive";
 import { logger } from "./logger";
+import { ResponseClosedError, waitForWritableDrain } from "./wait-for-writable.js";
 
 export function safeHubPdfFileName(raw: string): string {
   const trimmed = raw.trim().slice(0, 200);
@@ -112,16 +113,22 @@ export async function streamDrivePdfToExpress(
     const reader = driveRes.body.getReader();
     try {
       while (true) {
+        if (res.destroyed || res.writableEnded) {
+          throw new ResponseClosedError();
+        }
         const { done, value } = await reader.read();
         if (done) break;
         if (!res.write(value)) {
-          await new Promise<void>((resolve) => res.once("drain", resolve));
+          await waitForWritableDrain(res);
         }
       }
       res.end();
       return true;
     } catch (err) {
       reader.cancel();
+      if (err instanceof ResponseClosedError) {
+        return false;
+      }
       logger.error(
         { err, fileId, message: err instanceof Error ? err.message : String(err) },
         "Hub PDF stream pump failed",
