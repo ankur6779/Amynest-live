@@ -78,3 +78,78 @@ test("mergeProfiles accepts empty server", () => {
   assert.equal(winner, "client");
   assert.equal(profile.totalXp, 10);
 });
+
+test("virgin NOW-stamp client does not wipe richer server level/unlocks/PBs", () => {
+  const server = {
+    version: 2,
+    childId: 1,
+    totalXp: 1200,
+    coins: 55,
+    level: 5,
+    prestige: 1,
+    streakDays: 12,
+    questStreakDays: 4,
+    totalSessions: 40,
+    badges: [{ id: "flamingo-king", unlockedAt: 9000 }],
+    avatarId: "hero",
+    unlockedAvatarItems: ["hat", "cape"],
+    equippedItems: { hat: "hat" },
+    personalBests: { "breath-control": 90 },
+    wellnessScores: { calmness: 80, focus: 70 },
+    gamesCompletedToday: ["breath-control"],
+    gameHistory: [
+      {
+        gameId: "breath-control",
+        timestamp: 9000,
+        durationMs: 1000,
+        xpEarned: 50,
+        xpTier: "good",
+        score: 90,
+      },
+    ],
+  };
+  const virginClient = {
+    version: 2,
+    childId: 1,
+    totalXp: 40,
+    coins: 10,
+    level: 1,
+    prestige: 0,
+    streakDays: 1,
+    questStreakDays: 0,
+    totalSessions: 1,
+    badges: [],
+    avatarId: "explorer",
+    unlockedAvatarItems: [],
+    equippedItems: {},
+    personalBests: {},
+    wellnessScores: { calmness: 0, focus: 0 },
+    gamesCompletedToday: [],
+    gameHistory: [
+      {
+        gameId: "reaction-time",
+        timestamp: 9500,
+        durationMs: 800,
+        xpEarned: 40,
+        xpTier: "good",
+        score: 60,
+      },
+    ],
+  };
+
+  const { profile, winner } = mergeProfiles(server, virginClient, 1000, Date.now());
+  assert.equal(winner, "merge");
+  assert.equal(profile.totalXp, 1200);
+  assert.equal(profile.coins, 55);
+  assert.equal(profile.streakDays, 12);
+  assert.equal(profile.level, 5);
+  assert.equal(profile.prestige, 1);
+  assert.equal(profile.questStreakDays, 4);
+  assert.equal(profile.totalSessions, 40);
+  assert.equal(profile.avatarId, "hero");
+  assert.deepEqual(profile.unlockedAvatarItems, ["hat", "cape"]);
+  assert.equal((profile.personalBests as Record<string, number>)["breath-control"], 90);
+  assert.equal((profile.wellnessScores as Record<string, number>).calmness, 80);
+  assert.equal((profile.gameHistory as unknown[]).length, 2);
+  assert.equal((profile.badges as unknown[]).length, 1);
+});
