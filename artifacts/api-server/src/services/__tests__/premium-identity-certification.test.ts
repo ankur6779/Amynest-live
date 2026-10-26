@@ -37,6 +37,23 @@ describe("premium identity certification guardrails", () => {
     assert.doesNotMatch(route, /applyRevenueCatSnapshot\(rawRevenueCatUserId/);
   });
 
+  it("RevenueCat webhook reclaims failed/stale events instead of ACK-dropping retries", () => {
+    const route = readRepoFile("artifacts/api-server/src/routes/subscription.ts");
+    const claim = readRepoFile(
+      "artifacts/api-server/src/services/revenuecat-webhook-claim.ts",
+    );
+
+    assert.match(route, /decideRevenueCatWebhookClaim/);
+    assert.match(route, /webhook_in_progress/);
+    assert.match(claim, /prior_failure/);
+    assert.match(claim, /stale_pending/);
+    // Must not treat every insert conflict as a successful duplicate ACK.
+    assert.doesNotMatch(
+      route,
+      /if \(inserted\.length === 0\) \{\s*res\.json\(\{ ok: true, duplicate: true/,
+    );
+  });
+
   it("D/E/I: native billing never configures, purchases, or restores with raw Firebase uid fallback", () => {
     const hook = readRepoFile("artifacts/kidschedule/src/hooks/use-native-billing.ts");
 
