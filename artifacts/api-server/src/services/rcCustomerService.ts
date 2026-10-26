@@ -1,3 +1,4 @@
+import { db, subscriptionsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import { safeJsonResponse } from "../lib/safe-json-response.js";
@@ -8,6 +9,35 @@ import {
   productIdToPlan,
   type RevenueCatSnapshot,
 } from "./subscriptionStateService";
+
+/** RevenueCat can lag seconds behind Play/App Store; never downgrade on finalize. */
+const PURCHASE_FINALIZE_PENDING_REASON = "pending_entitlement";
+
+async function markPurchaseFinalizePendingEntitlement(
+  userId: string,
+  revenuecatAppUserId: string,
+): Promise<void> {
+  const now = new Date();
+  await db
+    .insert(subscriptionsTable)
+    .values({
+      userId,
+      plan: "free",
+      status: "free",
+      subscriptionState: "FREE",
+      revenuecatAppUserId,
+      syncError: PURCHASE_FINALIZE_PENDING_REASON,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: subscriptionsTable.userId,
+      set: {
+        revenuecatAppUserId,
+        syncError: PURCHASE_FINALIZE_PENDING_REASON,
+        updatedAt: now,
+      },
+    });
+}
 
 const RC_V2_SECRET_KEY = process.env.REVENUECAT_V2_SECRET_KEY ?? "";
 const RC_PROJECT_ID = process.env.REVENUECAT_PROJECT_ID ?? "";
@@ -324,9 +354,26 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
           expectedEntitlementId: ENTITLEMENT_ID,
           entitlementCount: asArray(entitlementsResult.data).length,
           subscriptionCount: subscriptionsResult.ok ? asArray(subscriptionsResult.data).length : null,
+          source: opts.source ?? "purchase_finalize",
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      // purchase_finalize runs seconds after checkout; writing FREE + lastEventAt here
+      // would throttle GET /subscription from pulling RC for 5 minutes and can
+      // clobber an already-active row while RevenueCat is still propagating.
+      if ((opts.source ?? "purchase_finalize") === "purchase_finalize") {
+        await markPurchaseFinalizePendingEntitlement(canonicalUserId, canonicalUserId);
+        return {
+          synced: false,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          appliedUserId: canonicalUserId,
+          reason: PURCHASE_FINALIZE_PENDING_REASON,
+        };
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
         source: opts.source ?? "purchase_finalize",
