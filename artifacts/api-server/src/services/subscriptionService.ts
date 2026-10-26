@@ -520,15 +520,26 @@ export async function extendBonusPremium(
   return next;
 }
 
+/**
+ * Usage counters must key off the subscription owner (identity alias), matching
+ * getOrCreateSubscription / getEntitlements. Writing under a raw Firebase uid
+ * while premium checks resolve B→A remints lifetime free quotas and Speech clocks
+ * for sticky-aliased account recreation.
+ */
+async function usageOwnerUserId(userId: string): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId);
+}
+
 /** Generic per-feature usage read (uses each feature's configured bucket). */
 export async function getFeatureUsage(userId: string, feature: FeatureKey): Promise<number> {
+  const ownerUserId = await usageOwnerUserId(userId);
   const day = bucketKeyFor(feature);
   const rows = await db
     .select({ count: usageDailyTable.count })
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, ownerUserId),
         eq(usageDailyTable.day, day),
         eq(usageDailyTable.feature, feature),
       ),
@@ -543,6 +554,7 @@ export async function getFeatureUsageMap(
   features: FeatureKey[],
 ): Promise<Partial<Record<FeatureKey, number>>> {
   if (features.length === 0) return {};
+  const ownerUserId = await usageOwnerUserId(userId);
   const dayKeys = [...new Set(features.map((f) => bucketKeyFor(f)))];
   const rows = await db
     .select({
@@ -553,7 +565,7 @@ export async function getFeatureUsageMap(
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, ownerUserId),
         inArray(usageDailyTable.feature, features),
         inArray(usageDailyTable.day, dayKeys),
       ),
@@ -578,16 +590,19 @@ export async function getFeatureUsageMap(
  * refund paths (e.g. featureGate's res.end interceptor + a route's manual
  * refund on disconnect) cannot drive the counter negative and hand out extra
  * free uses. Initial inserts are clamped at max(0, by) too.
+ *
+ * Always writes under the alias subscription owner (see usageOwnerUserId).
  */
 export async function incrementFeatureUsage(
   userId: string,
   feature: FeatureKey,
   by = 1,
 ): Promise<number> {
+  const ownerUserId = await usageOwnerUserId(userId);
   const day = bucketKeyFor(feature);
   const result = await db
     .insert(usageDailyTable)
-    .values({ userId, feature, day, count: Math.max(0, by) })
+    .values({ userId: ownerUserId, feature, day, count: Math.max(0, by) })
     .onConflictDoUpdate({
       target: [usageDailyTable.userId, usageDailyTable.day, usageDailyTable.feature],
       set: {

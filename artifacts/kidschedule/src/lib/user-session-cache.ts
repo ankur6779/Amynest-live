@@ -5,6 +5,9 @@ import { clearOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { clearOnboardingCompletionCache } from "@/lib/setup-status";
 
 const SESSION_UID_KEY = "amynest:session:uid:v1";
+/** Keep in sync with PENDING_*_KEY in use-referrals.ts */
+const PENDING_REFERRAL_KEY = "amynest_pending_referral_code";
+const PENDING_GIFT_KEY = "amynest_pending_gift_code";
 
 /**
  * Wipe client-side caches tied to a prior account/session.
@@ -14,6 +17,9 @@ const SESSION_UID_KEY = "amynest:session:uid:v1";
  * Does not remove `amynest:device:id:v1`. The installation id is reused so
  * the backend can treat this install as one session; account ownership lives
  * in `user_devices`, not in the local id.
+ *
+ * Also clears pending gift/referral deep-link codes so a shared-device
+ * account switch cannot auto-redeem under the next Firebase uid.
  */
 export function clearUserSessionCaches(): void {
   clearOnboardingCompletionCache();
@@ -26,6 +32,8 @@ export function clearUserSessionCaches(): void {
     localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
     localStorage.removeItem(SESSION_UID_KEY);
     localStorage.removeItem("amynest_onboarding_session");
+    localStorage.removeItem(PENDING_GIFT_KEY);
+    localStorage.removeItem(PENDING_REFERRAL_KEY);
   } catch {
     /* private mode */
   }

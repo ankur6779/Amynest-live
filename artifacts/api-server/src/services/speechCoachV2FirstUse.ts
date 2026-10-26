@@ -1,9 +1,13 @@
 /**
- * Speech Coach V2 lifetime first-use — 90 seconds total, per account (userId).
+ * Speech Coach V2 lifetime first-use — 90 seconds total, per subscription owner.
  *
  * Stores consumed seconds in existing usage_daily (no schema change).
  * Feature string is intentionally NOT in FREE_FEATURE_LIMITS so entitlements
  * never expose a daily quota.
+ *
+ * Keys off identity-alias owner (resolveSubscriptionOwnerUserId), matching
+ * getOrCreateSubscription — not raw Firebase uid — so sticky B→A aliases cannot
+ * remint a fresh 90s demo after the owner exhausted first-use.
  *
  * Premium / trialing users must never call charge helpers.
  * Peeking (usage GET / page open) does not increment.
@@ -22,6 +26,7 @@ import {
   capFirstUseCharge,
   firstUseRemainingSeconds,
 } from "./speechCoachV2FirstUseWindow.js";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService.js";
 
 export {
   SPEECH_COACH_V2_FIRST_USE_DAY,
@@ -35,13 +40,18 @@ export {
 
 type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+async function ownerUserId(userId: string, exec: DbExec = db): Promise<string> {
+  return resolveSubscriptionOwnerUserId(userId, exec);
+}
+
 async function readLifetimeUsed(exec: DbExec, userId: string): Promise<number | null> {
+  const uid = await ownerUserId(userId, exec);
   const rows = await exec
     .select({ count: usageDailyTable.count })
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, uid),
         eq(usageDailyTable.day, SPEECH_COACH_V2_FIRST_USE_DAY),
         eq(usageDailyTable.feature, SPEECH_COACH_V2_FIRST_USE_FEATURE),
       ),
@@ -51,20 +61,21 @@ async function readLifetimeUsed(exec: DbExec, userId: string): Promise<number | 
   return n == null ? null : Math.max(0, n);
 }
 
-async function inferPriorV2Seconds(userId: string): Promise<number> {
+async function inferPriorV2Seconds(userId: string, exec: DbExec = db): Promise<number> {
+  const uid = await ownerUserId(userId, exec);
   const [dailyRows, sessionRows] = await Promise.all([
-    db
+    exec
       .select({
         total: sql<number>`coalesce(sum(${speechCoachV2DailyUsageTable.secondsUsed}), 0)`,
       })
       .from(speechCoachV2DailyUsageTable)
-      .where(eq(speechCoachV2DailyUsageTable.userId, userId)),
-    db
+      .where(eq(speechCoachV2DailyUsageTable.userId, uid)),
+    exec
       .select({
         total: sql<number>`coalesce(sum(${speechCoachV2SessionsTable.durationSeconds}), 0)`,
       })
       .from(speechCoachV2SessionsTable)
-      .where(eq(speechCoachV2SessionsTable.userId, userId)),
+      .where(eq(speechCoachV2SessionsTable.userId, uid)),
   ]);
   const daily = Number(dailyRows[0]?.total ?? 0);
   const sessions = Number(sessionRows[0]?.total ?? 0);
@@ -72,11 +83,12 @@ async function inferPriorV2Seconds(userId: string): Promise<number> {
 }
 
 async function persistLifetimeUsed(exec: DbExec, userId: string, used: number): Promise<number> {
+  const uid = await ownerUserId(userId, exec);
   const capped = Math.min(SPEECH_COACH_V2_FIRST_USE_SECONDS, Math.max(0, Math.floor(used)));
   await exec
     .insert(usageDailyTable)
     .values({
-      userId,
+      userId: uid,
       feature: SPEECH_COACH_V2_FIRST_USE_FEATURE,
       day: SPEECH_COACH_V2_FIRST_USE_DAY,
       count: capped,
@@ -88,7 +100,7 @@ async function persistLifetimeUsed(exec: DbExec, userId: string, used: number): 
         updatedAt: new Date(),
       },
     });
-  const after = await readLifetimeUsed(exec, userId);
+  const after = await readLifetimeUsed(exec, uid);
   return after ?? capped;
 }
 
@@ -118,12 +130,13 @@ export async function chargeSpeechCoachV2FirstUseSeconds(
   userId: string,
   requestedDelta: number,
 ): Promise<{ chargedSeconds: number; usedAfter: number; remainingAfter: number }> {
-  const existing = await readLifetimeUsed(exec, userId);
-  const seed = existing ?? (await inferPriorV2Seconds(userId));
+  const uid = await ownerUserId(userId, exec);
+  const existing = await readLifetimeUsed(exec, uid);
+  const seed = existing ?? (await inferPriorV2Seconds(uid, exec));
   await exec
     .insert(usageDailyTable)
     .values({
-      userId,
+      userId: uid,
       feature: SPEECH_COACH_V2_FIRST_USE_FEATURE,
       day: SPEECH_COACH_V2_FIRST_USE_DAY,
       count: seed,
@@ -135,7 +148,7 @@ export async function chargeSpeechCoachV2FirstUseSeconds(
     .from(usageDailyTable)
     .where(
       and(
-        eq(usageDailyTable.userId, userId),
+        eq(usageDailyTable.userId, uid),
         eq(usageDailyTable.day, SPEECH_COACH_V2_FIRST_USE_DAY),
         eq(usageDailyTable.feature, SPEECH_COACH_V2_FIRST_USE_FEATURE),
       ),
