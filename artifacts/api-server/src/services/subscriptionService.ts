@@ -423,6 +423,8 @@ async function maybeApplyAutomaticAgeTrial(
   const trialEnd = new Date(trialStart.getTime() + FREE_LIMITS.trialDays * DAY_MS);
   if (trialEnd.getTime() <= Date.now()) return sub;
 
+  // Conditional update: never clobber a concurrent activate/paid write that
+  // moved the row off free between the status check above and this UPDATE.
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
@@ -433,7 +435,12 @@ async function maybeApplyAutomaticAgeTrial(
       currentPeriodEnd: trialEnd,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(
+      and(
+        eq(subscriptionsTable.userId, userId),
+        eq(subscriptionsTable.status, "free"),
+      ),
+    )
     .returning();
   if (updated) {
     void trackServerSubscriptionFunnel(userId, "trial_started", { trigger: "age_auto" });
@@ -955,6 +962,8 @@ export async function startTrial(userId: string): Promise<Subscription> {
   // Only allow starting trial once, from the free state
   if (sub.status !== "free") return sub;
   const trialEnd = new Date(Date.now() + FREE_LIMITS.trialDays * 24 * 60 * 60 * 1000);
+  // Conditional update: require status still free so a concurrent Razorpay/RC
+  // activate cannot be overwritten back to a short internal trial window.
   const [updated] = await db
     .update(subscriptionsTable)
     .set({
@@ -965,12 +974,17 @@ export async function startTrial(userId: string): Promise<Subscription> {
       currentPeriodEnd: trialEnd,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(
+      and(
+        eq(subscriptionsTable.userId, userId),
+        eq(subscriptionsTable.status, "free"),
+      ),
+    )
     .returning();
   if (updated) {
     void trackServerSubscriptionFunnel(userId, "trial_started", { trigger: "manual_start" });
   }
-  return updated;
+  return updated ?? sub;
 }
 
 /**
