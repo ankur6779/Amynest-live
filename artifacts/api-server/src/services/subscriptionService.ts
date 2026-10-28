@@ -8,7 +8,7 @@ import {
   adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
   hasValidPaidPeriodEnd,
@@ -608,12 +608,48 @@ export async function incrementAiUsage(userId: string, by = 1): Promise<number> 
 }
 
 /**
+ * SQL fragment: row still lacks any live premium/trial window.
+ *
+ * Used so heal/repair UPDATEs refuse to clobber a concurrent activate,
+ * trial start, or bonus grant that landed after the in-memory decision.
+ */
+function stillLacksLiveEntitlementWindow(now: Date) {
+  return and(
+    or(
+      isNull(subscriptionsTable.currentPeriodEnd),
+      lte(subscriptionsTable.currentPeriodEnd, now),
+    ),
+    or(
+      isNull(subscriptionsTable.expiresAt),
+      lte(subscriptionsTable.expiresAt, now),
+    ),
+    or(
+      isNull(subscriptionsTable.bonusExpiresAt),
+      lte(subscriptionsTable.bonusExpiresAt, now),
+    ),
+    or(
+      isNull(subscriptionsTable.gracePeriodExpiresAt),
+      lte(subscriptionsTable.gracePeriodExpiresAt, now),
+    ),
+    or(
+      isNull(subscriptionsTable.trialEndsAt),
+      lte(subscriptionsTable.trialEndsAt, now),
+    ),
+  );
+}
+
+/**
  * Downgrade DB rows that say active/trialing but fail isPremiumNow (e.g. missing
  * or expired currentPeriodEnd). Runs on every entitlement read so bad state self-heals.
  *
  * CRITICAL: Active capped internal trials intentionally return isPremiumNow=false
  * (feature-gated). They must NEVER be healed to EXPIRED — that falsely shows
  * "Your Premium Trial Has Ended" to brand-new users who just received a trial.
+ *
+ * CRITICAL: UPDATE must condition on the row still lacking a live entitlement
+ * window. getEntitlements / feature gates call heal after getOrCreate; a
+ * Razorpay/RC activate that lands in that gap would otherwise be wiped to FREE
+ * (paid plan + currentPeriodEnd cleared) because the WHERE was userId-only.
  */
 export async function healStaleSubscriptionRecord(
   sub: Subscription,
@@ -624,12 +660,22 @@ export async function healStaleSubscriptionRecord(
   if (shouldPreserveActiveTrial(sub)) return sub;
   if (sub.status === "free") return sub;
 
+  const now = new Date();
+
   if (sub.provider === "manual" && sub.status === "active" && !hasValidPaidPeriodEnd(sub)) {
     const farFuture = new Date("2099-12-31T23:59:59.000Z");
     const [fixed] = await dbExec
       .update(subscriptionsTable)
-      .set({ currentPeriodEnd: farFuture, updatedAt: new Date() })
-      .where(eq(subscriptionsTable.userId, sub.userId))
+      .set({ currentPeriodEnd: farFuture, updatedAt: now })
+      .where(
+        and(
+          eq(subscriptionsTable.userId, sub.userId),
+          eq(subscriptionsTable.status, "active"),
+          eq(subscriptionsTable.provider, "manual"),
+          // Refuse if a concurrent paid activate already attached a live window.
+          stillLacksLiveEntitlementWindow(now),
+        ),
+      )
       .returning();
     return fixed ?? sub;
   }
@@ -638,7 +684,6 @@ export async function healStaleSubscriptionRecord(
     return sub;
   }
 
-  const now = new Date();
   const wasTrial = sub.status === "trialing" || sub.subscriptionState === "TRIAL";
   const [updated] = await dbExec
     .update(subscriptionsTable)
@@ -655,7 +700,15 @@ export async function healStaleSubscriptionRecord(
       expiredAt: wasTrial ? now : sub.expiredAt,
       updatedAt: now,
     })
-    .where(eq(subscriptionsTable.userId, sub.userId))
+    .where(
+      and(
+        eq(subscriptionsTable.userId, sub.userId),
+        // Match the stale status we decided to heal (avoid fighting unrelated writers).
+        eq(subscriptionsTable.status, sub.status),
+        // Never clobber a concurrent activate/trial/bonus that opened a live window.
+        stillLacksLiveEntitlementWindow(now),
+      ),
+    )
     .returning();
   if (wasTrial && updated) {
     void trackServerSubscriptionFunnel(sub.userId, "trial_expired", { trigger: "heal_stale" });
@@ -666,6 +719,9 @@ export async function healStaleSubscriptionRecord(
 /**
  * Repair rows falsely marked EXPIRED (instant heal / never completed a real trial).
  * Any EXPIRED+provider=none that did not live ≥1 day is reset to FREE.
+ *
+ * Conditional UPDATE: require the row still look falsely-expired (free + none)
+ * and still lack a live entitlement window so a concurrent activate is preserved.
  */
 export async function repairFalseExpiredInternalTrial(
   sub: Subscription,
@@ -686,7 +742,14 @@ export async function repairFalseExpiredInternalTrial(
       currentPeriodEnd: null,
       updatedAt: now,
     })
-    .where(eq(subscriptionsTable.userId, sub.userId))
+    .where(
+      and(
+        eq(subscriptionsTable.userId, sub.userId),
+        eq(subscriptionsTable.status, "free"),
+        eq(subscriptionsTable.provider, "none"),
+        stillLacksLiveEntitlementWindow(now),
+      ),
+    )
     .returning();
   if (updated) {
     void trackServerSubscriptionFunnel(sub.userId, "trial_false_expiry_repaired", {
