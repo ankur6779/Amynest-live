@@ -8,7 +8,7 @@ import {
   adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
   hasValidPaidPeriodEnd,
@@ -1023,6 +1023,31 @@ export async function activateSubscription(
     }
     return existing;
   }
+
+  // Same provider subscription must never shrink currentPeriodEnd. Without this,
+  // a delayed subscription.activated (or older charged) after a newer charged
+  // renewal silently truncates the paid window — the early-return above only
+  // no-ops equal periods and previously fell through to an unconditional UPDATE.
+  if (
+    sameProviderSub &&
+    opts.periodEnd &&
+    existing.currentPeriodEnd &&
+    opts.periodEnd.getTime() < existing.currentPeriodEnd.getTime()
+  ) {
+    const { logger } = await import("../lib/logger.js");
+    logger.warn(
+      {
+        userId,
+        plan,
+        providerSubscriptionId: opts.providerSubscriptionId ?? null,
+        existingPeriodEnd: existing.currentPeriodEnd.toISOString(),
+        incomingPeriodEnd: opts.periodEnd.toISOString(),
+      },
+      "[subscription] refused activateSubscription period regression",
+    );
+    return existing;
+  }
+
   const provider = opts.provider ?? "none";
   // Paid providers must include a future period end — prevents permanent premium
   // when webhooks/sync omit expiration_at_ms or expires_date.
@@ -1038,6 +1063,19 @@ export async function activateSubscription(
     return existing;
   }
 
+  // Conditional UPDATE: same providerSubscriptionId may only extend (or keep)
+  // currentPeriodEnd. Different / unbound ids may replace (plan switch / first bind).
+  // Closes the read→write race where a concurrent renewal extends the row after
+  // this call's in-memory check but before the write.
+  const sameSubPeriodGuard =
+    opts.periodEnd && opts.providerSubscriptionId
+      ? or(
+          sql`${subscriptionsTable.providerSubscriptionId} IS DISTINCT FROM ${opts.providerSubscriptionId}`,
+          isNull(subscriptionsTable.currentPeriodEnd),
+          lte(subscriptionsTable.currentPeriodEnd, opts.periodEnd),
+        )
+      : undefined;
+
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
@@ -1051,7 +1089,11 @@ export async function activateSubscription(
       currentPeriodEnd: opts.periodEnd ?? null,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(
+      sameSubPeriodGuard
+        ? and(eq(subscriptionsTable.userId, userId), sameSubPeriodGuard)
+        : eq(subscriptionsTable.userId, userId),
+    )
     .returning();
 
   // Referral system hook: mark this user's referral row as paid (no-op if
@@ -1067,5 +1109,5 @@ export async function activateSubscription(
     // best-effort
   }
 
-  return updated;
+  return updated ?? existing;
 }
