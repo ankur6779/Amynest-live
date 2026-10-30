@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, revenuecatWebhookEventsTable, subscriptionsTable } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import {
@@ -783,6 +783,9 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           throw err;
         }
 
+        // Guard provider + subscription id + status so a concurrent
+        // activateSubscription (no advisory lock) that rebound the row to a
+        // different paid subscription cannot be stamped cancelAtPeriodEnd.
         const [updated] = await tx
           .update(subscriptionsTable)
           .set({
@@ -790,8 +793,31 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             cancelledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptionsTable.userId, userId))
+          .where(
+            and(
+              eq(subscriptionsTable.userId, userId),
+              eq(subscriptionsTable.provider, "razorpay"),
+              eq(subscriptionsTable.providerSubscriptionId, sub.providerSubscriptionId),
+              inArray(subscriptionsTable.status, ["active", "trialing"]),
+            ),
+          )
           .returning();
+        if (!updated) {
+          await recordBillingAuditEvent({
+            userId,
+            source: "api",
+            eventName: "subscription_cancel_failed",
+            status: "warning",
+            reason: "concurrent_state_change",
+            metadata: cancelAuditMetadata({
+              requestId,
+              provider: sub.provider,
+              subscriptionId: sub.providerSubscriptionId,
+              statusBefore: before,
+            }),
+          });
+          return { kind: "inactive", status: "concurrent_state_change" };
+        }
         await recordBillingAuditEvent({
           userId,
           source: "api",
@@ -801,13 +827,18 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
             provider: sub.provider,
             subscriptionId: sub.providerSubscriptionId,
             statusBefore: before,
-            statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+            statusAfter: subscriptionStatusSnapshot(updated),
           }),
         });
         return { kind: "completed", provider: sub.provider };
       }
 
       const now = new Date();
+      // CRITICAL: do not UPDATE by userId alone after the in-memory
+      // none/manual decision. activateSubscription does not take the cancel
+      // advisory lock, so a concurrent Razorpay/RC activate can flip the row
+      // to paid between SELECT and this write — an unguarded wipe would set
+      // plan/status/periodEnd to EXPIRED and steal the paid window (#239/#240 class).
       const [updated] = await tx
         .update(subscriptionsTable)
         .set({
@@ -826,8 +857,30 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           expiredAt: now,
           updatedAt: now,
         })
-        .where(eq(subscriptionsTable.userId, userId))
+        .where(
+          and(
+            eq(subscriptionsTable.userId, userId),
+            inArray(subscriptionsTable.status, ["active", "trialing"]),
+            inArray(subscriptionsTable.provider, ["none", "manual"]),
+          ),
+        )
         .returning();
+      if (!updated) {
+        await recordBillingAuditEvent({
+          userId,
+          source: "api",
+          eventName: "subscription_cancel_failed",
+          status: "warning",
+          reason: "concurrent_state_change",
+          metadata: cancelAuditMetadata({
+            requestId,
+            provider: sub.provider ?? null,
+            subscriptionId: sub.providerSubscriptionId ?? null,
+            statusBefore: before,
+          }),
+        });
+        return { kind: "inactive", status: "concurrent_state_change" };
+      }
       await recordBillingAuditEvent({
         userId,
         source: "api",
@@ -837,7 +890,7 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
           provider: sub.provider ?? null,
           subscriptionId: sub.providerSubscriptionId ?? null,
           statusBefore: before,
-          statusAfter: updated ? subscriptionStatusSnapshot(updated) : null,
+          statusAfter: subscriptionStatusSnapshot(updated),
         }),
       });
       return { kind: "completed", provider: sub.provider ?? null };
