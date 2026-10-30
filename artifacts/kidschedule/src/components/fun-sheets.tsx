@@ -333,7 +333,7 @@ export function FunSheets({
       <Dialog open={previewing !== null} onOpenChange={open => {
       if (!open) setPreviewing(null);
     }}>
-        <DialogContent className="max-w-3xl w-[95vw] h-[85vh] p-0 gap-0 overflow-hidden" data-testid="funsheet-preview-dialog">
+        <DialogContent className="flex max-w-3xl w-[min(95dvw,calc(100dvw-var(--app-gutter-inline-start,12px)-var(--app-gutter-inline-end,12px)))] max-h-[var(--app-dialog-max-height,90dvh)] h-[min(85dvh,var(--app-dialog-max-height,90dvh))] flex-col p-0 gap-0 overflow-hidden" data-testid="funsheet-preview-dialog">
           <DialogHeader className="px-4 py-3 border-b">
             <DialogTitle className="text-base font-quicksand truncate pr-6">
               {previewing?.name ?? "Preview"}

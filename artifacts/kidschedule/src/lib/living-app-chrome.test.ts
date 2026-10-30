@@ -34,6 +34,7 @@ describe("living global chrome continuity", () => {
     );
     const indexCss = readFileSync(resolve(srcDir, "index.css"), "utf8");
     expect(indexCss).toContain('@import "./styles/living-app-chrome.css"');
+    expect(indexCss).toContain('@import "./styles/amynest-viewport.css"');
     expect(chrome).toContain("html.amynest-living-universe");
     expect(chrome).toContain(".app-header");
     expect(chrome).toContain(".app-footer");
