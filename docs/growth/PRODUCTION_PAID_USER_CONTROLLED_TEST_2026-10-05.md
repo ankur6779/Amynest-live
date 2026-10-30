@@ -1,6 +1,10 @@
 # Production paid-user identity/attribution repair — 5 Oct 2026
 
-**Final status:** `PRODUCTION REPAIR VERIFIED — READY FOR CLEAN DEVICE TEST`
+**Backend/web repair status (5 Oct 2026):** `PRODUCTION REPAIR VERIFIED — READY FOR CLEAN DEVICE TEST`
+
+**Android (30 Oct 2026):** `ANDROID DEVICE TEST BLOCKED`
+
+**CI (30 Oct 2026):** `CI FAILURE ROOT CAUSE VERIFIED — FIX BLOCKED`
 
 ```
 ADS CAMPAIGN 23986249354: PAUSED
@@ -211,3 +215,149 @@ Required later chain, every link evidenced:
 Google Ads click → Play Store → Install Referrer → native attribution → stable device ID → Firebase UID → RevenueCat UID → real Play purchase → RevenueCat INITIAL_PURCHASE → subscription → acquisition attribution → campaign/click id → Ads conversion ledger (`shouldUpload=false` until separately approved).
 
 Do not fabricate a gclid to skip the click.
+
+---
+
+## Android Native Readiness
+
+Inspected 30 Oct 2026. Git `main` HEAD `5158b0ca70fe23497b19666b346e5613335a5ca9`, working tree clean, tracking `origin/main`. Both `c41d74529` and `5158b0ca7` are ancestors of HEAD.
+
+Native identity files were introduced in `c41d74529` and remain in HEAD. They live under `android/` (Play WebView wrapper), not Capacitor.
+
+### Native implementation (source + Gradle source set)
+
+| Concern | File / method | Commit |
+|---|---|---|
+| Install Referrer capture | `InstallReferrerBridge.queryPlayReferrer` / `prefetch` / `fetchOn` | `c41d74529` |
+| Persist referrer + click ids | `NativeAnalyticsSpine.onReferrer`, prefs `amynest_analytics` / `referrer_json`; `parseReferrer` stores gclid/gbraid/wbraid/campaign_id | `c41d74529` |
+| Stable app-scoped device ID | `NativeAnalyticsSpine.getOrCreateDeviceId` — UUID in `SharedPreferences` `amynest_analytics` / `device_id` (not advertising ID / IMEI / serial / MAC) | `c41d74529` |
+| Document-start injection | `NativeAnalyticsSpine.installDocumentStart` → `WebViewCompat.addDocumentStartJavaScript`; called from `MainActivity` **before** `loadUrl` | `c41d74529` |
+| Native `first_open` ACK | `sendFirstOpenIfFreshInstall` POSTs `/api/analytics/preauth-events`; `KEY_FIRST_OPEN_SENT` set only if POST ok | `c41d74529` |
+| Firebase UID stitch | JS `analytics` authed ingest → `stitchDeviceAnalyticsIdentity` (`device:{id}` → Firebase UID) | `c41d74529` |
+| RevenueCat login | `AmyNestApp.initRevenueCat` uses persisted UID if present; JS `syncIdentifiedRevenueCatUser` → `BillingBridge.setUserId` → `Purchases.logInWith` | `c41d74529` |
+| Anonymous purchase guard | `BillingBridge.purchase` returns `authenticated_identity_required` if no persisted canonical UID; refuses `$RCAnonymousID` | `c41d74529` |
+| Server webhook / subscription | `POST /api/subscription/webhook` Bearer `REVENUECAT_WEBHOOK_SECRET`; `INITIAL_PURCHASE` → `recordServerPurchaseTruth` | `c41d74529` |
+
+Gradle inclusion: `settings.gradle.kts` `include(":app")`; sources under `android/app/src/main/kotlin/`. ProGuard keep rules include `NativeAnalyticsSpine` and `InstallReferrerBridge`.
+
+**Artifact-level proof (not Play-uploaded):** local `assembleRelease` APK dex contains `Lcom/amynest/app/NativeAnalyticsSpine;`, `Lcom/amynest/app/InstallReferrerBridge;`, and `authenticated_identity_required`.
+
+This is **not** proof that Play Production currently ships that APK.
+
+### Build environment
+
+| Item | Result |
+|---|---|
+| JDK | Android Studio JBR OpenJDK 21.0.10 (`JAVA_HOME` otherwise unset; `/usr/bin/java` is a macOS stub) |
+| Android SDK | `$HOME/Library/Android/sdk` — platforms 35/36/36.1, build-tools 36.1.0 |
+| Gradle wrapper | `android/gradlew` + Gradle 9.1.0 |
+| `local.properties` `sdk.dir` | present |
+| `keystore.properties` | present (values not printed) |
+| `adb` | `$HOME/Library/Android/sdk/platform-tools/adb` — daemon started; **no devices** |
+| Android unit tests | no `android/app/src/test` or `androidTest` tree |
+
+### Artifacts
+
+| Variant | Result |
+|---|---|
+| `:app:assembleDebug` | **FAILED** — `processDebugGoogleServices`: no client for `com.amynest.app.debug` in `google-services.json` |
+| `:app:assembleRelease` | **BUILD SUCCESSFUL** in 26s (local only) |
+
+| Field | Value |
+|---|---|
+| Git SHA used | `5158b0ca70fe23497b19666b346e5613335a5ca9` |
+| Artifact | APK `android/app/build/outputs/apk/release/app-release.apk` |
+| Package | `com.amynest.app` |
+| versionName | `1.4.66` |
+| versionCode | `109` |
+| Wrapper constant | `PushBridge.WRAPPER_VERSION = 2.8.0` |
+| SHA-256 | `7fafe1a6c9150c489ebf8875ff0ea3f2432bf67cefc4957f6fdbdc00d8b28c4d` |
+| Built | 2026-10-30 22:11 local |
+| Play Production upload | **not performed** |
+
+### Device availability
+
+`adb devices -l` → empty (daemon running, zero attachments).
+
+**Status: `ANDROID DEVICE TEST BLOCKED`**
+
+To continue:
+
+1. Attach a physical Android device with USB debugging **or** a Google Play–enabled emulator.
+2. Confirm `adb devices` lists it.
+3. Sideload/internal-install the local `1.4.66` (`109`) artifact that contains `NativeAnalyticsSpine` (do **not** upload to Play Production for this step).
+4. Verify on device, in order, before any purchase: native device id stability across WebView reload → unsigned native `first_open` ACK → Firebase login stitch → RevenueCat `appUserID` equals Firebase UID → anonymous purchase refused.
+5. Only then a Play Billing test purchase.
+
+Unverified runtime gates (no device evidence): Install Referrer, native device-id persistence, native first_open ACK on device, Firebase stitch, RevenueCat identified login, purchase guard, Play purchase.
+
+---
+
+## GitHub Actions Failure
+
+| Field | Evidence |
+|---|---|
+| Workflow | Production deploy (gated) — `.github/workflows/deploy-production.yml` |
+| Latest run | [37350137383](https://github.com/ankur6779/Amynest-live/actions/runs/37350137383) on `5158b0ca7` (30 Oct 2026 17:40 UTC start) |
+| Overall | **failure** |
+| Failing job | `Deploy Cloudflare API proxy worker` (databaseId `111899842006`) |
+| Failing step | `Deploy amynest-api-proxy` → `bash scripts/deploy-cloudflare-api-proxy.sh` |
+| Exit code | **1** |
+| Wrangler | 4.147.0 |
+| Token present | yes (`CLOUDFLARE_API_TOKEN` set; value redacted) |
+| Error | `A request to the Cloudflare API (/accounts/362bb082e16cf42fbcd036e164f0fbc4/workers/services/amynest-api-proxy) failed.` **`No access to the specified service.`** |
+| When | **during** `wrangler deploy`, after checkout/setup-node; not a test failure; not a Pages failure |
+
+Same error on earlier identity-repair run [37346651736](https://github.com/ankur6779/Amynest-live/actions/runs/37346651736).
+
+Root cause: GitHub secret `CLOUDFLARE_API_TOKEN` authenticates but lacks **Workers Scripts Edit** (or equivalent) on Cloudflare account `362bb082e16cf42fbcd036e164f0fbc4` for worker `amynest-api-proxy`. The deploy script already documents that Pages Edit is not enough. This is a **credentials/permission** issue, not a worker source bug.
+
+`infra/cloudflare/amynest-api-proxy/src/worker.test.mjs` — **pass** locally (not the CI failure).
+
+No repository code change was made. Fixing CI requires updating the GitHub secret (or Cloudflare API token permissions), which is a production-credentials change and is **blocked** without owner approval. Pushing a no-op to “make CI green” was not done.
+
+### Deployment planes (keep separate)
+
+| Plane | Status | Evidence |
+|---|---|---|
+| Cloudflare Pages | **success** in run 37350137383 | live `index-DQaIcJb1.js` |
+| Coolify API | **serving** | `POST /api/analytics/preauth-events` policy responses; `/api/health` `{ok:true}` `x-amynest-backend: coolify` |
+| Cloudflare API proxy worker **CI deploy** | **failed** | wrangler “No access to the specified service” |
+| Cloudflare API proxy worker **live traffic** | **still routing** | www `/api/health` has `cf-ray` + `x-amynest-trace-cf-ms` (set in `worker.js`); Coolify origin health lacks that CF trace header |
+| Overall GHA | **failure** | one required job failed |
+
+A failed worker **deploy job** does not prove `/api` is down. It proves CI could not **update** the worker.
+
+**CI status: `CI FAILURE ROOT CAUSE VERIFIED — FIX BLOCKED`**
+
+Required owner action: grant the GitHub `CLOUDFLARE_API_TOKEN` secret Workers Scripts Edit on account `362bb082e16cf42fbcd036e164f0fbc4` for `amynest-api-proxy`, then re-run only the worker job (do not treat a Pages/API redeploy as the fix).
+
+---
+
+## Production Safety
+
+Checked 30 Oct 2026 ~16:40 UTC. No Ads mutations. No AAB uploaded to Play. No extra valid `first_open` probe. No production DB writes for this pass (ledger/table SELECT only).
+
+| Check | Result |
+|---|---|
+| Campaign `23986249354` | **PAUSED**, ₹400/day, customer `6395859996` |
+| Invalid preauth body | **400** `invalid_body` |
+| Missing device id | **400** `missing_device_id` |
+| Unsigned `purchase_success` | **202** `accepted:0` `rejectedPreauthPolicy:1` |
+| Live JS ACK-after-POST | `analytics-service-gF6F5k1Y.js`: `shouldEmitFirstOpen` does not `setItem` before return; `markFirstOpenDelivered` present |
+| Migration 0051 | both tables present |
+| Ads ledger | **0** rows; no upload-like statuses |
+| RevenueCat webhook unsigned | **401** `invalid_webhook_signature` |
+
+**Never `READY FOR ADS RESUME`.**
+
+---
+
+## Final status (30 Oct 2026)
+
+| Stream | Status |
+|---|---|
+| Backend/web identity repair | still `PRODUCTION REPAIR VERIFIED — READY FOR CLEAN DEVICE TEST` |
+| Android | **`ANDROID DEVICE TEST BLOCKED`** |
+| CI worker job | **`CI FAILURE ROOT CAUSE VERIFIED — FIX BLOCKED`** |
+| Ads | **PAUSED** — not resume-ready |
