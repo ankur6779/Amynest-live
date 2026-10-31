@@ -8,7 +8,7 @@ import {
   adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
   hasValidPaidPeriodEnd,
@@ -927,9 +927,14 @@ export async function maybeAutoGrantPremium(
     plan = (grant[0].plan as Exclude<Plan, "free">) ?? "yearly";
   }
 
+  // getOrCreate resolves sticky B→A; write must target that owner row or the
+  // grant silently updates 0 rows / an orphan Firebase uid after recovery.
   const sub = await getOrCreateSubscription(userId, db, phoneNumber);
   if (isPremiumNow(sub)) return;
   const premiumUntil = new Date("2099-12-31T23:59:59.000Z");
+  // Conditional update: never clobber a concurrent Razorpay/RC activate that
+  // moved the row onto a store provider between the isPremiumNow check and
+  // this UPDATE (would flip provider→manual and orphan billing lifecycle).
   await db
     .update(subscriptionsTable)
     .set({
@@ -947,7 +952,15 @@ export async function maybeAutoGrantPremium(
       cancelAtPeriodEnd: 0,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId));
+    .where(
+      and(
+        eq(subscriptionsTable.userId, sub.userId),
+        or(
+          eq(subscriptionsTable.provider, "none"),
+          eq(subscriptionsTable.provider, "manual"),
+        ),
+      ),
+    );
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {
