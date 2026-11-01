@@ -363,6 +363,12 @@ async function notifyReferralRewardUnlocked(
 
 /**
  * Idempotently grants any unclaimed reward milestones for the referrer.
+ *
+ * Paid referrers receive shareable gift tokens; everyone else receives personal
+ * bonus days. Gift inserts MUST run inside the same transaction as the
+ * referralRewardsGranted bump — minting after commit permanently burns the
+ * milestone when createGiftToken fails or the process dies (activateSubscription
+ * also swallows markReferralPaid errors, so there is no reliable retry).
  */
 export async function tryGrantReferralReward(referrerUserId: string): Promise<number> {
   const sub = await getOrCreateSubscription(referrerUserId);
@@ -392,15 +398,13 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
 
     if (!isPaid) {
       await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
+    } else {
+      for (let i = 0; i < toGrant; i++) {
+        await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS, tx);
+      }
     }
     return toGrant;
   });
-
-  if (granted > 0 && isPaid) {
-    for (let i = 0; i < granted; i++) {
-      await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS);
-    }
-  }
 
   if (granted > 0) {
     await notifyReferralRewardUnlocked(referrerUserId, granted, already + granted, isPaid);
