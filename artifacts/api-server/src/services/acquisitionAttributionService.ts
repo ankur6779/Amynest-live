@@ -113,6 +113,9 @@ export async function recordPreauthAttribution(
         gbraid: ids.gbraid,
         wbraid: ids.wbraid,
         campaignId: ids.campaignId,
+        utmSource: ids.utmSource,
+        utmMedium: ids.utmMedium,
+        utmCampaign: ids.utmCampaign,
         sourceMetadata: { lastEvent: ev.name },
         at: now,
       });

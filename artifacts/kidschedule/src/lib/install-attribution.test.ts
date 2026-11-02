@@ -21,6 +21,7 @@ import {
   emitInstallSourceOnce,
   getInstallAttribution,
   getInstallSourceLabel,
+  readLastTouchAttribution,
 } from "./install-attribution";
 
 describe("install-attribution gbraid/wbraid", () => {
@@ -48,9 +49,12 @@ describe("install-attribution gbraid/wbraid", () => {
     };
     capturePlayInstallReferrer();
     const attr = getInstallAttribution();
-    expect(attr?.gclid).toBe("g2");
-    expect(attr?.gbraid).toBe("gb-play");
-    expect(attr?.wbraid).toBe("wb-play");
+    expect(attr?.gclid).toBe("g1");
+    expect(attr?.gbraid).toBe("gb-test");
+    expect(attr?.wbraid).toBe("wb-test");
+    expect(attr?.utmMedium).toBeUndefined();
+    expect(readLastTouchAttribution()?.gclid).toBe("g2");
+    expect(readLastTouchAttribution()?.utmMedium).toBe("cpc");
     expect(attr?.playReferrer).toContain("gb-play");
   });
 
@@ -122,5 +126,16 @@ describe("install-attribution gbraid/wbraid", () => {
     expect(getInstallSourceLabel(attr)).toBe("meta_ads");
     const again = getInstallAttribution();
     expect(again?.fbclid).toBe("meta-click-1");
+  });
+
+  it("keeps the first click id when a later landing URL carries a different one", () => {
+    captureCampaignAttribution();
+    window.history.replaceState({}, "", "/?gclid=g-later&utm_source=google&utm_campaign=second");
+    captureCampaignAttribution();
+    const attr = getInstallAttribution();
+    expect(attr?.gclid).toBe("g1");
+    expect(attr?.utmCampaign).toBeUndefined();
+    expect(readLastTouchAttribution()?.gclid).toBe("g-later");
+    expect(readLastTouchAttribution()?.utmCampaign).toBe("second");
   });
 });

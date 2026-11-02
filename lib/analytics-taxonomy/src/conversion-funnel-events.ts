@@ -85,6 +85,7 @@ export const CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS = {
     period_type: z.string().max(32).optional(),
     currency: z.string().max(8).optional(),
     price: z.number().finite().optional(),
+    purchase_class: z.enum(["paid", "introductory", "unknown"]).optional(),
   }),
   purchase_failed: z.object({
     ...funnelContext,

@@ -7,7 +7,7 @@ import {
   purchaseDedupeKey,
   scrubServerAnalyticsProps,
 } from "./analyticsSpine";
-import { classifyRevenueCatInitialPurchase } from "./revenueCatPurchaseClass";
+import { classifyRevenueCatWebhook } from "./revenueCatPurchaseClass";
 
 describe("analytics spine", () => {
   it("strips secrets, prompts, and client identity", () => {
@@ -88,11 +88,16 @@ describe("analytics spine", () => {
     assert.equal("child_name" in kept, false);
   });
 
-  it("does not treat a RevenueCat trial initial purchase as paid", () => {
-    assert.equal(classifyRevenueCatInitialPurchase("TRIAL"), "trial");
-    assert.equal(classifyRevenueCatInitialPurchase("trial"), "trial");
-    assert.equal(classifyRevenueCatInitialPurchase("NORMAL"), "paid");
-    assert.equal(classifyRevenueCatInitialPurchase("INTRO"), "paid");
-    assert.equal(classifyRevenueCatInitialPurchase(undefined), "paid");
+  it("does not treat a RevenueCat trial or unpriced intro as a paid conversion", () => {
+    const trial = classifyRevenueCatWebhook({ type: "INITIAL_PURCHASE", periodType: "TRIAL", price: 0 });
+    assert.equal(trial.countsAsPaid, false);
+    assert.equal(trial.recordPaidPurchase, false);
+    assert.equal(trial.funnelStep, "trial_started");
+    const intro = classifyRevenueCatWebhook({ type: "INITIAL_PURCHASE", periodType: "INTRO" });
+    assert.equal(intro.countsAsPaid, false);
+    assert.equal(intro.funnelStep, "introductory_unpriced");
+    const missing = classifyRevenueCatWebhook({ type: "INITIAL_PURCHASE" });
+    assert.equal(missing.countsAsPaid, false);
+    assert.equal(missing.purchaseClass, "unknown");
   });
 });

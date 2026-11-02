@@ -1,10 +1,10 @@
 # AmyNest product analytics readiness audit
 
-Date: 2 Nov 2026, Asia/Calcutta. Branch `cursor/analytics-readiness-audit-f731`, based on `29d1943d`.
+Date: 2 Nov 2026, Asia/Calcutta. Branch `cursor/analytics-readiness-audit-f731`. Certification update the same day. Base commit of the earlier audit was `29d1943d`.
 
 Verdict: **CONDITIONAL PASS**.
 
-This is not production readiness. Unit tests did not run an Android WebView, an iOS WKWebView, or Coolify Postgres. Migration `0052` was not applied. Google Ads campaign `23986249354` was not changed. No Ads conversion was uploaded. RevenueCat products and prices were not changed.
+This is not production readiness. Unit tests did not run an Android WebView, an iOS WKWebView, Coolify Postgres, or a live RevenueCat webhook. Migration `0052` was not applied. Google Ads campaign `23986249354` was not changed. No Ads conversion was uploaded. RevenueCat products and prices were not changed. The lifecycle and purchase-class work in this file is implemented in code. It was not deployed.
 
 ## 1. Feature instrumentation matrix
 
@@ -14,19 +14,19 @@ The matrix below is the action layer. `feature_viewed` means the route catalog m
 
 | Route or surface | Feature | Viewed | Started | Meaningful action | Completed | Abandon or exit | Modal | Identity | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| `/speech-coach`, `/speech-coach-v2`, `/speech-coach/live`, hub speech routes | speech_coach | yes | named session start plus `feature_started` for `speech_session` | limit, reconnect, ttfa, upgrade shown | `speech_coach_v2_session_complete` plus `feature_completed` | no leave-without-finish event | upgrade shown is not `trackModal` | device id, then Firebase uid. Named events still include numeric `childId` | partial |
-| `/talking-amy`, `/speech-coach/talk` | talking_amy | yes | no separate session start found | none beyond page entry | no | page_exit only | no | same | page only |
+| `/speech-coach`, `/speech-coach-v2`, `/speech-coach/live`, hub speech routes | speech_coach | yes | named session start plus `feature_started` for `speech_session` | one `speech_session_progress` on the first successful heartbeat | `speech_coach_v2_session_complete` plus `feature_completed` | `speech_session_abandoned` reason `leave` if the session started and `finishSession` did not run | upgrade shown is not `trackModal` | device id, then Firebase uid. Named events still include numeric `childId`. Feature events do not | partial |
+| `/talking-amy`, `/speech-coach/talk` | talking_amy | yes | `talking_amy_session_started` once per visit when a child profile exists | `talking_amy_first_interaction` on the first successful recording | `talking_amy_session_completed` the first time a turn reaches celebrate | `talking_amy_session_abandoned` reason `leave` if the visit ends before that | no | product events omit child id. The screen does not start without a child profile | partial |
 | `/assistant`, `/amy-ai-tutor`, `/learn-with-amy` | ask_amy | yes | message send | `ask_amy_message_sent` length only, `ask_amy_response_received` latency and success | response received | page_exit | no | same. Prompts and replies are scrubbed | partial |
-| Parenting hub coloring tile | coloring | hub open | `coloring_activity_started` on hub feature id | PDF save | `coloring_activity_completed` and `feature_completed` | download error emits `feature_error` | preview dialog is not `trackModal` | same. File id is not sent. Child name is not sent | partial |
-| `/worksheet` and hub worksheets | worksheets | yes | hub `feature_started` and `worksheet_opened` | `worksheet_downloaded`, `asset_download` | download is the completion that exists | no abandon event | no | same | partial |
-| Story player | stories | when the player route is open | `story_opened`, `video_started`, `feature_started` | playback | `video_completed`, `feature_completed` | no explicit abandon | no | same. Story text is not stored | partial |
-| `/games` | gaming_hub | yes | no in-module start found | no match or level event found | no | page_exit | no | same | page only |
-| `/discovery-worlds`, `/worlds/:slug` | discovery_worlds | yes | no `feature_started` | `object_open`, `answer_correct`, `answer_incorrect`, `replay` | no feature completion | page_exit | no | same | partial |
-| `/health-lab` | health_lab | yes | no | no in-module action found | no | page_exit | no | same | page only |
-| `/nutrition` | nutrition | yes | no | no meal-log analytics event found | no | page_exit | no | same | page only |
-| Infant hub inside parenting hub | infant | not in `analytics_events` | client-log adapter only | feed, sleep, diaper, cry, growth stay in client logs | not in the product spine | no | no | client logs are not the analytics identity spine | not in spine |
+| Parenting hub coloring tile | coloring | hub open | `coloring_activity_started` on hub feature id | `coloring_preview_opened` when the preview dialog opens | `coloring_activity_completed` and `feature_completed` on PDF save | download error emits `feature_error` | preview is an event, not `trackModal` | same. File id is not sent. Child name is not sent | partial |
+| `/worksheet` and hub worksheets | worksheets | yes | hub `feature_started` and `worksheet_opened` | `worksheet_downloaded`, `asset_download` | download is the completion that exists | `worksheet_generation_failed` with `error_class` `worksheet_error`. The error message is not copied | no | same | partial |
+| Story player | stories | when the player route is open | `story_opened`, `video_started`, `feature_started` | playback | `video_completed`, `feature_completed` | `feature_abandoned` if playback started and `ended` did not fire | no | same. Story text is not stored | partial |
+| `/games` | gaming_hub | yes | `game_opened` on play, `game_started` when play begins, including guests | `game_completed` and `game_result` with score, total, and perfect | result panel is that completion | no separate abandon. Leaving mid-game is `page_exit` | no | game id only. Title and child id are not on these events | partial |
+| `/discovery-worlds`, `/worlds/:slug` | discovery_worlds | yes | no `feature_started` | `object_open`, `answer_correct`, `answer_incorrect`, `replay` | `discovery_completed` when the daily adventure completes, outcome `complete` | page_exit | no | world id only. Child id from the client log is not copied | partial |
+| `/health-lab` | health_lab | yes | `health_lab_tool_opened` once per page load from the dashboard view | `health_lab_assessment_started` | `health_lab_assessment_completed` outcome `completed` | same event with outcome `abandoned` | no | game id and duration only. Score, shop, and cheat text stay in client logs | partial |
+| `/nutrition` | nutrition | yes | `nutrition_tool_opened` for hub and plan, once per session | `nutrition_plan_generated` for grocery and tiffin, counts only | `nutrition_plan_saved` with `entry_count` 1 when a meal outcome is recorded | no separate abandon | no | meal names are not copied | partial |
+| Infant hub inside parenting hub | infant | `infant_action` `hub_opened` once per load | not a session | `log_created`, `milestone_completed`, `exercise_completed` | those actions are the signal | no | no | no child id, measurements, notes, or cry text | partial |
 | `/routines`, `/routines/generate`, `/routines/:id` | routines | yes | `routine_generation_started` and `feature_started` | `routine_generated`, `routine_generation_failed`, `routine_feedback_submitted` | `feature_completed` on a committed routine | failure emits `feature_error` | no | same. Feature events do not copy `childId` | partial |
-| `/phonics`, `/abacus`, `/spelling`, `/olympiad`, `/rhymes`, `/audio-lessons`, `/study`, `/smart-math-tricks` | learning modules | yes on mapped routes | abacus has `abacus_mode_started` | abacus completion events already existed | abacus mode, mental, and challenge completions | no generic abandon | no | abacus events still include numeric `childId` | partial |
+| `/phonics`, `/abacus`, `/spelling`, `/olympiad`, `/rhymes`, `/audio-lessons`, `/study`, `/smart-math-tricks` | learning modules | yes on mapped routes | abacus has `abacus_mode_started`. Study zone session start is `learning_activity_started` | abacus completion events already existed | abacus completions, and `learning_activity_completed` when the study zone session ends | no generic abandon | no | study zone product events omit child id. Abacus events still include numeric `childId`. Phonics has no single completion callback, so none was invented | partial |
 | `/birth-sky/*` | birth_sky | yes | no new start | existing birth-sky events only where they already called `track()` | no new completion | page_exit | no | same | page plus legacy |
 | `/dashboard` | today | yes | card taps only where they already called `track()` | existing button events | no | page_exit | no | same | partial |
 | `/onboarding`, `/begin` | onboarding | yes | `onboarding_started` | `onboarding_step_completed` | `onboarding_completed` | page_exit | no | same | partial |
@@ -39,14 +39,10 @@ Routes with no feature name in `route-catalog.ts` are page analytics only. That 
 
 These are real product actions that still do not have an event. Generic fillers were not added.
 
-- Talking Amy has no session start or completion separate from the speech coach session events.
-- Speech practice has no abandon event when the child leaves before `finishSession`.
-- Games have no match start, level complete, or abandon event.
-- Health Lab has no result or session event.
-- Nutrition has no meal logged, plan opened, or plan completed event in the product spine.
-- Infant hub events are client logs. Feed, sleep, diaper, cry, and growth measurements were not copied into `analytics_events`.
-- Discovery answers are named events and do not emit `feature_completed`.
-- Coloring preview is a dialog and does not emit `trackModal`.
+- Games have no abandon event when the player leaves before `finishGame`. `page_exit` is the leave signal.
+- Phonics, spelling, olympiad, rhymes, and audio lessons have page entry and no single completion callback. No completion event was added.
+- Infant feed, sleep, diaper, and burp details stay in client logs. The spine receives `infant_action` `log_created` only. Growth measurements and cry text are not copied.
+- Coloring preview is `coloring_preview_opened`. It is not `trackModal`.
 - Most other dialogs and drawers still do not call `trackModal`.
 - Setting toggles are not named events.
 - Store renewals emit `subscription_funnel_event` step `subscription_renewed`. They do not emit a second `purchase_success`.
@@ -64,9 +60,11 @@ Android Install Referrer (Play)
   -> POST preauth or authed ingest
   -> user_acquisition_attribution (migration 0051)
         first_touch_at is the first row time and is kept
-        click ids are kept when a later event sends null
-        a later non-null click id replaces the stored click id
+        a stored non-null click id is never replaced
+        an empty first-touch click id can still be filled
+        a conflicting later click id is stored in source_metadata.lastTouch
         last_touch_at moves on every merge
+        the browser keeps the same rule in localStorage and writes amynest:last_touch_attribution
   -> stitch on login writes canonical user and Firebase uid on that row
   -> RevenueCat webhook resolves app_user_id to the same Firebase uid
   -> recordServerPurchaseTruth reads the attribution row by uid or device id
@@ -96,13 +94,13 @@ Path for one initial purchase:
 2. `POST /subscription/webhook` inserts `revenuecat_webhook_events` with `onConflictDoNothing` on the RevenueCat event id. A replay returns `duplicate: true` and does not write a second analytics row.
 3. `app_user_id` is resolved to the canonical Firebase uid. `$RCAnonymousID:` is not accepted as the purchase user.
 4. `period_type === TRIAL` on `INITIAL_PURCHASE` now writes `subscription_funnel_event` step `trial_started` only. It does not write `purchase_success`, `upgrade_completed`, or an ads ledger row.
-5. Any other `INITIAL_PURCHASE` calls `recordServerPurchaseTruth`. That writes `purchase_success`, a funnel step, and `upgrade_completed`, all with `source: server`. The same `transaction_id` collapses to one row. A later server event replaces a client row in place.
+5. `INITIAL_PURCHASE` is classified by `classifyRevenueCatWebhook`. `NORMAL` writes `purchase_success` with `purchase_class` `paid`. A priced `INTRO` writes `purchase_class` `introductory` and counts as paid. An `INTRO` without a positive price writes funnel step `introductory_unpriced` and does not count as paid. `PROMOTIONAL` writes `promotional_grant` and does not count as paid. A missing period type still writes `purchase_success` with `purchase_class` `unknown` and `countsAsPaid` false. The same `transaction_id` collapses to one row. Historical rows are not rewritten.
 6. Price and currency are stored when RevenueCat sends them. They are not invented.
 7. `RENEWAL` updates entitlement state and writes funnel step `subscription_renewed`. It is not a new paid conversion.
 8. `REFUND`, and `CANCELLATION` with reason `CUSTOMER_SUPPORT`, write funnel step `refund`. Other cancellations write `subscription_cancelled`. No refunded amount is stored.
 9. The ads ledger row is prepared with `shouldUpload: false` and `uploadStatus: blocked_ads_paused`. Eligible for a future upload only when a click id exists. Nothing is uploaded.
 
-Trial starts are not paid purchases on the forward path. Historical `purchase_success` rows written before `period_type` was stored cannot be split from trials. The dashboard says that. It does not report those rows as zero.
+Trial starts are not paid purchases. The Product paid-conversion count includes `purchase_class` `paid` or `introductory`, and legacy server rows whose `period_type` is `NORMAL`. Other server purchase rows, including rows with no class and no `NORMAL` period, are `unknownPurchaseClass`. They are not rewritten and they are not counted as paid. Taxes, store commission, and net proceeds are not in the webhook payload. Razorpay list-price MRR is not store proceeds.
 
 Internal age trials (`trackServerSubscriptionFunnel(..., "trial_started")`) and `speech_coach_trial_started` are separate from store trials. Speech trials are labeled on their own.
 
@@ -140,13 +138,57 @@ This audit did not apply `0052`.
 
 ## 7. Dashboard completeness
 
-`/admin/growth` Product section now shows installs as first opens, activated users, store trial starts, speech trial starts, server paid conversions, refund or cancel event counts, D1, D3, and D7, paywall, checkout, feature completion, feature users who also have a server paid event in the same range, and acquisition-bucket conversion.
+`/admin/growth` Product section shows installs, activation, store trial starts, speech trial starts, server paid conversions, unknown purchase class, refund or cancel event counts, retention, feature starts and completions for the named lifecycle events, and acquisition-bucket conversion.
 
-MRR and refund amount render as **Not collected**, with the reason. They are not zeros. An empty table means the query ran and found no rows in the selected range.
+Reliability labels:
+
+- Received and rejected are process counters since the API process started. Zero means this process has not seen that outcome.
+- Device queue, device retries, and last device acknowledgement are **Not collected**.
+- Latest stored event is the newest `server_ts` in range. Null renders as **Zero** events in range.
+- Unknown attribution share is **Not applicable** when the range has no install events.
+- Missing platform and missing app version are counts. Zero is a real zero.
+- Purchase reconciliation is **Collected** when `revenuecat_webhook_events` can be read, and **Unverified** when it cannot. A difference between webhook rows and `purchase_success` is not itself an error, because trials do not write `purchase_success`.
+- MRR, refund amount, taxes, and net proceeds are **Not collected**.
+
+An empty table means the query ran and found no rows in the selected range.
 
 Feature-to-paid is same-range overlap, not a causal attribution model.
 
-## 8. Files changed in this audit
+## 8. Files changed in this certification
+
+Feature bridges and attribution:
+
+- `artifacts/kidschedule/src/pages/talking-amy/index.tsx`
+- `artifacts/kidschedule/src/lib/talking-amy-telemetry.ts`
+- `artifacts/kidschedule/src/pages/games.tsx`
+- `artifacts/kidschedule/src/features/health-lab/health-lab-analytics.ts`
+- `artifacts/kidschedule/src/features/nutrition/lib/nutrition-hub-analytics.ts`
+- `artifacts/kidschedule/src/features/nutrition/lib/nutrition-memory-sync.ts`
+- `artifacts/kidschedule/src/lib/infant-hub-analytics.ts`
+- `artifacts/kidschedule/src/lib/discovery-worlds-telemetry.ts`
+- `artifacts/kidschedule/src/lib/study-zone-analytics.ts`
+- `artifacts/kidschedule/src/components/coloring-books.tsx`
+- `artifacts/kidschedule/src/components/story-player.tsx`
+- `artifacts/kidschedule/src/features/worksheet-studio/worksheet-studio-analytics.ts`
+- `artifacts/kidschedule/src/features/speech-coach-v2/lib/analytics.ts`
+- `artifacts/kidschedule/src/features/speech-coach-v2/hooks/use-speech-coach-v2-session.ts`
+- `artifacts/kidschedule/src/lib/install-attribution.ts`
+- `artifacts/kidschedule/src/lib/analytics/analytics-service.ts`
+- `artifacts/kidschedule/src/lib/analytics/safe-product-track.ts`
+
+Server, dashboard, and tests:
+
+- `artifacts/api-server/src/services/revenueCatPurchaseClass.ts`
+- `artifacts/api-server/src/services/revenueCatPurchaseClass.test.ts`
+- `artifacts/api-server/src/services/acquisitionAttributionLogic.ts`
+- `artifacts/api-server/src/services/growth-dashboard/product-analytics.ts`
+- `artifacts/api-server/src/services/analyticsSpine.ts`
+- `artifacts/kidschedule/src/components/admin/growth/product-analytics-panel.tsx`
+- `lib/analytics-taxonomy/src/product-spine-events.ts`
+- `docs/analytics/ANALYTICS_EVENT_DICTIONARY.md`
+- `docs/analytics/ANALYTICS_DEPLOYMENT_RUNBOOK.md`
+
+## 8b. Files changed in the earlier audit pass
 
 - `artifacts/kidschedule/src/lib/analytics/analytics-service.ts`
 - `artifacts/kidschedule/src/lib/analytics/product-spine-client.test.ts`
@@ -172,38 +214,42 @@ Feature-to-paid is same-range overlap, not a causal attribution model.
 
 ## 9. Test results
 
-Kidschedule vitest, 6 files, 24 passed. Covers page view identity envelope, speech feature start and completion without a child id on the feature event, routine feature start, and the previous queue and route tests.
+Kidschedule vitest for the eight touched analytics files: 34 passed, 0 failed. Covers install first-touch immutability, Talking Amy, Health Lab, and infant product payloads, speech feature events, routine feature start, nutrition hub, meal memory, and the product spine client.
 
-API node tests, 35 passed. Covers spine allowlist, trial versus paid classification, server identity, purchase dedupe keys, attribution first-touch behavior, taxonomy, and pre-auth scrubbing.
+API node tests: `revenueCatPurchaseClass.test.ts`, `analyticsSpine.test.ts`, and `acquisitionAttributionLogic.test.ts` — 34 passed, 0 failed. Taxonomy catalog test: 11 passed. Catalog size is 215 names.
 
-Not run: Android WebView, iOS WKWebView, Coolify Postgres, RevenueCat webhook against a live store, Google Ads upload. Those are **UNVERIFIED**.
+`analytics-preauth.test.ts` was started in this environment and returned HTTP 429 from the in-memory rate limiter, then the process kept retrying Redis. Those route tests are **not passed**. They were not changed by this certification.
+
+Not run: Android WebView, iOS WKWebView, Coolify Postgres, a database integration test, a live RevenueCat webhook, and Google Ads upload. Those are **UNVERIFIED**. Migration `0052` was not executed.
 
 ## 10. Remaining issues
 
 P0
 
-- Do not apply `0052` or ship this as production measurement until schema deploy is explicitly approved.
-- Do not treat historical `purchase_success` rows as trial-free. `period_type` was not stored on them.
-- Do not describe iOS users as Google Ads acquired. There is no SKAdNetwork or click-id bridge.
-- Infant health, cry, feed, and growth details must stay out of general analytics.
+- Do not apply `0052` until the pre-migration duplicate checks in the runbook pass on Coolify. This certification did not run those checks.
+- Do not run `db:push` against Coolify. The Drizzle `event_id` unique index is not partial. Migration `0052` is partial. `CREATE INDEX IF NOT EXISTS` will not change an index that already exists.
+- Do not count `purchase_class` `unknown`, missing class without `period_type` `NORMAL`, trials, promotional grants, or unpriced introductory offers as paid.
+- Do not describe iOS users as Google Ads acquired. There is no SKAdNetwork, AdAttributionKit, or ATT prompt in `artifacts/amynest-capacitor/ios`.
+- Infant measurements, cry text, meal names, prompts, and child names stay out of these product events.
 
 P1
 
-- Games, Health Lab, Nutrition, and Talking Amy still have page entry without in-module actions.
 - Speech and abacus named events still carry numeric `childId`.
-- `mergeFirstTouch` replaces a stored click id when a later event sends a different non-null id. `first_touch_at` does not move. That is not strict first-touch for the identifier.
-- MRR in the Subscriptions section is a list-price estimate, not store proceeds.
-- Device queue depth is invisible to the admin API.
-- Dialogs are not instrumented except where a call site already existed.
+- Games have no abandon event before finish.
+- Phonics and the other learning routes without a completion callback stay at `feature_viewed`.
+- Device queue depth, retry count, and last device acknowledgement are not collected.
+- MRR in the Subscriptions section is a Razorpay list-price estimate, not App Store or Play Store proceeds.
+- Purchase reconciliation counts webhook rows. It does not classify trial versus paid from the webhook payload column.
+- Android WebView and iOS WKWebView were not executed.
 
 P2
 
-- D14 and D30 cohorts need the user to be old enough. A new cohort shows zero because the day has not arrived, which the rate renders as 0% once cohort size is non-zero. Read cohort size before reading the rate.
-- `INTRO` period type is classified as paid because it is billed. Confirm that against a real RevenueCat payload before using it for revenue.
+- D14 and D30 need a cohort old enough to measure. Read cohort size before the rate.
+- Most dialogs still do not call `trackModal`.
 - Admin feature-to-paid overlap is not an incrementality model.
 
 ## Verdict
 
 **CONDITIONAL PASS.**
 
-The spine can be reviewed and the API can run before migration `0052`. Staging is allowed only with that migration still unapplied until schema approval, with Android and iOS marked unverified, and with the Product dashboard labels above. It is not ready for production.
+The lifecycle events, first-touch rule, purchase classes, and reliability labels are implemented and covered by the unit tests that passed. The API can be deployed before migration `0052`. It is not READY FOR STAGING as a certified environment, and it is not READY FOR PRODUCTION. Database application, device behavior, live purchase reconciliation, and production event freshness are unverified.

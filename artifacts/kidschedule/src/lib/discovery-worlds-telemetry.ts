@@ -1,4 +1,5 @@
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 import {
   buildDiscoveryWorldsAnalyticsMeta,
   formatDiscoveryWorldsLogMessage,
@@ -19,5 +20,11 @@ export function trackDiscoveryWorldsEvent(
     type: "info",
     message: formatDiscoveryWorldsLogMessage(worldId, event),
     meta: buildDiscoveryWorldsAnalyticsMeta(worldId, event, detail),
+  });
+  if (event !== "world_daily_adventure_complete") return;
+  safeProductTrack("discovery_completed", {
+    feature_name: "discovery_worlds",
+    world_id: String(worldId).slice(0, 64),
+    outcome: "complete",
   });
 }

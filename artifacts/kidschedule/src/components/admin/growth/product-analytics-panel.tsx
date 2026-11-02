@@ -17,6 +17,7 @@ type ProductAnalytics = {
     storeTrialStarts: number;
     speechTrialStarts: number;
     paidConversions: number;
+    unknownPurchaseClass: number;
     refundOrCancelEvents: number;
   };
   pages: Array<{ pageName: string; views: number; uniqueUsers: number; avgActiveMs: number }>;
@@ -57,6 +58,27 @@ type ProductAnalytics = {
     refundAmount: { state: "not_collected"; reason: string };
     deviceQueue: { state: "not_collected"; reason: string };
     historicalPaidPeriod: { state: "partial"; reason: string };
+    deviceRetryCount: { state: "not_collected"; reason: string };
+    lastDeviceSync: { state: "not_collected"; reason: string };
+    taxesAndNetProceeds: { state: "not_collected"; reason: string };
+  };
+  reliability: {
+    eventsInRange: number;
+    missingPlatform: number;
+    missingAppVersion: number;
+    latestServerTs: string | null;
+    unknownAttributionUsers: number;
+    attributionUsers: number;
+    purchaseReconciliation: {
+      state: "collected" | "unverified";
+      reason: string;
+      initialWebhooks: number | null;
+      initialTransactions: number | null;
+      serverPurchaseRows: number | null;
+      renewals: number | null;
+      cancelOrRefund: number | null;
+      billingIssues: number | null;
+    };
   };
   technical: {
     ingestionSuccessRate: number | null;
@@ -78,6 +100,11 @@ function queryUrl(preset: GrowthTimePreset, start: string, end: string): string 
     if (end) params.set("end", end);
   }
   return `/api/admin/growth/product-analytics?${params.toString()}`;
+}
+
+function share(part: number, whole: number): string {
+  if (whole === 0) return "Not applicable";
+  return `${Math.round((part / whole) * 1000) / 10}%`;
 }
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -183,12 +210,14 @@ export function ProductAnalyticsPanel({
         <Stat label="Store trial starts" value={data.executive.storeTrialStarts} />
         <Stat label="Speech trial starts" value={data.executive.speechTrialStarts} />
         <Stat label="Server paid conversions" value={data.executive.paidConversions} />
+        <Stat label="Unknown purchase class" value={data.executive.unknownPurchaseClass} />
         <Stat label="Refund or cancel events" value={data.executive.refundOrCancelEvents} />
         <Stat label="MRR" value="Not collected" />
       </section>
       <p className="text-xs text-muted-foreground">{data.availability.mrr.reason}</p>
       <p className="text-xs text-muted-foreground">{data.availability.refundAmount.reason}</p>
       <p className="text-xs text-muted-foreground">{data.availability.historicalPaidPeriod.reason}</p>
+      <p className="text-xs text-muted-foreground">{data.availability.taxesAndNetProceeds.reason}</p>
 
       <section className="rounded-2xl border border-white/10 p-4 space-y-2">
         <h2 className="font-quicksand font-semibold text-sm">Pages</h2>
@@ -275,11 +304,15 @@ export function ProductAnalyticsPanel({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Stat
             label="Ingest success"
-            value={data.technical.ingestionSuccessRate == null ? "—" : rate(data.technical.ingestionSuccessRate, 1)}
+            value={
+              data.technical.ingestionSuccessRate == null
+                ? "Not applicable"
+                : rate(data.technical.ingestionSuccessRate, 1)
+            }
           />
-          <Stat label="Accepted" value={data.technical.processQuality.accepted} />
+          <Stat label="Received (process)" value={data.technical.processQuality.accepted} />
           <Stat
-            label="Rejected"
+            label="Rejected (process)"
             value={
               data.technical.processQuality.rejected.unknownEvent
               + data.technical.processQuality.rejected.invalidProps
@@ -287,8 +320,37 @@ export function ProductAnalyticsPanel({
             }
           />
           <Stat label="Duplicate groups" value={data.technical.duplicateEventGroups} />
+          <Stat label="Events in range" value={data.reliability.eventsInRange} />
+          <Stat label="Device queue" value="Not collected" />
+          <Stat label="Device retries" value="Not collected" />
+          <Stat
+            label="Latest stored event"
+            value={data.reliability.latestServerTs ?? "Zero"}
+          />
+          <Stat
+            label="Unknown attribution"
+            value={share(data.reliability.unknownAttributionUsers, data.reliability.attributionUsers)}
+          />
+          <Stat label="Missing platform" value={data.reliability.missingPlatform} />
+          <Stat label="Missing app version" value={data.reliability.missingAppVersion} />
+          <Stat
+            label="Purchase reconciliation"
+            value={data.reliability.purchaseReconciliation.state === "collected" ? "Collected" : "Unverified"}
+          />
         </div>
+        <p className="text-xs text-muted-foreground">
+          Received and rejected counts are since this API process started. They are not the selected range. A zero there means this process has not seen that outcome.
+        </p>
         <p className="text-xs text-muted-foreground">{data.technical.queueBacklogNote}</p>
+        <p className="text-xs text-muted-foreground">{data.availability.deviceQueue.reason}</p>
+        <p className="text-xs text-muted-foreground">{data.availability.deviceRetryCount.reason}</p>
+        <p className="text-xs text-muted-foreground">{data.availability.lastDeviceSync.reason}</p>
+        <p className="text-xs text-muted-foreground">{data.reliability.purchaseReconciliation.reason}</p>
+        {data.reliability.purchaseReconciliation.state === "collected" ? (
+          <p className="text-xs text-muted-foreground">
+            Initial webhooks {data.reliability.purchaseReconciliation.initialWebhooks}. Distinct initial transactions {data.reliability.purchaseReconciliation.initialTransactions}. Server purchase rows {data.reliability.purchaseReconciliation.serverPurchaseRows}. Renewals {data.reliability.purchaseReconciliation.renewals}. Cancel or refund webhooks {data.reliability.purchaseReconciliation.cancelOrRefund}. Billing issues {data.reliability.purchaseReconciliation.billingIssues}.
+          </p>
+        ) : null}
         <Table
           headers={["Platform", "App version", "Events", "Users"]}
           rows={data.technical.coverage.map((row) => [row.platform, row.appVersion, row.events, row.users])}

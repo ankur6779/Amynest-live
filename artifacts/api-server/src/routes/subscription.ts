@@ -35,7 +35,7 @@ import {
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
-import { classifyRevenueCatInitialPurchase } from "../services/revenueCatPurchaseClass.js";
+import { classifyRevenueCatWebhook } from "../services/revenueCatPurchaseClass.js";
 import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
@@ -579,17 +579,13 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       });
     }
     if (event.type === "INITIAL_PURCHASE" && event.transaction_id && userId) {
-      const purchaseClass = classifyRevenueCatInitialPurchase(event.period_type);
-      if (purchaseClass === "trial") {
-        void trackServerSubscriptionFunnel(userId, "trial_started", {
-          source: "revenuecat",
-          transaction_id: event.transaction_id,
-          period_type: "TRIAL",
-          event_type: "INITIAL_PURCHASE",
-          ...(event.product_id ? { product_id: event.product_id } : {}),
-          ...(event.store ? { store: event.store } : {}),
-        });
-      } else {
+      const decision = classifyRevenueCatWebhook({
+        type: event.type,
+        periodType: event.period_type,
+        cancelReason: event.cancel_reason,
+        price: event.price,
+      });
+      if (decision.recordPaidPurchase) {
         const { recordServerPurchaseTruth } = await import("../services/serverPurchaseTruthService.js");
         void recordServerPurchaseTruth({
           canonicalUserId: userId,
@@ -601,6 +597,16 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
           periodType: event.period_type ?? undefined,
           price: typeof event.price === "number" ? event.price : undefined,
           currency: event.currency,
+          purchaseClass: decision.purchaseClass ?? "unknown",
+        });
+      } else if (decision.funnelStep) {
+        void trackServerSubscriptionFunnel(userId, decision.funnelStep, {
+          source: "revenuecat",
+          transaction_id: event.transaction_id,
+          event_type: "INITIAL_PURCHASE",
+          ...(event.period_type ? { period_type: event.period_type } : {}),
+          ...(event.product_id ? { product_id: event.product_id } : {}),
+          ...(event.store ? { store: event.store } : {}),
         });
       }
     }

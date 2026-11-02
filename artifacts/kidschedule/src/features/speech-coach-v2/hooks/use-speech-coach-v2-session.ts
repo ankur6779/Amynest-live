@@ -33,6 +33,8 @@ import {
   trackSpeechCoachV2LimitReached,
   trackSpeechCoachV2SessionComplete,
   trackSpeechCoachV2SessionStart,
+  trackSpeechSessionAbandoned,
+  trackSpeechSessionProgress,
 } from "../lib/analytics";
 
 export type SessionUiState =
@@ -92,6 +94,9 @@ export function useSpeechCoachV2Session(input: {
 
   const responseStartedAtRef = useRef<number | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionStartedRef = useRef(false);
+  const sessionTerminalRef = useRef(false);
+  const progressTrackedRef = useRef(false);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
@@ -143,6 +148,7 @@ export function useSpeechCoachV2Session(input: {
       trackSpeechCoachPaidUsage({ childId });
     }
     setUiState("ready");
+    sessionStartedRef.current = true;
     trackSpeechCoachV2SessionStart({
       childId,
       sessionId: started.sessionId,
@@ -223,6 +229,7 @@ export function useSpeechCoachV2Session(input: {
         trackSpeechCoachPaidUsage({ childId });
       }
       setUiState("ready");
+      sessionStartedRef.current = true;
       trackSpeechCoachV2SessionStart({
         childId,
         sessionId: started.sessionId,
@@ -259,6 +266,14 @@ export function useSpeechCoachV2Session(input: {
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
+
+  useEffect(() => {
+    return () => {
+      if (sessionStartedRef.current && !sessionTerminalRef.current) {
+        trackSpeechSessionAbandoned("leave");
+      }
+    };
+  }, []);
 
   const handleUserTranscript = useCallback(
     async (transcript: string, rawTranscript?: string) => {
@@ -316,6 +331,10 @@ export function useSpeechCoachV2Session(input: {
       })
         .then((hb) => {
           setRemainingSeconds(hb.remainingSeconds);
+          if (!progressTrackedRef.current) {
+            progressTrackedRef.current = true;
+            trackSpeechSessionProgress();
+          }
         })
         .catch((err: unknown) => {
           if (isSpeechCoachLimitError(err)) {
@@ -333,6 +352,7 @@ export function useSpeechCoachV2Session(input: {
 
   const finishSession = useCallback(async () => {
     if (!sessionState || !tabLockToken) return;
+    sessionTerminalRef.current = true;
     setUiState("celebrating");
 
     try {

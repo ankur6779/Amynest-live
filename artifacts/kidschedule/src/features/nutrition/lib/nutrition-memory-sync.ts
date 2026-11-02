@@ -101,6 +101,9 @@ export function recordLocalMealOutcome(
   ].slice(0, 500);
 
   writeStore(childId, { version: 1, childId, entries: next });
+  void import("@/lib/analytics/safe-product-track").then(({ safeProductTrack }) => {
+    safeProductTrack("nutrition_plan_saved", { feature_name: "nutrition", entry_count: 1 });
+  });
   return next;
 }
 

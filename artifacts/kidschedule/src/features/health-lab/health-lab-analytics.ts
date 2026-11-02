@@ -3,6 +3,7 @@
  */
 
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 
 export type HealthLabAnalyticsEvent =
   | "health_lab_session_start"
@@ -26,6 +27,43 @@ export type HealthLabAnalyticsEvent =
   | "health_lab_sync_success"
   | "health_lab_sync_failure";
 
+let healthLabToolOpened = false;
+
+function clipId(value: string | number | boolean | undefined): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, 64) : undefined;
+}
+
+/** Product spine only. Scores, shop, and cheat text stay in client logs. */
+function bridgeHealthLabProduct(
+  event: HealthLabAnalyticsEvent,
+  meta: Record<string, string | number | boolean | undefined>,
+): void {
+  if (event === "health_lab_dashboard_view") {
+    if (healthLabToolOpened) return;
+    healthLabToolOpened = true;
+    safeProductTrack("health_lab_tool_opened", { feature_name: "health_lab" });
+    return;
+  }
+  const gameId = clipId(meta.gameId);
+  if (event === "health_lab_session_start") {
+    safeProductTrack("health_lab_assessment_started", {
+      feature_name: "health_lab",
+      ...(gameId ? { game_id: gameId } : {}),
+    });
+    return;
+  }
+  if (event !== "health_lab_session_complete" && event !== "health_lab_session_abandon") return;
+  const duration = typeof meta.durationMs === "number" && Number.isFinite(meta.durationMs)
+    ? Math.max(0, Math.round(meta.durationMs))
+    : undefined;
+  safeProductTrack("health_lab_assessment_completed", {
+    feature_name: "health_lab",
+    outcome: event === "health_lab_session_complete" ? "completed" : "abandoned",
+    ...(gameId ? { game_id: gameId } : {}),
+    ...(duration !== undefined ? { duration_ms: duration } : {}),
+  });
+}
+
 function emit(
   event: HealthLabAnalyticsEvent,
   meta: Record<string, string | number | boolean | undefined>,
@@ -35,6 +73,7 @@ function emit(
     message: `[health-lab] ${event}`,
     meta: { feature: "health_lab", event, ...meta },
   });
+  bridgeHealthLabProduct(event, meta);
 }
 
 export function trackHealthLabEvent(

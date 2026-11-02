@@ -1,4 +1,5 @@
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 
 export type StudyZoneAnalyticsEvent =
   | "study_zone_session_start"
@@ -38,6 +39,10 @@ export function trackStudyZoneEvent(
 export function trackStudyZoneSessionStart(childId: number, mode: string): void {
   sessionStarts.set(childId, Date.now());
   trackStudyZoneEvent("study_zone_session_start", childId, { mode });
+  safeProductTrack("learning_activity_started", {
+    feature_name: "study_zone",
+    module: mode.slice(0, 64),
+  });
 }
 
 export function trackStudyZoneSessionEnd(childId: number, mode: string): void {
@@ -48,6 +53,11 @@ export function trackStudyZoneSessionEnd(childId: number, mode: string): void {
     mode,
     durationMs,
     durationSec: Math.round(durationMs / 1000),
+  });
+  safeProductTrack("learning_activity_completed", {
+    feature_name: "study_zone",
+    module: mode.slice(0, 64),
+    duration_ms: Math.max(0, Math.round(durationMs)),
   });
 }
 

@@ -13,6 +13,7 @@ import {
   type HubDownloadWallet,
 } from "@/lib/hub-pdf-download";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -329,7 +330,10 @@ export function ColoringBooks({
                       {file.name}
                     </p>
                     <div className="flex flex-col gap-1.5">
-                      <Button size="sm" variant="outline" className="w-full h-8 px-2 text-[11px] gap-1 rounded-xl" onClick={() => setPreviewing(file)} data-testid={`coloring-preview-${file.id}`}>
+                      <Button size="sm" variant="outline" className="w-full h-8 px-2 text-[11px] gap-1 rounded-xl" onClick={() => {
+                        setPreviewing(file);
+                        safeProductTrack("coloring_preview_opened", { feature_name: "coloring" });
+                      }} data-testid={`coloring-preview-${file.id}`}>
                         <Eye className="h-3.5 w-3.5 shrink-0" />
                         {t("components.coloring_books.preview")}
                       </Button>

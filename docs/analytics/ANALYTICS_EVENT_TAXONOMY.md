@@ -1,6 +1,6 @@
 # AmyNest analytics event taxonomy
 
-The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **193** event names. Unknown names are rejected and counted.
+The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **215** event names. Unknown names are rejected and counted. Lifecycle definitions are in `ANALYTICS_EVENT_DICTIONARY.md`.
 
 Product-spine names added for this work (23):
 

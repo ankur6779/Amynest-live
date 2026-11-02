@@ -20,6 +20,17 @@ export function trackSpeechCoachV2SessionStart(props: {
   });
 }
 
+export function trackSpeechSessionProgress(): void {
+  track("speech_session_progress", { feature_name: "speech_session" });
+}
+
+export function trackSpeechSessionAbandoned(reason: string): void {
+  track("speech_session_abandoned", {
+    feature_name: "speech_session",
+    reason: reason.slice(0, 64),
+  });
+}
+
 export function trackSpeechCoachV2SessionComplete(props: {
   childId: number;
   sessionId: string;

@@ -8,12 +8,82 @@ import { getAnalyticsQuality } from "../analyticsIngestService";
 import { parseGrowthTimeRange } from "./timeRange.js";
 import { ANALYTICS_NOISE_FILTER, rowNum } from "./sqlHelpers.js";
 
+const SERVER_PAID = sql`
+  event_name IN ('purchase_success', 'upgrade_completed')
+  AND coalesce(props->>'source', '') = 'server'
+  AND (
+    props->>'purchase_class' IN ('paid', 'introductory')
+    OR (
+      coalesce(props->>'purchase_class', '') = ''
+      AND upper(coalesce(props->>'period_type', '')) = 'NORMAL'
+    )
+  )
+`;
+
 const PAGE_EVENTS = sql`event_name IN ('screen_view', 'page_view')`;
 const EXIT_EVENTS = sql`event_name IN ('screen_leave', 'page_exit')`;
 const ACTIVITY = sql`event_name NOT IN ('device_header_missing', 'session_heartbeat')`;
 
 function iso(d: Date): string {
   return d.toISOString();
+}
+
+function isoOrNull(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+async function readPurchaseReconciliation(start: string, end: string) {
+  const empty = {
+    state: "unverified" as const,
+    reason:
+      "revenuecat_webhook_events could not be read. This is unverified, not a count of zero.",
+    initialWebhooks: null as number | null,
+    initialTransactions: null as number | null,
+    serverPurchaseRows: null as number | null,
+    renewals: null as number | null,
+    cancelOrRefund: null as number | null,
+    billingIssues: null as number | null,
+  };
+  try {
+    const hooks = await db.execute(sql`
+      SELECT
+        count(*) FILTER (WHERE event_type = 'INITIAL_PURCHASE')::int AS initial_webhooks,
+        count(DISTINCT transaction_id) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND coalesce(transaction_id, '') <> ''
+        )::int AS initial_transactions,
+        count(*) FILTER (WHERE event_type = 'RENEWAL')::int AS renewals,
+        count(*) FILTER (WHERE event_type IN ('CANCELLATION', 'REFUND'))::int AS cancel_or_refund,
+        count(*) FILTER (WHERE event_type = 'BILLING_ISSUE')::int AS billing_issues
+      FROM revenuecat_webhook_events
+      WHERE received_at >= ${start}::timestamptz
+        AND received_at <= ${end}::timestamptz
+    `);
+    const purchases = await db.execute(sql`
+      SELECT count(*)::int AS server_purchase_rows
+      FROM analytics_events
+      WHERE event_name = 'purchase_success'
+        AND coalesce(props->>'source', '') = 'server'
+        AND server_ts >= ${start}::timestamptz
+        AND server_ts <= ${end}::timestamptz
+    `);
+    const hookRow = rowsOf(hooks)[0] ?? {};
+    const purchaseRow = rowsOf(purchases)[0] ?? {};
+    return {
+      state: "collected" as const,
+      reason:
+        "Webhook counts are received events. period_type stays inside the payload, so this comparison does not split trial from paid. Server purchase_success includes paid, introductory, and unknown classes.",
+      initialWebhooks: rowNum(hookRow, "initial_webhooks"),
+      initialTransactions: rowNum(hookRow, "initial_transactions"),
+      serverPurchaseRows: rowNum(purchaseRow, "server_purchase_rows"),
+      renewals: rowNum(hookRow, "renewals"),
+      cancelOrRefund: rowNum(hookRow, "cancel_or_refund"),
+      billingIssues: rowNum(hookRow, "billing_issues"),
+    };
+  } catch {
+    return empty;
+  }
 }
 
 function rowsOf(result: { rows: unknown[] }): Record<string, unknown>[] {
@@ -63,11 +133,19 @@ export async function computeProductAnalytics(input: {
           count(DISTINCT user_id) FILTER (
             WHERE event_name = 'speech_coach_trial_started'
           )::int AS speech_trial_starts,
+          count(DISTINCT user_id) FILTER (WHERE ${SERVER_PAID})::int AS paid_conversions,
           count(DISTINCT user_id) FILTER (
             WHERE event_name IN ('purchase_success', 'upgrade_completed')
               AND coalesce(props->>'source', '') = 'server'
               AND upper(coalesce(props->>'period_type', '')) <> 'TRIAL'
-          )::int AS paid_conversions,
+              AND NOT (
+                props->>'purchase_class' IN ('paid', 'introductory')
+                OR (
+                  coalesce(props->>'purchase_class', '') = ''
+                  AND upper(coalesce(props->>'period_type', '')) = 'NORMAL'
+                )
+              )
+          )::int AS unknown_purchase_class,
           count(*) FILTER (
             WHERE event_name = 'subscription_funnel_event'
               AND props->>'step' IN ('refund', 'subscription_cancelled')
@@ -129,16 +207,40 @@ export async function computeProductAnalytics(input: {
           coalesce(props->>'feature_name', props->>'feature', props->>'feature_id', event_name) AS feature_name,
           count(*) FILTER (WHERE event_name IN ('feature_viewed', 'feature_open'))::int AS views,
           count(DISTINCT user_id)::int AS unique_users,
-          count(*) FILTER (WHERE event_name IN ('feature_started', 'feature_open'))::int AS starts,
-          count(*) FILTER (WHERE event_name IN ('feature_completed', 'feature_complete'))::int AS completions,
-          count(*) FILTER (WHERE event_name = 'feature_abandoned')::int AS abandoned,
+          count(*) FILTER (
+            WHERE event_name IN (
+              'feature_started', 'feature_open',
+              'talking_amy_session_started', 'game_started', 'health_lab_assessment_started',
+              'learning_activity_started', 'speech_coach_v2_session_start', 'routine_generation_started'
+            )
+          )::int AS starts,
+          count(*) FILTER (
+            WHERE event_name IN (
+              'feature_completed', 'feature_complete',
+              'talking_amy_session_completed', 'game_completed', 'discovery_completed',
+              'coloring_activity_completed', 'learning_activity_completed',
+              'speech_coach_v2_session_complete', 'routine_generated', 'worksheet_downloaded',
+              'nutrition_plan_generated', 'nutrition_plan_saved'
+            )
+            OR (
+              event_name = 'health_lab_assessment_completed'
+              AND coalesce(props->>'outcome', '') = 'completed'
+            )
+          )::int AS completions,
+          count(*) FILTER (
+            WHERE event_name IN (
+              'feature_abandoned', 'talking_amy_session_abandoned', 'speech_session_abandoned'
+            )
+            OR (
+              event_name = 'health_lab_assessment_completed'
+              AND coalesce(props->>'outcome', '') = 'abandoned'
+            )
+          )::int AS abandoned,
           count(DISTINCT user_id) FILTER (
             WHERE event_name IN ('feature_started', 'feature_open', 'feature_completed', 'feature_complete')
               AND user_id IN (
                 SELECT user_id FROM analytics_events
-                WHERE event_name IN ('purchase_success', 'upgrade_completed')
-                  AND coalesce(props->>'source', '') = 'server'
-                  AND upper(coalesce(props->>'period_type', '')) <> 'TRIAL'
+                WHERE ${SERVER_PAID}
                   AND server_ts >= ${start}::timestamptz
                   AND server_ts <= ${end}::timestamptz
               )
@@ -175,11 +277,19 @@ export async function computeProductAnalytics(input: {
           count(DISTINCT user_id) FILTER (
             WHERE event_name = 'subscription_funnel_event' AND props->>'step' = 'trial_started'
           )::int AS trial_starts,
+          count(DISTINCT user_id) FILTER (WHERE ${SERVER_PAID})::int AS paid_conversions,
           count(DISTINCT user_id) FILTER (
             WHERE event_name IN ('purchase_success', 'upgrade_completed')
               AND coalesce(props->>'source', '') = 'server'
               AND upper(coalesce(props->>'period_type', '')) <> 'TRIAL'
-          )::int AS paid_conversions,
+              AND NOT (
+                props->>'purchase_class' IN ('paid', 'introductory')
+                OR (
+                  coalesce(props->>'purchase_class', '') = ''
+                  AND upper(coalesce(props->>'period_type', '')) = 'NORMAL'
+                )
+              )
+          )::int AS unknown_purchase_class,
           count(DISTINCT user_id) FILTER (
             WHERE event_name IN ('purchase_success', 'upgrade_completed')
               OR (event_name = 'subscription_funnel_event' AND props->>'step' = 'purchase_success')
@@ -285,11 +395,7 @@ export async function computeProductAnalytics(input: {
             bool_or(event_name IN ('pre_signup_signup_completed', 'child_created')) AS signup,
             bool_or(event_name IN ('paywall_view', 'premium_paywall_viewed')) AS paywall,
             bool_or(event_name IN ('checkout_started', 'subscribe_clicked', 'upgrade_started')) AS checkout,
-            bool_or(
-              event_name IN ('purchase_success', 'upgrade_completed')
-              AND coalesce(props->>'source', '') = 'server'
-              AND upper(coalesce(props->>'period_type', '')) <> 'TRIAL'
-            ) AS paid
+            bool_or(${SERVER_PAID}) AS paid
           FROM analytics_events
           WHERE server_ts >= ${start}::timestamptz
             AND server_ts <= ${end}::timestamptz
@@ -349,6 +455,25 @@ export async function computeProductAnalytics(input: {
     ) d
   `);
 
+  const freshness = await db.execute(sql`
+    SELECT max(server_ts) AS latest_server_ts
+    FROM analytics_events
+    WHERE server_ts >= ${start}::timestamptz
+      AND server_ts <= ${end}::timestamptz
+      AND ${ANALYTICS_NOISE_FILTER}
+  `);
+  const gaps = await db.execute(sql`
+    SELECT
+      count(*)::int AS events,
+      count(*) FILTER (WHERE coalesce(platform, '') = '')::int AS missing_platform,
+      count(*) FILTER (WHERE coalesce(app_version, '') = '')::int AS missing_app_version
+    FROM analytics_events
+    WHERE server_ts >= ${start}::timestamptz
+      AND server_ts <= ${end}::timestamptz
+      AND ${ANALYTICS_NOISE_FILTER}
+  `);
+  const purchaseReconciliation = await readPurchaseReconciliation(start, end);
+
   const exec = rowsOf(executive)[0] ?? {};
   const journeyRow = rowsOf(journey)[0] ?? {};
   const retentionRow = rowsOf(retention)[0] ?? {};
@@ -377,6 +502,7 @@ export async function computeProductAnalytics(input: {
       storeTrialStarts: rowNum(exec, "store_trial_starts"),
       speechTrialStarts: rowNum(exec, "speech_trial_starts"),
       paidConversions: rowNum(exec, "paid_conversions"),
+      unknownPurchaseClass: rowNum(exec, "unknown_purchase_class"),
       refundOrCancelEvents: rowNum(exec, "refund_or_cancel_events"),
     },
     pages: rowsOf(pages).map((row) => ({
@@ -450,8 +576,31 @@ export async function computeProductAnalytics(input: {
       historicalPaidPeriod: {
         state: "partial" as const,
         reason:
-          "Server purchase rows written before period_type was stored cannot be separated from free trials. New RevenueCat TRIAL initial purchases are excluded.",
+          "Paid conversions count purchase_class paid or introductory, or legacy rows whose period_type is NORMAL. Rows with no class and no NORMAL period stay unknown and are not rewritten.",
       },
+      deviceRetryCount: {
+        state: "not_collected" as const,
+        reason: "Retry counts stay on the device queue. The server does not receive them.",
+      },
+      lastDeviceSync: {
+        state: "not_collected" as const,
+        reason: "The last acknowledged device sync is not stored. latestServerTs is the newest stored event, not a device acknowledgement.",
+      },
+      taxesAndNetProceeds: {
+        state: "not_collected" as const,
+        reason: "RevenueCat webhooks used here expose a gross price when present. Taxes, store commission, and net proceeds are not in that payload.",
+      },
+    },
+    reliability: {
+      eventsInRange: rowNum(rowsOf(gaps)[0] ?? {}, "events"),
+      missingPlatform: rowNum(rowsOf(gaps)[0] ?? {}, "missing_platform"),
+      missingAppVersion: rowNum(rowsOf(gaps)[0] ?? {}, "missing_app_version"),
+      latestServerTs: isoOrNull(rowsOf(freshness)[0]?.latest_server_ts),
+      unknownAttributionUsers: rowsOf(acquisition)
+        .filter((row) => String(row.bucket ?? "") === "attribution_unknown")
+        .reduce((sum, row) => sum + rowNum(row, "users"), 0),
+      attributionUsers: rowsOf(acquisition).reduce((sum, row) => sum + rowNum(row, "users"), 0),
+      purchaseReconciliation,
     },
     technical: {
       processQuality: quality,
