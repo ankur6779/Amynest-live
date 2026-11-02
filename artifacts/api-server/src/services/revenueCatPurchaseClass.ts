@@ -137,6 +137,63 @@ export function classifyRevenueCatWebhook(input: {
   };
 }
 
+export type StoredWebhookClass =
+  | "trial_initial"
+  | "paid_initial"
+  | "introductory_priced"
+  | "introductory_unpriced"
+  | "promotional"
+  | "unknown_initial"
+  | "renewal"
+  | "cancellation"
+  | "refund"
+  | "billing_issue"
+  | "unclassified";
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function textField(record: Record<string, unknown> | null, key: string): string | null {
+  const value = record?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+function priceField(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && /^-?\d+(\.\d+)?$/.test(value.trim())) return Number(value);
+  return null;
+}
+
+/**
+ * Classify a stored RevenueCat webhook body. Returns a class name only.
+ * The stored payload is not copied into the result.
+ */
+export function classifyStoredWebhookPayload(payload: unknown): StoredWebhookClass {
+  const body = asRecord(payload);
+  const event = asRecord(body?.event) ?? body;
+  const decision = classifyRevenueCatWebhook({
+    type: textField(event, "type") ?? textField(body, "event_type"),
+    periodType: textField(event, "period_type") ?? textField(event, "periodType"),
+    cancelReason: textField(event, "cancel_reason") ?? textField(event, "cancelReason"),
+    price: priceField(event?.price),
+  });
+  if (decision.eventType === "INITIAL_PURCHASE") {
+    if (decision.funnelStep === "trial_started") return "trial_initial";
+    if (decision.funnelStep === "promotional_grant") return "promotional";
+    if (decision.purchaseClass === "paid") return "paid_initial";
+    if (decision.purchaseClass === "introductory") return "introductory_priced";
+    if (decision.funnelStep === "introductory_unpriced") return "introductory_unpriced";
+    return "unknown_initial";
+  }
+  if (decision.eventType === "RENEWAL") return "renewal";
+  if (decision.funnelStep === "refund") return "refund";
+  if (decision.funnelStep === "subscription_cancelled") return "cancellation";
+  if (decision.funnelStep === "billing_issue") return "billing_issue";
+  return "unclassified";
+}
+
 /** @deprecated Use classifyRevenueCatWebhook. Kept so older call sites compile. */
 export function classifyRevenueCatInitialPurchase(
   periodType: string | null | undefined,

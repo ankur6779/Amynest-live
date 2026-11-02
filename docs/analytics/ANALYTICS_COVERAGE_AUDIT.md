@@ -152,9 +152,9 @@ Distinct feature names on those routes: **41**.
 | Child profile | route entry | feature_viewed | child_created remains the create event; child_profile_created is not a second event |
 | Parent profile / settings | route entry | feature_viewed | Individual setting toggles are not all named |
 | Onboarding | existing funnel + named step | onboarding_started, onboarding_completed, onboarding_step_completed | Step event fires when the existing funnel reports step_completed |
-| Speech Coach | session plus progress and leave | speech_coach_v2_session_start, speech_session_progress, speech_coach_v2_session_complete, speech_session_abandoned, feature_started, feature_completed | Progress fires once per session on the first successful heartbeat. Named events still include numeric childId |
+| Speech Coach | session plus progress and leave | speech_coach_v2_session_start, speech_session_progress, speech_coach_v2_session_complete, speech_session_abandoned, feature_started, feature_completed | Progress fires once per session on the first successful heartbeat. Numeric childId is removed before the event is queued |
 | Talking Amy | session when a child profile exists | talking_amy_session_started, talking_amy_first_interaction, talking_amy_session_completed, talking_amy_session_abandoned | Product props omit child id. No session exists without a child profile |
-| Games | open, start, finish, result | game_opened, game_started, game_completed, game_result | Guests are included. No mid-game abandon event |
+| Games | open, start, finish, result, abandon | game_opened, game_started, game_completed, game_result, game_abandoned | Guests and signed-in players share the event. Abandon fires once after a real start and not after finish |
 | Health Lab | tool and assessment | health_lab_tool_opened, health_lab_assessment_started, health_lab_assessment_completed | Score and cheat text stay in client logs |
 | Nutrition | hub, plan, save | nutrition_tool_opened, nutrition_plan_generated, nutrition_plan_saved | Meal names are not copied. entry_count is 1 |
 | Infant hub | privacy-safe actions | infant_action hub_opened, log_created, milestone_completed, exercise_completed | Growth, cry text, and child id are not copied |

@@ -2,55 +2,75 @@
 
 Date: 2 Nov 2026, Asia/Calcutta.
 
-Migration `0052` was not applied by this certification. Do not apply it, deploy production, change RevenueCat products, or change Google Ads campaign `23986249354` without an explicit approval. This runbook is the check list for that approval. It is not a record that the checks were executed.
+Migrations `0052` and `0053` were not applied by this certification. Do not apply them, deploy production, change RevenueCat products, or change Google Ads campaign `23986249354` without an explicit approval. This runbook is the procedure. It is not a record that the checks were executed.
 
-## Schema comparison
+## Intended uniqueness
 
-`lib/db/migrations/0052_analytics_product_spine.sql` adds nullable columns that `lib/db/src/schema/analytics_events.ts` already declares: `event_id`, identity and page columns, attribution columns, and `ingestion_status`.
+`event_id` is a nullable client idempotency key.
 
-The difference that matters:
+- Multiple NULL values are allowed. Historical rows have no key.
+- Empty string is not a key.
+- The same non-empty `event_id` may be stored once.
+- The same rule applies to `props->>'event_id'`, which covers rows written before the column existed.
 
-- The SQL unique index `analytics_events_event_id_uq` is partial: `WHERE event_id IS NOT NULL AND event_id <> ''`.
-- The Drizzle schema declares `uniqueIndex("analytics_events_event_id_uq").on(t.eventId)` with no predicate.
-- The SQL also creates `analytics_events_props_event_id_uq` on `props->>'event_id'`. Drizzle does not declare that expression index.
-- `CREATE INDEX IF NOT EXISTS` does not replace an index that already has that name. If a non-partial index is created first, the partial definition is not applied.
-- Do not run `db:push` against Coolify. It can try to reconcile the Drizzle index with the database.
+A non-partial unique index is the wrong shape. PostgreSQL already allows many NULLs in a non-partial unique index, but it treats `''` as a real key, and `CREATE UNIQUE INDEX IF NOT EXISTS` will not replace an index that already has that name.
 
-PostgreSQL unique indexes allow multiple NULLs. Duplicate non-empty `event_id` values make `CREATE UNIQUE INDEX` fail. That is the pre-check below.
+Drizzle now declares both indexes as partial:
 
-Ingest reads `information_schema` for `event_id`. Before the column exists, the same values stay in `props`. After it exists, ingest also fills the columns. Existing queries that read `props` keep working.
+- `analytics_events_event_id_uq` where `event_id IS NOT NULL AND event_id <> ''`
+- `analytics_events_props_event_id_uq` where `props->>'event_id' IS NOT NULL AND props->>'event_id' <> ''`
+
+Do not run `db:push` against Coolify. Apply the SQL files below.
+
+## What was checked from this environment
+
+A read-only `SELECT` was attempted against the configured database. The host did not resolve (`getaddrinfo ENOTFOUND`). No index definition was read. No duplicate count was read. No migration was executed. Live index state and live duplicate state are **UNVERIFIED**.
+
+`psql` is not installed here. Android `adb` is not installed. `ANDROID_HOME` is unset. `xcodebuild` is not installed. No signing credentials and no physical device were available. That is not a device pass.
 
 ## Pre-migration checks
 
-Run these on Coolify only when schema approval is explicit. They do not change data.
+Run these read-only statements on the target database only when schema approval is explicit. Stop if either duplicate query returns a group count above zero. Do not delete rows from this migration.
 
 ```sql
 SELECT column_name
 FROM information_schema.columns
-WHERE table_name = 'analytics_events'
+WHERE table_schema = 'public'
+  AND table_name = 'analytics_events'
   AND column_name IN ('event_id', 'installation_id', 'firebase_uid', 'gclid');
 
-SELECT indexname, indexdef
-FROM pg_indexes
-WHERE tablename = 'analytics_events'
-  AND indexname IN (
+SELECT c.relname AS indexname,
+       i.indisunique,
+       pg_get_expr(i.indpred, i.indrelid) AS predicate,
+       pg_get_indexdef(i.indexrelid) AS indexdef
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_index i ON i.indexrelid = c.oid
+WHERE n.nspname = 'public'
+  AND c.relname IN (
     'analytics_events_event_id_uq',
     'analytics_events_props_event_id_uq'
   );
 
 SELECT count(*) AS rows FROM analytics_events;
 
-SELECT event_id, count(*)
-FROM analytics_events
-WHERE event_id IS NOT NULL AND event_id <> ''
-GROUP BY event_id
-HAVING count(*) > 1;
+SELECT count(*) AS duplicate_groups
+FROM (
+  SELECT event_id
+  FROM analytics_events
+  WHERE event_id IS NOT NULL AND event_id <> ''
+  GROUP BY event_id
+  HAVING count(*) > 1
+) d;
 
-SELECT props->>'event_id' AS event_id, count(*)
-FROM analytics_events
-WHERE coalesce(props->>'event_id', '') <> ''
-GROUP BY 1
-HAVING count(*) > 1;
+SELECT count(*) AS props_duplicate_groups
+FROM (
+  SELECT props->>'event_id' AS event_id
+  FROM analytics_events
+  WHERE coalesce(props->>'event_id', '') <> ''
+  GROUP BY 1
+  HAVING count(*) > 1
+) d;
 
 SELECT
   count(*) FILTER (WHERE event_id IS NULL) AS null_event_id,
@@ -58,33 +78,59 @@ SELECT
 FROM analytics_events;
 ```
 
-Stop if either duplicate query returns rows. Do not delete those rows as part of this migration. Decide the keeper explicitly.
+`installation_id` is not a column. It stays in `props`. A missing `installation_id` column is expected.
 
-`installation_id` is not a column in `0052`. It is stored in `props` and copied from the device id. The column check above is expected to show no `installation_id` column.
+If `analytics_events_event_id_uq` already exists and `predicate` is null, the index is non-partial. Do not leave it in place. `0052` and `0053` replace it only after the duplicate count is zero. If the duplicate count is not zero, the migration raises and does not drop the existing index. Decide the keeper row outside this migration.
 
-## Apply
+## Migration SQL
 
-Only after the duplicate checks return no rows, and only with approval:
+Execute the files. Do not retype them as `CREATE UNIQUE INDEX IF NOT EXISTS`. That form silently keeps a wrong index of the same name.
 
-1. Deploy the API and web build first. Do not run `0052` in the same step.
-2. Confirm `POST /api/analytics/events` and `POST /api/analytics/preauth-events` still accept the previous payload and return 202.
-3. Execute `lib/db/migrations/0052_analytics_product_spine.sql` once. Statements are `ADD COLUMN IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`.
+1. `lib/db/migrations/0052_analytics_product_spine.sql`
+2. `lib/db/migrations/0053_analytics_event_id_partial_unique.sql`
+
+`0052` adds the nullable columns, then runs one `DO` block per unique index. `0053` is the forward repair for a database that already applied an older `0052`. Each block:
+
+- Reads `pg_get_expr` for the index predicate.
+- Returns immediately when the predicate is already partial, references `event_id`, contains `IS NOT NULL` and `<>`, and does not contain `OR`. The column index must not mention `props`. The props index must mention `props`.
+- Counts duplicate non-empty keys and `RAISE EXCEPTION` before any `DROP` when that count is above zero.
+- Drops the wrong index only after that check, then creates the partial unique index.
+- The drop and create are one statement. A create failure rolls the drop back.
+
+`0053` raises if `analytics_events.event_id` does not exist yet. Apply `0052` first. Running `0053` after the new `0052` is a no-op when the predicate already matches.
+
+There is no migration journal. Executing the files is the application step.
+
+## Apply order
+
+Only after the duplicate checks return zero, and only with approval:
+
+1. Deploy the API and web build first. Do not run the migrations in the same step.
+2. Confirm `POST /api/analytics/events` and `POST /api/analytics/preauth-events` still accept a previous allowlisted payload and return 202. A missing device id on the pre-auth route returns 400. The production limits stay 60 requests per IP and 30 requests per device per 60 seconds.
+3. Execute `0052`, then `0053`.
 4. Restart the API so the column cache re-reads `event_id`.
-5. Run the post-checks.
+5. Run the verification SQL.
 
-There is no migration journal entry. Applying the file is the only application step. Do not rely on `db:push`.
-
-## Post-migration checks
+## Verification SQL
 
 ```sql
+SELECT c.relname AS indexname,
+       i.indisunique,
+       pg_get_expr(i.indpred, i.indrelid) AS predicate
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_index i ON i.indexrelid = c.oid
+WHERE n.nspname = 'public'
+  AND c.relname IN (
+    'analytics_events_event_id_uq',
+    'analytics_events_props_event_id_uq'
+  );
+
 SELECT column_name, is_nullable
 FROM information_schema.columns
-WHERE table_name = 'analytics_events'
+WHERE table_schema = 'public'
+  AND table_name = 'analytics_events'
   AND column_name = 'event_id';
-
-SELECT indexdef
-FROM pg_indexes
-WHERE indexname = 'analytics_events_event_id_uq';
 
 SELECT id, event_id, props->>'event_id' AS props_event_id
 FROM analytics_events
@@ -92,24 +138,41 @@ ORDER BY server_ts DESC
 LIMIT 20;
 ```
 
-A new event should have the same id in the column and in `props` after the API restart. Older rows keep their `props` payload. A null `event_id` on an old row is expected, not a failure.
+Pass conditions:
 
-Confirm the Product panel on `/admin/growth` still loads. Unknown purchase class, device queue "Not collected", and purchase reconciliation "Collected" or "Unverified" should be visible. An empty range is zero events, not a collector failure.
+- Both indexes exist, `indisunique` is true, and `predicate` is not null.
+- The column-index predicate contains `event_id`, `IS NOT NULL`, and `<>`, and does not contain `props`.
+- The props-index predicate contains `props`, `event_id`, `IS NOT NULL`, and `<>`.
+- A new event after the API restart has the same id in the column and in `props`.
+- Older rows may keep a null `event_id`. That is expected.
 
-## Rollback
+Confirm `/admin/growth` Product still loads. Webhook classes are listed separately. The webhook row total is not a paid conversion. Paid conversions remain the `purchase_class` `paid` and `introductory` count. Device queue stays **Not collected** until a device check exists.
 
-- Redeploy the previous API and web build.
-- Leave the new columns and indexes in place.
-- Do not drop columns if the new API has written them. `props` still holds the payload, but dropping columns removes the column copy.
-- Do not drop the unique indexes while the new API is still inserting `event_id`.
+## Rollback limitations
 
-## What this certification did not do
+- There is no down migration. Do not drop columns. `props` still holds the payload, and dropping a column removes only the column copy.
+- Each `DO` block is atomic. An error inside it restores the index that block dropped. It does not undo an earlier `ADD COLUMN` that already committed.
+- If duplicate non-empty ids exist, the block raises and the previous index stays. Do not delete those rows as part of the migration.
+- Do not drop the new unique indexes while the API is still writing `event_id`. Old API builds ignore the new columns and can keep running with the indexes left in place.
+- Re-running `0053` does not rebuild a correct partial index.
+- This procedure does not rewrite historical analytics rows, historical purchase classes, or stored webhook payloads.
 
-- Did not connect to Coolify.
-- Did not execute the SQL above.
-- Did not deploy the API.
-- Did not change RevenueCat products or prices.
-- Did not upload a Google Ads conversion or edit campaign `23986249354`.
-- Did not run the Android WebView or the iOS WKWebView.
+## Staging checklist
 
-Android and iOS attribution and event delivery remain unverified on hardware. iOS has no SKAdNetwork, AdAttributionKit, or ATT implementation, so unknown iOS acquisition must stay unknown.
+1. Deploy API and web to the staging environment. Do not apply `0052` or `0053` in that same step.
+2. Check pre-auth: missing device id is 400, an allowlisted event is 202, a second delivery of the same event id is a duplicate summary, `purchase_success` is rejected by the pre-auth allowlist, and the 31st request for one device in a minute is 429. Do not raise the production limits to make the check pass.
+3. Run the read-only prechecks on the staging database. Stop if duplicate groups are not zero.
+4. After approval, execute `0052`, then `0053`, then the verification SQL. Restart the API.
+5. Send one staging event and confirm the column and `props` event ids match.
+6. Open Product analytics and confirm trial, paid initial, introductory, renewal, cancellation, refund, billing issue, and unclassified webhook counts are separate from paid conversions.
+7. Do not upload a Google Ads conversion, edit campaign `23986249354`, change a price or trial, or ship a Play Store or App Store production release.
+
+## Actions that require a person
+
+- Run the read-only prechecks on the real database. This environment could not resolve the host.
+- Approve and execute `0052` and `0053`.
+- Deploy the API and web build to staging, then later to production, as separate decisions.
+- Set `ANALYTICS_CHILD_REF_SECRET` only if stored events should keep a pseudonymous child reference. Leave it unset to drop numeric child ids with no replacement. Do not put the secret in client code.
+- Run a signed Android WebView build and a signed iOS build. No device or signing material was available here.
+- Send one sandbox RevenueCat webhook to a non-production project and compare it with the fixture classes. Fixture tests are not that check.
+- Any change to subscription price, trial policy, Google Ads campaign `23986249354`, Play Store production, or Apple production.

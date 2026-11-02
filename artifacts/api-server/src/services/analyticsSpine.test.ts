@@ -31,6 +31,53 @@ describe("analytics spine", () => {
     assert.equal("child_name" in clean, false);
   });
 
+  it("drops numeric child ids and does not invent a child ref without a secret", () => {
+    const previous = process.env.ANALYTICS_CHILD_REF_SECRET;
+    delete process.env.ANALYTICS_CHILD_REF_SECRET;
+    try {
+      const clean = scrubServerAnalyticsProps({
+        screen: "/games",
+        childId: 7,
+        child_id: 8,
+        child_ref: "client-supplied",
+        diagnosis: "private",
+        medication: "private",
+        nested: { childId: 9, child_name: "Ava" },
+      });
+      assert.equal(clean.screen, "/games");
+      assert.equal("childId" in clean, false);
+      assert.equal("child_id" in clean, false);
+      assert.equal("child_ref" in clean, false);
+      assert.equal("diagnosis" in clean, false);
+      assert.equal("medication" in clean, false);
+      const nested = clean.nested as Record<string, unknown>;
+      assert.equal("childId" in nested, false);
+      assert.equal("child_name" in nested, false);
+    } finally {
+      if (previous === undefined) delete process.env.ANALYTICS_CHILD_REF_SECRET;
+      else process.env.ANALYTICS_CHILD_REF_SECRET = previous;
+    }
+  });
+
+  it("replaces a legacy child id with a pseudonymous ref only when the server secret is set", () => {
+    const previous = process.env.ANALYTICS_CHILD_REF_SECRET;
+    process.env.ANALYTICS_CHILD_REF_SECRET = "analytics-child-ref-test-secret";
+    try {
+      const first = scrubServerAnalyticsProps({ childId: 7, screen: "/speech-coach" });
+      const second = scrubServerAnalyticsProps({ child_id: "8", screen: "/speech-coach" });
+      assert.match(String(first.child_ref), /^[a-f0-9]{24}$/);
+      assert.notEqual(first.child_ref, "7");
+      assert.notEqual(first.child_ref, second.child_ref);
+      assert.equal("childId" in first, false);
+      assert.equal(JSON.stringify(first).includes("analytics-child-ref-test-secret"), false);
+      const kept = pickSpineProps(first);
+      assert.equal(kept.child_ref, first.child_ref);
+    } finally {
+      if (previous === undefined) delete process.env.ANALYTICS_CHILD_REF_SECRET;
+      else process.env.ANALYTICS_CHILD_REF_SECRET = previous;
+    }
+  });
+
   it("resolves canonical identity on the server and ignores the client copy", () => {
     const props = applyServerIdentity(
       { screen: "/dashboard", canonical_user_id: "spoofed" },

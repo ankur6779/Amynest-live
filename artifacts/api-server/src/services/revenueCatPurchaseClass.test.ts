@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { classifyRevenueCatWebhook } from "./revenueCatPurchaseClass";
+import { classifyRevenueCatWebhook, classifyStoredWebhookPayload } from "./revenueCatPurchaseClass";
 
 describe("RevenueCat webhook purchase classification", () => {
   it("initial NORMAL purchase with a price is paid and gross is present", () => {
@@ -138,5 +138,29 @@ describe("RevenueCat webhook purchase classification", () => {
     });
     assert.deepEqual(fromReplay, fromWebhook);
     assert.equal(fromWebhook.purchaseClass, "paid");
+  });
+
+  it("classifies stored webhook fixtures without copying the payload", () => {
+    const secretUser = "rc-user-should-not-leak";
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ event: { type: "INITIAL_PURCHASE", period_type: "TRIAL", price: 0, app_user_id: secretUser } }, "trial_initial"],
+      [{ event: { type: "INITIAL_PURCHASE", period_type: "NORMAL", price: 499, app_user_id: secretUser } }, "paid_initial"],
+      [{ event: { type: "INITIAL_PURCHASE", period_type: "INTRO", price: 49, app_user_id: secretUser } }, "introductory_priced"],
+      [{ event: { type: "INITIAL_PURCHASE", period_type: "INTRO", price: 0, app_user_id: secretUser } }, "introductory_unpriced"],
+      [{ event: { type: "INITIAL_PURCHASE", period_type: "PROMOTIONAL", app_user_id: secretUser } }, "promotional"],
+      [{ event: { type: "INITIAL_PURCHASE", app_user_id: secretUser } }, "unknown_initial"],
+      [{ event: { type: "RENEWAL", period_type: "NORMAL", price: 499, app_user_id: secretUser } }, "renewal"],
+      [{ event: { type: "CANCELLATION", cancel_reason: "UNSUBSCRIBE", app_user_id: secretUser } }, "cancellation"],
+      [{ event: { type: "CANCELLATION", cancel_reason: "CUSTOMER_SUPPORT", app_user_id: secretUser } }, "refund"],
+      [{ event: { type: "REFUND", app_user_id: secretUser } }, "refund"],
+      [{ event: { type: "BILLING_ISSUE", app_user_id: secretUser } }, "billing_issue"],
+      [{ event: { type: "TEST", app_user_id: secretUser } }, "unclassified"],
+    ];
+    for (const [payload, expected] of cases) {
+      const result = classifyStoredWebhookPayload(payload);
+      assert.equal(result, expected);
+      assert.equal(JSON.stringify(result).includes(secretUser), false);
+      assert.equal(typeof result, "string");
+    }
   });
 });

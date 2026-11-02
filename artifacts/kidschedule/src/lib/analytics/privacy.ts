@@ -4,7 +4,9 @@ import {
 } from "@workspace/analytics-taxonomy";
 
 const PII_KEY_PATTERN =
-  /^(email|phone|mobile|child_?name|name|message|prompt|token|jwt|password|authorization|firebase_?token)$/i;
+  /^(email|phone|mobile|child_?name|name|message|prompt|transcript|token|jwt|password|authorization|firebase_?token|diagnosis|medication|conversation|question|answer|content)$/i;
+
+const CHILD_IDENTIFIER_KEY = /^(childId|child_id|child_ref|childRef)$/i;
 
 const PII_VALUE_EMAIL = /@/;
 const MAX_STRING_LEN = 512;
@@ -22,7 +24,7 @@ export function scrubAnalyticsProps(
       out[key] = value;
       continue;
     }
-    if (PII_KEY_PATTERN.test(key)) continue;
+    if (PII_KEY_PATTERN.test(key) || CHILD_IDENTIFIER_KEY.test(key)) continue;
     if (typeof value === "string") {
       if (PII_VALUE_EMAIL.test(value) && value.length > 6) continue;
       out[key] = value.slice(0, MAX_STRING_LEN);

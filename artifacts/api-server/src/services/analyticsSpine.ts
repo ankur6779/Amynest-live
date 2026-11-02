@@ -2,6 +2,7 @@
  * Product-spine helpers shared by ingest and identity stitch.
  * Identity fields are resolved on the server. Client copies are stripped.
  */
+import { createHmac } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 
@@ -9,6 +10,8 @@ export const PRODUCT_SPINE_SCHEMA_VERSION = "1.1.0";
 
 const SENSITIVE_KEY =
   /^(email|phone|mobile|child_?name|name|message|prompt|transcript|token|jwt|password|authorization|firebase_?token|id_token|access_token|refresh_token|card|cvv|pan|diagnosis|medication|conversation|question|answer|content)$/i;
+
+const CHILD_IDENTIFIER_KEY = /^(childId|child_id|child_ref|childRef)$/i;
 
 const CLIENT_IDENTITY_KEYS = new Set([
   "user_id",
@@ -70,7 +73,21 @@ export const SPINE_ALLOWLIST = [
   "screen",
   "path",
   "event_id",
+  "child_ref",
 ] as const;
+
+function pseudonymousChildRef(raw: unknown): string | null {
+  const secret = process.env.ANALYTICS_CHILD_REF_SECRET?.trim();
+  if (!secret) return null;
+  const id =
+    typeof raw === "number" && Number.isInteger(raw) && raw > 0
+      ? String(raw)
+      : typeof raw === "string" && /^[1-9]\d{0,11}$/.test(raw.trim())
+        ? raw.trim()
+        : null;
+  if (!id) return null;
+  return createHmac("sha256", secret).update(`child:${id}`).digest("hex").slice(0, 24);
+}
 
 const PURCHASE_EVENTS = new Set([
   "purchase_success",
@@ -119,7 +136,12 @@ export function scrubServerAnalyticsProps(
   props: Record<string, unknown>,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+  let rawChild: unknown;
   for (const [key, value] of Object.entries(props)) {
+    if (CHILD_IDENTIFIER_KEY.test(key)) {
+      if (key === "childId" || key === "child_id") rawChild ??= value;
+      continue;
+    }
     if (SENSITIVE_KEY.test(key) || CLIENT_IDENTITY_KEYS.has(key)) continue;
     if (typeof value === "string") {
       if (value.includes("@") && value.length > 6) continue;
@@ -132,6 +154,8 @@ export function scrubServerAnalyticsProps(
       out[key] = scrubServerAnalyticsProps(value as Record<string, unknown>);
     }
   }
+  const childRef = pseudonymousChildRef(rawChild);
+  if (childRef) out.child_ref = childRef;
   return out;
 }
 

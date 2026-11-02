@@ -40,7 +40,8 @@ describe("speech coach product events", () => {
     expect(names).toContain("feature_completed");
     const feature = body.events.find((event) => event.name === "feature_started");
     expect(feature?.props.feature_name).toBe("speech_session");
-    expect(feature?.props.childId).toBeUndefined();
-    expect(JSON.stringify(feature?.props)).not.toMatch(/transcript|child_name/);
+    const serialized = JSON.stringify(body.events);
+    expect(serialized).not.toMatch(/"childId"|"child_id"|"child_name"|"diagnosis"|"medication"/);
+    expect(body.events.every((event) => event.props.childId === undefined)).toBe(true);
   });
 });

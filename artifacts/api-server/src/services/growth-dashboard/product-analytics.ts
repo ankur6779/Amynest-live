@@ -38,27 +38,71 @@ async function readPurchaseReconciliation(start: string, end: string) {
   const empty = {
     state: "unverified" as const,
     reason:
-      "revenuecat_webhook_events could not be read. This is unverified, not a count of zero.",
-    initialWebhooks: null as number | null,
-    initialTransactions: null as number | null,
-    serverPurchaseRows: null as number | null,
+      "revenuecat_webhook_events could not be read. This is unverified, not a count of zero. Webhook row totals are not paid conversions.",
+    trialInitial: null as number | null,
+    paidInitial: null as number | null,
+    introductoryPriced: null as number | null,
+    introductoryUnpriced: null as number | null,
+    promotional: null as number | null,
+    unknownInitial: null as number | null,
     renewals: null as number | null,
-    cancelOrRefund: null as number | null,
+    cancellations: null as number | null,
+    refunds: null as number | null,
     billingIssues: null as number | null,
+    unclassified: null as number | null,
+    webhookRows: null as number | null,
+    serverPurchaseRows: null as number | null,
   };
   try {
     const hooks = await db.execute(sql`
+      WITH classified AS (
+        SELECT
+          event_type,
+          upper(coalesce(payload->'event'->>'period_type', '')) AS period_type,
+          upper(coalesce(payload->'event'->>'cancel_reason', '')) AS cancel_reason,
+          CASE
+            WHEN coalesce(payload->'event'->>'price', '') ~ '^-?[0-9]+(\\.[0-9]+)?$'
+            THEN (payload->'event'->>'price')::numeric
+            ELSE NULL
+          END AS price
+        FROM revenuecat_webhook_events
+        WHERE received_at >= ${start}::timestamptz
+          AND received_at <= ${end}::timestamptz
+      )
       SELECT
-        count(*) FILTER (WHERE event_type = 'INITIAL_PURCHASE')::int AS initial_webhooks,
-        count(DISTINCT transaction_id) FILTER (
-          WHERE event_type = 'INITIAL_PURCHASE' AND coalesce(transaction_id, '') <> ''
-        )::int AS initial_transactions,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND period_type = 'TRIAL'
+        )::int AS trial_initial,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND period_type = 'NORMAL'
+        )::int AS paid_initial,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND period_type = 'INTRO' AND coalesce(price, 0) > 0
+        )::int AS introductory_priced,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND period_type = 'INTRO' AND coalesce(price, 0) <= 0
+        )::int AS introductory_unpriced,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE' AND period_type = 'PROMOTIONAL'
+        )::int AS promotional,
+        count(*) FILTER (
+          WHERE event_type = 'INITIAL_PURCHASE'
+            AND period_type NOT IN ('TRIAL', 'NORMAL', 'INTRO', 'PROMOTIONAL')
+        )::int AS unknown_initial,
         count(*) FILTER (WHERE event_type = 'RENEWAL')::int AS renewals,
-        count(*) FILTER (WHERE event_type IN ('CANCELLATION', 'REFUND'))::int AS cancel_or_refund,
-        count(*) FILTER (WHERE event_type = 'BILLING_ISSUE')::int AS billing_issues
-      FROM revenuecat_webhook_events
-      WHERE received_at >= ${start}::timestamptz
-        AND received_at <= ${end}::timestamptz
+        count(*) FILTER (
+          WHERE event_type = 'CANCELLATION' AND cancel_reason <> 'CUSTOMER_SUPPORT'
+        )::int AS cancellations,
+        count(*) FILTER (
+          WHERE event_type = 'REFUND'
+            OR (event_type = 'CANCELLATION' AND cancel_reason = 'CUSTOMER_SUPPORT')
+        )::int AS refunds,
+        count(*) FILTER (WHERE event_type = 'BILLING_ISSUE')::int AS billing_issues,
+        count(*) FILTER (
+          WHERE event_type NOT IN ('INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'REFUND', 'BILLING_ISSUE')
+        )::int AS unclassified,
+        count(*)::int AS webhook_rows
+      FROM classified
     `);
     const purchases = await db.execute(sql`
       SELECT count(*)::int AS server_purchase_rows
@@ -73,13 +117,20 @@ async function readPurchaseReconciliation(start: string, end: string) {
     return {
       state: "collected" as const,
       reason:
-        "Webhook counts are received events. period_type stays inside the payload, so this comparison does not split trial from paid. Server purchase_success includes paid, introductory, and unknown classes.",
-      initialWebhooks: rowNum(hookRow, "initial_webhooks"),
-      initialTransactions: rowNum(hookRow, "initial_transactions"),
-      serverPurchaseRows: rowNum(purchaseRow, "server_purchase_rows"),
+        "Webhook classes count stored RevenueCat events. webhookRows is every row in the range and is not a paid conversion. Paid conversions stay on analytics_events where purchase_class is paid or introductory. This query returns counts only and does not select customer payloads.",
+      trialInitial: rowNum(hookRow, "trial_initial"),
+      paidInitial: rowNum(hookRow, "paid_initial"),
+      introductoryPriced: rowNum(hookRow, "introductory_priced"),
+      introductoryUnpriced: rowNum(hookRow, "introductory_unpriced"),
+      promotional: rowNum(hookRow, "promotional"),
+      unknownInitial: rowNum(hookRow, "unknown_initial"),
       renewals: rowNum(hookRow, "renewals"),
-      cancelOrRefund: rowNum(hookRow, "cancel_or_refund"),
+      cancellations: rowNum(hookRow, "cancellations"),
+      refunds: rowNum(hookRow, "refunds"),
       billingIssues: rowNum(hookRow, "billing_issues"),
+      unclassified: rowNum(hookRow, "unclassified"),
+      webhookRows: rowNum(hookRow, "webhook_rows"),
+      serverPurchaseRows: rowNum(purchaseRow, "server_purchase_rows"),
     };
   } catch {
     return empty;
@@ -231,6 +282,7 @@ export async function computeProductAnalytics(input: {
             WHERE event_name IN (
               'feature_abandoned', 'talking_amy_session_abandoned', 'speech_session_abandoned'
             )
+            OR event_name = 'game_abandoned'
             OR (
               event_name = 'health_lab_assessment_completed'
               AND coalesce(props->>'outcome', '') = 'abandoned'

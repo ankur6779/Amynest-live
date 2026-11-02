@@ -1,10 +1,10 @@
 # AmyNest analytics event dictionary
 
-Date: 2 Nov 2026, Asia/Calcutta. Catalog size: 215 names in `@workspace/analytics-taxonomy`.
+Date: 2 Nov 2026, Asia/Calcutta. Catalog size: 216 names in `@workspace/analytics-taxonomy`.
 
 These definitions are the only meanings used by the certification events. A name is not emitted from a re-render, a route change, or a repeated callback unless a new product action happened.
 
-Identity on every event is the device id before login and the Firebase uid after login. `installation_id` is that device id. `session_id` is the analytics session. Child names, prompts, replies, meal text, measurements, and cry transcripts are not properties of these events.
+Identity on every event is the device id before login and the Firebase uid after login. `installation_id` is that device id. `session_id` is the analytics session. A numeric `childId` is not an identity key. The client scrub and the server scrub drop `childId`, `child_id`, `child_name`, diagnosis, and medication before the event is queued or stored. A `child_ref` is written only when the server has `ANALYTICS_CHILD_REF_SECRET` and a legacy payload still contains a child id. Child names, prompts, replies, meal text, measurements, and cry transcripts are not properties of these events.
 
 ## Words
 
@@ -25,9 +25,10 @@ Identity on every event is the device id before login and the Firebase uid after
 | `talking_amy_session_completed` | The first time a turn reaches the celebrate phase | Transcript |
 | `talking_amy_session_abandoned` | Unmount after start when celebrate never happened | |
 | `game_opened` | The player opens a game intro, including a guest | Title, child id |
-| `game_started` | Play begins. One start per open. | |
-| `game_completed` | `finishGame` passes its finished guard | |
+| `game_started` | Play begins. One start per open. Opening the intro is not a start. | |
+| `game_completed` | `finishGame` sets the session finished before the result event | |
 | `game_result` | The same finish, with score, total, and perfect | |
+| `game_abandoned` | One event when a started session is left or the page unmounts before finish. A second leave, a rerender, and a completed game do not emit again. | |
 | `health_lab_tool_opened` | First dashboard view in the page load. Range changes do not repeat it. | |
 | `health_lab_assessment_started` | An assessment session starts. `game_id` only. | Score |
 | `health_lab_assessment_completed` | The assessment ends. `outcome` is `completed` or `abandoned`. | Score, shop, cheat text |
@@ -45,14 +46,14 @@ Identity on every event is the device id before login and the Firebase uid after
 | `learning_activity_completed` | Study zone session end, with duration | Child id |
 | `speech_session_progress` | The first successful Speech Coach heartbeat in that session | Transcript |
 | `speech_session_abandoned` | The session started and `finishSession` did not run | |
-| `speech_coach_v2_session_start` / `speech_coach_v2_session_complete` | Existing session boundaries. Feature events omit child id. The named events still include numeric `childId`. | |
+| `speech_coach_v2_session_start` / `speech_coach_v2_session_complete` | Existing session boundaries. Callers may still pass `childId`. The queued event does not. | |
 | `routine_generation_started` | Generation was requested | |
 | `routine_generated` | Generation succeeded. This is the saved plan. There is no second `routine_applied` event. | |
 | `routine_generation_failed` | Generation failed | Prompt text |
 
 Abacus mode start and completion events already exist. They were not duplicated. Phonics, spelling, olympiad, rhymes, and audio lessons have no single completion callback, so they stay on `feature_viewed` and `page_exit`.
 
-Games have no abandon event. Leaving before `finishGame` is `page_exit`.
+`game_abandoned` is the mid-game leave. `page_exit` still fires when the route changes. A completed game is not abandoned. Guests use the same event. The pre-auth allowlist accepts it, so it is not dropped before login.
 
 ## Purchase events
 

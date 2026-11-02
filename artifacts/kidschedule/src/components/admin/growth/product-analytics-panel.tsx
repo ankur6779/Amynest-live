@@ -72,12 +72,19 @@ type ProductAnalytics = {
     purchaseReconciliation: {
       state: "collected" | "unverified";
       reason: string;
-      initialWebhooks: number | null;
-      initialTransactions: number | null;
-      serverPurchaseRows: number | null;
+      trialInitial: number | null;
+      paidInitial: number | null;
+      introductoryPriced: number | null;
+      introductoryUnpriced: number | null;
+      promotional: number | null;
+      unknownInitial: number | null;
       renewals: number | null;
-      cancelOrRefund: number | null;
+      cancellations: number | null;
+      refunds: number | null;
       billingIssues: number | null;
+      unclassified: number | null;
+      webhookRows: number | null;
+      serverPurchaseRows: number | null;
     };
   };
   technical: {
@@ -348,7 +355,7 @@ export function ProductAnalyticsPanel({
         <p className="text-xs text-muted-foreground">{data.reliability.purchaseReconciliation.reason}</p>
         {data.reliability.purchaseReconciliation.state === "collected" ? (
           <p className="text-xs text-muted-foreground">
-            Initial webhooks {data.reliability.purchaseReconciliation.initialWebhooks}. Distinct initial transactions {data.reliability.purchaseReconciliation.initialTransactions}. Server purchase rows {data.reliability.purchaseReconciliation.serverPurchaseRows}. Renewals {data.reliability.purchaseReconciliation.renewals}. Cancel or refund webhooks {data.reliability.purchaseReconciliation.cancelOrRefund}. Billing issues {data.reliability.purchaseReconciliation.billingIssues}.
+            Webhook classes, not paid conversions. Trial initial {data.reliability.purchaseReconciliation.trialInitial}. Paid initial {data.reliability.purchaseReconciliation.paidInitial}. Introductory priced {data.reliability.purchaseReconciliation.introductoryPriced}. Introductory unpriced {data.reliability.purchaseReconciliation.introductoryUnpriced}. Promotional {data.reliability.purchaseReconciliation.promotional}. Unknown initial {data.reliability.purchaseReconciliation.unknownInitial}. Renewals {data.reliability.purchaseReconciliation.renewals}. Cancellations {data.reliability.purchaseReconciliation.cancellations}. Refunds {data.reliability.purchaseReconciliation.refunds}. Billing issues {data.reliability.purchaseReconciliation.billingIssues}. Unclassified {data.reliability.purchaseReconciliation.unclassified}. Webhook rows {data.reliability.purchaseReconciliation.webhookRows} are not paid conversions. Server purchase rows {data.reliability.purchaseReconciliation.serverPurchaseRows}.
           </p>
         ) : null}
         <Table

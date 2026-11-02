@@ -1,8 +1,8 @@
 # AmyNest analytics event taxonomy
 
-The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **215** event names. Unknown names are rejected and counted. Lifecycle definitions are in `ANALYTICS_EVENT_DICTIONARY.md`.
+The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **216** event names. Unknown names are rejected and counted. Lifecycle definitions are in `ANALYTICS_EVENT_DICTIONARY.md`.
 
-Product-spine names added for this work (23):
+Product-spine names added for this work (24):
 
 | Event | When it fires |
 |---|---|
@@ -27,6 +27,7 @@ Product-spine names added for this work (23):
 | `coloring_activity_started` | Hub coloring feature id |
 | `coloring_activity_completed` | Coloring PDF saved |
 | `subscription_cancelled` | Server, after the cancel API completes |
+| `game_abandoned` | A started game is left before `finishGame` |
 
 ## Names that already existed and were not duplicated
 
@@ -47,6 +48,6 @@ Product-spine names added for this work (23):
 
 ## Properties that must not be sent
 
-Passwords, bearer tokens, raw Ask Amy prompts or replies, child names, payment credentials, and health narrative fields. Ingest drops those keys even if a client sends them.
+Passwords, bearer tokens, raw Ask Amy prompts or replies, child names, numeric child ids, payment credentials, and health narrative fields. The client queue and server ingest drop those keys even if a caller passes them. A pseudonymous `child_ref` is added only when `ANALYTICS_CHILD_REF_SECRET` is set on the server.
 
 Every accepted client event also carries `event_id`, `installation_id` (the durable device id), `session_id`, `device_id`, platform, app version, and first-touch attribution fields when they are already stored on the device. `installation_id` is not a separate Play or App Store install token. Zod schemas still strip unknown feature fields; the server copies the spine allowlist back onto the stored props.

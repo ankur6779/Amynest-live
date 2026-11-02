@@ -161,6 +161,11 @@ export const PRODUCT_SPINE_EVENT_PROP_SCHEMAS = {
     total: z.number().int().nonnegative().optional(),
     perfect: z.boolean().optional(),
   }),
+  game_abandoned: z.object({
+    feature_name: z.string().max(80).optional(),
+    game_id: z.string().max(64),
+    reason: z.string().max(64).optional(),
+  }),
   health_lab_tool_opened: z.object({ feature_name: z.string().max(80).optional() }),
   health_lab_assessment_started: z.object({
     feature_name: z.string().max(80).optional(),
@@ -252,6 +257,7 @@ export const PRODUCT_SPINE_EVENT_CATEGORY = {
   game_started: "learning",
   game_completed: "learning",
   game_result: "learning",
+  game_abandoned: "learning",
   health_lab_tool_opened: "learning",
   health_lab_assessment_started: "learning",
   health_lab_assessment_completed: "learning",

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -78,7 +79,12 @@ export const analyticsEventsTable = pgTable(
       t.eventCategory,
       t.serverTs,
     ),
-    eventIdUq: uniqueIndex("analytics_events_event_id_uq").on(t.eventId),
+    eventIdUq: uniqueIndex("analytics_events_event_id_uq")
+      .on(t.eventId)
+      .where(sql`${t.eventId} IS NOT NULL AND ${t.eventId} <> ''`),
+    propsEventIdUq: uniqueIndex("analytics_events_props_event_id_uq")
+      .on(sql`(props->>'event_id')`)
+      .where(sql`(props->>'event_id') IS NOT NULL AND (props->>'event_id') <> ''`),
     anonymousDeviceIdx: index("analytics_events_anonymous_device_idx").on(
       t.anonymousDeviceId,
       t.serverTs,

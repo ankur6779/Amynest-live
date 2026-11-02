@@ -40,6 +40,7 @@ import { prepareGameSession } from "@/lib/game-adaptive-progression";
 import { setGameDifficulty } from "@/lib/game-difficulty";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import { claimGameAbandon, type GamePlaySession } from "@/lib/analytics/game-abandon";
 import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 import {
   beginGameSession,
@@ -115,17 +116,33 @@ export default function GamesPage() {
   const finishingRef = useRef(false);
   /** One finish per play stage — blocks duplicate mastery, wallet, and analytics. */
   const gameStartTrackedRef = useRef("");
-  const playSessionRef = useRef<{
-    gameId: string;
-    idempotencyKey: string;
-    finished: boolean;
-  } | null>(null);
+  const playSessionRef = useRef<GamePlaySession | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
 
   const resetPlaySession = useCallback(() => {
+    const claim = claimGameAbandon(playSessionRef.current);
+    if (claim) {
+      safeProductTrack("game_abandoned", {
+        feature_name: "gaming_hub",
+        game_id: claim.gameId,
+        reason: "leave",
+      });
+    }
     playSessionRef.current = null;
     finishingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      const claim = claimGameAbandon(playSessionRef.current);
+      if (!claim) return;
+      safeProductTrack("game_abandoned", {
+        feature_name: "gaming_hub",
+        game_id: claim.gameId,
+        reason: "unmount",
+      });
+    };
   }, []);
 
   const { data: childProfiles = [] } = useListChildren({
@@ -369,6 +386,7 @@ export default function GamesPage() {
         gameId: prev.game.id,
         idempotencyKey: createPlayIdempotencyKey(prev.game.id),
         finished: false,
+        abandonEmitted: false,
       };
       if (gameStartTrackedRef.current !== prev.game.id) {
         gameStartTrackedRef.current = prev.game.id;
