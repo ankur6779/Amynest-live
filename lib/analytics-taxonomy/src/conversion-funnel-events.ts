@@ -80,6 +80,11 @@ export const CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS = {
     ...funnelContext,
     plan: z.string().max(32).optional(),
     transaction_id: z.string().max(128).optional(),
+    product_id: z.string().max(128).optional(),
+    store: z.string().max(32).optional(),
+    period_type: z.string().max(32).optional(),
+    currency: z.string().max(8).optional(),
+    price: z.number().finite().optional(),
   }),
   purchase_failed: z.object({
     ...funnelContext,

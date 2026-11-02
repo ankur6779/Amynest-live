@@ -1,6 +1,6 @@
 # AmyNest analytics event taxonomy
 
-The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **192** event names. Unknown names are rejected and counted.
+The catalog lives in `@workspace/analytics-taxonomy` and is the allowlist for ingest. Current size: **193** event names. Unknown names are rejected and counted.
 
 Product-spine names added for this work (23):
 
@@ -25,6 +25,7 @@ Product-spine names added for this work (23):
 | `worksheet_opened` | Hub worksheet feature id |
 | `worksheet_downloaded` | PDF save tagged as a worksheet |
 | `coloring_activity_started` | Hub coloring feature id |
+| `coloring_activity_completed` | Coloring PDF saved |
 | `subscription_cancelled` | Server, after the cancel API completes |
 
 ## Names that already existed and were not duplicated
@@ -47,3 +48,5 @@ Product-spine names added for this work (23):
 ## Properties that must not be sent
 
 Passwords, bearer tokens, raw Ask Amy prompts or replies, child names, payment credentials, and health narrative fields. Ingest drops those keys even if a client sends them.
+
+Every accepted client event also carries `event_id`, `installation_id` (the durable device id), `session_id`, `device_id`, platform, app version, and first-touch attribution fields when they are already stored on the device. `installation_id` is not a separate Play or App Store install token. Zod schemas still strip unknown feature fields; the server copies the spine allowlist back onto the stored props.

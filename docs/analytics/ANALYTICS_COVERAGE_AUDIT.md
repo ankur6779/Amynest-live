@@ -154,7 +154,7 @@ Distinct feature names on those routes: **41**.
 | Onboarding | existing funnel + named step | onboarding_started, onboarding_completed, onboarding_step_completed | Step event fires when the existing funnel reports step_completed |
 | Speech Coach / Talking Amy | route + existing session events | feature_viewed, speech_coach_v2_session_start, speech_coach_v2_session_complete | Pre-existing session events were not duplicated |
 | Worksheets | open + pdf save | worksheet_opened, worksheet_downloaded, asset_download | Opened fires for hub feature ids hub_worksheets and worksheets |
-| Coloring | hub start | coloring_activity_started | No completion event was found to attach to |
+| Coloring | hub start and PDF save | coloring_activity_started, coloring_activity_completed, feature_completed, feature_error | Preview dialog is not a modal event |
 | Stories / video | player | story_opened, video_started, video_completed, feature_started, feature_completed | Story text is not stored |
 | Health Lab, games, nutrition, birth sky, phonics, and the other mapped routes | route entry | feature_viewed | In-module actions stay on their existing feature analytics where those already called track() |
 | Paywall / purchase | existing funnel + server truth | paywall_view, checkout_started, purchase_success, upgrade_completed | Client purchase is not proof of payment. RevenueCat webhook via recordServerPurchaseTruth remains authoritative and is deduped by transaction id |

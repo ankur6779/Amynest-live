@@ -131,6 +131,10 @@ export const PRODUCT_SPINE_EVENT_PROP_SCHEMAS = {
     feature_name: z.string().max(80).optional(),
     source: z.string().max(64).optional(),
   }),
+  coloring_activity_completed: z.object({
+    feature_name: z.string().max(80).optional(),
+    source: z.string().max(64).optional(),
+  }),
   subscription_cancelled: z.object({
     source: z.string().max(32).optional(),
     provider: z.string().max(32).optional(),
@@ -161,6 +165,7 @@ export const PRODUCT_SPINE_EVENT_CATEGORY = {
   worksheet_opened: "learning",
   worksheet_downloaded: "learning",
   coloring_activity_started: "learning",
+  coloring_activity_completed: "learning",
   subscription_cancelled: "premium",
 } as const satisfies Record<
   keyof typeof PRODUCT_SPINE_EVENT_PROP_SCHEMAS,

@@ -34,6 +34,9 @@ describe("product spine client", () => {
     const exit = body.events.find((event) => event.name === "page_exit");
     expect(exit?.props.time_on_screen_ms).toBe(1500);
     expect(body.events.every((event) => typeof event.eventId === "string")).toBe(true);
+    const view = body.events.find((event) => event.name === "page_view");
+    expect(view?.props.installation_id).toEqual(view?.props.device_id);
+    expect(typeof view?.props.session_id).toBe("string");
   });
 
   it("does not emit a second page view for the same path inside the dedupe window", async () => {

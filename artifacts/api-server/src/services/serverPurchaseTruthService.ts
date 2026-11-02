@@ -14,6 +14,9 @@ export async function recordServerPurchaseTruth(input: {
   providerEventId?: string;
   deviceId?: string | null;
   conversionAt?: Date;
+  periodType?: string;
+  price?: number;
+  currency?: string;
 }): Promise<void> {
   if (!input.transactionId.trim() || input.canonicalUserId.startsWith("$RCAnonymousID:")) {
     return;
@@ -29,6 +32,9 @@ export async function recordServerPurchaseTruth(input: {
       store: input.store,
       providerEventId: input.providerEventId,
       attribution,
+      periodType: input.periodType,
+      price: input.price,
+      currency: input.currency,
     });
     await ingestAnalyticsEvents(
       [
@@ -38,6 +44,9 @@ export async function recordServerPurchaseTruth(input: {
             source: "server",
             platform: "server",
             transaction_id: input.transactionId,
+            ...(input.periodType ? { period_type: input.periodType.slice(0, 32) } : {}),
+            ...(input.currency ? { currency: input.currency.slice(0, 8) } : {}),
+            ...(typeof input.price === "number" && Number.isFinite(input.price) ? { price: input.price } : {}),
             ...(attribution?.gclid ? { gclid: attribution.gclid } : {}),
             ...(attribution?.gbraid ? { gbraid: attribution.gbraid } : {}),
             ...(attribution?.wbraid ? { wbraid: attribution.wbraid } : {}),
@@ -53,6 +62,9 @@ export async function recordServerPurchaseTruth(input: {
             action: "purchase_success",
             entitlement_state: "premium",
             transaction_id: input.transactionId,
+            ...(input.periodType ? { period_type: input.periodType.slice(0, 32) } : {}),
+            ...(input.currency ? { currency: input.currency.slice(0, 8) } : {}),
+            ...(typeof input.price === "number" && Number.isFinite(input.price) ? { price: input.price } : {}),
             ...(props.gclid ? { gclid: props.gclid } : {}),
             ...(props.campaign_id ? { campaign_id: props.campaign_id } : {}),
           },

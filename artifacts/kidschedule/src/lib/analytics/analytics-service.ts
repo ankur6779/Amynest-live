@@ -254,6 +254,8 @@ export class AnalyticsService {
     });
 
     const scrubbed = scrubAnalyticsProps(rawProps);
+    const deviceId = getOrCreateDeviceId();
+    const sessionId = this.session.getSessionId();
     const props: Record<string, unknown> = {
       ...scrubbed,
       ...envelope,
@@ -261,8 +263,12 @@ export class AnalyticsService {
       os: ctx.os,
       browser: ctx.browser,
       language: ctx.language,
-      device_id: getOrCreateDeviceId(),
+      device_id: deviceId,
+      installation_id: deviceId,
+      anonymous_device_id: deviceId,
+      session_id: sessionId,
     };
+    if (!props.route && this.currentPath) props.route = this.currentPath;
     if (ctx.subscriptionState) props.subscription_state = ctx.subscriptionState;
     if (ctx.childAgeBand) props.child_age_band = ctx.childAgeBand;
     if (ctx.country) props.country = ctx.country;
@@ -280,7 +286,7 @@ export class AnalyticsService {
       name,
       eventId: newEventId(),
       props,
-      sessionId: this.session.getSessionId(),
+      sessionId,
       clientTs: new Date().toISOString(),
     };
 

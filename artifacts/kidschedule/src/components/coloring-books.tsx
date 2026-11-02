@@ -12,6 +12,7 @@ import {
   savePdfFromResponse,
   type HubDownloadWallet,
 } from "@/lib/hub-pdf-download";
+import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -180,6 +181,10 @@ export function ColoringBooks({
       const contentType = res.headers.get("content-type") ?? "";
       if (contentType.includes("json")) {
         const data = ((await safeJsonResponse(res).then((p) => (p.ok ? p.data : {})))) as DownloadResponse;
+        getAnalyticsService().trackFeatureUsage("coloring", "error", {
+          source: "coloring_download",
+          error_class: res.status === 429 ? "quota" : res.status === 402 ? "paywall" : res.status === 401 ? "auth" : "download_failed",
+        });
         if (res.status === 429) {
           if (data.dailyQuota) setQuota(data.dailyQuota);
           if (data.downloadWallet) setDownloadWallet(data.downloadWallet);
@@ -212,18 +217,31 @@ export function ColoringBooks({
       }
       const saved = await savePdfFromResponse(res, file.name);
       if (!saved) {
+        getAnalyticsService().trackFeatureUsage("coloring", "error", {
+          source: "coloring_download",
+          error_class: "save_failed",
+        });
         setRowError({
           id: file.id,
           message: "Couldn't save the PDF. Please try again."
         });
         return;
       }
+      getAnalyticsService().track("coloring_activity_completed", {
+        feature_name: "coloring",
+        source: "coloring_download",
+      });
+      getAnalyticsService().trackFeatureUsage("coloring", "completed", { source: "coloring_download" });
       const quotaHeaders = parseHubQuotaHeaders(res);
       if (quotaHeaders.dailyQuota) setQuota(quotaHeaders.dailyQuota);
       if (quotaHeaders.lifetimeQuota) setLifetimeQuota(quotaHeaders.lifetimeQuota);
       if (quotaHeaders.downloadWallet) setDownloadWallet(quotaHeaders.downloadWallet);
       await fetchPage(page);
     } catch {
+      getAnalyticsService().trackFeatureUsage("coloring", "error", {
+        source: "coloring_download",
+        error_class: "network",
+      });
       setRowError({
         id: file.id,
         message: "Network error — please check your connection."

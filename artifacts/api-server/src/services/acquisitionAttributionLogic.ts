@@ -245,7 +245,10 @@ export function buildServerPurchaseSuccessProps(input: {
   store?: string;
   providerEventId?: string;
   attribution?: AttributionRecord | null;
-}): Record<string, string> {
+  periodType?: string;
+  price?: number;
+  currency?: string;
+}): Record<string, string | number> {
   const attribution = input.attribution;
   const status = attribution ? attribution.attributionStatus : ATTRIBUTION_UNKNOWN;
   return {
@@ -264,5 +267,8 @@ export function buildServerPurchaseSuccessProps(input: {
       ? { campaign_id: attribution.campaignId }
       : {}),
     ...(attribution?.installSource ? { install_source: attribution.installSource } : {}),
+    ...(input.periodType ? { period_type: input.periodType.slice(0, 32) } : {}),
+    ...(input.currency ? { currency: input.currency.slice(0, 8) } : {}),
+    ...(typeof input.price === "number" && Number.isFinite(input.price) ? { price: input.price } : {}),
   };
 }

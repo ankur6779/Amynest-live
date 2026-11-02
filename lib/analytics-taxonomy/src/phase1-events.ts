@@ -98,6 +98,12 @@ export const PHASE1_EVENT_PROP_SCHEMAS = {
     gbraid: z.string().max(128).optional(),
     wbraid: z.string().max(128).optional(),
     campaign_id: z.string().max(64).optional(),
+    period_type: z.string().max(32).optional(),
+    product_id: z.string().max(128).optional(),
+    store: z.string().max(32).optional(),
+    event_type: z.string().max(64).optional(),
+    currency: z.string().max(8).optional(),
+    price: z.number().finite().optional(),
   }),
   onboarding_funnel_event: z.object({
     step: z.string().max(64),

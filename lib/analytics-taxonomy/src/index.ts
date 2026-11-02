@@ -261,6 +261,9 @@ const EVENT_PROP_SCHEMAS = {
     gbraid: z.string().max(128).optional(),
     wbraid: z.string().max(128).optional(),
     campaign_id: z.string().max(64).optional(),
+    period_type: z.string().max(32).optional(),
+    currency: z.string().max(8).optional(),
+    price: z.number().finite().optional(),
   }),
   premium_download_bank_refreshed: z.object({
     downloads_used_today: z.number().int().nonnegative().optional(),

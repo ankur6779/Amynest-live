@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import {
   applyServerIdentity,
   classifyAcquisition,
+  pickSpineProps,
   purchaseDedupeKey,
   scrubServerAnalyticsProps,
 } from "./analyticsSpine";
+import { classifyRevenueCatInitialPurchase } from "./revenueCatPurchaseClass";
 
 describe("analytics spine", () => {
   it("strips secrets, prompts, and client identity", () => {
@@ -71,5 +73,26 @@ describe("analytics spine", () => {
     assert.equal(classifyAcquisition({ gclid: "abc", install_source: "google_ads" }), "verified_paid");
     assert.equal(classifyAcquisition({ install_source: "organic" }), "organic");
     assert.equal(classifyAcquisition({}), "attribution_unknown");
+  });
+
+  it("keeps installation id and route after schema stripping", () => {
+    const kept = pickSpineProps({
+      installation_id: "device-12345678",
+      session_id: "sess-1",
+      route: "/speech-coach",
+      child_name: "Ava",
+    });
+    assert.equal(kept.installation_id, "device-12345678");
+    assert.equal(kept.session_id, "sess-1");
+    assert.equal(kept.route, "/speech-coach");
+    assert.equal("child_name" in kept, false);
+  });
+
+  it("does not treat a RevenueCat trial initial purchase as paid", () => {
+    assert.equal(classifyRevenueCatInitialPurchase("TRIAL"), "trial");
+    assert.equal(classifyRevenueCatInitialPurchase("trial"), "trial");
+    assert.equal(classifyRevenueCatInitialPurchase("NORMAL"), "paid");
+    assert.equal(classifyRevenueCatInitialPurchase("INTRO"), "paid");
+    assert.equal(classifyRevenueCatInitialPurchase(undefined), "paid");
   });
 });
