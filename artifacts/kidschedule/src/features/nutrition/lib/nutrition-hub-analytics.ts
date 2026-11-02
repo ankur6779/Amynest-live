@@ -4,6 +4,7 @@
  */
 
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 import type { AchievementId } from "@/features/nutrition/lib/nutrition-achievements";
 import type { NutritionTab } from "@/features/nutrition/types/nutrition-hub.types";
 
@@ -56,6 +57,33 @@ function shouldEmitSessionEvent(key: string): boolean {
   return true;
 }
 
+function countOf(meta: Record<string, string | number | boolean | undefined>, key: string): number | undefined {
+  const value = meta[key];
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.round(value)) : undefined;
+}
+
+/** Counts and tool names only. Meal text stays out of the product spine. */
+function bridgeNutritionProduct(
+  event: NutritionHubAnalyticsEvent,
+  meta: Record<string, string | number | boolean | undefined>,
+): void {
+  if (event === "nutrition_hub_open" || event === "plan_tab_open") {
+    safeProductTrack("nutrition_tool_opened", {
+      feature_name: "nutrition",
+      tool: event === "plan_tab_open" ? "plan" : "hub",
+    });
+    return;
+  }
+  if (event === "grocery_generated" || event === "tiffin_generated") {
+    const itemCount = countOf(meta, event === "grocery_generated" ? "itemCount" : "dayCount");
+    safeProductTrack("nutrition_plan_generated", {
+      feature_name: "nutrition",
+      plan_kind: event === "grocery_generated" ? "grocery" : "tiffin",
+      ...(itemCount !== undefined ? { item_count: itemCount } : {}),
+    });
+  }
+}
+
 function emit(
   event: NutritionHubAnalyticsEvent,
   meta: Record<string, string | number | boolean | undefined>,
@@ -65,6 +93,7 @@ function emit(
     message: `[nutrition-hub] ${event}`,
     meta: { feature: "nutrition_hub", event, ...meta },
   });
+  bridgeNutritionProduct(event, meta);
 }
 
 function emitOncePerSession(

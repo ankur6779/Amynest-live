@@ -8,6 +8,7 @@ import { trackGrowthEvent } from "@/lib/growth-analytics";
 import { initMetaAttribution } from "@/lib/meta-attribution";
 
 const STORAGE_KEY = "amynest:install_attribution";
+const LAST_TOUCH_KEY = "amynest:last_touch_attribution";
 const CAPTURED_KEY = "amynest:install_attribution_captured";
 const ANDROID_REFERRER_WAIT_MS = 2500;
 
@@ -29,6 +30,100 @@ export type InstallAttribution = {
   campaignId?: string;
   capturedAt: string;
 };
+
+export type LastTouchAttribution = {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
+  fbclid?: string;
+  campaignId?: string;
+  at: string;
+};
+
+const FIRST_TOUCH_KEYS = [
+  "utmSource",
+  "utmMedium",
+  "utmCampaign",
+  "utmContent",
+  "utmTerm",
+  "gclid",
+  "gbraid",
+  "wbraid",
+  "fbclid",
+  "ref",
+  "campaignId",
+  "playReferrer",
+] as const satisfies readonly (keyof InstallAttribution)[];
+
+function hasValue(value: unknown): boolean {
+  return typeof value === "string" ? value.trim().length > 0 : value != null && value !== "";
+}
+
+function clickConflict(existing: InstallAttribution, incoming: Partial<InstallAttribution>): boolean {
+  for (const key of ["gclid", "gbraid", "wbraid", "fbclid"] as const) {
+    if (hasValue(existing[key]) && hasValue(incoming[key]) && existing[key] !== incoming[key]) return true;
+  }
+  return false;
+}
+
+/** Fill only empty first-touch fields. A stored click id is never replaced. */
+function keepFirstTouch(existing: InstallAttribution, incoming: Partial<InstallAttribution>): InstallAttribution {
+  if (clickConflict(existing, incoming)) {
+    const kept: InstallAttribution = { ...existing, capturedAt: existing.capturedAt };
+    if (!kept.playReferrer && incoming.playReferrer) kept.playReferrer = incoming.playReferrer;
+    if (!kept.playClickTimestamp && incoming.playClickTimestamp) kept.playClickTimestamp = incoming.playClickTimestamp;
+    if (!kept.playInstallTimestamp && incoming.playInstallTimestamp) {
+      kept.playInstallTimestamp = incoming.playInstallTimestamp;
+    }
+    return kept;
+  }
+  const next: InstallAttribution = { ...existing, capturedAt: existing.capturedAt };
+  for (const key of FIRST_TOUCH_KEYS) {
+    if (!hasValue(next[key]) && hasValue(incoming[key])) {
+      next[key] = incoming[key] as never;
+    }
+  }
+  if (!next.landingPath && incoming.landingPath) next.landingPath = incoming.landingPath;
+  if (!next.playClickTimestamp && incoming.playClickTimestamp) next.playClickTimestamp = incoming.playClickTimestamp;
+  if (!next.playInstallTimestamp && incoming.playInstallTimestamp) {
+    next.playInstallTimestamp = incoming.playInstallTimestamp;
+  }
+  return next;
+}
+
+function writeLastTouch(incoming: Partial<InstallAttribution>): void {
+  const signal = FIRST_TOUCH_KEYS.some((key) => hasValue(incoming[key]));
+  if (!signal) return;
+  const snapshot: LastTouchAttribution = {
+    utmSource: incoming.utmSource,
+    utmMedium: incoming.utmMedium,
+    utmCampaign: incoming.utmCampaign,
+    gclid: incoming.gclid,
+    gbraid: incoming.gbraid,
+    wbraid: incoming.wbraid,
+    fbclid: incoming.fbclid,
+    campaignId: incoming.campaignId,
+    at: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(LAST_TOUCH_KEY, JSON.stringify(snapshot));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readLastTouchAttribution(): LastTouchAttribution | null {
+  try {
+    const raw = localStorage.getItem(LAST_TOUCH_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as LastTouchAttribution;
+  } catch {
+    return null;
+  }
+}
 
 type PlayInstallReferrer = {
   referrer?: string;
@@ -121,22 +216,13 @@ function parseUtmFromUrl(): Partial<InstallAttribution> {
 
 function mergePlayReferrer(existing: InstallAttribution, play: PlayInstallReferrer): InstallAttribution {
   const fromReferrer = play.referrer ? parseReferrerQuery(play.referrer) : {};
-  return {
-    ...existing,
+  writeLastTouch(fromReferrer);
+  return keepFirstTouch(existing, {
     ...fromReferrer,
-    playReferrer: play.referrer ?? existing.playReferrer,
-    playClickTimestamp: play.clickTimestamp ?? existing.playClickTimestamp,
-    playInstallTimestamp: play.installTimestamp ?? existing.playInstallTimestamp,
-    utmSource: fromReferrer.utmSource ?? existing.utmSource,
-    utmMedium: fromReferrer.utmMedium ?? existing.utmMedium,
-    utmCampaign: fromReferrer.utmCampaign ?? existing.utmCampaign,
-    utmContent: fromReferrer.utmContent ?? existing.utmContent,
-    utmTerm: fromReferrer.utmTerm ?? existing.utmTerm,
-    gclid: fromReferrer.gclid ?? existing.gclid,
-    gbraid: fromReferrer.gbraid ?? existing.gbraid,
-    wbraid: fromReferrer.wbraid ?? existing.wbraid,
-    campaignId: fromReferrer.campaignId ?? existing.campaignId,
-  };
+    playReferrer: play.referrer,
+    playClickTimestamp: play.clickTimestamp,
+    playInstallTimestamp: play.installTimestamp,
+  });
 }
 
 function resolveInstallSource(attr: InstallAttribution | null | undefined): string {
@@ -180,19 +266,11 @@ function buildInstallSourcePayload(attr: InstallAttribution) {
 export function captureCampaignAttribution(): InstallAttribution {
   const existing = readAttribution();
   const fromUrl = parseUtmFromUrl();
-  const hasNewData = Object.keys(fromUrl).some(
-    (k) => k !== "landingPath" && fromUrl[k as keyof typeof fromUrl],
-  );
-
-  const merged: InstallAttribution = {
-    ...(existing ?? { capturedAt: new Date().toISOString() }),
-    ...fromUrl,
-    capturedAt: existing?.capturedAt ?? new Date().toISOString(),
-  };
-
-  if (hasNewData || !existing) {
+  const merged = keepFirstTouch(existing ?? { capturedAt: new Date().toISOString() }, fromUrl);
+  if (!existing || JSON.stringify(merged) !== JSON.stringify(existing)) {
     writeAttribution(merged);
   }
+  writeLastTouch(fromUrl);
   initMetaAttribution();
   return merged;
 }

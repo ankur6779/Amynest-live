@@ -34,6 +34,9 @@ describe("product spine client", () => {
     const exit = body.events.find((event) => event.name === "page_exit");
     expect(exit?.props.time_on_screen_ms).toBe(1500);
     expect(body.events.every((event) => typeof event.eventId === "string")).toBe(true);
+    const view = body.events.find((event) => event.name === "page_view");
+    expect(view?.props.installation_id).toEqual(view?.props.device_id);
+    expect(typeof view?.props.session_id).toBe("string");
   });
 
   it("does not emit a second page view for the same path inside the dedupe window", async () => {
@@ -103,11 +106,35 @@ describe("product spine client", () => {
       password: "nope",
       message: "hello",
       child_name: "Ava",
+      childId: 7,
+      child_id: 7,
+      diagnosis: "private",
+      medication: "private",
     });
     expect(clean.screen).toBe("/assistant");
     expect(clean.prompt).toBeUndefined();
     expect(clean.password).toBeUndefined();
     expect(clean.message).toBeUndefined();
     expect(clean.child_name).toBeUndefined();
+    expect(clean.childId).toBeUndefined();
+    expect(clean.child_id).toBeUndefined();
+    expect(clean.diagnosis).toBeUndefined();
+    expect(clean.medication).toBeUndefined();
+  });
+
+  it("does not queue a numeric child id or a child name", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    getAnalyticsService().trackEvent("speech_coach_v2_session_start", {
+      childId: 12,
+      sessionId: "sess-privacy",
+      ageBand: "3-4",
+    });
+    await flushAnalytics(fetchMock);
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as {
+      events: Array<{ props: Record<string, unknown> }>;
+    };
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toMatch(/"childId"|"child_id"|"child_name"|"diagnosis"/);
+    expect(serialized).not.toContain("Ava");
   });
 });

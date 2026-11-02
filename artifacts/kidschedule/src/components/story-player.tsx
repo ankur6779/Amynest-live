@@ -51,11 +51,13 @@ export function StoryFlowPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [errored, setErrored] = useState(false);
   const startedRef = useRef(false);
+  const endedRef = useRef(false);
 
   // Reset on story change.
   useEffect(() => {
     setErrored(false);
     startedRef.current = false;
+    endedRef.current = false;
   }, [story.id]);
 
   // Replay signal: seek to start and play.
@@ -106,6 +108,7 @@ export function StoryFlowPlayer({
       }
     };
     const handleEnded = () => {
+      endedRef.current = true;
       void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
         const service = getAnalyticsService();
         const durationMs = Number.isFinite(v.duration) ? Math.round(v.duration * 1000) : undefined;
@@ -131,6 +134,11 @@ export function StoryFlowPlayer({
     v.addEventListener("ended", handleEnded);
     v.addEventListener("error", handleError);
     return () => {
+      if (startedRef.current && !endedRef.current) {
+        void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+          getAnalyticsService().trackFeatureUsage("stories", "abandoned", { source: "story_player" });
+        });
+      }
       v.removeEventListener("timeupdate", handleTimeUpdate);
       v.removeEventListener("play", handlePlay);
       v.removeEventListener("ended", handleEnded);

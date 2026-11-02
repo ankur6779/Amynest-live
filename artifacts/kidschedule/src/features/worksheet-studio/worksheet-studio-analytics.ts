@@ -1,4 +1,5 @@
 import { recordStudioAnalytics } from "@workspace/worksheet-studio/client";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 
 /** Lightweight analytics hooks for worksheet studio events. */
 type WorksheetEvent =
@@ -28,6 +29,12 @@ export function trackWorksheetEvent(
   props?: Record<string, string | number | boolean>,
 ): void {
   try {
+    if (event === "worksheet_error") {
+      safeProductTrack("worksheet_generation_failed", {
+        feature_name: "worksheets",
+        error_class: "worksheet_error",
+      });
+    }
     recordStudioAnalytics(event, props);
     if (typeof window !== "undefined" && "gtag" in window) {
       (window as { gtag?: (...args: unknown[]) => void }).gtag?.("event", event, props);

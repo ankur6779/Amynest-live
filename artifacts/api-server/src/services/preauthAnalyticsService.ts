@@ -66,6 +66,38 @@ export const PREAUTH_ANALYTICS_EVENTS = new Set([
   "pre_signup_campaign_blocked",
   "pre_signup_campaign_eligible",
   "pre_signup_native_schedule_result",
+  "game_opened",
+  "game_started",
+  "game_completed",
+  "game_result",
+  "game_abandoned",
+  "talking_amy_session_started",
+  "talking_amy_first_interaction",
+  "talking_amy_session_completed",
+  "talking_amy_session_abandoned",
+  "health_lab_tool_opened",
+  "health_lab_assessment_started",
+  "health_lab_assessment_completed",
+  "nutrition_tool_opened",
+  "nutrition_plan_generated",
+  "nutrition_plan_saved",
+  "infant_action",
+  "discovery_completed",
+  "learning_activity_started",
+  "learning_activity_completed",
+  "speech_session_progress",
+  "speech_session_abandoned",
+  "coloring_activity_started",
+  "coloring_activity_completed",
+  "coloring_preview_opened",
+  "story_opened",
+  "video_started",
+  "video_completed",
+  "worksheet_opened",
+  "worksheet_downloaded",
+  "worksheet_generation_failed",
+  "ask_amy_message_sent",
+  "ask_amy_response_received",
 ]);
 
 const DEVICE_ID_PATTERN = /^[a-zA-Z0-9_-]{8,128}$/;
@@ -90,6 +122,14 @@ const STRIP_PREAUTH_PROP_KEYS = new Set([
   "entitlement_state",
   "revenuecat_id",
   "rc_app_user_id",
+  "childId",
+  "child_id",
+  "child_ref",
+  "childRef",
+  "child_name",
+  "childName",
+  "diagnosis",
+  "medication",
 ]);
 
 export function isValidPreauthDeviceId(deviceId: string): boolean {
@@ -128,18 +168,33 @@ export function filterPreauthEvents(events: RawAnalyticsEvent[]): {
   return { allowed, rejected };
 }
 
+type PreauthPersist = typeof ingestAnalyticsEvents;
+type PreauthAttribution = typeof recordPreauthAttribution;
+
+let persistPreauthEvents: PreauthPersist = ingestAnalyticsEvents;
+let persistPreauthAttribution: PreauthAttribution = recordPreauthAttribution;
+
+/** Test seam. Production callers keep the database implementations. */
+export function setPreauthPersistenceForTests(
+  persist: PreauthPersist | null,
+  attribution: PreauthAttribution | null = null,
+): void {
+  persistPreauthEvents = persist ?? ingestAnalyticsEvents;
+  persistPreauthAttribution = attribution ?? recordPreauthAttribution;
+}
+
 export async function ingestPreauthAnalyticsEvents(
   events: RawAnalyticsEvent[],
   ctx: Omit<AnalyticsIngestContext, "userId"> & { deviceId: string },
 ): Promise<AnalyticsIngestSummary & { rejectedPreauthPolicy: number }> {
   const sanitized = sanitizePreauthEvents(events);
   const { allowed, rejected } = filterPreauthEvents(sanitized);
-  const summary = await ingestAnalyticsEvents(allowed, {
+  const summary = await persistPreauthEvents(allowed, {
     userId: preauthUserId(ctx.deviceId),
     platform: ctx.platform,
     appVersion: ctx.appVersion,
     deviceId: ctx.deviceId,
   });
-  void recordPreauthAttribution(ctx.deviceId, allowed);
+  void persistPreauthAttribution(ctx.deviceId, allowed);
   return { ...summary, rejectedPreauthPolicy: rejected };
 }

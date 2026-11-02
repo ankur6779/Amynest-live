@@ -1,4 +1,4 @@
-import { track } from "@/lib/analytics";
+import { track, trackFeatureUsage } from "@/lib/analytics";
 import { getAnalyticsService } from "@/lib/analytics/analytics-service";
 
 export type RoutineGenerationMode =
@@ -67,6 +67,7 @@ export function trackRoutineGenerationStarted(
     mode: ctx.mode,
     source: ctx.source,
   });
+  trackFeatureUsage("routines", "started", { source: ctx.source ?? "routine_generation" });
 }
 
 /** Emit when a routine is committed (saved) or returned without a separate save step. */
@@ -86,6 +87,7 @@ export function trackRoutineGeneratedOnce(input: {
     itemCount: input.itemCount,
     source: input.source,
   });
+  trackFeatureUsage("routines", "completed", { source: input.source ?? "routine_generation" });
 }
 
 export function trackRoutineGenerationFailed(
@@ -107,4 +109,5 @@ export function trackRoutineGenerationFailed(
     feature: "routine_generation",
     statusCode,
   });
+  trackFeatureUsage("routines", "error", { source: ctx.source ?? "routine_generation", error_class: errorClass });
 }

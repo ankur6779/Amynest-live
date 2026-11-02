@@ -78,11 +78,6 @@ function toDateOrNull(iso: string | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function numericChildId(props: Record<string, unknown>): number | null {
-  const v = props["childId"];
-  return typeof v === "number" && Number.isInteger(v) ? v : null;
-}
-
 function noteDropped(summary: AnalyticsIngestSummary, eventId: string | undefined): void {
   if (eventId) summary.droppedEventIds.push(eventId);
 }
@@ -242,7 +237,7 @@ export async function ingestAnalyticsEvents(
     });
     const base: InsertAnalyticsEvent = {
       userId: ctx.userId,
-      childId: numericChildId(merged),
+      childId: null,
       eventName: result.name,
       eventCategory: result.category,
       sessionId: ev.sessionId?.slice(0, 128) ?? null,

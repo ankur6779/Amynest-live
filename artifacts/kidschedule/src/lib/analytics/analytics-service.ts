@@ -97,6 +97,29 @@ function attachInstallAttribution(props: Record<string, unknown>): void {
     if (attr?.fbclid && !props.fbclid) props.fbclid = attr.fbclid;
     if (attr?.utmCampaign && !props.utm_campaign) props.utm_campaign = attr.utmCampaign;
     if (attr?.campaignId && !props.campaign_id) props.campaign_id = attr.campaignId;
+    const capturedAt = raw ? (JSON.parse(raw) as { capturedAt?: string }).capturedAt : undefined;
+    if (capturedAt && !props.first_touch_at) props.first_touch_at = capturedAt;
+    const lastRaw = localStorage.getItem("amynest:last_touch_attribution");
+    if (lastRaw) {
+      const last = JSON.parse(lastRaw) as {
+        utmSource?: string;
+        utmMedium?: string;
+        utmCampaign?: string;
+        gclid?: string;
+        gbraid?: string;
+        wbraid?: string;
+        campaignId?: string;
+        at?: string;
+      };
+      if (last.utmSource && !props.last_touch_source) props.last_touch_source = last.utmSource;
+      if (last.utmMedium && !props.last_touch_medium) props.last_touch_medium = last.utmMedium;
+      if (last.utmCampaign && !props.last_touch_campaign) props.last_touch_campaign = last.utmCampaign;
+      if (last.gclid && !props.last_touch_gclid) props.last_touch_gclid = last.gclid;
+      if (last.gbraid && !props.last_touch_gbraid) props.last_touch_gbraid = last.gbraid;
+      if (last.wbraid && !props.last_touch_wbraid) props.last_touch_wbraid = last.wbraid;
+      if (last.campaignId && !props.last_touch_campaign_id) props.last_touch_campaign_id = last.campaignId;
+      if (last.at && !props.last_touch_at) props.last_touch_at = last.at;
+    }
   } catch {
     if (!props.install_source) props.install_source = "unknown";
   }
@@ -254,6 +277,8 @@ export class AnalyticsService {
     });
 
     const scrubbed = scrubAnalyticsProps(rawProps);
+    const deviceId = getOrCreateDeviceId();
+    const sessionId = this.session.getSessionId();
     const props: Record<string, unknown> = {
       ...scrubbed,
       ...envelope,
@@ -261,8 +286,12 @@ export class AnalyticsService {
       os: ctx.os,
       browser: ctx.browser,
       language: ctx.language,
-      device_id: getOrCreateDeviceId(),
+      device_id: deviceId,
+      installation_id: deviceId,
+      anonymous_device_id: deviceId,
+      session_id: sessionId,
     };
+    if (!props.route && this.currentPath) props.route = this.currentPath;
     if (ctx.subscriptionState) props.subscription_state = ctx.subscriptionState;
     if (ctx.childAgeBand) props.child_age_band = ctx.childAgeBand;
     if (ctx.country) props.country = ctx.country;
@@ -280,7 +309,7 @@ export class AnalyticsService {
       name,
       eventId: newEventId(),
       props,
-      sessionId: this.session.getSessionId(),
+      sessionId,
       clientTs: new Date().toISOString(),
     };
 

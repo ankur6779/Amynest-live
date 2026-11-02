@@ -33,6 +33,8 @@ vi.mock("../lib/analytics", () => ({
   trackSpeechCoachV2SessionStart: vi.fn(),
   trackSpeechCoachV2SessionComplete: vi.fn(),
   trackSpeechCoachV2LimitReached: vi.fn(),
+  trackSpeechSessionProgress: vi.fn(),
+  trackSpeechSessionAbandoned: vi.fn(),
 }));
 
 const authFetch = vi.fn(async () => ({

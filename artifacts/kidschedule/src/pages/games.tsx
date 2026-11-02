@@ -40,6 +40,8 @@ import { prepareGameSession } from "@/lib/game-adaptive-progression";
 import { setGameDifficulty } from "@/lib/game-difficulty";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import { claimGameAbandon, type GamePlaySession } from "@/lib/analytics/game-abandon";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 import {
   beginGameSession,
   endGameSession,
@@ -113,17 +115,34 @@ export default function GamesPage() {
   /** Prevents concurrent finishGame calls while async work is in flight. */
   const finishingRef = useRef(false);
   /** One finish per play stage — blocks duplicate mastery, wallet, and analytics. */
-  const playSessionRef = useRef<{
-    gameId: string;
-    idempotencyKey: string;
-    finished: boolean;
-  } | null>(null);
+  const gameStartTrackedRef = useRef("");
+  const playSessionRef = useRef<GamePlaySession | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
 
   const resetPlaySession = useCallback(() => {
+    const claim = claimGameAbandon(playSessionRef.current);
+    if (claim) {
+      safeProductTrack("game_abandoned", {
+        feature_name: "gaming_hub",
+        game_id: claim.gameId,
+        reason: "leave",
+      });
+    }
     playSessionRef.current = null;
     finishingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      const claim = claimGameAbandon(playSessionRef.current);
+      if (!claim) return;
+      safeProductTrack("game_abandoned", {
+        feature_name: "gaming_hub",
+        game_id: claim.gameId,
+        reason: "unmount",
+      });
+    };
   }, []);
 
   const { data: childProfiles = [] } = useListChildren({
@@ -351,6 +370,8 @@ export default function GamesPage() {
         runtimeDifficulty: runtimeGameGuidance?.difficulty,
       });
       setActive({ kind: "play", game: g, stage: "intro" });
+      gameStartTrackedRef.current = "";
+      safeProductTrack("game_opened", { feature_name: "gaming_hub", game_id: g.id.slice(0, 64) });
     },
     [isPremium, limit, limitHit, previewAgeMonths, resetPlaySession, runtimeGameGuidance, t],
   );
@@ -365,7 +386,12 @@ export default function GamesPage() {
         gameId: prev.game.id,
         idempotencyKey: createPlayIdempotencyKey(prev.game.id),
         finished: false,
+        abandonEmitted: false,
       };
+      if (gameStartTrackedRef.current !== prev.game.id) {
+        gameStartTrackedRef.current = prev.game.id;
+        safeProductTrack("game_started", { feature_name: "gaming_hub", game_id: prev.game.id.slice(0, 64) });
+      }
       finishingRef.current = false;
       if (activeChildId != null) {
         const began = beginGameSession({
@@ -403,6 +429,15 @@ export default function GamesPage() {
 
       finishingRef.current = true;
       session.finished = true;
+      const perfectPreview = total === 0 ? false : score / total >= 0.95;
+      safeProductTrack("game_completed", { feature_name: "gaming_hub", game_id: g.id.slice(0, 64) });
+      safeProductTrack("game_result", {
+        feature_name: "gaming_hub",
+        game_id: g.id.slice(0, 64),
+        score: Math.max(0, Math.round(score)),
+        total: Math.max(0, Math.round(total)),
+        perfect: perfectPreview,
+      });
 
       try {
         const ratio = total === 0 ? 0 : score / total;

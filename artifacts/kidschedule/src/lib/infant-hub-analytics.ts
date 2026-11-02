@@ -1,4 +1,5 @@
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 
 const INFANT_NOTIF_PREFS_KEY = "amynest:infant-notification-prefs";
 
@@ -216,10 +217,35 @@ function recordDebug(
   console.info("[infant-analytics]", entry);
 }
 
+const INFANT_PRODUCT_ACTION: Partial<
+  Record<InfantAnalyticsEventName, "hub_opened" | "log_created" | "milestone_completed" | "exercise_completed">
+> = {
+  infant_hub_opened: "hub_opened",
+  feed_logged: "log_created",
+  sleep_log_added: "log_created",
+  diaper_logged: "log_created",
+  burp_logged: "log_created",
+  milestone_completed: "milestone_completed",
+  breathing_exercise_completed: "exercise_completed",
+};
+
+let infantHubOpenedTracked = false;
+
+function bridgeInfantProduct(event: InfantAnalyticsEventName): void {
+  const action = INFANT_PRODUCT_ACTION[event];
+  if (!action) return;
+  if (action === "hub_opened") {
+    if (infantHubOpenedTracked) return;
+    infantHubOpenedTracked = true;
+  }
+  safeProductTrack("infant_action", { feature_name: "infant_hub", action });
+}
+
 function dispatch(
   event: InfantAnalyticsEventName,
   properties: Record<string, unknown>,
 ): void {
+  bridgeInfantProduct(event);
   try {
     for (const adapter of adapters) {
       try {

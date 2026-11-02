@@ -81,16 +81,48 @@ export function mergeFirstTouch(
     gbraid?: string | null;
     wbraid?: string | null;
     campaignId?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
     sourceMetadata?: Record<string, unknown>;
     at: string;
   },
 ): AttributionRecord {
-  const gclid = clean(incoming.gclid) ?? existing?.gclid ?? null;
-  const gbraid = clean(incoming.gbraid) ?? existing?.gbraid ?? null;
-  const wbraid = clean(incoming.wbraid) ?? existing?.wbraid ?? null;
-  const campaignId = clean(incoming.campaignId) ?? existing?.campaignId ?? null;
+  const keep = (previous: string | null | undefined, next: string | null | undefined): string | null =>
+    clean(previous) ?? clean(next);
+  const gclid = keep(existing?.gclid, incoming.gclid);
+  const gbraid = keep(existing?.gbraid, incoming.gbraid);
+  const wbraid = keep(existing?.wbraid, incoming.wbraid);
+  const campaignId = keep(existing?.campaignId, incoming.campaignId);
   const installSource = preferInstallSource(incoming.installSource, existing?.installSource);
   const clickIds = { gclid, gbraid, wbraid, campaignId, installSource };
+  const firstTouchAt = existing?.firstTouchAt ?? incoming.at;
+  const priorMeta = existing?.sourceMetadata ?? {};
+  const firstTouch =
+    priorMeta.firstTouch && typeof priorMeta.firstTouch === "object"
+      ? priorMeta.firstTouch
+      : {
+          gclid,
+          gbraid,
+          wbraid,
+          campaignId,
+          installSource,
+          utmSource: clean(incoming.utmSource),
+          utmMedium: clean(incoming.utmMedium),
+          utmCampaign: clean(incoming.utmCampaign),
+          at: firstTouchAt,
+        };
+  const lastTouch = {
+    gclid: clean(incoming.gclid),
+    gbraid: clean(incoming.gbraid),
+    wbraid: clean(incoming.wbraid),
+    campaignId: clean(incoming.campaignId),
+    installSource: clean(incoming.installSource),
+    utmSource: clean(incoming.utmSource),
+    utmMedium: clean(incoming.utmMedium),
+    utmCampaign: clean(incoming.utmCampaign),
+    at: incoming.at,
+  };
   return {
     deviceId: incoming.deviceId || existing?.deviceId || "",
     canonicalUserId: isCanonicalUserId(incoming.canonicalUserId)
@@ -104,11 +136,13 @@ export function mergeFirstTouch(
     gbraid,
     wbraid,
     campaignId,
-    firstTouchAt: existing?.firstTouchAt ?? incoming.at,
+    firstTouchAt,
     lastTouchAt: incoming.at,
     sourceMetadata: {
-      ...(existing?.sourceMetadata ?? {}),
+      ...priorMeta,
       ...(incoming.sourceMetadata ?? {}),
+      firstTouch,
+      lastTouch,
     },
     attributionStatus: resolveAttributionStatus(clickIds),
   };
@@ -135,7 +169,12 @@ export function stitchCanonicalUser(
   };
 }
 
-export function extractClickIdsFromProps(props: Record<string, unknown> | undefined): ClickIds & { installSource?: string } {
+export function extractClickIdsFromProps(props: Record<string, unknown> | undefined): ClickIds & {
+  installSource?: string;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+} {
   const p = props ?? {};
   const str = (key: string): string | null =>
     typeof p[key] === "string" ? (p[key] as string) : null;
@@ -145,6 +184,9 @@ export function extractClickIdsFromProps(props: Record<string, unknown> | undefi
     wbraid: str("wbraid"),
     campaignId: str("campaign_id") ?? str("campaignId"),
     installSource: str("source") ?? str("install_source") ?? undefined,
+    utmSource: str("utm_source") ?? str("utmSource"),
+    utmMedium: str("utm_medium") ?? str("utmMedium"),
+    utmCampaign: str("utm_campaign") ?? str("utmCampaign"),
   };
 }
 
@@ -245,7 +287,11 @@ export function buildServerPurchaseSuccessProps(input: {
   store?: string;
   providerEventId?: string;
   attribution?: AttributionRecord | null;
-}): Record<string, string> {
+  periodType?: string;
+  price?: number;
+  currency?: string;
+  purchaseClass?: string;
+}): Record<string, string | number> {
   const attribution = input.attribution;
   const status = attribution ? attribution.attributionStatus : ATTRIBUTION_UNKNOWN;
   return {
@@ -264,5 +310,9 @@ export function buildServerPurchaseSuccessProps(input: {
       ? { campaign_id: attribution.campaignId }
       : {}),
     ...(attribution?.installSource ? { install_source: attribution.installSource } : {}),
+    ...(input.periodType ? { period_type: input.periodType.slice(0, 32) } : {}),
+    ...(input.currency ? { currency: input.currency.slice(0, 8) } : {}),
+    ...(typeof input.price === "number" && Number.isFinite(input.price) ? { price: input.price } : {}),
+    ...(input.purchaseClass ? { purchase_class: input.purchaseClass.slice(0, 32) } : {}),
   };
 }

@@ -208,4 +208,22 @@ describe("paid-user identity + attribution loop", () => {
     assert.equal(laterUnknown.attributionStatus, GOOGLE_ADS_VERIFIED);
     assert.equal(ATTRIBUTED, GOOGLE_ADS_VERIFIED);
   });
+
+  it("a later different gclid does not replace first-touch and is stored as last touch", () => {
+    const first = firstTouch({ gclid: "gclid-1", utmSource: "google", utmCampaign: "first-campaign" });
+    const later = mergeFirstTouch(first, {
+      deviceId: DEVICE,
+      gclid: "gclid-2",
+      utmSource: "google",
+      utmMedium: "cpc",
+      utmCampaign: "second-campaign",
+      at: "2026-11-02T12:00:00.000Z",
+    });
+    assert.equal(later.gclid, "gclid-1");
+    assert.equal(later.firstTouchAt, first.firstTouchAt);
+    assert.equal(later.lastTouchAt, "2026-11-02T12:00:00.000Z");
+    const last = later.sourceMetadata.lastTouch as { gclid?: string; utmCampaign?: string };
+    assert.equal(last.gclid, "gclid-2");
+    assert.equal(last.utmCampaign, "second-campaign");
+  });
 });

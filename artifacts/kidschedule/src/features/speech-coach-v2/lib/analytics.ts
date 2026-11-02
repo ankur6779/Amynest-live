@@ -1,4 +1,4 @@
-import { track } from "@/lib/analytics";
+import { track, trackFeatureUsage } from "@/lib/analytics";
 import type { SpeechCoachV2Phase } from "@workspace/speech-coach-v2";
 
 export function trackSpeechCoachV2SessionStart(props: {
@@ -7,6 +7,7 @@ export function trackSpeechCoachV2SessionStart(props: {
   ageBand: string;
 }): void {
   track("speech_coach_v2_session_start", props);
+  trackFeatureUsage("speech_session", "started", { source: "speech_coach_v2" });
   void import("@/lib/firebase-subscription-attribution").then(({ trackFirebaseQualitySignal }) => {
     trackFirebaseQualitySignal(
       "speech_coach_started",
@@ -19,6 +20,17 @@ export function trackSpeechCoachV2SessionStart(props: {
   });
 }
 
+export function trackSpeechSessionProgress(): void {
+  track("speech_session_progress", { feature_name: "speech_session" });
+}
+
+export function trackSpeechSessionAbandoned(reason: string): void {
+  track("speech_session_abandoned", {
+    feature_name: "speech_session",
+    reason: reason.slice(0, 64),
+  });
+}
+
 export function trackSpeechCoachV2SessionComplete(props: {
   childId: number;
   sessionId: string;
@@ -27,6 +39,7 @@ export function trackSpeechCoachV2SessionComplete(props: {
   phaseReached: SpeechCoachV2Phase | string;
 }): void {
   track("speech_coach_v2_session_complete", props);
+  trackFeatureUsage("speech_session", "completed", { source: "speech_coach_v2" });
 }
 
 export function trackSpeechCoachV2LimitReached(props: { childId: number; isTrial?: boolean }): void {

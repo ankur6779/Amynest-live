@@ -25,6 +25,7 @@ describe("preauth analytics policy", () => {
       { name: "paywall_view" },
       { name: "checkout_started" },
       { name: "speech_coach_v2_session_start" },
+      { name: "game_abandoned" },
       { name: "purchase_success" },
       { name: "upgrade_completed" },
     ]);
@@ -38,6 +39,7 @@ describe("preauth analytics policy", () => {
         "paywall_view",
         "checkout_started",
         "speech_coach_v2_session_start",
+        "game_abandoned",
       ],
     );
   });
@@ -55,6 +57,9 @@ describe("preauth analytics policy", () => {
           value: 499,
           entitlement_state: "premium",
           device_id: "keep-device",
+          childId: 7,
+          child_name: "Ava",
+          diagnosis: "private",
         },
       },
     ]);
@@ -64,5 +69,8 @@ describe("preauth analytics policy", () => {
     assert.equal("canonical_user_id" in (event?.props ?? {}), false);
     assert.equal("revenue" in (event?.props ?? {}), false);
     assert.equal("entitlement_state" in (event?.props ?? {}), false);
+    assert.equal("childId" in (event?.props ?? {}), false);
+    assert.equal("child_name" in (event?.props ?? {}), false);
+    assert.equal("diagnosis" in (event?.props ?? {}), false);
   });
 });

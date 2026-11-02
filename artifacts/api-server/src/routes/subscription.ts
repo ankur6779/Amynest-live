@@ -35,6 +35,7 @@ import {
   TOTAL_COUNT_BY_PLAN,
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
+import { classifyRevenueCatWebhook } from "../services/revenueCatPurchaseClass.js";
 import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
@@ -428,6 +429,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     environment?: string;
     period_type?: string;
     price?: number;
+    currency?: string;
     auto_renew_status?: boolean;
     cancel_reason?: string;
   };
@@ -577,15 +579,36 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       });
     }
     if (event.type === "INITIAL_PURCHASE" && event.transaction_id && userId) {
-      const { recordServerPurchaseTruth } = await import("../services/serverPurchaseTruthService.js");
-      void recordServerPurchaseTruth({
-        canonicalUserId: userId,
-        transactionId: event.transaction_id,
-        productId: event.product_id ?? undefined,
-        store: event.store ?? undefined,
-        providerEventId: eventId,
-        conversionAt: eventAt,
+      const decision = classifyRevenueCatWebhook({
+        type: event.type,
+        periodType: event.period_type,
+        cancelReason: event.cancel_reason,
+        price: event.price,
       });
+      if (decision.recordPaidPurchase) {
+        const { recordServerPurchaseTruth } = await import("../services/serverPurchaseTruthService.js");
+        void recordServerPurchaseTruth({
+          canonicalUserId: userId,
+          transactionId: event.transaction_id,
+          productId: event.product_id ?? undefined,
+          store: event.store ?? undefined,
+          providerEventId: eventId,
+          conversionAt: eventAt,
+          periodType: event.period_type ?? undefined,
+          price: typeof event.price === "number" ? event.price : undefined,
+          currency: event.currency,
+          purchaseClass: decision.purchaseClass ?? "unknown",
+        });
+      } else if (decision.funnelStep) {
+        void trackServerSubscriptionFunnel(userId, decision.funnelStep, {
+          source: "revenuecat",
+          transaction_id: event.transaction_id,
+          event_type: "INITIAL_PURCHASE",
+          ...(event.period_type ? { period_type: event.period_type } : {}),
+          ...(event.product_id ? { product_id: event.product_id } : {}),
+          ...(event.store ? { store: event.store } : {}),
+        });
+      }
     }
 
     res.json({ ok: true, eventId, applied: { userId, plan: applied.plan, isPremium: applied.isPremium, reason: applied.reason, source: appliedFrom } });

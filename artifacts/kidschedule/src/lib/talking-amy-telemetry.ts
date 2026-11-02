@@ -3,6 +3,7 @@
  */
 
 import { queueClientLog } from "@/lib/client-logs";
+import { safeProductTrack } from "@/lib/analytics/safe-product-track";
 import type { TalkingAmyModeId } from "@/lib/talking-amy-modes";
 
 export type TalkingAmyTelemetryEvent =
@@ -21,6 +22,28 @@ function emit(event: TalkingAmyTelemetryEvent, meta: Record<string, unknown>): v
 
 export function trackTalkingAmySessionStarted(childId: number, sessionCount: number): void {
   emit("talking_amy_session_started", { childId, sessionCount });
+  safeProductTrack("talking_amy_session_started", { feature_name: "talking_amy" });
+}
+
+export function trackTalkingAmyFirstInteraction(interaction: string): void {
+  safeProductTrack("talking_amy_first_interaction", {
+    feature_name: "talking_amy",
+    interaction: interaction.slice(0, 64),
+  });
+}
+
+export function trackTalkingAmySessionCompleted(durationMs?: number): void {
+  safeProductTrack("talking_amy_session_completed", {
+    feature_name: "talking_amy",
+    ...(durationMs !== undefined ? { duration_ms: Math.max(0, Math.round(durationMs)) } : {}),
+  });
+}
+
+export function trackTalkingAmySessionAbandoned(reason: string): void {
+  safeProductTrack("talking_amy_session_abandoned", {
+    feature_name: "talking_amy",
+    reason: reason.slice(0, 64),
+  });
 }
 
 export function trackTalkingAmyModeSelected(childId: number, modeId: TalkingAmyModeId): void {

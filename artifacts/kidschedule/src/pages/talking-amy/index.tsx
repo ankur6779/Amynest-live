@@ -90,8 +90,11 @@ import {
   type TalkingAmyLocalStats,
 } from "@/lib/talking-amy-session";
 import {
+  trackTalkingAmyFirstInteraction,
   trackTalkingAmyModeSelected,
   trackTalkingAmyReplay,
+  trackTalkingAmySessionAbandoned,
+  trackTalkingAmySessionCompleted,
   trackTalkingAmySessionStarted,
   trackTalkingAmySurpriseMode,
 } from "@/lib/talking-amy-telemetry";
@@ -305,6 +308,9 @@ export default function TalkingAmyPage() {
   const celebrateTimerRef = useRef<number | null>(null);
   const vadCleanupRef = useRef<(() => void) | null>(null);
   const sessionTrackedRef = useRef(false);
+  const interactionTrackedRef = useRef(false);
+  const completedTrackedRef = useRef(false);
+  const sessionStartedAtRef = useRef(0);
   const [hasReplay, setHasReplay] = useState(false);
 
   const audioLevelRef = useMicLevelRef(phase === "recording");
@@ -337,8 +343,16 @@ export default function TalkingAmyPage() {
     const next = recordTalkingAmySessionStart(child.id);
     setStats(next);
     setCollection(loadTalkingAmyCollection(child.id));
+    sessionStartedAtRef.current = Date.now();
     trackTalkingAmySessionStarted(child.id, next.sessionCount);
   }, [child]);
+
+  useEffect(() => {
+    return () => {
+      if (!sessionTrackedRef.current || completedTrackedRef.current) return;
+      trackTalkingAmySessionAbandoned("leave");
+    };
+  }, []);
 
   useEffect(() => {
     if (!child) return;
@@ -439,6 +453,11 @@ export default function TalkingAmyPage() {
       setUnlockedAchievement(achievement);
       setMiniSurprise(opts?.miniSurpriseId ?? null);
       setPhase("celebrate");
+      if (!completedTrackedRef.current) {
+        completedTrackedRef.current = true;
+        const startedAt = sessionStartedAtRef.current;
+        trackTalkingAmySessionCompleted(startedAt > 0 ? Date.now() - startedAt : undefined);
+      }
       rotatePrompt();
       clearCelebrateTimer();
       const surpriseMs = opts?.miniSurpriseId ? miniSurpriseDurationMs() : 0;
@@ -635,6 +654,11 @@ export default function TalkingAmyPage() {
       setStatusHint("Microphone busy — try again in a moment.");
       window.setTimeout(() => setStatusHint(null), 2200);
       return;
+    }
+
+    if (!interactionTrackedRef.current) {
+      interactionTrackedRef.current = true;
+      trackTalkingAmyFirstInteraction("recording");
     }
 
     if (phaseRef.current !== "recording" || !holdActiveRef.current) {
