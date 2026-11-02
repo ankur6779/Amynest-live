@@ -114,6 +114,13 @@ export function trackOnboardingFunnel(payload: OnboardingFunnelPayload): void {
     ...payload.extra,
   });
 
+  if (payload.event === "onboarding_step_completed" || payload.event === "step_completed") {
+    getAnalyticsService().track("onboarding_step_completed", {
+      onboarding_step: String(payload.step).slice(0, 64),
+      source: "onboarding",
+    });
+  }
+
   if (payload.event === "onboarding_started") {
     void import("@/lib/conversion-funnel").then(({ trackConversionFunnel }) => {
       trackConversionFunnel("onboarding_started", { source: "onboarding" }, { onceKey: "session" });

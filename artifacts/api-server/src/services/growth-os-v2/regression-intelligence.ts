@@ -65,7 +65,7 @@ const METRIC_CHECKS: Array<{
     metric: "dashboard_view",
     label: "Dashboard reach",
     category: "conversion",
-    condition: sql`event_name = 'dashboard_view' OR (event_name = 'screen_view' AND props->>'screen' = '/dashboard')`,
+    condition: sql`event_name = 'dashboard_view' OR (event_name IN ('screen_view', 'page_view') AND props->>'screen' = '/dashboard')`,
   },
   {
     metric: "trial_started",

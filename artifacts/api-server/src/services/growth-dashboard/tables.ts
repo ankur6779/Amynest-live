@@ -39,7 +39,7 @@ export async function computeTables(range: GrowthTimeRange) {
              count(DISTINCT user_id)::int AS users,
              count(*)::int AS views
       FROM analytics_events
-      WHERE event_name = 'screen_view'
+      WHERE event_name IN ('screen_view', 'page_view')
         AND server_ts >= ${start}::timestamptz AND server_ts <= ${end}::timestamptz
       GROUP BY 1 ORDER BY views DESC LIMIT 20
     `),

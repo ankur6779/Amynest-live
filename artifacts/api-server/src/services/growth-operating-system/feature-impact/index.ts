@@ -22,9 +22,9 @@ export type FeatureImpactLabRow = {
 const FEATURES: Array<{ key: string; label: string; filter: string }> = [
   { key: "routine_generator", label: "Routine Generator", filter: "event_name = 'routine_generated'" },
   { key: "speech_coach", label: "Speech Coach", filter: "event_name = 'speech_coach_v2_session_start'" },
-  { key: "nutrition_hub", label: "Nutrition Hub", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%nutrition%'" },
-  { key: "parent_hub", label: "Parent Hub", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%parenting-hub%'" },
-  { key: "stories", label: "Stories", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%stories%'" },
+  { key: "nutrition_hub", label: "Nutrition Hub", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%nutrition%'" },
+  { key: "parent_hub", label: "Parent Hub", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%parenting-hub%'" },
+  { key: "stories", label: "Stories", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%stories%'" },
   { key: "worksheets", label: "Worksheets", filter: "event_name = 'asset_download'" },
 ];
 

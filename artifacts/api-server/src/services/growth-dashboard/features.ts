@@ -69,7 +69,7 @@ async function featureCounts(
   const events = def.eventNames.map((e) => `'${e}'`).join(",");
   const completes = def.completeEvents.map((e) => `'${e}'`).join(",");
   const screenClause = def.screenLike
-    ? sql`OR (event_name = 'screen_view' AND props->>'screen' ILIKE ${`%${def.screenLike}%`})`
+    ? sql`OR (event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE ${`%${def.screenLike}%`})`
     : sql``;
 
   const res = await db.execute(sql`

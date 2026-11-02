@@ -57,7 +57,7 @@ const FUNNEL_DEFS: FunnelDef[] = [
     key: "signup",
     label: "Signup",
     available: true,
-    sql: sql`event_name IN ('pre_signup_signup_completed', 'pre_signup_login_completed') OR (event_name = 'screen_view' AND props->>'screen' IN ('/sign-up', '/sign-in'))`,
+    sql: sql`event_name IN ('pre_signup_signup_completed', 'pre_signup_login_completed') OR (event_name IN ('screen_view', 'page_view') AND props->>'screen' IN ('/sign-up', '/sign-in'))`,
   },
   {
     key: "onboarding_completed",
@@ -81,7 +81,7 @@ const FUNNEL_DEFS: FunnelDef[] = [
     key: "nutrition_hub_used",
     label: "Nutrition Hub Used",
     available: true,
-    sql: sql`(event_name = 'screen_view' AND props->>'screen' ILIKE '%nutrition%') OR (event_name = 'feature_open' AND props->>'feature' ILIKE '%nutrition%')`,
+    sql: sql`(event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%nutrition%') OR (event_name = 'feature_open' AND props->>'feature' ILIKE '%nutrition%')`,
   },
   {
     key: "worksheet_downloaded",

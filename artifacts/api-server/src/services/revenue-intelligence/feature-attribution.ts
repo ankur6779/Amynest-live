@@ -10,11 +10,11 @@ const CORRELATION_DISCLAIMER =
 
 const FEATURES: Array<{ feature: string; label: string; filter: string }> = [
   { feature: "routine_generation", label: "Routine Generation", filter: "event_name IN ('routine_generated', 'routine_generation_completed')" },
-  { feature: "parent_hub", label: "Parent Hub", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%parenting-hub%'" },
+  { feature: "parent_hub", label: "Parent Hub", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%parenting-hub%'" },
   { feature: "speech_coach", label: "Speech Coach", filter: "event_name = 'speech_coach_v2_session_start'" },
   { feature: "worksheets", label: "Worksheets", filter: "event_name = 'asset_download'" },
-  { feature: "stories", label: "Stories", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%stories%'" },
-  { feature: "nutrition", label: "Nutrition", filter: "event_name = 'screen_view' AND props->>'screen' ILIKE '%nutrition%'" },
+  { feature: "stories", label: "Stories", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%stories%'" },
+  { feature: "nutrition", label: "Nutrition", filter: "event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%nutrition%'" },
   { feature: "ai_coach", label: "AI Coach", filter: "event_name IN ('speech_coach_started', 'infant_coach_session_start')" },
 ];
 

@@ -101,7 +101,7 @@ const FUNNEL_STAGES: Array<{
     label: "Dashboard",
     condition: sql`(
       event_name = 'dashboard_view'
-      OR (event_name = 'screen_view' AND props->>'screen' = '/dashboard')
+      OR (event_name IN ('screen_view', 'page_view') AND props->>'screen' = '/dashboard')
     )`,
   },
   {
@@ -222,7 +222,7 @@ export async function computeActivationMetrics(range: GrowthTimeRange) {
   `);
 
   const dashboard = await countDistinctUsers(
-    sql`(event_name = 'dashboard_view' OR (event_name = 'screen_view' AND props->>'screen' = '/dashboard'))`,
+    sql`(event_name = 'dashboard_view' OR (event_name IN ('screen_view', 'page_view') AND props->>'screen' = '/dashboard'))`,
     range,
   );
   const cta = await countDistinctUsers(sql`event_name = 'routine_cta_clicked'`, range);

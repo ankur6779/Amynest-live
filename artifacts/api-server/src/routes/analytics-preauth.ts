@@ -21,7 +21,7 @@ import {
 
 const router: IRouter = Router();
 
-const PREAUTH_MAX_BODY_BYTES = 32 * 1024;
+const PREAUTH_MAX_BODY_BYTES = 64 * 1024;
 const PREAUTH_DEVICE_WINDOW_MS = 60_000;
 const PREAUTH_DEVICE_MAX = 30;
 const PREAUTH_IP_WINDOW_MS = 60_000;
@@ -29,6 +29,7 @@ const PREAUTH_IP_MAX = 60;
 
 const EventSchema = z.object({
   name: z.string().min(1).max(64),
+  eventId: z.string().min(8).max(64).optional(),
   props: z.record(z.string(), z.unknown()).optional(),
   sessionId: z.string().max(128).optional(),
   clientTs: z.string().max(40).optional(),

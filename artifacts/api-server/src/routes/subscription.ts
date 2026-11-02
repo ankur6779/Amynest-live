@@ -892,6 +892,23 @@ router.post("/subscription/cancel", requireAuth, asyncRoute(async (req, res): Pr
     res.status(409).json({ error: "invalid_subscription_id", provider: outcome.provider, entitlements: ent });
     return;
   }
+  if (outcome.kind === "completed") {
+    void import("../services/analyticsIngestService").then(({ ingestAnalyticsEvents }) =>
+      ingestAnalyticsEvents(
+        [
+          {
+            name: "subscription_cancelled",
+            props: {
+              source: "server",
+              provider: outcome.provider ?? "unknown",
+              authoritative: true,
+            },
+          },
+        ],
+        { userId },
+      ),
+    );
+  }
   res.json({
     ok: true,
     duplicate: outcome.kind === "duplicate",

@@ -42,4 +42,51 @@ export function trackAppOpen(): void {
   getAnalyticsService().trackAppOpen();
 }
 
+/** Canonical product-analytics entry points. All of them go through AnalyticsService. */
+export function trackEvent<E extends AnalyticsEventName>(
+  eventName: E,
+  properties: AnalyticsEventProps<E>,
+): void {
+  getAnalyticsService().trackEvent(eventName, properties);
+}
+
+export function trackPageView(
+  pageName: string,
+  properties: Record<string, unknown> = {},
+): void {
+  getAnalyticsService().trackPageView(pageName, properties);
+}
+
+export function trackFeatureUsage(
+  featureName: string,
+  action: "viewed" | "started" | "interaction" | "completed" | "abandoned" | "error",
+  properties: Record<string, unknown> = {},
+): void {
+  getAnalyticsService().trackFeatureUsage(featureName, action, properties);
+}
+
+export function trackError(
+  errorType: string,
+  properties: Record<string, unknown> = {},
+): void {
+  const allowed = ["react", "api", "ai", "network", "database", "unhandled", "unknown"] as const;
+  const errorClass = (allowed as readonly string[]).includes(errorType)
+    ? (errorType as (typeof allowed)[number])
+    : "unknown";
+  const message = typeof properties.message === "string" ? properties.message : errorType;
+  getAnalyticsService().trackError(errorClass, message, {
+    route: typeof properties.route === "string" ? properties.route : undefined,
+    feature: typeof properties.feature === "string" ? properties.feature : undefined,
+    statusCode: typeof properties.statusCode === "number" ? properties.statusCode : undefined,
+  });
+}
+
+export function startSession(): void {
+  getAnalyticsService().startSession();
+}
+
+export function endSession(): void {
+  getAnalyticsService().endSession();
+}
+
 export { getAnalyticsService } from "@/lib/analytics/analytics-service";

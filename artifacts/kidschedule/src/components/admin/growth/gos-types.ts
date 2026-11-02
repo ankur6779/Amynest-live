@@ -23,7 +23,8 @@ export type GosNavSection =
   | "settings"
   | "pre-signup"
   | "observatory"
-  | "ads-health";
+  | "ads-health"
+  | "product";
 
 export type IntelligenceTab =
   | "insights"
@@ -203,6 +204,7 @@ export type CopilotResponse = {
 
 export const GOS_NAV: Array<{ id: GosNavSection; label: string }> = [
   { id: "overview", label: "Overview" },
+  { id: "product", label: "Product" },
   { id: "executive", label: "Executive" },
   { id: "observatory", label: "Observatory" },
   { id: "acquisition", label: "Acquisition" },

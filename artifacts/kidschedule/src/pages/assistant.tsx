@@ -181,6 +181,13 @@ export default function AssistantPage() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
+    const askStarted = Date.now();
+    void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+      getAnalyticsService().track("ask_amy_message_sent", {
+        message_chars: text.length,
+        has_child_context: Boolean(primaryChild?.id),
+      });
+    });
     sendAbortRef.current?.abort();
     const controller = new AbortController();
     sendAbortRef.current = controller;
@@ -211,6 +218,14 @@ export default function AssistantPage() {
         ASSISTANT_AI_TIMEOUT_MS,
       );
       if (res.status === 402) {
+        void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+          getAnalyticsService().track("ask_amy_response_received", {
+            success: false,
+            latency_ms: Date.now() - askStarted,
+            status_code: 402,
+            error_class: "quota",
+          });
+        });
         // P0-7 D3 — soft-continue message only. Quotas unchanged (D4).
         // No auto-paywall, no Upgrade/Zap theatre on hard-day Ask Amy.
         refreshSubscription();
@@ -235,6 +250,12 @@ export default function AssistantPage() {
       const answer = readAssistantAnswer(data);
       if (!answer) throw new Error("empty_answer");
       setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+      void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+        getAnalyticsService().track("ask_amy_response_received", {
+          success: true,
+          latency_ms: Date.now() - askStarted,
+        });
+      });
       if (!hasOnboardingMilestone("first_amy_chat")) {
         trackOnboardingMilestone("first_amy_chat", { source: "assistant" });
         trackSubscriptionEvent({
@@ -245,6 +266,17 @@ export default function AssistantPage() {
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch (err) {
       if (controller.signal.aborted) return;
+      const status = err instanceof Error && err.message.startsWith("api_error_")
+        ? Number(err.message.slice("api_error_".length))
+        : undefined;
+      void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+        getAnalyticsService().track("ask_amy_response_received", {
+          success: false,
+          latency_ms: Date.now() - askStarted,
+          status_code: Number.isFinite(status) ? status : undefined,
+          error_class: status ? "api" : "network",
+        });
+      });
       toast({ title: t("ai.error_response"), variant: "destructive" });
     } finally {
       setLoading(false);

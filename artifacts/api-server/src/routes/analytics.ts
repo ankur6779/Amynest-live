@@ -8,11 +8,13 @@ import { stitchDeviceAnalyticsIdentity } from "../services/analyticsIdentityStit
 import { DEVICE_ID_HEADER } from "../services/deviceLimitService";
 import { logger } from "../lib/logger";
 import { recordApiDomainOutcome } from "../lib/api-domain-metrics";
+import { checkDistributedRateLimit } from "../lib/distributed-rate-limit";
 
 const router: IRouter = Router();
 
 const EventSchema = z.object({
   name: z.string().min(1).max(64),
+  eventId: z.string().min(8).max(64).optional(),
   props: z.record(z.string(), z.unknown()).optional(),
   sessionId: z.string().max(128).optional(),
   clientTs: z.string().max(40).optional(),
@@ -43,6 +45,16 @@ router.post("/analytics/events", async (req, res): Promise<void> => {
     return;
   }
 
+  const rate = await checkDistributedRateLimit(`analytics-user:${userId}`, {
+    windowMs: 60_000,
+    maxPerWindow: 120,
+  });
+  if (!rate.allowed) {
+    recordApiDomainOutcome("analytics", false, Date.now() - started, "rate_limited");
+    res.status(429).json({ error: "rate_limited", retryAfterMs: rate.retryAfterMs });
+    return;
+  }
+
   const parsed = BatchSchema.safeParse(req.body);
   if (!parsed.success) {
     recordApiDomainOutcome("analytics", false, Date.now() - started, "invalid_body");
@@ -60,6 +72,7 @@ router.post("/analytics/events", async (req, res): Promise<void> => {
       userId,
       platform: parsed.data.platform,
       appVersion: parsed.data.appVersion ?? parsed.data.buildNumber,
+      deviceId: deviceId || null,
     });
     recordApiDomainOutcome("analytics", true, Date.now() - started);
     res.status(202).json({ ok: true, ...summary });

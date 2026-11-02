@@ -38,6 +38,7 @@ import { PreSignupFunnelPanel } from "./pre-signup-funnel-panel";
 import { RevenueIntelligenceSection } from "./revenue-intelligence-section";
 import { ObservatoryPanel } from "./observatory-panel";
 import { AdsConversionHealthPanel } from "./ads-conversion-health-panel";
+import { ProductAnalyticsPanel } from "./product-analytics-panel";
 import type {
   DecisionsSectionData,
   ExecutiveSectionData,
@@ -142,9 +143,19 @@ export function GosSectionContent({
   customEnd: string;
 }) {
   const apiSection = section === "recommendations" ? "decisions" : section;
-  const { data, isLoading, error } = useGosSection(apiSection, preset, customStart, customEnd, undefined, section !== "overview");
+  const { data, isLoading, error } = useGosSection(
+    apiSection,
+    preset,
+    customStart,
+    customEnd,
+    undefined,
+    section !== "overview" && section !== "product",
+  );
 
   if (section === "overview") return null;
+  if (section === "product") {
+    return <ProductAnalyticsPanel preset={preset} customStart={customStart} customEnd={customEnd} />;
+  }
 
   if (error) {
     return (

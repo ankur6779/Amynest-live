@@ -21,6 +21,10 @@ import {
   CONVERSION_FUNNEL_EVENT_CATEGORY,
   CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS,
 } from "./conversion-funnel-events.js";
+import {
+  PRODUCT_SPINE_EVENT_CATEGORY,
+  PRODUCT_SPINE_EVENT_PROP_SCHEMAS,
+} from "./product-spine-events.js";
 
 export {
   ANALYTICS_EVENT_VERSION,
@@ -556,6 +560,7 @@ const EVENT_PROP_SCHEMAS = {
   ...FIRST_VALUE_EVENT_PROP_SCHEMAS,
   ...ABACUS_EVENT_PROP_SCHEMAS,
   ...CONVERSION_FUNNEL_EVENT_PROP_SCHEMAS,
+  ...PRODUCT_SPINE_EVENT_PROP_SCHEMAS,
 } as const;
 
 export type AnalyticsEventName = keyof typeof EVENT_PROP_SCHEMAS;
@@ -640,6 +645,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   ...FIRST_VALUE_EVENT_CATEGORY,
   ...ABACUS_EVENT_CATEGORY,
   ...CONVERSION_FUNNEL_EVENT_CATEGORY,
+  ...PRODUCT_SPINE_EVENT_CATEGORY,
 };
 
 export const ANALYTICS_EVENT_NAMES = Object.keys(

@@ -116,6 +116,14 @@ export function savePdfBlob(
     assetId: safeName,
     feature: meta?.feature,
   });
+  const feature = meta?.feature ?? "";
+  const assetType = meta?.assetType ?? "";
+  if (feature.includes("worksheet") || assetType.includes("worksheet")) {
+    getAnalyticsService().track("worksheet_downloaded", {
+      feature_name: feature.slice(0, 80) || "worksheets",
+      asset_type: assetType.slice(0, 64) || "pdf",
+    });
+  }
 }
 
 /** Save PDF from a fetch Response (application/pdf body). Returns false on empty/failed body. */

@@ -93,6 +93,12 @@ export function StoryFlowPlayer({
     const handlePlay = () => {
       if (!startedRef.current) {
         startedRef.current = true;
+        void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+          const service = getAnalyticsService();
+          service.track("story_opened", { story_id: story.id, feature_name: "stories" });
+          service.track("video_started", { story_id: story.id, feature_name: "stories" });
+          service.trackFeatureUsage("stories", "started", { source: "story_player" });
+        });
         onProgress(story.id, v.currentTime, {
           durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
           startedSession: true
@@ -100,6 +106,16 @@ export function StoryFlowPlayer({
       }
     };
     const handleEnded = () => {
+      void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
+        const service = getAnalyticsService();
+        const durationMs = Number.isFinite(v.duration) ? Math.round(v.duration * 1000) : undefined;
+        service.track("video_completed", {
+          story_id: story.id,
+          feature_name: "stories",
+          duration_ms: durationMs,
+        });
+        service.trackFeatureUsage("stories", "completed", { source: "story_player" });
+      });
       onProgress(story.id, v.duration || 0, {
         durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
         completed: true

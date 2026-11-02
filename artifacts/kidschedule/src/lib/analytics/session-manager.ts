@@ -10,6 +10,7 @@ const SESSION_LAST_ACTIVE_KEY = "amynest_analytics_session_last_active";
 const SESSION_STARTED_KEY = "amynest_analytics_session_started";
 const APP_OPEN_KEY = "amynest_analytics_app_open_sent";
 const FIRST_OPEN_KEY = "amynest_analytics_first_open";
+const FIRST_FEATURE_KEY = "amynest_analytics_first_feature";
 
 export type SessionEndReason =
   | "timeout"
@@ -124,6 +125,13 @@ export class SessionManager {
     return true;
   }
 
+  claimFirstFeature(): boolean {
+    if (typeof localStorage === "undefined") return false;
+    if (localStorage.getItem(FIRST_FEATURE_KEY)) return false;
+    localStorage.setItem(FIRST_FEATURE_KEY, "1");
+    return true;
+  }
+
   markFirstOpenDelivered(): void {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(FIRST_OPEN_KEY, "1");
@@ -158,7 +166,7 @@ export function savePersistentQueue(events: QueuedAnalyticsEvent[]): void {
       localStorage.removeItem(PERSISTENT_QUEUE_KEY);
       return;
     }
-    localStorage.setItem(PERSISTENT_QUEUE_KEY, JSON.stringify(events.slice(-500)));
+    localStorage.setItem(PERSISTENT_QUEUE_KEY, JSON.stringify(events));
   } catch {
     /* quota exceeded — best effort */
   }

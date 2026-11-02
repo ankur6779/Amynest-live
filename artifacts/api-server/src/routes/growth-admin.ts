@@ -22,6 +22,7 @@ import {
 } from "../services/growth-observatory/index.js";
 import { computeGrowthOperations } from "../services/growth-os-v2/index.js";
 import { computeRevenueIntelligence } from "../services/revenue-intelligence/index.js";
+import { computeProductAnalytics } from "../services/growth-dashboard/product-analytics.js";
 
 const router: IRouter = Router();
 
@@ -68,6 +69,21 @@ const GOS_SECTIONS = new Set<GosSection>([
   "revenue-intelligence",
   "ads-health",
 ]);
+
+/** GET /api/admin/growth/product-analytics — page, feature, journey, retention. */
+router.get(
+  "/admin/growth/product-analytics",
+  asyncRoute(async (req, res) => {
+    const auth = getAuth(req);
+    if (!requireGrowthAdmin(req, res, auth)) return;
+
+    const preset = typeof req.query["preset"] === "string" ? req.query["preset"] : undefined;
+    const start = typeof req.query["start"] === "string" ? req.query["start"] : undefined;
+    const end = typeof req.query["end"] === "string" ? req.query["end"] : undefined;
+    const payload = await computeProductAnalytics({ preset, start, end });
+    res.json({ ok: true, ...payload });
+  }),
+);
 
 /** GET /api/admin/growth/dashboard?preset=last_7_days&start=&end= */
 router.get(

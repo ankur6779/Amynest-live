@@ -17,17 +17,17 @@ const FEATURE_QUERIES: Array<{
   {
     key: "nutrition_hub",
     label: "Nutrition Hub",
-    eventFilter: "(event_name = 'screen_view' AND props->>'screen' ILIKE '%nutrition%')",
+    eventFilter: "(event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%nutrition%')",
   },
   {
     key: "parent_hub",
     label: "Parent Hub",
-    eventFilter: "(event_name = 'screen_view' AND props->>'screen' ILIKE '%parenting-hub%')",
+    eventFilter: "(event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%parenting-hub%')",
   },
   {
     key: "stories",
     label: "Stories",
-    eventFilter: "(event_name = 'screen_view' AND props->>'screen' ILIKE '%stories%')",
+    eventFilter: "(event_name IN ('screen_view', 'page_view') AND props->>'screen' ILIKE '%stories%')",
   },
   {
     key: "worksheets",

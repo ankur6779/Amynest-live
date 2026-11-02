@@ -121,7 +121,16 @@ export function useFeatureUsage() {
     },
     onSuccess: (_data, featureId) => {
       void import("@/lib/analytics/analytics-service").then(({ getAnalyticsService }) => {
-        getAnalyticsService().trackFeatureOpen(featureId);
+        const service = getAnalyticsService();
+        service.trackFeatureOpen(featureId);
+        service.trackFeatureUsage(featureId, "started", { source: "feature_usage" });
+        if (featureId === "hub_worksheets" || featureId === "worksheets") {
+          service.track("worksheet_opened", { feature_name: featureId, source: "feature_usage" });
+        } else if (featureId === "hub_coloring_books") {
+          service.track("coloring_activity_started", { feature_name: featureId, source: "feature_usage" });
+        } else if (featureId === "hub_story_hub" || featureId === "story") {
+          service.track("story_opened", { feature_name: featureId });
+        }
       });
     },
   });

@@ -107,6 +107,12 @@ object NativeAnalyticsSpine {
     private fun documentStartScript(context: Context): String {
         val deviceId = JSONObject.quote(getOrCreateDeviceId(context))
         val version = JSONObject.quote(BuildConfig.VERSION_NAME)
+        val build = JSONObject.quote(BuildConfig.VERSION_CODE.toString())
+        val osVersion = JSONObject.quote(Build.VERSION.RELEASE ?: "")
+        val model = JSONObject.quote(Build.MODEL ?: "")
+        val webViewVersion = JSONObject.quote(
+            WebViewCompat.getCurrentWebViewPackage(context)?.versionName ?: "",
+        )
         val nativeSent = prefs(context).getBoolean(KEY_FIRST_OPEN_SENT, false)
         val referrerRaw = prefs(context).getString(KEY_REFERRER_JSON, null)
         val referrerJs = if (referrerRaw.isNullOrBlank()) "null" else referrerRaw
@@ -116,6 +122,13 @@ object NativeAnalyticsSpine {
                 var id = $deviceId;
                 window.__AMYNEST_NATIVE_DEVICE_ID = id;
                 window.__AMYNEST_APP_VERSION = $version;
+                window.__AMYNEST_DEVICE_INFO = {
+                  app_version: $version,
+                  app_build: $build,
+                  os_version: $osVersion,
+                  device_model: $model,
+                  webview_version: $webViewVersion
+                };
                 window.__AMYNEST_NATIVE_ANALYTICS = true;
                 window.__AMYNEST_NATIVE_FIRST_OPEN_SENT = $nativeSent;
                 var k = 'amynest:device:id:v1';

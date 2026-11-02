@@ -12,7 +12,11 @@ import {
   installSessionLifecycle,
   type SessionEndReason,
 } from "./session-manager";
-import type { AuthFetchFn, QueuedAnalyticsEvent } from "./constants";
+import {
+  HEARTBEAT_INTERVAL_MS,
+  type AuthFetchFn,
+  type QueuedAnalyticsEvent,
+} from "./constants";
 
 export type AnalyticsServiceConfig = Partial<AnalyticsRuntimeContext>;
 
@@ -29,6 +33,33 @@ function detectAuthState(): "authenticated" | "guest" | "unknown" {
     return "unknown";
   }
   return "guest";
+}
+
+function stringProp(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, 64) : undefined;
+}
+
+function newEventId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `e_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function readDeviceFacts(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const w = window as Window & {
+    __AMYNEST_DEVICE_INFO?: Record<string, unknown>;
+  };
+  const info = w.__AMYNEST_DEVICE_INFO ?? {};
+  const out: Record<string, string> = {};
+  for (const key of ["os_version", "device_model", "webview_version", "app_build"] as const) {
+    const value = info[key];
+    if (typeof value === "string" && value.trim()) out[key] = value.trim().slice(0, 64);
+  }
+  const connection = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+  if (typeof connection?.effectiveType === "string" && connection.effectiveType) {
+    out.network_type = connection.effectiveType.slice(0, 32);
+  }
+  return out;
 }
 
 function attachInstallAttribution(props: Record<string, unknown>): void {
@@ -84,6 +115,12 @@ export class AnalyticsService {
   private lifecycleCleanup: (() => void) | null = null;
   private onlineCleanup: (() => void) | null = null;
   private firstOpenAwaitingAck = false;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityCleanup: (() => void) | null = null;
+  private foregroundStartedAt = Date.now();
+  private hiddenAt: number | null = null;
+  private lastPageView: { path: string; at: number } | null = null;
+  private readonly featureStartedAt = new Map<string, number>();
 
   /** Dedupe guard — prevents duplicate emitters for the same logical action */
   private readonly recentFingerprints = new Map<string, number>();
@@ -111,14 +148,59 @@ export class AnalyticsService {
       const onOnline = () => void this.queue.flush();
       window.addEventListener("online", onOnline);
       this.onlineCleanup = () => window.removeEventListener("online", onOnline);
+      document.addEventListener("visibilitychange", this.onVisibility);
+      this.visibilityCleanup = () => document.removeEventListener("visibilitychange", this.onVisibility);
+      if (typeof document === "undefined" || document.visibilityState !== "hidden") {
+        this.startHeartbeat();
+      }
     }
   }
 
   dispose(): void {
     this.lifecycleCleanup?.();
     this.onlineCleanup?.();
+    this.visibilityCleanup?.();
+    this.stopHeartbeat();
     this.lifecycleCleanup = null;
     this.onlineCleanup = null;
+    this.visibilityCleanup = null;
+  }
+
+  private onVisibility = (): void => {
+    if (typeof document === "undefined") return;
+    if (document.visibilityState === "hidden") {
+      const foregroundMs = Math.max(0, Date.now() - this.foregroundStartedAt);
+      this.hiddenAt = Date.now();
+      this.stopHeartbeat();
+      this.track("app_background", { foreground_ms: foregroundMs }, { dedupe: false });
+      void this.queue.flush();
+      return;
+    }
+    const backgroundMs = this.hiddenAt ? Math.max(0, Date.now() - this.hiddenAt) : 0;
+    this.hiddenAt = null;
+    this.foregroundStartedAt = Date.now();
+    this.track("app_foreground", { background_ms: backgroundMs }, { dedupe: false });
+    this.startHeartbeat();
+  };
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      this.track(
+        "session_heartbeat",
+        {
+          active_ms: Math.max(0, Date.now() - this.foregroundStartedAt),
+          interval_ms: HEARTBEAT_INTERVAL_MS,
+        },
+        { dedupe: false },
+      );
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = null;
   }
 
   setAuthFetch(fetcher: AuthFetchFn | null): void {
@@ -188,9 +270,15 @@ export class AnalyticsService {
     if (!props.auth_state) {
       props.auth_state = detectAuthState();
     }
+    const facts = readDeviceFacts();
+    for (const [key, value] of Object.entries(facts)) {
+      if (!props[key]) props[key] = value;
+    }
+    if (!props.event_schema_version) props.event_schema_version = "1.1.0";
 
     const event: QueuedAnalyticsEvent = {
       name,
+      eventId: newEventId(),
       props,
       sessionId: this.session.getSessionId(),
       clientTs: new Date().toISOString(),
@@ -392,6 +480,152 @@ export class AnalyticsService {
       asset_id: opts.assetId?.slice(0, 128),
       feature: opts.feature?.slice(0, 80),
     });
+  }
+
+  trackEvent<E extends AnalyticsEventName>(
+    eventName: E,
+    properties: AnalyticsEventProps<E>,
+  ): void {
+    this.track(eventName, properties);
+  }
+
+  trackPageView(pageName: string, properties: Record<string, unknown> = {}): void {
+    const path = String(properties.path ?? properties.page_path ?? pageName);
+    const now = Date.now();
+    if (this.lastPageView && this.lastPageView.path === path && now - this.lastPageView.at < 800) {
+      return;
+    }
+    this.lastPageView = { path, at: now };
+    const screen = String(properties.screen ?? path);
+    this.track(
+      "page_view",
+      {
+        screen,
+        path,
+        page_name: typeof properties.page_name === "string" ? properties.page_name : pageName,
+        page_path: path,
+        previous_page: typeof properties.previous_page === "string" ? properties.previous_page : undefined,
+        referrer_page: typeof properties.referrer_page === "string" ? properties.referrer_page : undefined,
+        route_transition_id:
+          typeof properties.route_transition_id === "string" ? properties.route_transition_id : undefined,
+        page_visit_id: typeof properties.page_visit_id === "string" ? properties.page_visit_id : undefined,
+        feature_name: typeof properties.feature_name === "string" ? properties.feature_name : undefined,
+        navigation_source:
+          typeof properties.navigation_source === "string" ? properties.navigation_source : undefined,
+      },
+      { dedupe: false },
+    );
+    this.currentScreen = screen;
+    this.currentPath = path;
+  }
+
+  trackPageExit(pageName: string, properties: Record<string, unknown> = {}): void {
+    const path = String(properties.path ?? properties.page_path ?? this.currentPath ?? pageName);
+    const screen = String(properties.screen ?? path);
+    const duration = Number(properties.active_duration_ms ?? properties.page_duration_ms ?? 0);
+    const active = Number.isFinite(duration) ? Math.max(0, Math.round(duration)) : 0;
+    this.track(
+      "page_exit",
+      {
+        screen,
+        path,
+        page_name: typeof properties.page_name === "string" ? properties.page_name : pageName,
+        page_path: path,
+        previous_page: typeof properties.previous_page === "string" ? properties.previous_page : undefined,
+        next_page: typeof properties.next_page === "string" ? properties.next_page : undefined,
+        page_visit_id: typeof properties.page_visit_id === "string" ? properties.page_visit_id : undefined,
+        route_transition_id:
+          typeof properties.route_transition_id === "string" ? properties.route_transition_id : undefined,
+        feature_name: typeof properties.feature_name === "string" ? properties.feature_name : undefined,
+        page_duration_ms: active,
+        active_duration_ms: active,
+        time_on_screen_ms: active,
+      },
+      { dedupe: false },
+    );
+  }
+
+  trackFeatureUsage(
+    featureName: string,
+    action: "viewed" | "started" | "interaction" | "completed" | "abandoned" | "error",
+    properties: Record<string, unknown> = {},
+  ): void {
+    const name = featureName.slice(0, 80);
+    if (!name) return;
+    if (action === "started") this.featureStartedAt.set(name, Date.now());
+    const startedAt = this.featureStartedAt.get(name);
+    const duration =
+      startedAt && (action === "completed" || action === "abandoned")
+        ? Math.max(0, Date.now() - startedAt)
+        : undefined;
+    if (action === "completed" || action === "abandoned") this.featureStartedAt.delete(name);
+    const screen = this.currentScreen || undefined;
+    if (action === "viewed") {
+      this.track("feature_viewed", {
+        feature_name: name,
+        screen,
+        source: stringProp(properties.source),
+        page_visit_id: stringProp(properties.page_visit_id),
+      });
+    } else if (action === "started") {
+      this.track("feature_started", { feature_name: name, screen, source: stringProp(properties.source) });
+    } else if (action === "interaction") {
+      this.track("feature_interaction", {
+        feature_name: name,
+        screen,
+        interaction_type: stringProp(properties.interaction_type),
+        source: stringProp(properties.source),
+      });
+    } else if (action === "completed") {
+      this.track("feature_completed", {
+        feature_name: name,
+        screen,
+        duration_ms: duration,
+        success: properties.success !== false,
+      });
+    } else if (action === "abandoned") {
+      this.track("feature_abandoned", {
+        feature_name: name,
+        screen,
+        duration_ms: duration,
+        reason: stringProp(properties.reason),
+      });
+    } else {
+      this.track("feature_error", {
+        feature_name: name,
+        screen,
+        error_class: stringProp(properties.error_class) ?? "unknown",
+      });
+    }
+    if ((action === "started" || action === "completed") && this.session.claimFirstFeature()) {
+      this.track("first_feature_used", { feature_name: name, source: stringProp(properties.source) });
+    }
+  }
+
+  /** Modal and drawer UI. Not a page view. */
+  trackModal(name: string, action: "open" | "close", properties: Record<string, unknown> = {}): void {
+    this.trackFeatureUsage(name, "interaction", {
+      ...properties,
+      interaction_type: action === "open" ? "modal_open" : "modal_close",
+    });
+  }
+
+  trackScrollMilestone(depthPct: 25 | 50 | 75 | 100, pageVisitId?: string): void {
+    const screen = this.currentScreen || this.currentPath || "/";
+    this.track(
+      "scroll_milestone",
+      { screen, depth_pct: depthPct, page_visit_id: pageVisitId },
+      { dedupe: false },
+    );
+  }
+
+  startSession(): void {
+    this.session.getSessionId();
+    this.trackAppOpen();
+  }
+
+  endSession(): void {
+    this.session.rotateSession("manual");
   }
 
   trackAppOpen(): void {
