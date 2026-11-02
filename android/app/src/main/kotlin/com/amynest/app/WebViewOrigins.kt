@@ -28,6 +28,25 @@ object WebViewOrigins {
             host.endsWith(".amynest.in", ignoreCase = true)
     }
 
+    /**
+     * True when [url] is an http(s) page on a trusted AmyNest host.
+     * Used to gate [android.webkit.JavascriptInterface] inject bridges:
+     * those interfaces are visible to every origin loaded in the WebView, so
+     * callers must re-check [android.webkit.WebView.getUrl] instead of forging
+     * [CANONICAL_WRAPPER_URL] as the source origin.
+     */
+    fun isTrustedWebViewUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val uri = try {
+            Uri.parse(url)
+        } catch (_: Throwable) {
+            return false
+        }
+        val scheme = uri.scheme?.lowercase() ?: return false
+        if (scheme != "https" && scheme != "http") return false
+        return isTrustedAmyNestHost(uri.host)
+    }
+
     fun toOriginRule(url: String): String? {
         val uri = try {
             Uri.parse(url)

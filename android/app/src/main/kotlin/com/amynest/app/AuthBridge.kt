@@ -367,6 +367,12 @@ class AuthBridge(
         val webView = webViewRef.get() ?: return
         val activity = activityRef.get() ?: return
         val token = readPendingFacebookAccessToken(activity) ?: return
+        // Never dump OAuth tokens into a non-AmyNest page (external https can
+        // load in the same WebView; JavascriptInterface is global to that WebView).
+        if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) {
+            Log.w(TAG, "skip pending Facebook inject — untrusted page url=${webView.url}")
+            return
+        }
         injectPendingFacebookAccessTokenJs(webView, token)
     }
 
@@ -374,11 +380,7 @@ class AuthBridge(
         val webView = webViewRef.get() ?: return
         val delaysMs = longArrayOf(150L, 400L, 900L)
         for (delay in delaysMs) {
-            webView.postDelayed({
-                val activity = activityRef.get() ?: return@postDelayed
-                val token = readPendingFacebookAccessToken(activity) ?: return@postDelayed
-                injectPendingFacebookAccessTokenJs(webView, token)
-            }, delay)
+            webView.postDelayed({ deliverPendingFacebookAuthIfAny() }, delay)
         }
     }
 
@@ -481,6 +483,12 @@ class AuthBridge(
         val webView = webViewRef.get() ?: return
         val activity = activityRef.get() ?: return
         val token = readPendingGoogleIdToken(activity) ?: return
+        // Never dump OAuth tokens into a non-AmyNest page (external https can
+        // load in the same WebView; JavascriptInterface is global to that WebView).
+        if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) {
+            Log.w(TAG, "skip pending Google inject — untrusted page url=${webView.url}")
+            return
+        }
         injectPendingGoogleIdTokenJs(webView, token)
     }
 
@@ -489,11 +497,7 @@ class AuthBridge(
         val webView = webViewRef.get() ?: return
         val delaysMs = longArrayOf(150L, 400L, 900L)
         for (delay in delaysMs) {
-            webView.postDelayed({
-                val activity = activityRef.get() ?: return@postDelayed
-                val token = readPendingGoogleIdToken(activity) ?: return@postDelayed
-                injectPendingGoogleIdTokenJs(webView, token)
-            }, delay)
+            webView.postDelayed({ deliverPendingGoogleAuthIfAny() }, delay)
         }
     }
 
@@ -514,19 +518,38 @@ class AuthBridge(
         fun postMessage(rawMessage: String) {
             val wv = webViewRef.get() ?: return
             wv.post {
-                deliverJsReply(wv, rawMessage, Uri.parse(WebViewOrigins.CANONICAL_WRAPPER_URL))
+                val pageUrl = wv.url
+                if (!WebViewOrigins.isTrustedWebViewUrl(pageUrl)) {
+                    Log.w(TAG, "rejected AuthInject postMessage from untrusted page url=$pageUrl")
+                    return@post
+                }
+                // Use the live page URL — never forge CANONICAL_WRAPPER_URL.
+                // addJavascriptInterface is visible to every origin in the WebView.
+                deliverJsReply(wv, rawMessage, Uri.parse(pageUrl))
             }
         }
 
         @JavascriptInterface
         fun getPendingGoogleIdToken(): String {
-            val ctx = activityRef.get() ?: webViewRef.get()?.context ?: return ""
+            val wv = webViewRef.get()
+            val pageUrl = wv?.url
+            if (!WebViewOrigins.isTrustedWebViewUrl(pageUrl)) {
+                Log.w(TAG, "rejected getPendingGoogleIdToken from untrusted page url=$pageUrl")
+                return ""
+            }
+            val ctx = activityRef.get() ?: wv?.context ?: return ""
             return readPendingGoogleIdToken(ctx) ?: ""
         }
 
         @JavascriptInterface
         fun getPendingFacebookAccessToken(): String {
-            val ctx = activityRef.get() ?: webViewRef.get()?.context ?: return ""
+            val wv = webViewRef.get()
+            val pageUrl = wv?.url
+            if (!WebViewOrigins.isTrustedWebViewUrl(pageUrl)) {
+                Log.w(TAG, "rejected getPendingFacebookAccessToken from untrusted page url=$pageUrl")
+                return ""
+            }
+            val ctx = activityRef.get() ?: wv?.context ?: return ""
             return readPendingFacebookAccessToken(ctx) ?: ""
         }
     }
@@ -551,6 +574,10 @@ class AuthBridge(
     }
 
     private fun postAuthReply(webView: WebView, message: String) {
+        if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) {
+            Log.w(TAG, "skip auth bridge reply — untrusted page url=${webView.url}")
+            return
+        }
         val js =
             "(function(){try{" +
                 "var p=JSON.parse(${JSONObject.quote(message)});" +
@@ -560,6 +587,10 @@ class AuthBridge(
                 "window.dispatchEvent(new CustomEvent('amynest-google-auth-bridge-reply',{detail:p}));" +
                 "}catch(e){console.error('[AuthBridge] bridge reply failed',e);}})();"
         webView.post {
+            if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) {
+                Log.w(TAG, "skip auth bridge reply (posted) — untrusted page url=${webView.url}")
+                return@post
+            }
             try {
                 webView.evaluateJavascript(js) { result ->
                     Log.d(TAG, "postAuthReply evaluateJavascript result=$result")
@@ -569,6 +600,7 @@ class AuthBridge(
             }
         }
         webView.postDelayed({
+            if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) return@postDelayed
             try {
                 webView.evaluateJavascript(js, null)
             } catch (_: Throwable) { /* retry */ }
