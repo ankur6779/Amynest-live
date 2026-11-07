@@ -22,7 +22,11 @@ export type TtsTelemetryEvent = {
   toKeyHash?: string;
 };
 
-type StoredEvent = TtsTelemetryEvent & { at: number };
+type StoredEvent = TtsTelemetryEvent & {
+  at: number;
+  /** Server-attested auth uid only — never trust a client-supplied value. */
+  userId: string | null;
+};
 
 export type LayerAggregate = {
   successRate: number;
@@ -45,10 +49,36 @@ const LATENCY_OUTLIER_CAP_MS = 12_000;
 const API_DEGRADED_MIN_SAMPLES = 12;
 const API_DEGRADED_FAIL_RATE = 0.42;
 const API_DEGRADED_WINDOW_MS = 15 * 60 * 1000;
+/**
+ * Client TTS telemetry is untrusted and forgeable by any signed-in user.
+ * Fleet-wide `apiDegraded` (clients skip live OpenAI TTS) must not trip on a
+ * single reporter: cap per-user contribution and require multi-user failure quorum.
+ */
+export const API_DEGRADED_MAX_EVENTS_PER_USER = 6;
+export const API_DEGRADED_MIN_DISTINCT_FAILURE_USERS = 2;
 
 const eventLog: StoredEvent[] = [];
 const transitionCounts = new Map<string, Map<string, number>>();
 const cacheKeyPopularity = new Map<string, number>();
+
+function reporterKey(userId: string | null | undefined): string {
+  return userId?.trim() || "__anonymous__";
+}
+
+function capApiEventsPerUser(
+  events: StoredEvent[],
+  maxPerUser: number,
+): StoredEvent[] {
+  const perUser = new Map<string, StoredEvent[]>();
+  for (const event of events) {
+    const key = reporterKey(event.userId);
+    const list = perUser.get(key) ?? [];
+    if (list.length >= maxPerUser) continue;
+    list.push(event);
+    perUser.set(key, list);
+  }
+  return [...perUser.values()].flat();
+}
 
 function isLearnableLayer(layer: string): layer is LearnableLayer {
   return (LEARNABLE_LAYERS as readonly string[]).includes(layer);
@@ -118,9 +148,12 @@ function scoreLayer(agg: LayerAggregate, layer: LearnableLayer): number {
 function detectApiDegraded(now = Date.now()): boolean {
   const cutoff = now - API_DEGRADED_WINDOW_MS;
   const recent = eventLog.filter((e) => e.at >= cutoff && e.layer === "api");
-  if (recent.length < API_DEGRADED_MIN_SAMPLES) return false;
-  const fails = recent.filter((e) => !e.success).length;
-  return fails / recent.length >= API_DEGRADED_FAIL_RATE;
+  const capped = capApiEventsPerUser(recent, API_DEGRADED_MAX_EVENTS_PER_USER);
+  if (capped.length < API_DEGRADED_MIN_SAMPLES) return false;
+  const fails = capped.filter((e) => !e.success);
+  const failureUsers = new Set(fails.map((e) => reporterKey(e.userId)));
+  if (failureUsers.size < API_DEGRADED_MIN_DISTINCT_FAILURE_USERS) return false;
+  return fails.length / capped.length >= API_DEGRADED_FAIL_RATE;
 }
 
 function buildSegmentAdjustments(
@@ -152,9 +185,21 @@ function buildSegmentAdjustments(
   return { penalties, boosts };
 }
 
-export function ingestTtsTelemetry(events: TtsTelemetryEvent[]): { accepted: number } {
+export type IngestTtsTelemetryOptions = {
+  /** Server-attested auth uid. Do not pass client-supplied ids. */
+  userId?: string | null;
+};
+
+export function ingestTtsTelemetry(
+  events: TtsTelemetryEvent[],
+  options: IngestTtsTelemetryOptions = {},
+): { accepted: number } {
   const now = Date.now();
   let accepted = 0;
+  const attestedUserId =
+    typeof options.userId === "string" && options.userId.trim()
+      ? options.userId.trim()
+      : null;
 
   for (const raw of events) {
     if (!raw?.cacheKeyHash || typeof raw.cacheKeyHash !== "string") continue;
@@ -173,6 +218,7 @@ export function ingestTtsTelemetry(events: TtsTelemetryEvent[]): { accepted: num
       exploration: raw.exploration,
       fromKeyHash: raw.fromKeyHash?.slice(0, 128),
       toKeyHash: raw.toKeyHash?.slice(0, 128),
+      userId: attestedUserId,
       at: now,
     };
 
