@@ -3,9 +3,6 @@ import {
   CATEGORY_LABELS,
   MAX_HISTORY,
   STAGE_LABELS,
-  STORAGE_KEY_DRAFT,
-  STORAGE_KEY_HISTORY,
-  STORAGE_KEY_REMINDERS,
   activeReminders,
   addCustomQuestion,
   addManualAction,
@@ -47,6 +44,7 @@ import {
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { usePtmPrepAi } from "@/hooks/use-ptm-prep-ai";
 import { usePtmPrepSync } from "@/hooks/use-ptm-prep-sync";
+import { loadPtmPrepLocal } from "@/lib/ptm-prep-storage";
 import {
   Bell,
   Calendar,
@@ -76,39 +74,6 @@ interface Props {
   child?: ChildLite | null;
 }
 
-function loadDraft(): PtmSession | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY_DRAFT);
-    return raw ? (JSON.parse(raw) as PtmSession) : null;
-  } catch {
-    return null;
-  }
-}
-
-function loadHistory(): PtmSession[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY_HISTORY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as PtmSession[]).slice(0, MAX_HISTORY) : [];
-  } catch {
-    return [];
-  }
-}
-
-function loadReminders(): PtmReminder[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY_REMINDERS);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as PtmReminder[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
 
@@ -117,12 +82,13 @@ type ConfirmKind = "discard" | "delete_history" | null;
 export function PtmPrepAssistant({ child }: Props) {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
-  const { persist, ready } = usePtmPrepSync();
+  const { persist, ready, userId } = usePtmPrepSync();
   const { generateQuestions, generateActions, loading: aiLoading } = usePtmPrepAi(authFetch);
 
-  const [session, setSession] = useState<PtmSession | null>(() => loadDraft());
-  const [history, setHistory] = useState<PtmSession[]>(() => loadHistory());
-  const [reminders, setReminders] = useState<PtmReminder[]>(() => loadReminders());
+  const [session, setSession] = useState<PtmSession | null>(null);
+  const [history, setHistory] = useState<PtmSession[]>([]);
+  const [reminders, setReminders] = useState<PtmReminder[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [confirmKind, setConfirmKind] = useState<ConfirmKind>(null);
@@ -130,11 +96,14 @@ export function PtmPrepAssistant({ child }: Props) {
   const [shareToast, setShareToast] = useState<string | null>(null);
 
   useEffect(() => {
+    setHydrated(false);
     if (!ready) return;
-    setSession(loadDraft());
-    setHistory(loadHistory());
-    setReminders(loadReminders());
-  }, [ready]);
+    const local = loadPtmPrepLocal(userId);
+    setSession(local.draft);
+    setHistory(local.history.slice(0, MAX_HISTORY));
+    setReminders(local.reminders);
+    setHydrated(true);
+  }, [ready, userId]);
 
   const saveAll = useCallback(
     (draft: PtmSession | null, hist: PtmSession[], rems: PtmReminder[]) => {
@@ -143,10 +112,12 @@ export function PtmPrepAssistant({ child }: Props) {
     [persist],
   );
 
+  // Persist only after hydrate so leftover React state from a prior account
+  // cannot bump clientUpdatedAt and overwrite the newly signed-in user's server row.
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !hydrated || !userId) return;
     saveAll(session, history, reminders);
-  }, [session, history, reminders, ready, saveAll]);
+  }, [session, history, reminders, ready, hydrated, userId, saveAll]);
 
   useEffect(() => {
     if (!session || !child) return;
@@ -163,7 +134,7 @@ export function PtmPrepAssistant({ child }: Props) {
   }, [child?.id, child?.name, session]);
 
   const draftPreview = useMemo(() => {
-    const d = loadDraft();
+    const d = session ?? loadPtmPrepLocal(userId).draft;
     if (!d || d.stage === "done") return null;
     const stage = STAGE_LABELS[d.stage]?.title ?? d.stage;
     const selected = d.questions.filter((q) => q.selected).length;
@@ -171,7 +142,7 @@ export function PtmPrepAssistant({ child }: Props) {
       return t("components.ptm_prep.resume_with_questions", { count: selected, stage });
     }
     return t("components.ptm_prep.resume_stage", { stage });
-  }, [t, session, ready]);
+  }, [t, session, ready, userId]);
 
   const stats = useMemo(() => (session ? sessionStats(session) : null), [session]);
   const amyHint = useMemo(() => (session ? buildAmyHint(session.actions) : null), [session]);
@@ -204,7 +175,7 @@ export function PtmPrepAssistant({ child }: Props) {
   };
 
   const resumeSession = () => {
-    const d = loadDraft();
+    const d = session ?? loadPtmPrepLocal(userId).draft;
     if (d) setSession(d);
   };
 
