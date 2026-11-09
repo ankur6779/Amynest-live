@@ -11,6 +11,9 @@ import {
 
 const router: IRouter = Router();
 
+/** Pre-signup CRM — mounted before requireAuth (see routes/index.ts). */
+export const pushAnonymousPublicRouter: IRouter = Router();
+
 const DEVICE_ID_HEADER = "x-amynest-device-id";
 
 const PLATFORMS = ["ios", "ios-capacitor", "android", "web", "unknown"] as const;
@@ -36,6 +39,8 @@ const anonymousRegisterSchema = z.object({
 
 const linkDeviceSchema = z.object({
   deviceId: z.string().trim().min(8).max(128),
+  /** Must match the FCM token previously stored for this deviceId. */
+  token: z.string().trim().min(1).max(512),
 });
 
 function looksLikeApnsDeviceTokenHex(t: string): boolean {
@@ -109,7 +114,11 @@ router.post("/push/register", async (req, res): Promise<void> => {
 
   const deviceIdHeader = req.header(DEVICE_ID_HEADER)?.trim();
   if (deviceIdHeader) {
-    await linkAnonymousDeviceToUser(deviceIdHeader, userId).catch(() => undefined);
+    // Only promote the anonymous row when the caller proves possession of the
+    // same FCM token that was stored for this install (blocks cross-account plant).
+    await linkAnonymousDeviceToUser(deviceIdHeader, userId, {
+      requirePushToken: token,
+    }).catch(() => undefined);
   }
 
   res.json({ ok: true });
@@ -117,9 +126,9 @@ router.post("/push/register", async (req, res): Promise<void> => {
 
 /**
  * POST /api/push/register-anonymous
- * Pre-signup FCM registration — no auth required.
+ * Pre-signup FCM registration — intentionally unauthenticated (public router).
  */
-router.post("/push/register-anonymous", async (req, res): Promise<void> => {
+pushAnonymousPublicRouter.post("/push/register-anonymous", async (req, res): Promise<void> => {
   const parsed = anonymousRegisterSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid body" });
@@ -151,6 +160,7 @@ router.post("/push/register-anonymous", async (req, res): Promise<void> => {
 /**
  * POST /api/push/link-device
  * Links a previously anonymous device to the authenticated user.
+ * Requires the same FCM token that was registered anonymously for that deviceId.
  */
 router.post("/push/link-device", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
@@ -163,7 +173,9 @@ router.post("/push/link-device", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid body" });
     return;
   }
-  const result = await linkAnonymousDeviceToUser(parsed.data.deviceId, userId);
+  const result = await linkAnonymousDeviceToUser(parsed.data.deviceId, userId, {
+    requirePushToken: parsed.data.token,
+  });
   res.json(result);
 });
 
