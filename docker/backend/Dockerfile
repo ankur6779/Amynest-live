@@ -125,6 +125,11 @@ COPY --from=build --chown=nodejs:nodejs \
 # Skyfield + JPL BSP daemon (local only)
 COPY --from=build --chown=nodejs:nodejs /app/artifacts/ephemeris-daemon /app/ephemeris-daemon
 COPY --from=build --chown=nodejs:nodejs /app/scripts/start-api-with-ephemeris.sh /app/scripts/start-api-with-ephemeris.sh
+# 0052/0053 are applied from the running API because Coolify Postgres has no public port.
+COPY --from=build --chown=nodejs:nodejs \
+  /app/lib/db/migrations/0052_analytics_product_spine.sql \
+  /app/lib/db/migrations/0053_analytics_event_id_partial_unique.sql \
+  /app/migrations/
 
 RUN chmod +x /app/scripts/start-api-with-ephemeris.sh \
   /app/ephemeris-daemon/scripts/start.sh \

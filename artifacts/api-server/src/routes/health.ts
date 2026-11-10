@@ -34,6 +34,10 @@ import { getAnalyticsQuality } from "../services/analyticsIngestService.js";
 import { getSchedulerSnapshot, SCHEDULER_JOB_CATALOG } from "../lib/single-active-scheduler.js";
 import { isBirthSkyPublicEnabled } from "../services/birth-sky/allowlist.js";
 import { pool } from "@workspace/db";
+import {
+  applyAnalyticsProductSpineMigration,
+  type SqlClient,
+} from "../services/analyticsProductSpineMigration.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -214,6 +218,28 @@ router.post("/healthz/ops/birth-sky-mig-0050", async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: message.slice(0, 300) });
+  }
+});
+
+/**
+ * Additive ops: analytics_events spine columns and partial event_id indexes
+ * (migrations 0052 then 0053). Protected by x-health-secret, same gate as migration 0050.
+ * Stops before DDL when non-empty event ids are duplicated. Does not delete rows.
+ */
+router.post("/healthz/ops/analytics-mig-0052-0053", async (req, res) => {
+  if (!requireInternalHealthSecret(req, res)) return;
+  const client = await pool.connect();
+  try {
+    await client.query("SET statement_timeout = '10min'");
+    const result = await applyAnalyticsProductSpineMigration(client as SqlClient);
+    if (!res.headersSent) res.status(result.status).json(result.body);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!res.headersSent) {
+      res.status(500).json({ ok: false, migration: "0052+0053", error: message.slice(0, 300) });
+    }
+  } finally {
+    client.release();
   }
 });
 

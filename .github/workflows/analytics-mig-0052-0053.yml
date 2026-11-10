@@ -1,0 +1,99 @@
+# Apply additive analytics migrations 0052 and 0053 through the Coolify API.
+# The database host is not reachable from GitHub-hosted runners.
+# Never runs unscoped drizzle-kit push.
+
+name: Analytics migrations 0052 and 0053
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/db/migrations/0052_analytics_product_spine.sql"
+      - "lib/db/migrations/0053_analytics_event_id_partial_unique.sql"
+      - "artifacts/api-server/src/services/analyticsProductSpineMigration.ts"
+      - "artifacts/api-server/src/routes/health.ts"
+      - "docker/backend/Dockerfile"
+      - ".github/workflows/analytics-mig-0052-0053.yml"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type apply-0052 to run the analytics schema migration"
+        required: true
+        type: string
+
+jobs:
+  migrate-0052-0053-via-api:
+    name: Apply + verify migrations 0052 and 0053
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.confirm == 'apply-0052'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for Coolify redeploy then apply 0052 and 0053
+        env:
+          INTERNAL_HEALTH_SECRET: ${{ secrets.INTERNAL_HEALTH_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${INTERNAL_HEALTH_SECRET:-}" ]; then
+            echo "INTERNAL_HEALTH_SECRET not configured."
+            exit 1
+          fi
+          API_URL="$(python3 - << 'PY'
+          from pathlib import Path
+          text = Path(".github/workflows/birth-sky-public-launch-ops.yml").read_text()
+          for line in text.splitlines():
+              stripped = line.strip()
+              if stripped.startswith("API_URL:"):
+                  print(stripped.split(":", 1)[1].strip().strip("'\""))
+                  break
+          else:
+              raise SystemExit("API_URL missing from birth-sky workflow")
+          PY
+          )"
+          if [ -z "${API_URL}" ]; then
+            echo "API_URL missing"
+            exit 1
+          fi
+          for i in $(seq 1 40); do
+            CODE="$(curl -sS -A 'AmyNest-AnalyticsMigration/1.0' -o /tmp/mig.json -w '%{http_code}' --max-time 180 \
+              -X POST -H "x-health-secret: ${INTERNAL_HEALTH_SECRET}" \
+              "${API_URL}/api/healthz/ops/analytics-mig-0052-0053" || echo 000)"
+            echo "attempt $i http=$CODE"
+            if [ "$CODE" = "200" ]; then
+              node -e '
+              const j=JSON.parse(require("fs").readFileSync("/tmp/mig.json","utf8"));
+              const indexes = Array.isArray(j.indexes) ? j.indexes : [];
+              const column = indexes.find((row) => row.indexname === "analytics_events_event_id_uq");
+              const props = indexes.find((row) => row.indexname === "analytics_events_props_event_id_uq");
+              const pred = (row) => String(row && row.predicate || "");
+              const ok = j.ok === true
+                && column && column.indisunique === true && pred(column).includes("event_id") && !pred(column).includes("props")
+                && props && props.indisunique === true && pred(props).includes("props");
+              if (!ok) {
+                console.error("VERIFY_FAIL", JSON.stringify({ ok: j.ok, error: j.error, indexes }));
+                process.exit(1);
+              }
+              console.log("VERIFY_OK", JSON.stringify({
+                migration: j.migration,
+                precheck: j.precheck,
+                indexes: indexes.map((row) => ({ indexname: row.indexname, indisunique: row.indisunique, predicate: row.predicate })),
+              }));
+              '
+              exit $?
+            fi
+            if [ "$CODE" = "409" ]; then
+              node -e '
+              const j=JSON.parse(require("fs").readFileSync("/tmp/mig.json","utf8"));
+              console.error("STOPPED", JSON.stringify({ error: j.error, precheck: j.precheck }));
+              process.exit(j.error === "migration_in_progress" ? 2 : 1);
+              '
+              RC=$?
+              if [ "$RC" != "2" ]; then exit "$RC"; fi
+            fi
+            sleep 20
+          done
+          echo "FAIL: migration endpoint never succeeded"
+          exit 1
