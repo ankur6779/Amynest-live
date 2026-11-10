@@ -2,7 +2,7 @@
 
 Date: 2 Nov 2026, Asia/Calcutta.
 
-Migrations `0052` and `0053` were not applied by this certification. Do not apply them, deploy production, change RevenueCat products, or change Google Ads campaign `23986249354` without an explicit approval. This runbook is the procedure. It is not a record that the checks were executed.
+Migrations `0052` and `0053` were not applied by the 2 Nov certification. On 10 Nov 2026 the schema change was approved. They still have not been executed: the database host does not resolve from outside Coolify, and the ops route is not on the running API until that build is released. Do not release the live API, change RevenueCat products, or change Google Ads campaign `23986249354` without an explicit approval. This runbook is the procedure. It is not a record that the checks were executed.
 
 ## Intended uniqueness
 
@@ -103,7 +103,11 @@ There is no migration journal. Executing the files is the application step.
 
 ## Apply order
 
-Only after the duplicate checks return zero, and only with approval:
+Only after the duplicate checks return zero, and only with approval.
+
+On 10 Nov 2026 the schema change was approved. Coolify Postgres does not accept a connection from outside the Docker network, so the running API applies the files. Deploy the API build that contains `POST /api/healthz/ops/analytics-mig-0052-0053`, then call that route with `x-health-secret`. The route reads the two SQL files from `/app/migrations`, refuses to start when a non-empty `event_id` is duplicated, and runs `0052` then `0053` in one transaction. It does not delete rows and it does not run `db:push`.
+
+Direct order, when a database session is available:
 
 1. Deploy the API and web build first. Do not run the migrations in the same step.
 2. Confirm `POST /api/analytics/events` and `POST /api/analytics/preauth-events` still accept a previous allowlisted payload and return 202. A missing device id on the pre-auth route returns 400. The production limits stay 60 requests per IP and 30 requests per device per 60 seconds.

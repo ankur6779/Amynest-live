@@ -9,6 +9,10 @@ const LONG_REQUEST_TIMEOUT_MS = Number(
 /** Audio/TTS health probes stream from OpenAI + GCS — exceed default 5s API timeout. */
 const HEALTH_PROBE_TIMEOUT_MS = Number(process.env.API_HEALTH_PROBE_TIMEOUT_MS ?? "15000");
 
+/** Schema migration may scan analytics_events and build indexes. */
+const SCHEMA_MIGRATION_TIMEOUT_MS = Number(process.env.API_SCHEMA_MIGRATION_TIMEOUT_MS ?? "600000");
+const SCHEMA_MIGRATION_PATHS = ["/api/healthz/ops/analytics-mig-0052-0053"];
+
 /** Deep health probes (OpenAI TTS stream, Drive list, etc.). */
 const HEALTH_PROBE_PATH_PREFIXES = [
   "/api/healthz/audio",
@@ -39,6 +43,9 @@ const LONG_RUNNING_PATH_PREFIXES = [
 
 function resolveTimeoutMs(req: Request): number {
   const path = req.originalUrl?.split("?")[0] ?? "";
+  if (SCHEMA_MIGRATION_PATHS.some((exact) => path === exact)) {
+    return SCHEMA_MIGRATION_TIMEOUT_MS;
+  }
   if (HEALTH_PROBE_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return HEALTH_PROBE_TIMEOUT_MS;
   }
