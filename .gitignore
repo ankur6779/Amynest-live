@@ -69,6 +69,7 @@ hetzner-overrides.env
 # Catch-all for any *.env secret dumps (e.g. "Amynest-backend-dykj (2).env")
 *.env
 !.env*.example
+.cursor/cloud-secrets.local.env
 
 # Service account / Firebase client JSON — never commit under attached_assets
 attached_assets/*.json

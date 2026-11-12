@@ -1,0 +1,9 @@
+{
+  "name": "AmyNest Cloud",
+  "install": "bash .cursor/cloud-bootstrap.sh install",
+  "start": "bash .cursor/cloud-bootstrap.sh start",
+  "ports": [
+    { "name": "web", "port": 3000 },
+    { "name": "api", "port": 5000 }
+  ]
+}
