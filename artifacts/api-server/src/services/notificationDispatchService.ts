@@ -698,7 +698,14 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   }, null);
   const allTokensStale =
     tokens.length > 0 && tokens.every((t) => isStalePushToken(t.lastSeenAt, now));
-  if (allTokensStale && input.bypassDailyCap !== true) {
+  // Time-sensitive transactional sends (routine_item, infant_care) must still
+  // attempt delivery — lastSeenAt only refreshes on push re-register, not every
+  // app open (notably iOS Capacitor after the first successful registration).
+  if (
+    allTokensStale &&
+    input.bypassDailyCap !== true &&
+    !isTransactionalNotificationCategory(input.category)
+  ) {
     logger.info(
       {
         evt: "notification_suppressed",
