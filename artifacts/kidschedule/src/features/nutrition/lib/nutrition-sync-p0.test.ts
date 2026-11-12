@@ -162,6 +162,60 @@ describe("nutrition-sync P0 regression", () => {
     expect(second).toBe(true);
     expect(localStorage.getItem(`amynest:nutrition-sync-queue:${CHILD_ID}`)).toBe("[]");
   });
+
+  it("flush skips PUT when server day is newer (multi-device LWW)", async () => {
+    // Device A: partial checklist queued offline at T1
+    persistTodayChecklist(CHILD_ID, { breakfast: true });
+    const localTs = Date.now();
+
+    // Advance clock; device B already wrote a fuller day to the server at T2
+    vi.setSystemTime(new Date("2026-06-14T18:00:00"));
+    const serverTs = Date.now();
+
+    const puts: Array<Record<string, unknown>> = [];
+    const authFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/daily-score") && init?.method === "PUT") {
+        puts.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/daily-score")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            log: {
+              dateKey: "2026-06-14",
+              checklist: {
+                breakfast: true,
+                protein: true,
+                dairy: true,
+                greens: true,
+                fruit: true,
+              },
+              updatedAt: new Date(serverTs).toISOString(),
+            },
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ ok: true, log: null }), { status: 200 });
+    });
+
+    // Force local dayUpdatedAt older than server (stale offline edit)
+    const raw = JSON.parse(localStorage.getItem(`nutrition:daily-score:${CHILD_ID}`)!);
+    raw.dayUpdatedAt["2026-06-14"] = localTs;
+    localStorage.setItem(`nutrition:daily-score:${CHILD_ID}`, JSON.stringify(raw));
+
+    configureNutritionSync(authFetch);
+    enqueueNutritionSync(CHILD_ID, "2026-06-14");
+    const ok = await flushNutritionSync(CHILD_ID);
+
+    expect(ok).toBe(true);
+    expect(puts).toHaveLength(0);
+    expect(localStorage.getItem(`amynest:nutrition-sync-queue:${CHILD_ID}`)).toBe("[]");
+    expect(readTodayChecklist(CHILD_ID).protein).toBe(true);
+    expect(readTodayChecklist(CHILD_ID).greens).toBe(true);
+  });
 });
 
 describe("nutrition-sync multi-child isolation", () => {
