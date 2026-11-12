@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
+import { db, subscriptionsTable, type Subscription } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import { safeJsonResponse } from "../lib/safe-json-response.js";
 import type { Plan } from "./subscriptionService";
+import { isPremiumNow } from "./subscription-premium-gate.js";
 import {
   applyRevenueCatSnapshot,
   markRevenueCatSyncError,
@@ -33,6 +36,17 @@ export function getRevenueCatV2ConfigStatus(): RcV2ConfigStatus {
     configured: missing.length === 0,
     missing,
   };
+}
+
+/**
+ * Restore Purchase must not wipe a still-valid local RevenueCat row when RC
+ * transiently returns no active entitlements (API lag, propagation delay).
+ */
+export function shouldPreserveLocalEntitlementOnRestoreEmptyRc(
+  local: Subscription | null | undefined,
+): boolean {
+  if (!local || local.provider !== "revenuecat") return false;
+  return isPremiumNow(local);
 }
 
 export function assertRevenueCatV2ConfigAtBoot(): void {
@@ -327,6 +341,27 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
         },
         "[rcSync] no active RevenueCat V2 entitlement for customer",
       );
+      if (opts.source === "restore") {
+        const localRow = await db.query.subscriptionsTable.findFirst({
+          where: eq(subscriptionsTable.userId, canonicalUserId),
+        });
+        if (shouldPreserveLocalEntitlementOnRestoreEmptyRc(localRow)) {
+          logger.warn(
+            { userId: canonicalUserId, requestedUserId: userId },
+            "[rcSync] restore: RC empty but local paid period still valid — preserving local entitlement",
+          );
+          return {
+            synced: false,
+            isPremium: true,
+            verifiedCustomer: true,
+            activeEntitlement: false,
+            dbUpdated: false,
+            apiPremium: true,
+            appliedUserId: canonicalUserId,
+            reason: "rc_empty_local_preserved",
+          };
+        }
+      }
       const snapshot = buildSnapshotFromV2(userId, null, customerResult.data, null, null, opts.eventType ?? undefined);
       const applied = await applyRevenueCatSnapshot(canonicalUserId, snapshot, {
         source: opts.source ?? "purchase_finalize",
