@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import {
   db,
   childrenTable,
@@ -9,6 +9,7 @@ import {
   buildWeeklyTrend,
   computeCurrentStreak,
   computeMinDayMet,
+  shouldRejectStaleNutritionWrite,
   type WeeklyTrendDay,
 } from "../lib/nutritionTrackLogic.js";
 
@@ -95,15 +96,41 @@ export async function saveDailyScore(
   userId: string,
   dateKey: string,
   checklist: Record<string, boolean>,
+  clientUpdatedAt?: number,
 ): Promise<
-  { ok: false; error: "forbidden" } | { ok: true; log: ReturnType<typeof rowToPayload> }
+  | { ok: false; error: "forbidden" }
+  | { ok: true; log: ReturnType<typeof rowToPayload>; merged: boolean }
 > {
   if (!(await verifyChildOwner(childId, userId))) {
     return { ok: false, error: "forbidden" };
   }
 
+  const existingRows = await db
+    .select()
+    .from(nutritionDailyLogTable)
+    .where(
+      and(
+        eq(nutritionDailyLogTable.childId, childId),
+        eq(nutritionDailyLogTable.userId, userId),
+        eq(nutritionDailyLogTable.dateKey, dateKey),
+      ),
+    )
+    .limit(1);
+  const existing = existingRows[0];
+
+  if (
+    existing &&
+    shouldRejectStaleNutritionWrite(existing.updatedAt.getTime(), clientUpdatedAt)
+  ) {
+    return { ok: true, log: rowToPayload(existing), merged: false };
+  }
+
   const sanitized = sanitizeChecklist(checklist);
   const { score, minDayMet } = computeScoreFromChecklist(sanitized);
+  const writeAt =
+    clientUpdatedAt != null && clientUpdatedAt > 0
+      ? new Date(Math.max(clientUpdatedAt, existing?.updatedAt.getTime() ?? 0))
+      : new Date();
 
   const [row] = await db
     .insert(nutritionDailyLogTable)
@@ -114,6 +141,7 @@ export async function saveDailyScore(
       checklist: sanitized,
       score,
       minDayMet,
+      updatedAt: writeAt,
     })
     .onConflictDoUpdate({
       target: [nutritionDailyLogTable.childId, nutritionDailyLogTable.dateKey],
@@ -122,12 +150,12 @@ export async function saveDailyScore(
         score,
         minDayMet,
         userId,
-        updatedAt: sql`now()`,
+        updatedAt: writeAt,
       },
     })
     .returning();
 
-  return { ok: true, log: rowToPayload(row!) };
+  return { ok: true, log: rowToPayload(row!), merged: true };
 }
 
 function shiftDateKey(dateKey: string, days: number): string {

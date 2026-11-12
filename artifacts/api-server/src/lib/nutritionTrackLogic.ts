@@ -2,6 +2,15 @@
 
 export const MIN_DAY_CHECKED_THRESHOLD = 1;
 
+/** Reject client PUT when server row is newer or same age (deterministic tie → server wins). */
+export function shouldRejectStaleNutritionWrite(
+  serverUpdatedAtMs: number,
+  clientUpdatedAtMs: number | undefined,
+): boolean {
+  if (clientUpdatedAtMs == null || clientUpdatedAtMs <= 0) return false;
+  return serverUpdatedAtMs >= clientUpdatedAtMs;
+}
+
 export function computeMinDayMet(checked: number): boolean {
   return checked >= MIN_DAY_CHECKED_THRESHOLD;
 }

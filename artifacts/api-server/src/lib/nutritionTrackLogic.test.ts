@@ -5,11 +5,20 @@ import {
   computeCurrentStreak,
   computeMinDayMet,
   isStreakQualifyingDay,
+  shouldRejectStaleNutritionWrite,
 } from "./nutritionTrackLogic.js";
 
 test("computeMinDayMet is true when at least one item checked", () => {
   assert.equal(computeMinDayMet(0), false);
   assert.equal(computeMinDayMet(1), true);
+});
+
+test("shouldRejectStaleNutritionWrite rejects when server is newer or tied", () => {
+  assert.equal(shouldRejectStaleNutritionWrite(5000, 4000), true);
+  assert.equal(shouldRejectStaleNutritionWrite(5000, 5000), true);
+  assert.equal(shouldRejectStaleNutritionWrite(4000, 5000), false);
+  assert.equal(shouldRejectStaleNutritionWrite(5000, undefined), false);
+  assert.equal(shouldRejectStaleNutritionWrite(5000, 0), false);
 });
 
 test("isStreakQualifyingDay accepts score >= 50 or min day met", () => {
