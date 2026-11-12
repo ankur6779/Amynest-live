@@ -17,7 +17,12 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { generateAiRoutine, enrichMealOptionsWithAi } from "./routines.js";
+import {
+  generateAiRoutine,
+  enrichMealOptionsWithAi,
+  ageGroupFromTotalMonths,
+  buildListEnrichCtx,
+} from "./routines.js";
 import { REGION_LABELS, type Region, type ScheduleItem } from "../lib/routine-templates.js";
 
 // ─── Mock-client factory ───────────────────────────────────────────────────
@@ -1094,3 +1099,63 @@ describe("enrichMealOptionsWithAi — infant hard block", () => {
     }
   });
 });
+
+// ─── list-enrich ageGroup derivation ───────────────────────────────────────────
+// GET /routines previously read child.ageGroup (column does not exist) and
+// defaulted to early_school, so infant routines were enqueued with adult meal
+// enrichment and breast/formula notes were overwritten.
+describe("buildListEnrichCtx — derive ageGroup from age/ageMonths", () => {
+  it("maps under-12-months children to infant (not early_school)", () => {
+    assert.equal(ageGroupFromTotalMonths(0), "infant");
+    assert.equal(ageGroupFromTotalMonths(6), "infant");
+    assert.equal(ageGroupFromTotalMonths(11), "infant");
+    assert.equal(ageGroupFromTotalMonths(12), "toddler");
+    const ctx = buildListEnrichCtx({ age: 0, ageMonths: 7, foodType: "veg" }, null);
+    assert.equal(ctx.ageGroup, "infant");
+  });
+
+  it("never defaults missing ageGroup field to early_school for babies", () => {
+    // Simulate a DB child row: age + ageMonths only (no ageGroup property).
+    const child = { age: 0, ageMonths: 4, foodType: "veg", allergies: null };
+    const ctx = buildListEnrichCtx(child, { dietType: "veg" });
+    assert.equal(ctx.ageGroup, "infant");
+    assert.notEqual(ctx.ageGroup, "early_school");
+  });
+
+  it("skips OpenAI when list-enrich ctx is built for an infant", async () => {
+    let called = false;
+    const client = {
+      chat: {
+        completions: {
+          create: async () => {
+            called = true;
+            return {
+              choices: [
+                {
+                  message: {
+                    content: '{"slots":[{"idx":0,"options":["Paneer Tikka","Dhokla","Upma","Poha"]}]}',
+                  },
+                },
+              ],
+            };
+          },
+        },
+      },
+    };
+    const infantItems: ScheduleItem[] = [
+      {
+        time: "7:00 AM",
+        activity: "Morning Wake & Feed",
+        duration: 30,
+        category: "meal",
+        notes: "Morning feed (breast/formula). Skin-to-skin cuddle after feeding.",
+        status: "pending",
+      },
+    ];
+    const ctx = buildListEnrichCtx({ age: 0, ageMonths: 5 }, null);
+    const result = await enrichMealOptionsWithAi(infantItems, ctx, client);
+    assert.equal(called, false);
+    assert.equal(result[0]?.notes, infantItems[0]?.notes);
+  });
+});
+
