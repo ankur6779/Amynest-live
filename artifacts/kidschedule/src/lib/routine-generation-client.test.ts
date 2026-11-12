@@ -3,6 +3,7 @@ import {
   fetchStandardRoutine,
   fetchAmyAiRoutine,
   fetchRoutineWithResilience,
+  persistGeneratedRoutine,
   RoutineGenerationPaywallError,
 } from "./routine-generation-client";
 import { resetAnalyticsServiceForTests, getAnalyticsService } from "./analytics/analytics-service";
@@ -78,6 +79,37 @@ describe("routine-generation-client resilience", () => {
 
     await fetchStandardRoutine(authFetch as never, { childId: 3, date: "2026-07-05" });
     expect(getAnalyticsService().pendingCount()).toBeGreaterThanOrEqual(0);
+  });
+
+  it("persistGeneratedRoutine POSTs sanitized items to /api/routines", async () => {
+    const authFetch = vi.fn(
+      async () => new Response(JSON.stringify({ id: 99, childName: "Sam" }), { status: 200 }),
+    );
+
+    const saved = await persistGeneratedRoutine(authFetch as never, {
+      childId: 5,
+      date: "2026-07-04",
+      title: "Tomorrow",
+      items: [{ activity: "Breakfast", time: "8:00 AM", duration: 30, category: "meal" }],
+    });
+
+    expect(saved.id).toBe(99);
+  });
+
+  it("maps save paywall errors to RoutineGenerationPaywallError", async () => {
+    const authFetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: "routine_limit_reached" }), { status: 402 }),
+    );
+
+    await expect(
+      persistGeneratedRoutine(authFetch as never, {
+        childId: 1,
+        date: "2026-07-04",
+        title: "Tomorrow",
+        items: [{ activity: "Breakfast", time: "8:00 AM", duration: 30, category: "meal" }],
+      }),
+    ).rejects.toBeInstanceOf(RoutineGenerationPaywallError);
   });
 });
 
