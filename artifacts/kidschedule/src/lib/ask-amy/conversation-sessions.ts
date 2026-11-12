@@ -62,6 +62,20 @@ export function storageKeyForUser(userId: string | null | undefined): string {
   return `${STORAGE_PREFIX}${userId && userId.length > 0 ? userId : "local"}`;
 }
 
+/**
+ * Bind workspace state to one user. Active chat always starts blank so a prior
+ * user's in-memory conversation cannot display or persist under another account.
+ */
+export function prepareAmyAiSessionForUser(userId: string | null | undefined): {
+  store: AmyAiSessionStore;
+  current: AmyAiConversation;
+} {
+  return {
+    store: loadSessionStore(userId),
+    current: emptyConversation(),
+  };
+}
+
 export function loadSessionStore(userId: string | null | undefined): AmyAiSessionStore {
   if (typeof window === "undefined") return { conversations: [] };
   try {
