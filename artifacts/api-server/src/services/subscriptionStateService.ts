@@ -26,7 +26,27 @@ export type RevenueCatSnapshot = {
   cancelledAt?: Date | null;
   eventType?: string | null;
   eventAt?: Date | null;
+  /** Webhook cancel_reason — CUSTOMER_SUPPORT means a refund revoke. */
+  cancelReason?: string | null;
+  /** Webhook price — negative prices are Google/self-serve refunds. */
+  price?: number | null;
 };
+
+/**
+ * Refunds must revoke Premium immediately even when expiration_at_ms is still
+ * in the future. Modern RC sends refunds as CANCELLATION + CUSTOMER_SUPPORT
+ * (or price < 0); legacy projects may still emit REFUND.
+ */
+export function isRevenueCatImmediateRevoke(opts: {
+  eventType?: string | null;
+  cancelReason?: string | null;
+  price?: number | null;
+}): boolean {
+  if (opts.eventType === "REFUND") return true;
+  if (opts.eventType !== "CANCELLATION") return false;
+  if (opts.cancelReason === "CUSTOMER_SUPPORT") return true;
+  return typeof opts.price === "number" && opts.price < 0;
+}
 
 export type SubscriptionApplyResult = {
   userId: string;
@@ -80,6 +100,18 @@ export function deriveStateFromRevenueCatSnapshot(
   snapshot: RevenueCatSnapshot,
   now = new Date(),
 ): { state: SubscriptionState; reason: string; premiumUntil: Date | null } {
+  if (
+    isRevenueCatImmediateRevoke({
+      eventType: snapshot.eventType,
+      cancelReason: snapshot.cancelReason,
+      price: snapshot.price,
+    })
+  ) {
+    const expiration = snapshot.expirationAt ?? null;
+    const premiumUntil =
+      expiration && expiration.getTime() <= now.getTime() ? expiration : now;
+    return { state: "EXPIRED", reason: "refunded", premiumUntil };
+  }
   const expiration = snapshot.expirationAt ?? null;
   const graceExpiration = snapshot.gracePeriodExpirationAt ?? null;
   if (graceExpiration && graceExpiration.getTime() > now.getTime()) {
