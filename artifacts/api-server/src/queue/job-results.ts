@@ -22,6 +22,27 @@ const LONG_TTL_JOB_TYPES = new Set([
 
 const MAX_USER_ACTIVE_JOBS = Number(process.env.AI_MAX_USER_ACTIVE_JOBS ?? "4");
 
+/** Atomic INCR+EXPIRE (+ rollback) — safe to retry via withRedisRetry on closed connections. */
+const ACQUIRE_USER_SLOT_SCRIPT = `
+local n = redis.call('INCR', KEYS[1])
+redis.call('EXPIRE', KEYS[1], ARGV[1])
+if n <= tonumber(ARGV[2]) then
+  return 1
+end
+redis.call('DECR', KEYS[1])
+return 0
+`;
+
+/** Atomic DECR (+ DEL at zero) — safe to retry via withRedisRetry on closed connections. */
+const RELEASE_USER_SLOT_SCRIPT = `
+local n = redis.call('DECR', KEYS[1])
+if n <= 0 then
+  redis.call('DEL', KEYS[1])
+  return 0
+end
+return n
+`;
+
 function jobResultTtlSec(type?: string): number {
   if (type && LONG_TTL_JOB_TYPES.has(type)) return TTL_SEC_LONG;
   return TTL_SEC_DEFAULT;
@@ -192,22 +213,22 @@ export async function patchJobRecord(
 export async function tryAcquireUserSlot(userId: string): Promise<boolean> {
   if (!isRedisQueueEnabled()) return true;
   const key = userActiveKey(userId);
-  return withRedisRetry(async (redis) => {
-    const n = await redis.incr(key);
-    await redis.expire(key, TTL_SEC_LONG);
-    if (n <= MAX_USER_ACTIVE_JOBS) return true;
-    await redis.decr(key);
-    return false;
-  });
+  const acquired = await withRedisRetry((redis) =>
+    redis.eval(
+      ACQUIRE_USER_SLOT_SCRIPT,
+      1,
+      key,
+      String(TTL_SEC_LONG),
+      String(MAX_USER_ACTIVE_JOBS),
+    ),
+  );
+  return acquired === 1;
 }
 
 export async function releaseUserSlot(userId: string): Promise<void> {
   if (!isRedisQueueEnabled()) return;
   const key = userActiveKey(userId);
-  await withRedisRetry(async (redis) => {
-    const n = await redis.decr(key);
-    if (n <= 0) await redis.del(key);
-  });
+  await withRedisRetry((redis) => redis.eval(RELEASE_USER_SLOT_SCRIPT, 1, key));
 }
 
 export async function waitForJobResult(
