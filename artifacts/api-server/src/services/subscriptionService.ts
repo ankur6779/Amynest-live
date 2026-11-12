@@ -951,6 +951,9 @@ export async function maybeAutoGrantPremium(
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {
+  // Reads resolve the alias owner via getOrCreateSubscription; write must match
+  // or POST /subscription/start-trial silently no-ops after B→A recovery.
+  const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId);
   const sub = await getOrCreateSubscription(userId);
   // Only allow starting trial once, from the free state
   if (sub.status !== "free") return sub;
@@ -965,12 +968,14 @@ export async function startTrial(userId: string): Promise<Subscription> {
       currentPeriodEnd: trialEnd,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptionsTable.userId, userId))
+    .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId))
     .returning();
   if (updated) {
-    void trackServerSubscriptionFunnel(userId, "trial_started", { trigger: "manual_start" });
+    void trackServerSubscriptionFunnel(subscriptionOwnerUserId, "trial_started", {
+      trigger: "manual_start",
+    });
   }
-  return updated;
+  return updated ?? sub;
 }
 
 /**
