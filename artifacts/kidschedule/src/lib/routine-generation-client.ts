@@ -459,3 +459,83 @@ export async function fetchRoutineWithResilience(
     emitGeneratedOnSuccess: true,
   });
 }
+
+export type PersistGeneratedRoutineResult = {
+  routineId: number;
+  replaced: boolean;
+};
+
+/**
+ * POST /api/routines after generate — generate endpoints return JSON only.
+ */
+export async function persistGeneratedRoutine(
+  authFetch: AuthFetchFn,
+  generated: RoutineGenerateResult,
+  payload: Pick<RoutineGeneratePayload, "childId" | "date">,
+  options?: { override?: boolean },
+): Promise<PersistGeneratedRoutineResult> {
+  const items = sanitizeRoutineItems(generated.items).map((item) => ({
+    ...item,
+    duration: Math.max(1, Math.round(Number(item.duration) || 30)),
+  }));
+  if (items.length === 0) {
+    throw new Error("empty_routine");
+  }
+
+  const res = await authFetch(
+    getApiUrl("/api/routines"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childId: payload.childId,
+        date: payload.date,
+        title: generated.title?.trim() || "Daily Routine",
+        items,
+        adaptations: generated.adaptations ?? undefined,
+        override: options?.override ?? true,
+      }),
+    },
+    AI_FETCH_TIMEOUT_MS,
+  );
+
+  let body: unknown = null;
+  const raw = await res.text();
+  try {
+    body = raw ? JSON.parse(raw) : null;
+  } catch {
+    /* ignore */
+  }
+
+  if (res.status === 402 || res.status === 403) {
+    const errBody = body as { reason?: string; error?: string; feature?: string } | null;
+    const isFeatureLocked =
+      res.status === 402 &&
+      (errBody?.error === "feature_locked" ||
+        errBody?.error === "routine_locked" ||
+        errBody?.feature === "routine_generate" ||
+        errBody?.error === "routine_limit_reached");
+    const isLegacyLimit = res.status === 403 && errBody?.reason === "routine_limit_exceeded";
+    if (isFeatureLocked || isLegacyLimit) {
+      throw new RoutineGenerationPaywallError();
+    }
+  }
+
+  if (res.status === 409) {
+    const errBody = body as { error?: string; routineId?: number } | null;
+    if (errBody?.error === "routine_exists" && options?.override !== false) {
+      return persistGeneratedRoutine(authFetch, generated, payload, { override: true });
+    }
+  }
+
+  if (!res.ok) {
+    throw new Error(`Routine save failed (${res.status})`);
+  }
+
+  const saved = body as { id?: number } | null;
+  if (!saved?.id) {
+    throw new Error("Routine save returned no id");
+  }
+
+  return { routineId: saved.id, replaced: options?.override === true };
+}
