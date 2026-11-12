@@ -2,6 +2,7 @@ import { getApiUrl } from "@/lib/api";
 import { enqueueClientAi } from "@/lib/client-ai-queue";
 import { reportFailedRoutine } from "@/lib/client-logs";
 import { resolveAiApiData } from "@/lib/poll-result";
+import { parseApiJson } from "@/lib/safe-json-response";
 import { buildEmergencyRoutineFallback, sanitizeRoutineItems } from "@/lib/routine-item-safety";
 import {
   beginRoutineGenerationSession,
@@ -450,12 +451,79 @@ async function runAmyAiRoutineInner(
 export async function fetchRoutineWithResilience(
   authFetch: AuthFetchFn,
   payload: RoutineGeneratePayload,
-  options?: { childName?: string; source?: string },
+  options?: {
+    childName?: string;
+    source?: string;
+    emitGeneratedOnSuccess?: boolean;
+  },
 ): Promise<RoutineGenerateResult> {
   return fetchStandardRoutine(authFetch, payload, {
     source: options?.source,
     childName: options?.childName,
     allowClientEmergency: true,
-    emitGeneratedOnSuccess: true,
+    emitGeneratedOnSuccess: options?.emitGeneratedOnSuccess ?? true,
   });
+}
+
+export type PersistGeneratedRoutineResult = {
+  id: number;
+  childName?: string;
+};
+
+/**
+ * Persist a generated routine via POST /api/routines (generate endpoints do not save).
+ */
+export async function persistGeneratedRoutine(
+  authFetch: AuthFetchFn,
+  input: {
+    childId: number;
+    date: string;
+    title: string;
+    items: unknown;
+    adaptations?: string[] | null;
+    override?: boolean;
+  },
+): Promise<PersistGeneratedRoutineResult> {
+  const items = sanitizeRoutineItems(input.items);
+  if (items.length === 0) {
+    throw new Error("Cannot save empty routine");
+  }
+
+  const res = await authFetch(getApiUrl("/api/routines"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      childId: input.childId,
+      date: input.date,
+      title: input.title.trim() || "Daily Routine",
+      items,
+      adaptations: input.adaptations ?? undefined,
+      override: input.override ?? true,
+    }),
+  });
+
+  if (res.status === 402 || res.status === 403) {
+    let body: { error?: string; reason?: string; feature?: string } | null = null;
+    try {
+      body = (await res.json()) as { error?: string; reason?: string; feature?: string };
+    } catch {
+      /* ignore */
+    }
+    const isFeatureLocked =
+      res.status === 402 &&
+      (body?.error === "feature_locked" ||
+        body?.error === "routine_locked" ||
+        body?.error === "routine_limit_reached" ||
+        body?.feature === "routine_generate");
+    const isLegacyLimit = res.status === 403 && body?.reason === "routine_limit_exceeded";
+    if (isFeatureLocked || isLegacyLimit) {
+      throw new RoutineGenerationPaywallError();
+    }
+  }
+
+  if (!res.ok) {
+    throw new Error(`Failed to save routine (${res.status})`);
+  }
+
+  return parseApiJson<PersistGeneratedRoutineResult>(res);
 }

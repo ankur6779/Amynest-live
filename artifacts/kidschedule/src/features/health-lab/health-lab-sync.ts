@@ -60,7 +60,8 @@ function writeMeta(childId: number, ts: number): void {
   }
 }
 
-function mergeState(
+/** Client-side merge — mirrors server mergeProfiles (newer local wins scalar fields). */
+export function mergeHealthLabClientState(
   local: HealthLabPersistedState,
   server: Partial<HealthLabPersistedState> | null,
   serverTs: number,
@@ -76,8 +77,8 @@ function mergeState(
     for (const b of server.badges ?? []) badgeMap.set(b.id, b);
     for (const b of local.badges) badgeMap.set(b.id, b);
     return {
-      ...local,
       ...server,
+      ...local,
       totalXp: Math.max(local.totalXp, server.totalXp ?? 0),
       coins: Math.max(local.coins, server.coins ?? 0),
       streakDays: Math.max(local.streakDays, server.streakDays ?? 0),
@@ -120,7 +121,7 @@ export async function hydrateHealthLabProfile(
           clientUpdatedAt?: number;
         }>(res);
         if (json.profile) {
-          const merged = mergeState(local, json.profile, json.clientUpdatedAt ?? 0, localTs);
+          const merged = mergeHealthLabClientState(local, json.profile, json.clientUpdatedAt ?? 0, localTs);
           saveHealthLabState(merged);
           writeMeta(childId, Math.max(localTs, json.clientUpdatedAt ?? 0));
           trackHealthLabEvent("health_lab_sync_success", childId, { action: "hydrate" });
@@ -167,7 +168,7 @@ export async function flushHealthLabSync(childId: number): Promise<boolean> {
     }
     const json = (await parseApiJson<{ profile?: Partial<HealthLabPersistedState> }>(res));
     if (json.profile) {
-      const merged = mergeState(state, json.profile, clientUpdatedAt, clientUpdatedAt);
+      const merged = mergeHealthLabClientState(state, json.profile, clientUpdatedAt, clientUpdatedAt);
       saveHealthLabState(merged);
     }
     saveQueue(childId, []);
