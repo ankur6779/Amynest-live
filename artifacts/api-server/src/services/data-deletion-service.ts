@@ -103,6 +103,9 @@ import {
   ttsCacheTable,
   coachAudioCacheTable,
   revenuecatWebhookEventsTable,
+  userCustomActivitiesTable,
+  userRetentionTable,
+  worksheetDownloadsTable,
 } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 
@@ -178,6 +181,8 @@ export async function purgeChildScopedData(
     { table: "vaccination_logs", run: () => tx.delete(vaccinationLogsTable).where(eq(vaccinationLogsTable.childId, childId)).returning({ id: vaccinationLogsTable.id }) },
     { table: "nba_decision_logs", run: () => tx.delete(nbaDecisionLogsTable).where(eq(nbaDecisionLogsTable.childId, childId)).returning({ id: nbaDecisionLogsTable.id }) },
     { table: "parent_task_completions", run: () => tx.delete(parentTaskCompletionsTable).where(eq(parentTaskCompletionsTable.childId, childId)).returning({ id: parentTaskCompletionsTable.id }) },
+    { table: "worksheet_downloads", run: () => tx.delete(worksheetDownloadsTable).where(eq(worksheetDownloadsTable.childId, childId)).returning({ id: worksheetDownloadsTable.id }) },
+    { table: "user_custom_activities", run: () => tx.delete(userCustomActivitiesTable).where(eq(userCustomActivitiesTable.childId, childId)).returning({ id: userCustomActivitiesTable.id }) },
   ];
 
   for (const { table, run } of intChildDeletes) {
@@ -431,6 +436,9 @@ async function purgeUserScopedData(
     { table: "feature_notification_schedules_by_user", run: () => tx.delete(featureNotificationSchedulesTable).where(eq(featureNotificationSchedulesTable.userId, userId)).returning({ id: featureNotificationSchedulesTable.id }) },
     { table: "phonics_downloads_by_user", run: () => tx.delete(phonicsDownloadsTable).where(eq(phonicsDownloadsTable.userId, userId)).returning({ id: phonicsDownloadsTable.id }) },
     { table: "speech_expert_waitlist_by_user", run: () => tx.delete(speechExpertWaitlistTable).where(eq(speechExpertWaitlistTable.userId, userId)).returning({ id: speechExpertWaitlistTable.id }) },
+    { table: "user_custom_activities_by_user", run: () => tx.delete(userCustomActivitiesTable).where(eq(userCustomActivitiesTable.userId, userId)).returning({ id: userCustomActivitiesTable.id }) },
+    { table: "worksheet_downloads_by_user", run: () => tx.delete(worksheetDownloadsTable).where(eq(worksheetDownloadsTable.userId, userId)).returning({ id: worksheetDownloadsTable.id }) },
+    { table: "user_retention", run: () => tx.delete(userRetentionTable).where(eq(userRetentionTable.userId, userId)).returning({ id: userRetentionTable.userId }) },
     { table: "referrals", run: () => tx.delete(referralsTable).where(or(eq(referralsTable.referrerUserId, userId), eq(referralsTable.referredUserId, userId))).returning({ id: referralsTable.id }) },
     { table: "gift_tokens", run: () => tx.delete(giftTokensTable).where(or(eq(giftTokensTable.ownerUserId, userId), eq(giftTokensTable.recipientUserId, userId))).returning({ id: giftTokensTable.id }) },
     { table: "children", run: () => tx.delete(childrenTable).where(eq(childrenTable.userId, userId)).returning({ id: childrenTable.id }) },
