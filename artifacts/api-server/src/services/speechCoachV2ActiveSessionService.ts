@@ -308,6 +308,14 @@ export async function getActiveSessionForChild(
   return row;
 }
 
+/**
+ * Validates tab lock + active status for realtime token mint / usage report.
+ *
+ * Intentionally does NOT refresh lastSeenAt. Heartbeats (validateAndTouchSession)
+ * own the billable clock: refreshing here without charging lets reconnect remints
+ * zero out elapsed time so the next heartbeat only bills ~1s, and keeps a live
+ * OpenAI RTC session from going stale while first-use seconds stay near 0.
+ */
 export async function assertActiveSessionForToken(input: {
   userId: string;
   childId: number;
@@ -337,11 +345,9 @@ export async function assertActiveSessionForToken(input: {
       409,
     );
   }
-
-  await db
-    .update(speechCoachV2ActiveSessionsTable)
-    .set({ lastSeenAt: new Date(), updatedAt: new Date() })
-    .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
+  if (Date.now() - row.lastSeenAt.getTime() > ACTIVE_STALE_MS) {
+    throw new SpeechCoachV2SessionError("Unknown or inactive session.", "invalid_session", 404);
+  }
 }
 
 export async function validateAndTouchSession(input: {

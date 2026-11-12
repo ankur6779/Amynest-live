@@ -63,8 +63,12 @@ export function useSpeechCoachV2Session(input: {
   ageMonths: number;
   enabled: boolean;
   realtimeConnected?: boolean;
+  /** Fired when AmyNest heartbeats fail repeatedly while RTC may still be live. */
+  onHeartbeatLost?: () => void;
 }) {
-  const { authFetch, childId, enabled, realtimeConnected = false } = input;
+  const { authFetch, childId, enabled, realtimeConnected = false, onHeartbeatLost } = input;
+  const onHeartbeatLostRef = useRef(onHeartbeatLost);
+  onHeartbeatLostRef.current = onHeartbeatLost;
 
   const [uiState, setUiState] = useState<SessionUiState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,6 +96,8 @@ export function useSpeechCoachV2Session(input: {
 
   const responseStartedAtRef = useRef<number | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Consecutive non-limit heartbeat failures while live; fail-closed after streak. */
+  const heartbeatFailStreakRef = useRef(0);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatRef.current) {
@@ -308,6 +314,8 @@ export function useSpeechCoachV2Session(input: {
   useEffect(() => {
     if (uiState !== "live" || !sessionState || !tabLockToken || !realtimeConnected) return;
 
+    heartbeatFailStreakRef.current = 0;
+
     const runHeartbeat = () => {
       void heartbeatSpeechCoachV2Session(authFetch, {
         childId,
@@ -315,12 +323,24 @@ export function useSpeechCoachV2Session(input: {
         tabLockToken,
       })
         .then((hb) => {
+          heartbeatFailStreakRef.current = 0;
           setRemainingSeconds(hb.remainingSeconds);
         })
         .catch((err: unknown) => {
           if (isSpeechCoachLimitError(err)) {
+            heartbeatFailStreakRef.current = 0;
             setUiState("limit_reached");
             trackSpeechCoachV2LimitReached({ childId, isTrial });
+            return;
+          }
+          // AmyNest API down while OpenAI RTC may stay up — do not keep the
+          // free clock open forever without successful billable heartbeats.
+          heartbeatFailStreakRef.current += 1;
+          if (heartbeatFailStreakRef.current >= 3) {
+            stopHeartbeat();
+            setUiState("ready");
+            setErrorMessage("Connection to AmyNest was interrupted. Tap Start to continue.");
+            onHeartbeatLostRef.current?.();
           }
         });
     };

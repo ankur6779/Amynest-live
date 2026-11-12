@@ -66,6 +66,15 @@ export default function SpeechCoachV2SessionPage() {
     [child?.age, child?.ageMonths],
   );
 
+  const handleLimitReached = useCallback(() => {
+    setLive(false);
+  }, []);
+
+  const heartbeatLostRef = useRef<() => void>(() => {
+    setLive(false);
+    setRealtimeConnected(false);
+  });
+
   const session = useSpeechCoachV2Session({
     authFetch,
     childId: child?.id ?? 0,
@@ -73,11 +82,8 @@ export default function SpeechCoachV2SessionPage() {
     ageMonths,
     enabled: v2Enabled && Boolean(child?.id),
     realtimeConnected,
+    onHeartbeatLost: () => heartbeatLostRef.current(),
   });
-
-  const handleLimitReached = useCallback(() => {
-    setLive(false);
-  }, []);
 
   const realtime = useSpeechCoachV2Realtime({
     authFetch,
@@ -91,6 +97,12 @@ export default function SpeechCoachV2SessionPage() {
     onLimitReached: handleLimitReached,
     onConnectionChange: setRealtimeConnected,
   });
+
+  heartbeatLostRef.current = () => {
+    setLive(false);
+    setRealtimeConnected(false);
+    realtime.disconnect();
+  };
 
   const handleEnd = useCallback(async () => {
     setLive(false);

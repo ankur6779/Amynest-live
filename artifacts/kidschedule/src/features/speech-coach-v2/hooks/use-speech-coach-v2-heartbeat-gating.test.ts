@@ -157,4 +157,42 @@ describe("useSpeechCoachV2Session heartbeat gating", () => {
     });
     expect(heartbeatMock).toHaveBeenCalledTimes(2);
   });
+
+  it("fail-closes live session after repeated heartbeat failures", async () => {
+    const onHeartbeatLost = vi.fn();
+    heartbeatMock.mockRejectedValue(new Error("network_down"));
+
+    const { result } = renderHook(() =>
+      useSpeechCoachV2Session({
+        authFetch,
+        childId: 1,
+        childName: "Mia",
+        ageMonths: 48,
+        enabled: true,
+        realtimeConnected: true,
+        onHeartbeatLost,
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.beginLive();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    // immediate run + 2 interval ticks = 3 failures
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    expect(heartbeatMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(onHeartbeatLost).toHaveBeenCalled();
+    expect(result.current.uiState).toBe("ready");
+    expect(result.current.errorMessage).toMatch(/interrupted/i);
+  });
 });
