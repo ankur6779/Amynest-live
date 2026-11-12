@@ -318,6 +318,22 @@ export async function syncRevenueCatSubscription(userId: string, opts: {
     const activeEnt = pickActiveEntitlement(entitlementsResult.data);
     const activeSubscription = subscriptionsResult.ok ? pickAccessSubscription(subscriptionsResult.data) : null;
     if (!activeEnt && !activeSubscription) {
+      if (!subscriptionsResult.ok) {
+        await markRevenueCatSyncError(userId, opts.source ?? "purchase_finalize", subscriptionsResult.reason, {
+          customerStatus: 200,
+          entitlementsStatus: entitlementsResult.ok ? 200 : entitlementsResult.status,
+          subscriptionsStatus: subscriptionsResult.status,
+        });
+        return {
+          synced: false,
+          isPremium: false,
+          verifiedCustomer: true,
+          activeEntitlement: false,
+          dbUpdated: false,
+          apiPremium: false,
+          reason: subscriptionsResult.reason,
+        };
+      }
       logger.warn(
         {
           userId,
