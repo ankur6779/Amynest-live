@@ -1,9 +1,13 @@
 /**
  * Birth Sky AI entitlement (Pack 2 + Addenda A/B).
- * Free insight consumed only after successful delivery ack, exactly once per deliveryId.
+ *
+ * Free insight is consumed when a successful assistant delivery is persisted
+ * server-side (stream `complete` path). Client ACK remains idempotent for UI
+ * sync — it must never be the sole authority, or free users can skip ACK and
+ * burn unlimited OpenAI cost.
  */
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   birthProfilesTable,
@@ -20,6 +24,13 @@ export type BirthSkyAiGate =
       isPremium: boolean;
       aiInsightsUsedCount: number;
     };
+
+/** Only a successfully delivered (non-moderated) assistant turn consumes the free insight. */
+export function shouldServerConsumeFreeInsightOnDelivery(
+  assistantStatus: "complete" | "moderated" | "error" | "cancelled" | "timeout" | "failed",
+): boolean {
+  return assistantStatus === "complete";
+}
 
 export async function evaluateBirthSkyAiGate(
   userId: string,
@@ -71,6 +82,7 @@ export type AckDeliveryResult = {
 
 /**
  * Idempotent delivery acknowledgment. Increments free count at most once per deliveryId.
+ * Safe to call from the stream success path and again from the client ACK endpoint.
  */
 export async function ackBirthSkyDelivery(input: {
   userId: string;
@@ -109,15 +121,31 @@ export async function ackBirthSkyDelivery(input: {
   let nextCount = gate.aiInsightsUsedCount;
 
   if (!gate.isPremium && gate.aiInsightsUsedCount < 1) {
-    await db
+    // Conditional update so concurrent ack/stream completions cannot both "consume".
+    const claimed = await db
       .update(birthProfilesTable)
       .set({
         aiInsightsUsedCount: 1,
         updatedAt: new Date(),
       })
-      .where(eq(birthProfilesTable.id, input.profileId));
-    consumed = true;
-    nextCount = 1;
+      .where(
+        and(
+          eq(birthProfilesTable.id, input.profileId),
+          sql`COALESCE(${birthProfilesTable.aiInsightsUsedCount}, 0) < 1`,
+        ),
+      )
+      .returning({ id: birthProfilesTable.id });
+    if (claimed.length > 0) {
+      consumed = true;
+      nextCount = 1;
+    } else {
+      const profiles = await db
+        .select({ count: birthProfilesTable.aiInsightsUsedCount })
+        .from(birthProfilesTable)
+        .where(eq(birthProfilesTable.id, input.profileId))
+        .limit(1);
+      nextCount = profiles[0]?.count ?? 1;
+    }
   }
 
   await db.insert(birthSkyAiDeliveriesTable).values({
