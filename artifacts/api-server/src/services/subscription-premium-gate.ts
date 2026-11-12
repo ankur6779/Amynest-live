@@ -57,6 +57,11 @@ export function shouldPreserveActiveTrial(s: Subscription): boolean {
   return false;
 }
 
+/** Store-billed rows are reconciled via webhooks — never heal-wipe on entitlement read. */
+export function shouldSkipHealStaleDowngrade(s: Subscription): boolean {
+  return s.provider === "revenuecat" || s.provider === "razorpay";
+}
+
 /**
  * Strict paid-subscriber check for assets that must not unlock via trials,
  * bonus grants, grace periods, journey access, or manual/promotional grants.
@@ -95,13 +100,27 @@ export function isPremiumNow(s: Subscription): boolean {
     !!s.expiresAt ||
     !!s.gracePeriodExpiresAt;
   if (hasExplicitV2State) {
-    return isStatePremium(s.subscriptionState, {
-      currentPeriodEnd: s.currentPeriodEnd,
-      expiresAt: s.expiresAt,
-      gracePeriodExpiresAt: s.gracePeriodExpiresAt,
-      trialEndsAt: s.trialEndsAt,
-      bonusExpiresAt: s.bonusExpiresAt,
-    });
+    if (
+      isStatePremium(s.subscriptionState, {
+        currentPeriodEnd: s.currentPeriodEnd,
+        expiresAt: s.expiresAt,
+        gracePeriodExpiresAt: s.gracePeriodExpiresAt,
+        trialEndsAt: s.trialEndsAt,
+        bonusExpiresAt: s.bonusExpiresAt,
+      })
+    ) {
+      return true;
+    }
+    // Unmigrated store row: subscriptionState still FREE but paid period is valid.
+    if (
+      (s.provider === "revenuecat" || s.provider === "razorpay")
+      && s.subscriptionState === "FREE"
+      && (s.status === "active" || s.status === "canceled" || s.status === "past_due")
+      && hasValidPaidPeriodEnd(s)
+    ) {
+      return true;
+    }
+    return false;
   }
   const now = Date.now();
   if (s.bonusExpiresAt && s.bonusExpiresAt.getTime() > now) return true;
