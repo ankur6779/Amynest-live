@@ -166,6 +166,12 @@ export function createLearningEventBus(
       return null;
     }
 
+    // Offline queue can survive reloads. If we boot already-online, hosts may
+    // never see an offline→online transition — drain before new online work.
+    if (isOnline() && offlineQueue.length > 0) {
+      flushOffline();
+    }
+
     const t0 = onTelemetry ? nowMs() : 0;
     seq += 1;
     const event = buildLearningEvent(input, { seq, now, createId });

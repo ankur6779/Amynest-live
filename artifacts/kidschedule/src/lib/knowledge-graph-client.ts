@@ -24,6 +24,7 @@ import {
 } from "@workspace/knowledge-graph";
 import type { WorldManifestItem } from "@workspace/world-engine";
 import {
+  getLearningEventBus,
   installLearningEventBus,
   publishItemLearning,
   publishMasteryDeltaEvents,
@@ -270,6 +271,16 @@ function ensureLearningEventIntegration(): void {
     );
   });
   bootstrapped = true;
+  // Offline events persist across reloads, but the browser only fires
+  // `online` on a transition. Booting already-online would leave the queue
+  // stuck forever — drain now that the KG sink is registered.
+  try {
+    if (typeof navigator === "undefined" || navigator.onLine !== false) {
+      getLearningEventBus().flushOffline();
+    }
+  } catch {
+    /* never break gameplay */
+  }
 }
 
 /**
