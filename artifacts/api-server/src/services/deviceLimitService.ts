@@ -438,6 +438,10 @@ export async function replaceDevice(params: {
 }): Promise<DeviceRegistrationResult> {
   return db.transaction(async (tx) => {
     await advisoryLockUser(tx, params.userId);
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`deviceid:${params.newDeviceId}`}))`,
+    );
+    await transferDeviceIfNeeded(tx, params.newDeviceId, params.userId);
 
     const [toRemove] = await tx
       .select()
