@@ -29,7 +29,7 @@ import {
   deleteConversation,
   emptyConversation,
   listHistoryConversations,
-  loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   seedFromServerHistory,
@@ -88,10 +88,11 @@ export function AmyAiConversationWorkspace({
   const { back } = useAppNavigate();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
-  const storeRef = useRef<AmyAiSessionStore>(loadSessionStore(userId));
+  const initialSession = prepareAmyAiSessionForUser(userId);
+  const storeRef = useRef<AmyAiSessionStore>(initialSession.store);
 
-  const [store, setStore] = useState<AmyAiSessionStore>(() => storeRef.current);
-  const [current, setCurrent] = useState<AmyAiConversation>(() => emptyConversation());
+  const [store, setStore] = useState<AmyAiSessionStore>(() => initialSession.store);
+  const [current, setCurrent] = useState<AmyAiConversation>(() => initialSession.current);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [slowWait, setSlowWait] = useState(false);
@@ -109,16 +110,25 @@ export function AmyAiConversationWorkspace({
 
   useEffect(() => {
     let cancelled = false;
+    sendAbortRef.current?.abort();
+    setInput("");
+    setPendingRetry(null);
+    setLoading(false);
+    setSlowWait(false);
+
+    const prepared = prepareAmyAiSessionForUser(userId);
+    storeRef.current = prepared.store;
+    setStore(prepared.store);
+    setCurrent(prepared.current);
+
     (async () => {
-      const loaded = loadSessionStore(userId);
-      storeRef.current = loaded;
       try {
         const r = await authFetch("/api/ai/messages");
         if (r.ok) {
           const data = await parseApiJson<{
             messages?: Array<{ role: string; content: string; createdAt?: string }>;
           }>(r);
-          const seeded = seedFromServerHistory(loaded, data.messages ?? []);
+          const seeded = seedFromServerHistory(prepared.store, data.messages ?? []);
           if (!cancelled) {
             storeRef.current = seeded;
             setStore(seeded);
@@ -133,12 +143,9 @@ export function AmyAiConversationWorkspace({
       } catch {
         /* non-fatal */
       }
-      if (!cancelled) {
-        setStore(loaded);
-        if (initialConversationId) {
-          const found = loaded.conversations.find((c) => c.id === initialConversationId);
-          if (found) setCurrent(found);
-        }
+      if (!cancelled && initialConversationId) {
+        const found = prepared.store.conversations.find((c) => c.id === initialConversationId);
+        if (found) setCurrent(found);
       }
     })();
     return () => {

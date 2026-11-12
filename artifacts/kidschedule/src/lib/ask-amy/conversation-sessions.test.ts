@@ -5,6 +5,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   searchConversations,
@@ -15,9 +16,13 @@ import {
 import { NEW_CHAT_TITLE } from "./conversation-title";
 
 const USER = "test-user";
+const USER_A = "user-a";
+const USER_B = "user-b";
 
 afterEach(() => {
   localStorage.removeItem(storageKeyForUser(USER));
+  localStorage.removeItem(storageKeyForUser(USER_A));
+  localStorage.removeItem(storageKeyForUser(USER_B));
 });
 
 describe("conversation-sessions", () => {
@@ -90,5 +95,22 @@ describe("conversation-sessions", () => {
     saveSessionStore(USER, { conversations: [conv] });
     expect(loadSessionStore(USER).conversations[0]?.title).toBe("Hello");
     expect(emptyConversation().title).toBe(NEW_CHAT_TITLE);
+  });
+
+  it("prepareAmyAiSessionForUser returns a blank active thread per account", () => {
+    const userAChat = appendMessage(emptyConversation(), { role: "user", content: "User A secret" });
+    saveSessionStore(USER_A, { conversations: [userAChat] });
+
+    const userBChat = appendMessage(emptyConversation(), { role: "user", content: "User B topic" });
+    saveSessionStore(USER_B, { conversations: [userBChat] });
+
+    const forA = prepareAmyAiSessionForUser(USER_A);
+    expect(forA.store.conversations[0]?.title).toBe("User A secret");
+    expect(forA.current.messages).toHaveLength(0);
+
+    const forB = prepareAmyAiSessionForUser(USER_B);
+    expect(forB.store.conversations[0]?.title).toBe("User B topic");
+    expect(forB.current.messages).toHaveLength(0);
+    expect(forB.current.id).not.toBe(forA.current.id);
   });
 });
