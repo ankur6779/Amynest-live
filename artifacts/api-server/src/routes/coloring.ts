@@ -436,7 +436,10 @@ router.post("/coloring/download", infantExploreMutationGate(), async (req, res):
     } catch (insertErr) {
       const pgCode = (insertErr as { code?: string }).code;
       if (pgCode === "23505") {
-        setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+        if (premiumReservation?.ok && premiumReservation.source === "bank") {
+          await refundPremiumDownloadBankDebit(userId);
+        }
+        setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed, downloadWallet));
         const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
         if (!streamed && !res.headersSent) {
           res.status(502).json({ error: "stream_failed" });
