@@ -2,6 +2,7 @@ import { db, giftTokensTable, type GiftToken } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { extendBonusPremium } from "./subscriptionService";
+import { resolveSubscriptionOwnerUserId } from "./userIdentityService";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -74,7 +75,12 @@ export async function redeemGiftToken(
     .where(eq(giftTokensTable.giftCode, code));
 
   if (!token) return { ok: false, reason: "not_found" };
-  if (token.ownerUserId === recipientUserId) return { ok: false, reason: "self_redeem" };
+  // Sticky B→A aliases share one entitlement wallet — compare canonical owners, not raw Firebase uids.
+  const [ownerCanonical, recipientCanonical] = await Promise.all([
+    resolveSubscriptionOwnerUserId(token.ownerUserId),
+    resolveSubscriptionOwnerUserId(recipientUserId),
+  ]);
+  if (ownerCanonical === recipientCanonical) return { ok: false, reason: "self_redeem" };
   if (token.status === "redeemed") return { ok: false, reason: "already_redeemed" };
   if (token.status === "expired" || (token.expiresAt && token.expiresAt < new Date())) {
     return { ok: false, reason: "expired" };
