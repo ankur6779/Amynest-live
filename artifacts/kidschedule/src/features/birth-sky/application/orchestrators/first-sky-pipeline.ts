@@ -311,14 +311,19 @@ export async function runFirstSkyPipeline(input: {
   };
 
   const runOnce = async (): Promise<CreateBirthSkyResponse> => {
-    // Generate again / interrupted profile → always fresh recompute when profile exists.
-    if (profile && (input.forceFresh || !snapshot)) {
+    // forceFresh (Generate again / formation resume) recomputes against server profile.
+    // Otherwise always create/upsert so setup draft edits after a failed first-run are
+    // persisted — recompute alone would regenerate from stale birth fields.
+    if (profile && input.forceFresh) {
       push("profile_init", { profileId: profile.profileId, mode: "reuse" });
       push("astro_generation", { path: "recompute" });
       return attemptRecompute(profile.profileId);
     }
 
-    push("profile_init", { mode: "create" });
+    push("profile_init", {
+      mode: "create",
+      existingProfileId: profile?.profileId,
+    });
     push("astro_generation", { path: "create" });
     const created = await attemptCreate();
     profile = created.profile;

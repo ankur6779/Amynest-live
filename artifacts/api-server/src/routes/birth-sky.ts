@@ -34,6 +34,7 @@ import {
   sealBirthPlace,
   sealBirthTime,
 } from "../services/birth-sky/birth-field-crypto.js";
+import { birthProfileCreateAction } from "../services/birth-sky/birth-profile-create-action.js";
 
 function snapshotFallbackUsed(snapshot: {
   astronomy?: unknown;
@@ -214,6 +215,8 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
     await ensureGenerationStatusColumn();
     logBirthSkyPipeline("preferences_ensured", { userId });
 
+    // Include soft-deleted rows: unique (userId, childId) still covers deletedAt != null,
+    // so recreate after DELETE must resurrect rather than INSERT (avoids 23505 lockout).
     const existing = await db
       .select()
       .from(birthProfilesTable)
@@ -221,7 +224,6 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
         and(
           eq(birthProfilesTable.userId, userId),
           eq(birthProfilesTable.childId, body.childId),
-          isNull(birthProfilesTable.deletedAt),
         ),
       )
       .limit(1);
@@ -238,7 +240,8 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
     const sealedPlace = sealBirthPlace(place);
 
     let profileRow: typeof birthProfilesTable.$inferSelect;
-    if (existing[0]) {
+    const createAction = birthProfileCreateAction(existing[0]);
+    if (createAction === "update" || createAction === "resurrect") {
       const [updated] = await db
         .update(birthProfilesTable)
         .set({
@@ -247,9 +250,10 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
           timePrecision: body.timePrecision,
           birthPlace: sealedPlace,
           consent,
+          deletedAt: null,
           updatedAt: now,
         })
-        .where(eq(birthProfilesTable.id, existing[0].id))
+        .where(eq(birthProfilesTable.id, existing[0]!.id))
         .returning();
       profileRow = updated!;
       await setGenerationStatus(profileRow.id, "COMPUTING");
@@ -258,6 +262,7 @@ router.post("/birth-sky/create", async (req, res): Promise<void> => {
         profileId: profileRow.id,
         childId: body.childId,
         created: false,
+        resurrected: createAction === "resurrect",
         generationStatus: "COMPUTING",
       });
     } else {
