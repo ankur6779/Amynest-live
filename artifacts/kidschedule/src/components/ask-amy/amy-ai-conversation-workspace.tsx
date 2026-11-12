@@ -30,6 +30,7 @@ import {
   emptyConversation,
   listHistoryConversations,
   loadSessionStore,
+  prepareAmyAiSessionForUser,
   renameConversation,
   saveSessionStore,
   seedFromServerHistory,
@@ -89,6 +90,7 @@ export function AmyAiConversationWorkspace({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
   const storeRef = useRef<AmyAiSessionStore>(loadSessionStore(userId));
+  const prevUserIdRef = useRef<string | null>(userId);
 
   const [store, setStore] = useState<AmyAiSessionStore>(() => storeRef.current);
   const [current, setCurrent] = useState<AmyAiConversation>(() => emptyConversation());
@@ -109,6 +111,19 @@ export function AmyAiConversationWorkspace({
 
   useEffect(() => {
     let cancelled = false;
+    const userChanged = prevUserIdRef.current !== null && prevUserIdRef.current !== userId;
+    prevUserIdRef.current = userId;
+
+    if (userChanged) {
+      const reset = prepareAmyAiSessionForUser(userId);
+      storeRef.current = reset.store;
+      setStore(reset.store);
+      setCurrent(reset.current);
+      setInput("");
+      setPendingRetry(null);
+      setHistoryOpen(false);
+    }
+
     (async () => {
       const loaded = loadSessionStore(userId);
       storeRef.current = loaded;
