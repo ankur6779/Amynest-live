@@ -20,14 +20,39 @@ function mapAlert(alert: GrowthAlert, existing?: GrowthOsAlertWorkflow): GrowthO
   };
 }
 
-export async function syncAlertWorkflows(alerts: GrowthAlert[]): Promise<GrowthOsAlertWorkflow[]> {
-  const payload = await loadGrowthOsPayload();
+/** Read-only merge for display — preserves admin workflow fields on existing rows. */
+export function mergeAlertWorkflows(
+  payload: Awaited<ReturnType<typeof loadGrowthOsPayload>>,
+  alerts: GrowthAlert[],
+): GrowthOsAlertWorkflow[] {
   const byId = new Map(payload.alertWorkflows.map((a) => [a.alertId, a]));
   const merged = alerts.map((a) => mapAlert(a, byId.get(a.id)));
   const preserved = payload.alertWorkflows.filter((a) => !alerts.some((x) => x.id === a.alertId));
-  payload.alertWorkflows = [...merged, ...preserved];
-  await saveGrowthOsPayload(payload);
-  return payload.alertWorkflows;
+  return [...merged, ...preserved];
+}
+
+export async function syncAlertWorkflows(alerts: GrowthAlert[]): Promise<GrowthOsAlertWorkflow[]> {
+  const payload = await loadGrowthOsPayload();
+  const existingAlertIds = new Set(payload.alertWorkflows.map((a) => a.alertId));
+  const newAlerts = alerts.filter((alert) => !existingAlertIds.has(alert.id));
+  if (newAlerts.length === 0) {
+    return mergeAlertWorkflows(payload, alerts);
+  }
+
+  const fresh = await loadGrowthOsPayload();
+  const freshByAlertId = new Set(fresh.alertWorkflows.map((a) => a.alertId));
+  let added = false;
+  for (const alert of newAlerts) {
+    if (!freshByAlertId.has(alert.id)) {
+      fresh.alertWorkflows.push(mapAlert(alert));
+      added = true;
+    }
+  }
+  if (added) {
+    await saveGrowthOsPayload(fresh);
+  }
+
+  return mergeAlertWorkflows(fresh, alerts);
 }
 
 export async function updateAlertWorkflow(input: {
