@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearPendingPlaySync,
   durableFinishGame,
   enqueuePlaySync,
   flushPendingPlaySync,
@@ -118,5 +119,17 @@ describe("game-finish durability (GA)", () => {
       idempotencyKey: "play:odd-one-out:recover",
     });
     expect(getPendingPlaySyncCount()).toBe(1);
+  });
+
+  it("clearPendingPlaySync drops queued plays so another account cannot flush them", () => {
+    enqueuePlaySync({
+      gameId: "maze-escape",
+      score: 5,
+      total: 8,
+      idempotencyKey: "play:maze-escape:prior-user",
+    });
+    expect(getPendingPlaySyncCount()).toBe(1);
+    clearPendingPlaySync();
+    expect(getPendingPlaySyncCount()).toBe(0);
   });
 });
