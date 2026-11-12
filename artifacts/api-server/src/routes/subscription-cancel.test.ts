@@ -39,6 +39,7 @@ const past = () => new Date(Date.now() - 86_400_000);
 
 const state: {
   authUserId: string | null;
+  subscriptionOwnerUserId: string | null;
   sub: SubRow | null;
   audits: AuditRow[];
   razorpayCalls: string[];
@@ -47,6 +48,7 @@ const state: {
   txCount: number;
 } = {
   authUserId: "user_1",
+  subscriptionOwnerUserId: null,
   sub: null,
   audits: [],
   razorpayCalls: [],
@@ -104,6 +106,10 @@ function entitlements() {
 
 let txQueue = Promise.resolve();
 
+function subscriptionLookupUserId(): string | null {
+  return state.subscriptionOwnerUserId ?? state.authUserId;
+}
+
 function makeDbMock() {
   const dbMock = {
     query: {
@@ -138,7 +144,8 @@ function makeDbMock() {
       from: () => ({
         where: () => ({
           limit: async () => {
-            if (!state.sub || state.sub.userId !== state.authUserId) return [];
+            const lookupUserId = subscriptionLookupUserId();
+            if (!state.sub || !lookupUserId || state.sub.userId !== lookupUserId) return [];
             return [state.sub];
           },
         }),
@@ -194,13 +201,22 @@ mock.module(new URL("../lib/auth.ts", import.meta.url).href, {
   namedExports: {
     getAuth: () => ({
       userId: state.authUserId,
-      email: null,
-      emailVerified: false,
+      email: "parent@example.com",
+      emailVerified: true,
       phoneNumber: null,
       name: null,
       picture: null,
-      signInProvider: null,
+      signInProvider: "google.com",
     }),
+  },
+});
+
+mock.module(new URL("../services/userIdentityService.ts", import.meta.url).href, {
+  namedExports: {
+    recoverPremiumOwnerForAuth: async ({ userId }: { userId: string }) =>
+      state.subscriptionOwnerUserId ?? userId,
+    resolveSubscriptionOwnerUserId: async (firebaseUid: string) =>
+      state.subscriptionOwnerUserId ?? firebaseUid,
   },
 });
 
@@ -287,6 +303,7 @@ after(async () => {
 
 beforeEach(() => {
   state.authUserId = "user_1";
+  state.subscriptionOwnerUserId = null;
   state.sub = subscription();
   state.audits = [];
   state.razorpayCalls = [];
@@ -399,6 +416,31 @@ describe("POST /api/subscription/cancel", () => {
     assert.equal(res.status, 409);
     assert.equal((await res.json() as { error: string }).error, "invalid_subscription_id");
     assert.equal(state.sub.status, "active");
+  });
+
+  it("cancels the canonical subscription owner for aliased premium accounts", async () => {
+    state.authUserId = "firebase_alias";
+    state.subscriptionOwnerUserId = "firebase_owner";
+    state.sub = subscription({
+      userId: "firebase_owner",
+      provider: "razorpay",
+      providerSubscriptionId: "sub_owner",
+    });
+
+    const res = await postCancel();
+    const body = await res.json() as { ok: boolean; entitlements: { cancelAtPeriodEnd: boolean } };
+
+    assert.equal(res.status, 200);
+    assert.equal(body.ok, true);
+    assert.equal(state.razorpayCalls.length, 1);
+    assert.equal(state.razorpayCalls[0], "sub_owner");
+    assert.equal(state.sub?.userId, "firebase_owner");
+    assert.equal(state.sub?.cancelAtPeriodEnd, 1);
+    assert.equal(body.entitlements.cancelAtPeriodEnd, true);
+    assert.equal(
+      audit("subscription_cancel_requested")?.metadata.authFirebaseUid,
+      "firebase_alias",
+    );
   });
 
   it("returns not found for missing subscription and unauthorized user row", async () => {
