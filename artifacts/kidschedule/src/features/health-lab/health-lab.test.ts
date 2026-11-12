@@ -270,6 +270,33 @@ describe("sync merge", () => {
     const { enqueueHealthLabSync } = await import("./health-lab-sync");
     expect(() => enqueueHealthLabSync(99)).not.toThrow();
   });
+
+  it("preserves newer local level and avatar when hydrating from stale server", async () => {
+    const { mergeHealthLabClientState } = await import("./health-lab-sync");
+
+    const local = {
+      ...defaultHealthLabState(42),
+      level: 5,
+      avatarId: "dragon",
+      totalXp: 900,
+      coins: 40,
+    };
+    const server = {
+      level: 2,
+      avatarId: "default",
+      totalXp: 500,
+      coins: 80,
+      gameHistory: [],
+      badges: [],
+    };
+
+    const merged = mergeHealthLabClientState(local, server, 1000, 2000);
+
+    expect(merged.level).toBe(5);
+    expect(merged.avatarId).toBe("dragon");
+    expect(merged.totalXp).toBe(900);
+    expect(merged.coins).toBe(80);
+  });
 });
 
 describe("freeze validation", () => {
