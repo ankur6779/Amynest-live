@@ -1,10 +1,14 @@
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db, userDevicesTable, type UserDevice } from "@workspace/db";
 import {
   getOrCreateSubscription,
   isPremiumNow,
   resolveDevicesMax,
 } from "./subscriptionService.js";
+import {
+  listUserIdsForSubscriptionIdentity,
+  resolveSubscriptionOwnerUserId,
+} from "./userIdentityService.js";
 import { logger } from "../lib/logger.js";
 import {
   normalizeDeviceMetadata,
@@ -85,11 +89,35 @@ export async function countActiveDevices(
   userId: string,
   dbExec: DbExec = db,
 ): Promise<number> {
+  const identityUserIds = await listUserIdsForSubscriptionIdentity(userId, dbExec);
   const [{ n }] = await dbExec
     .select({ n: sql<number>`count(*)::int` })
     .from(userDevicesTable)
-    .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)));
+    .where(
+      and(
+        inArray(userDevicesTable.userId, identityUserIds),
+        eq(userDevicesTable.isActive, 1),
+      ),
+    );
   return n ?? 0;
+}
+
+async function listActiveDeviceRowsForIdentity(
+  identityUserIds: string[],
+  dbExec: DbExec,
+  currentDeviceId?: string,
+): Promise<DeviceRecord[]> {
+  const rows = await dbExec
+    .select()
+    .from(userDevicesTable)
+    .where(
+      and(
+        inArray(userDevicesTable.userId, identityUserIds),
+        eq(userDevicesTable.isActive, 1),
+      ),
+    )
+    .orderBy(userDevicesTable.lastSeenAt);
+  return rows.map((row) => toDeviceRecord(row, currentDeviceId));
 }
 
 export async function listActiveDevicesForUser(
@@ -190,13 +218,18 @@ async function transferDeviceIfNeeded(
 
 async function deactivateOldestActiveExcept(
   tx: DbExec,
-  userId: string,
+  identityUserIds: string[],
   exceptDeviceId: string,
 ): Promise<boolean> {
   const rows = await tx
     .select()
     .from(userDevicesTable)
-    .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)))
+    .where(
+      and(
+        inArray(userDevicesTable.userId, identityUserIds),
+        eq(userDevicesTable.isActive, 1),
+      ),
+    )
     .orderBy(userDevicesTable.lastSeenAt);
 
   const victim = rows.find((row) => row.deviceId !== exceptDeviceId);
@@ -209,11 +242,11 @@ async function deactivateOldestActiveExcept(
   logger.info(
     {
       evt: "device.replaced_stale",
-      userId,
+      userId: victim.userId,
       removedDeviceId: victim.deviceId,
       newDeviceId: exceptDeviceId,
     },
-    "Released previous active session for this account",
+    "Released previous active session for this subscription identity",
   );
   return true;
 }
@@ -236,7 +269,11 @@ export async function registerOrRefreshDevice(params: {
   const now = new Date();
 
   return db.transaction(async (tx) => {
-    await advisoryLockUser(tx, userId);
+    // Serialize occupancy for the sticky subscription owner, not only the raw uid,
+    // so aliased B cannot race a reminted devicesMax while A holds active slots.
+    const ownerUserId = await resolveSubscriptionOwnerUserId(userId, tx);
+    const identityUserIds = await listUserIdsForSubscriptionIdentity(userId, tx);
+    await advisoryLockUser(tx, ownerUserId);
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`deviceid:${deviceId}`}))`);
 
     const [existing] = await tx
@@ -271,13 +308,11 @@ export async function registerOrRefreshDevice(params: {
     });
 
     if (action === "block") {
-      const devices = (
-        await tx
-          .select()
-          .from(userDevicesTable)
-          .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)))
-          .orderBy(userDevicesTable.lastSeenAt)
-      ).map((row) => toDeviceRecord(row, deviceId));
+      const devices = await listActiveDeviceRowsForIdentity(
+        identityUserIds,
+        tx,
+        deviceId,
+      );
 
       const isPremium = limit > 1;
       return {
@@ -295,15 +330,13 @@ export async function registerOrRefreshDevice(params: {
     await transferDeviceIfNeeded(tx, deviceId, userId);
 
     if (action === "replace_oldest") {
-      const replaced = await deactivateOldestActiveExcept(tx, userId, deviceId);
+      const replaced = await deactivateOldestActiveExcept(tx, identityUserIds, deviceId);
       if (!replaced) {
-        const devices = (
-          await tx
-            .select()
-            .from(userDevicesTable)
-            .where(and(eq(userDevicesTable.userId, userId), eq(userDevicesTable.isActive, 1)))
-            .orderBy(userDevicesTable.lastSeenAt)
-        ).map((row) => toDeviceRecord(row, deviceId));
+        const devices = await listActiveDeviceRowsForIdentity(
+          identityUserIds,
+          tx,
+          deviceId,
+        );
         return {
           ok: false as const,
           error: "device_limit_reached" as const,
