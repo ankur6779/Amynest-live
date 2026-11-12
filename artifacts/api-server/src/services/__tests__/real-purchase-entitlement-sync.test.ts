@@ -201,6 +201,19 @@ describe("real Play purchase entitlement sync — source contracts", () => {
     assert.match(route, /!row\.originalTransactionId/);
   });
 
+  it("purchase_finalize with no RC entitlement yet does not write FREE or bump lastEventAt", () => {
+    const rcSync = readRepoFile("artifacts/api-server/src/services/rcCustomerService.ts");
+    assert.match(rcSync, /pending_entitlement/);
+    assert.match(rcSync, /=== "purchase_finalize"\)/);
+    assert.match(rcSync, /dbUpdated: false/);
+    assert.match(rcSync, /markPurchaseFinalizePendingEntitlement/);
+    const purchaseFinalizeBlock = rcSync.slice(
+      rcSync.indexOf('if ((opts.source ?? "purchase_finalize") === "purchase_finalize")'),
+      rcSync.indexOf("const snapshot = buildSnapshotFromV2(userId, null"),
+    );
+    assert.doesNotMatch(purchaseFinalizeBlock, /applyRevenueCatSnapshot/);
+  });
+
   it("native finalize posts purchase_finalize before polling GET", () => {
     const finalize = readRepoFile("artifacts/kidschedule/src/lib/native-purchase-finalize.ts");
     assert.match(finalize, /postRevenueCatSync\(authFetch, "purchase_finalize"\)/);
