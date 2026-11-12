@@ -104,6 +104,26 @@ async function maybeRefundLoadMoreQuota(job: AiJobRecord): Promise<void> {
   }
 }
 
+async function maybeRefundFeatureGateUsage(job: AiJobRecord): Promise<void> {
+  try {
+    const { refundFeatureGateUsageFromFailedJob } = await import(
+      "../services/subscriptionService.js"
+    );
+    await refundFeatureGateUsageFromFailedJob(job);
+  } catch (err) {
+    const { logger } = await import("../lib/logger.js");
+    logger.warn(
+      {
+        evt: "feature_gate.job_refund_failed",
+        jobId: job.id,
+        type: job.type,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "feature-gate quota refund on AI job failure failed",
+    );
+  }
+}
+
 async function readJobRecord(jobId: string): Promise<AiJobRecord | undefined> {
   if (isRedisQueueEnabled()) {
     return getJobRecord(jobId);
@@ -161,6 +181,7 @@ export async function patchJobRecord(
 ): Promise<AiJobRecord | undefined> {
   const existing = await readJobRecord(jobId);
   if (!existing) return undefined;
+  const wasTerminal = isTerminalStatus(existing.status);
   const updated: AiJobRecord = {
     ...existing,
     ...patch,
@@ -181,8 +202,14 @@ export async function patchJobRecord(
         await clearCoachActiveGenerationForJob(updated.payload);
       })();
     }
-    if (updated.status === "failed" || updated.status === "timed_out") {
+    // Refund only on first transition into failure — avoids double-refund if
+    // poll/finalize patches the same terminal status again.
+    if (
+      !wasTerminal &&
+      (updated.status === "failed" || updated.status === "timed_out")
+    ) {
       void maybeRefundLoadMoreQuota(updated);
+      void maybeRefundFeatureGateUsage(updated);
     }
   }
   return updated;
