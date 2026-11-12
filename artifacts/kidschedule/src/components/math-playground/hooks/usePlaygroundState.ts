@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   buildParentRetentionSnapshot,
   defaultLearningState,
@@ -13,12 +13,7 @@ import {
 } from "@workspace/math-playground";
 import { recordEngagementOutcome } from "@workspace/math-playground-engagement";
 import { refreshPlaygroundIntelligence } from "@workspace/math-playground-reporting";
-import {
-  loadPlaygroundState,
-  saveParentSnapshot,
-  savePlaygroundState,
-  updateEngagementState,
-} from "../lib/storage";
+import { loadPlaygroundState, savePlaygroundState } from "../lib/storage";
 import {
   trackAssessmentCompleted,
   trackLearningGapDetected,
@@ -31,12 +26,22 @@ export function usePlaygroundState(childId: number) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const commitState = useCallback((next: PlaygroundPersistedState) => {
-    stateRef.current = next;
-    savePlaygroundState(next);
-    setState(next);
-    return next;
-  }, []);
+  useEffect(() => {
+    const loaded = loadPlaygroundState(childId);
+    stateRef.current = loaded;
+    setState(loaded);
+  }, [childId]);
+
+  const commitState = useCallback(
+    (next: PlaygroundPersistedState) => {
+      const normalized: PlaygroundPersistedState = { ...next, childId, version: 4 };
+      stateRef.current = normalized;
+      savePlaygroundState(normalized);
+      setState(normalized);
+      return normalized;
+    },
+    [childId],
+  );
 
   const persistState = useCallback(
     (next: PlaygroundPersistedState) => commitState(next),
@@ -152,20 +157,18 @@ export function usePlaygroundState(childId: number) {
 
   const saveEngagement = useCallback(
     (engagement: PlaygroundEngagementState) => {
-      updateEngagementState(childId, engagement);
       const prev = stateRef.current;
       return commitState({ ...prev, version: 4, engagement });
     },
-    [childId, commitState],
+    [commitState],
   );
 
   const saveSnapshot = useCallback(
     (snapshot: ParentRetentionSnapshot) => {
-      saveParentSnapshot(childId, snapshot);
       const prev = stateRef.current;
       return commitState({ ...prev, version: 4, lastParentSnapshot: snapshot });
     },
-    [childId, commitState],
+    [commitState],
   );
 
   return {
