@@ -39,22 +39,41 @@ export function trackWorksheetEvent(
   } catch { /* non-blocking */ }
 }
 
-const QUEUE_KEY = "worksheet-studio-offline-queue";
+const QUEUE_KEY_PREFIX = "worksheet-studio-offline-queue";
+const LEGACY_QUEUE_KEY = QUEUE_KEY_PREFIX;
 
 export interface QueuedRequest {
   id: string;
   url: string;
   body: string;
   createdAt: string;
+  userId?: string;
 }
 
-export function enqueueOfflineRequest(url: string, body: object): void {
+function queueKeyForUser(userId: string | null | undefined): string | null {
+  if (!userId || userId.length === 0) return null;
+  return `${QUEUE_KEY_PREFIX}:${userId}`;
+}
+
+export function enqueueOfflineRequest(
+  url: string,
+  body: object,
+  userId?: string | null,
+): void {
   try {
+    const key = queueKeyForUser(userId);
+    if (!key) return;
     const sanitized = sanitizeOfflineBody(body);
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = localStorage.getItem(key);
     const queue: QueuedRequest[] = raw ? (JSON.parse(raw) as QueuedRequest[]) : [];
-    queue.push({ id: `q_${Date.now()}`, url, body: JSON.stringify(sanitized), createdAt: new Date().toISOString() });
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-20)));
+    queue.push({
+      id: `q_${Date.now()}`,
+      url,
+      body: JSON.stringify(sanitized),
+      createdAt: new Date().toISOString(),
+      userId: userId ?? undefined,
+    });
+    localStorage.setItem(key, JSON.stringify(queue.slice(-20)));
   } catch { /* ignore */ }
 }
 
@@ -81,25 +100,67 @@ function sanitizeOfflineBody(body: object): object {
   return clone;
 }
 
-export async function flushOfflineQueue(fetcher: (url: string, init: RequestInit) => Promise<Response>): Promise<number> {
+export async function flushOfflineQueue(
+  fetcher: (url: string, init: RequestInit) => Promise<Response>,
+  userId?: string | null,
+): Promise<number> {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const key = queueKeyForUser(userId);
+    if (!key) return 0;
+    let raw = localStorage.getItem(key);
+    // One-time adopt of legacy unscoped queue into this user bucket.
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_QUEUE_KEY);
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem(LEGACY_QUEUE_KEY);
+        raw = legacy;
+      }
+    }
     if (!raw) return 0;
     const queue = JSON.parse(raw) as QueuedRequest[];
     let flushed = 0;
     const remaining: QueuedRequest[] = [];
     for (const item of queue) {
+      if (item.userId && userId && item.userId !== userId) {
+        remaining.push(item);
+        continue;
+      }
       try {
-        const res = await fetcher(item.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: item.body });
+        const res = await fetcher(item.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: item.body,
+        });
         if (res.ok) flushed += 1;
         else remaining.push(item);
       } catch {
         remaining.push(item);
       }
     }
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
+    localStorage.setItem(key, JSON.stringify(remaining));
     return flushed;
   } catch {
     return 0;
+  }
+}
+
+/** Drop all worksheet offline queues (scoped + legacy) on account switch. */
+export function clearWorksheetOfflineQueue(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key === LEGACY_QUEUE_KEY || key.startsWith(`${QUEUE_KEY_PREFIX}:`))
+      ) {
+        keys.push(key);
+      }
+    }
+    for (const key of keys) localStorage.removeItem(key);
+  } catch {
+    /* private mode */
   }
 }

@@ -11,6 +11,8 @@ const GIFT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 /** Gift tokens expire 365 days after creation if not redeemed. */
 const GIFT_TOKEN_EXPIRY_DAYS = 365;
 
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function randomBody(len = GIFT_CODE_BODY_LEN): string {
@@ -30,17 +32,20 @@ function buildGiftCode(): string {
 /**
  * Creates a new gift token for the given owner. Retries up to 5 times on the
  * (very unlikely) unique-code collision.
+ * Pass `exec` when calling from an open transaction so counter bumps + inserts
+ * commit or roll back together (referral reward issuance).
  */
 export async function createGiftToken(
   ownerUserId: string,
   bonusDays = 30,
+  exec: DbExecutor = db,
 ): Promise<GiftToken> {
   const expiresAt = new Date(Date.now() + GIFT_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const giftCode = buildGiftCode();
     try {
-      const [row] = await db
+      const [row] = await exec
         .insert(giftTokensTable)
         .values({ ownerUserId, giftCode, bonusDays, expiresAt })
         .returning();

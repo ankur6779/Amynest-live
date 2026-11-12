@@ -6,7 +6,7 @@ import { parseApiJson } from "@/lib/safe-json-response";
  *   - debounces duplicate taps (anti-spam)
  *   - dedupes pending submissions
  *   - retries with exponential backoff
- *   - persists across reloads in localStorage
+ *   - persists across reloads in localStorage (per signed-in user)
  *   - drains automatically when the browser regains connectivity
  *
  * IMPORTANT: This is the ONE place client-side that talks to the
@@ -22,7 +22,9 @@ import {
   type RewardEvent,
 } from "@workspace/learning-progress-engine";
 
-const STORAGE_KEY = "amynest:learning-sync:v1";
+const STORAGE_KEY_PREFIX = "amynest:learning-sync:v1";
+/** Legacy unscoped key — migrated into the active user bucket once. */
+const LEGACY_STORAGE_KEY = STORAGE_KEY_PREFIX;
 const MAX_QUEUE = 50;
 const MAX_RECENT_CACHE = 80;
 const BASE_RETRY_MS = 1500;
@@ -81,10 +83,15 @@ function emptyState(): QueueState {
   };
 }
 
-function loadState(): QueueState {
+function storageKeyForUser(userId: string | null | undefined): string | null {
+  if (!userId || userId.length === 0) return null;
+  return `${STORAGE_KEY_PREFIX}:${userId}`;
+}
+
+function readRawQueue(key: string): QueueState {
   if (typeof window === "undefined") return emptyState();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return emptyState();
     const parsed = JSON.parse(raw) as Partial<QueueState>;
     return {
@@ -99,26 +106,47 @@ function loadState(): QueueState {
   }
 }
 
-function persistState(state: QueueState): void {
+function loadStateForUser(userId: string | null | undefined): QueueState {
+  const key = storageKeyForUser(userId);
+  if (!key) return emptyState();
+  const scoped = readRawQueue(key);
+  if (scoped.queue.length > 0 || scoped.recent.length > 0) return scoped;
+
+  // One-time migration: adopt legacy unscoped queue into this user bucket.
+  if (typeof window === "undefined") return emptyState();
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!legacy) return scoped;
+    const migrated = readRawQueue(LEGACY_STORAGE_KEY);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return migrated;
+  } catch {
+    return scoped;
+  }
+}
+
+function persistState(userId: string | null | undefined, next: QueueState): void {
   if (typeof window === "undefined") return;
+  const key = storageKeyForUser(userId);
+  if (!key) return;
   try {
     window.localStorage.setItem(
-      STORAGE_KEY,
+      key,
       JSON.stringify({
-        queue: state.queue,
-        recent: state.recent.slice(-MAX_RECENT_CACHE),
-        diag: state.diag,
+        queue: next.queue,
+        recent: next.recent.slice(-MAX_RECENT_CACHE),
+        diag: next.diag,
       }),
     );
   } catch {
     /* quota — drop oldest and retry once */
     try {
       window.localStorage.setItem(
-        STORAGE_KEY,
+        key,
         JSON.stringify({
-          queue: state.queue.slice(-10),
-          recent: state.recent.slice(-20),
-          diag: state.diag,
+          queue: next.queue.slice(-10),
+          recent: next.recent.slice(-20),
+          diag: next.diag,
         }),
       );
     } catch {
@@ -127,7 +155,8 @@ function persistState(state: QueueState): void {
   }
 }
 
-let state: QueueState = loadState();
+let activeUserId: string | null = null;
+let state: QueueState = emptyState();
 const listeners = new Set<Listener>();
 let fetcher: Fetcher | null = null;
 let apiUrlFn: (path: string) => string = (p) => p;
@@ -143,19 +172,76 @@ function notify(): void {
 }
 
 function save(): void {
-  persistState(state);
+  persistState(activeUserId, state);
+  notify();
+}
+
+/**
+ * Bind the in-memory queue to a signed-in user. Call with null on sign-out so
+ * another account cannot flush or destroy this user's pending completions.
+ */
+export function setLearningSyncUser(userId: string | null | undefined): void {
+  const next = userId && userId.length > 0 ? userId : null;
+  if (next === activeUserId) return;
+  if (activeUserId) {
+    persistState(activeUserId, state);
+  }
+  activeUserId = next;
+  inFlight = new Set();
+  state = loadStateForUser(activeUserId);
+  notify();
+  if (activeUserId && fetcher) {
+    scheduleFlush(50);
+  }
+}
+
+/** Remove all per-user learning-sync keys (and legacy) — used on account switch. */
+export function clearLearningSyncStorage(): void {
+  activeUserId = null;
+  state = emptyState();
+  inFlight = new Set();
+  if (flushTimer != null && typeof window !== "undefined") {
+    window.clearTimeout(flushTimer);
+  }
+  flushTimer = null;
+  flushScheduled = false;
+  if (typeof window === "undefined") {
+    notify();
+    return;
+  }
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (
+        key &&
+        (key === LEGACY_STORAGE_KEY || key.startsWith(`${STORAGE_KEY_PREFIX}:`))
+      ) {
+        keys.push(key);
+      }
+    }
+    for (const key of keys) window.localStorage.removeItem(key);
+  } catch {
+    /* private mode */
+  }
   notify();
 }
 
 export function configureLearningSync(opts: {
   fetcher: Fetcher;
+  userId?: string | null;
   getApiUrl?: (path: string) => string;
   onRewards?: (events: RewardEvent[]) => void;
 }): void {
   fetcher = opts.fetcher;
   if (opts.getApiUrl) apiUrlFn = opts.getApiUrl;
   onRewards = opts.onRewards ?? null;
-  scheduleFlush(50);
+  if (opts.userId !== undefined) {
+    setLearningSyncUser(opts.userId);
+  }
+  if (activeUserId) {
+    scheduleFlush(50);
+  }
 }
 
 export function subscribeLearningSync(listener: Listener): () => void {
@@ -168,15 +254,12 @@ export function getSyncDiagnostics(): SyncDiagnostics {
   return state.diag;
 }
 
+export function getLearningSyncStorageKeyForTests(userId: string): string {
+  return `${STORAGE_KEY_PREFIX}:${userId}`;
+}
+
 export function clearLearningSyncForTests(): void {
-  state = emptyState();
-  inFlight = new Set();
-  if (flushTimer != null && typeof window !== "undefined") {
-    window.clearTimeout(flushTimer);
-  }
-  flushTimer = null;
-  flushScheduled = false;
-  save();
+  clearLearningSyncStorage();
 }
 
 function makeClientId(activityId: string, at: string): string {
@@ -199,6 +282,10 @@ export function enqueueLearningActivity(input: {
   correct?: boolean;
   at?: string;
 }): boolean {
+  if (!activeUserId) {
+    // Never park completions in an unscoped bucket — wait until auth binds.
+    return false;
+  }
   const at = input.at ?? new Date().toISOString();
   if (isLikelyDuplicateTap(input.activityId, state.recent, at)) {
     state.diag.recentDuplicatesSuppressed += 1;
@@ -246,7 +333,7 @@ function backoff(attempts: number): number {
 }
 
 function scheduleFlush(delay: number): void {
-  if (typeof window === "undefined" || !fetcher) return;
+  if (typeof window === "undefined" || !fetcher || !activeUserId) return;
   if (flushScheduled) return;
   flushScheduled = true;
   flushTimer = window.setTimeout(() => {
@@ -278,8 +365,16 @@ async function postOne(item: PendingActivity): Promise<PostResult> {
   return (await parseApiJson<PostResult>(res));
 }
 
+function isAuthOrOwnershipError(message: string): boolean {
+  return (
+    message.includes("learning-sync_http_401") ||
+    message.includes("learning-sync_http_403") ||
+    message.includes("learning-sync_http_404")
+  );
+}
+
 async function flushQueue(): Promise<void> {
-  if (!fetcher) return;
+  if (!fetcher || !activeUserId) return;
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     scheduleFlush(5000);
     return;
@@ -312,11 +407,16 @@ async function flushQueue(): Promise<void> {
       const message = err instanceof Error ? err.message : String(err);
       const next = state.queue.find((q) => q.clientId === item.clientId);
       if (next) {
-        next.attempts += 1;
-        next.nextAttemptAt = Date.now() + backoff(next.attempts);
-        // Give up after 8 attempts (~ couple of minutes) to avoid infinite retry.
-        if (next.attempts >= 8) {
-          state.queue = state.queue.filter((q) => q.clientId !== next.clientId);
+        // Auth/ownership failures usually mean the session flipped mid-flush —
+        // keep the item for the owning user instead of burning attempts.
+        if (isAuthOrOwnershipError(message)) {
+          next.nextAttemptAt = Date.now() + MAX_RETRY_MS;
+        } else {
+          next.attempts += 1;
+          next.nextAttemptAt = Date.now() + backoff(next.attempts);
+          if (next.attempts >= 8) {
+            state.queue = state.queue.filter((q) => q.clientId !== next.clientId);
+          }
         }
       }
       state.diag.lastErrorAt = new Date().toISOString();
