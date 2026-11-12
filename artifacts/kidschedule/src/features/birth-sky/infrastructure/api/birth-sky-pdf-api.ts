@@ -43,6 +43,19 @@ export async function fetchPdfStatus(
   const res = await authFetch(
     getApiUrl(`/api/birth-sky/profiles/${profileId}/pdf/status`),
   );
+  if (res.status === 409) {
+    const body = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      generationStatus?: string;
+    };
+    const err = new Error(body.error === "snapshot_stale" ? "snapshot_stale" : "pdf_status_conflict") as Error & {
+      code: string;
+      generationStatus?: string;
+    };
+    err.code = body.error === "snapshot_stale" ? "snapshot_stale" : "pdf_status_conflict";
+    err.generationStatus = body.generationStatus;
+    throw err;
+  }
   if (!res.ok) throw new Error(`pdf_status_failed:${res.status}`);
   return res.json();
 }
@@ -81,8 +94,19 @@ export async function generatePdfExport(
   }
   if (res.status === 409) {
     const body = (await res.json().catch(() => ({}))) as {
+      error?: string;
       completeness?: PdfCompleteness;
+      generationStatus?: string;
     };
+    if (body.error === "snapshot_stale") {
+      const err = new Error("snapshot_stale") as Error & {
+        code: string;
+        generationStatus?: string;
+      };
+      err.code = "snapshot_stale";
+      err.generationStatus = body.generationStatus;
+      throw err;
+    }
     const err = new Error("chart_incomplete") as Error & {
       code: string;
       completeness?: PdfCompleteness;

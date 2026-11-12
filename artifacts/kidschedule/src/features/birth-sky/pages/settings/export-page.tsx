@@ -79,7 +79,13 @@ export function BirthSkyExportPage({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load export status");
+      if ((err as { code?: string }).code === "snapshot_stale") {
+        setError(
+          "Your Birth Sky needs regenerating after the latest birth details edit. Regenerate first — we will not export a mismatched chart.",
+        );
+      } else {
+        setError(err instanceof Error ? err.message : "Could not load export status");
+      }
     } finally {
       setProgress("idle");
     }
@@ -118,7 +124,11 @@ export function BirthSkyExportPage({
     } catch (err) {
       const code = (err as { code?: string }).code;
       if (code === "premium_required") requirePremium();
-      else if (code === "chart_incomplete") {
+      else if (code === "snapshot_stale") {
+        setError(
+          "Your Birth Sky needs regenerating after the latest birth details edit. Regenerate first — we will not export a mismatched chart.",
+        );
+      } else if (code === "chart_incomplete") {
         setError(
           "Chart is incomplete for PDF (need full houses from birth time + place, no lite fallback).",
         );

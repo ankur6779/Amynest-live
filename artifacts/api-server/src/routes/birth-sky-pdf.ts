@@ -26,6 +26,7 @@ import {
   bytesToBase64,
   generateBirthSkyPdf,
 } from "../services/birth-sky/pdf-export-service.js";
+import { mayUseCurrentSnapshotForExport } from "../services/birth-sky/snapshot-generation-status.js";
 import { getOrCreateSubscription } from "../services/subscriptionService.js";
 import { isPremiumNow } from "../services/subscription-premium-gate.js";
 import type { AstronomyData } from "../services/birth-sky/ephemeris-port.js";
@@ -113,8 +114,13 @@ router.get(
       )
       .limit(1);
     const snap = snaps[0];
-    if (!snap) {
-      res.status(404).json({ error: "snapshot_not_found" });
+    const exportGate = mayUseCurrentSnapshotForExport(profile.generationStatus, Boolean(snap));
+    if (!exportGate.ok || !snap) {
+      res.status(409).json({
+        error: "snapshot_stale",
+        generationStatus: exportGate.generationStatus,
+        regenerateRequired: true,
+      });
       return;
     }
     const astronomy = attachChartDetails(snap.astronomy as AstronomyData);
@@ -199,8 +205,14 @@ router.post(
       )
       .limit(1);
     const snap = snaps[0];
-    if (!snap) {
-      res.status(404).json({ error: "snapshot_not_found" });
+    const exportGate = mayUseCurrentSnapshotForExport(profile.generationStatus, Boolean(snap));
+    if (!exportGate.ok || !snap) {
+      // Avoid mixing patched birth fields with a prior isCurrent sky after failed/in-flight regen.
+      res.status(409).json({
+        error: "snapshot_stale",
+        generationStatus: exportGate.generationStatus,
+        regenerateRequired: true,
+      });
       return;
     }
 
@@ -375,8 +387,13 @@ router.get(
       )
       .limit(1);
     const snap = snaps[0];
-    if (!snap) {
-      res.status(404).json({ error: "snapshot_not_found" });
+    const exportGate = mayUseCurrentSnapshotForExport(profile.generationStatus, Boolean(snap));
+    if (!exportGate.ok || !snap) {
+      res.status(409).json({
+        error: "snapshot_stale",
+        generationStatus: exportGate.generationStatus,
+        regenerateRequired: true,
+      });
       return;
     }
     const astronomy = attachChartDetails(snap.astronomy as AstronomyData);
