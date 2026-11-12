@@ -20,14 +20,29 @@ function mapAlert(alert: GrowthAlert, existing?: GrowthOsAlertWorkflow): GrowthO
   };
 }
 
+function mergeAlertWorkflows(
+  alerts: GrowthAlert[],
+  existingWorkflows: GrowthOsAlertWorkflow[],
+): GrowthOsAlertWorkflow[] {
+  const byId = new Map(existingWorkflows.map((a) => [a.alertId, a]));
+  const merged = alerts.map((a) => mapAlert(a, byId.get(a.id)));
+  const preserved = existingWorkflows.filter((a) => !alerts.some((x) => x.id === a.alertId));
+  return [...merged, ...preserved];
+}
+
 export async function syncAlertWorkflows(alerts: GrowthAlert[]): Promise<GrowthOsAlertWorkflow[]> {
   const payload = await loadGrowthOsPayload();
-  const byId = new Map(payload.alertWorkflows.map((a) => [a.alertId, a]));
-  const merged = alerts.map((a) => mapAlert(a, byId.get(a.id)));
-  const preserved = payload.alertWorkflows.filter((a) => !alerts.some((x) => x.id === a.alertId));
-  payload.alertWorkflows = [...merged, ...preserved];
-  await saveGrowthOsPayload(payload);
-  return payload.alertWorkflows;
+  const knownAlertIds = new Set(payload.alertWorkflows.map((a) => a.alertId));
+  const hasNew = alerts.some((a) => !knownAlertIds.has(a.id));
+
+  if (!hasNew) {
+    return mergeAlertWorkflows(alerts, payload.alertWorkflows);
+  }
+
+  const fresh = await loadGrowthOsPayload();
+  fresh.alertWorkflows = mergeAlertWorkflows(alerts, fresh.alertWorkflows);
+  await saveGrowthOsPayload(fresh);
+  return fresh.alertWorkflows;
 }
 
 export async function updateAlertWorkflow(input: {
