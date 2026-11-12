@@ -58,6 +58,17 @@ export function emptyConversation(id = createConversationId()): AmyAiConversatio
   };
 }
 
+/** Reset in-memory UI state when the signed-in user changes on a shared device. */
+export function prepareAmyAiSessionForUser(userId: string | null | undefined): {
+  store: AmyAiSessionStore;
+  current: AmyAiConversation;
+} {
+  return {
+    store: loadSessionStore(userId),
+    current: emptyConversation(),
+  };
+}
+
 export function storageKeyForUser(userId: string | null | undefined): string {
   return `${STORAGE_PREFIX}${userId && userId.length > 0 ? userId : "local"}`;
 }
