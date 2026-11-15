@@ -50,6 +50,7 @@ export const PREAUTH_ANALYTICS_EVENTS = new Set([
   "pre_signup_campaign_blocked",
   "pre_signup_campaign_eligible",
   "pre_signup_native_schedule_result",
+  "game_abandoned",
 ]);
 
 const DEVICE_ID_PATTERN = /^[a-zA-Z0-9_-]{8,128}$/;

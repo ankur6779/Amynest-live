@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -6,6 +7,7 @@ import {
   jsonb,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -32,8 +34,17 @@ export const analyticsEventsTable = pgTable(
     clientTs: timestamp("client_ts", { withTimezone: true }),
     /** When the server accepted the event (authoritative ordering). */
     serverTs: timestamp("server_ts", { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Client idempotency key. NULL and blank are not unique.
+     * Non-blank values are unique via the partial index below.
+     * Do not write this column until migration 0052 is applied.
+     */
+    eventId: text("event_id"),
   },
   (t) => ({
+    eventIdUnique: uniqueIndex("analytics_events_event_id_uidx")
+      .on(t.eventId)
+      .where(sql`${t.eventId} IS NOT NULL AND btrim(${t.eventId}) <> ''`),
     eventCreatedIdx: index("analytics_events_event_created_idx").on(
       t.eventName,
       t.serverTs,

@@ -36,6 +36,13 @@ import {
   getNextBestSkillGame,
   getRecommendedGames,
 } from "@/lib/game-hub-meta";
+import { track } from "@/lib/analytics";
+import {
+  noteGameCompleted,
+  noteGameStarted,
+  scheduleGameAbandonment,
+  takeGameAbandonment,
+} from "@/lib/game-abandonment";
 import { prepareGameSession } from "@/lib/game-adaptive-progression";
 import { setGameDifficulty } from "@/lib/game-difficulty";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -161,6 +168,16 @@ export default function GamesPage() {
 
   useEffect(() => {
     markSuccessfulScreen("/games");
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      const session = playSessionRef.current;
+      if (!session || session.finished) return;
+      scheduleGameAbandonment(session.idempotencyKey, (event) => {
+        track("game_abandoned", event);
+      });
+    };
   }, []);
 
   useEffect(() => {
@@ -361,11 +378,19 @@ export default function GamesPage() {
       prepareGameSession(prev.game.id, previewAgeMonths, {
         runtimeDifficulty: runtimeGameGuidance?.difficulty,
       });
+      const idempotencyKey = createPlayIdempotencyKey(prev.game.id);
       playSessionRef.current = {
         gameId: prev.game.id,
-        idempotencyKey: createPlayIdempotencyKey(prev.game.id),
+        idempotencyKey,
         finished: false,
       };
+      noteGameStarted({
+        sessionKey: idempotencyKey,
+        gameId: prev.game.id,
+        surface: "games_hub",
+        authState: isSignedIn ? "authenticated" : "guest",
+        childId: activeChildId,
+      });
       finishingRef.current = false;
       if (activeChildId != null) {
         const began = beginGameSession({
@@ -386,7 +411,7 @@ export default function GamesPage() {
       }
       return { kind: "play", game: prev.game, stage: "play" };
     });
-  }, [activeChildId, previewAgeMonths, runtimeGameGuidance]);
+  }, [activeChildId, isSignedIn, previewAgeMonths, runtimeGameGuidance]);
 
   const onUpgrade = useCallback(() => goTo("/pricing"), [goTo]);
 
@@ -403,6 +428,7 @@ export default function GamesPage() {
 
       finishingRef.current = true;
       session.finished = true;
+      noteGameCompleted(session.idempotencyKey);
 
       try {
         const ratio = total === 0 ? 0 : score / total;
@@ -760,6 +786,11 @@ export default function GamesPage() {
             gameTitle={active.game.title}
             onKeepPlaying={() => setExitConfirm(false)}
             onLeave={() => {
+              const session = playSessionRef.current;
+              if (session && !session.finished) {
+                const abandoned = takeGameAbandonment(session.idempotencyKey);
+                if (abandoned) track("game_abandoned", abandoned);
+              }
               setExitConfirm(false);
               resetPlaySession();
               setActive(null);

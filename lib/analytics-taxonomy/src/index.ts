@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CHILD_REF_PATTERN, redactAnalyticsIdentifiers } from "./child-ref.js";
 import {
   ANALYTICS_EVENT_VERSION,
   ANALYTICS_SCHEMA_VERSION,
@@ -460,7 +461,15 @@ const EVENT_PROP_SCHEMAS = {
   speech_coach_entry: z.object({
     source: z.string().max(64).optional(),
     child_id: z.number().int().optional(),
+    child_ref: z.string().regex(/^[a-f0-9]{24}$/).optional(),
     living: z.boolean().optional(),
+  }),
+  game_abandoned: z.object({
+    game_id: z.string().min(1).max(80),
+    surface: z.enum(["games_hub", "mini_game"]),
+    session_key: z.string().min(1).max(128),
+    auth_state: z.enum(["authenticated", "guest", "unknown"]),
+    child_ref: z.string().regex(/^[a-f0-9]{24}$/).optional(),
   }),
 
   // ── Speech Coach V2 (Realtime) ─────────────────────────────────────────
@@ -620,6 +629,7 @@ const EVENT_CATEGORY: Record<AnalyticsEventName, AnalyticsEventCategory> = {
   pre_signup_campaign_eligible: "growth",
   pre_signup_native_schedule_result: "growth",
   speech_coach_entry: "navigation",
+  game_abandoned: "learning",
   speech_coach_v2_session_start: "session",
   speech_coach_v2_session_complete: "session",
   speech_coach_v2_daily_limit: "session",
@@ -693,11 +703,24 @@ export function validateAnalyticsEvent(
       ),
     };
   }
+  const original =
+    props && typeof props === "object" && !Array.isArray(props)
+      ? (props as Record<string, unknown>)
+      : {};
+  const incomingRef = original.child_ref;
+  const merged: Record<string, unknown> = {
+    ...(parsed.data as Record<string, unknown>),
+  };
+  if (typeof incomingRef === "string" && CHILD_REF_PATTERN.test(incomingRef)) {
+    merged.child_ref = incomingRef;
+  }
+  if ("childId" in original) merged.childId = original.childId;
+  if ("child_id" in original) merged.child_id = original.child_id;
   return {
     valid: true,
     name,
     category: EVENT_CATEGORY[name],
-    props: parsed.data as Record<string, unknown>,
+    props: redactAnalyticsIdentifiers(merged),
   };
 }
 
@@ -717,6 +740,11 @@ export {
   type StartupFunnelEventType,
   type StartupFunnelEventPayload,
 } from "./startup-funnel-events.js";
+export {
+  CHILD_REF_PATTERN,
+  childAnalyticsRef,
+  redactAnalyticsIdentifiers,
+} from "./child-ref.js";
 export type { FirstValueEventName } from "./first-value-events.js";
 export {
   CANONICAL_FUNNEL_EVENTS,

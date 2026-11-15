@@ -1,6 +1,7 @@
 import {
   ANALYTICS_EVENT_VERSION,
   ANALYTICS_SCHEMA_VERSION,
+  redactAnalyticsIdentifiers,
 } from "@workspace/analytics-taxonomy";
 
 const PII_KEY_PATTERN =
@@ -38,7 +39,7 @@ export function scrubAnalyticsProps(
       out[key] = value.slice(0, 32);
     }
   }
-  return out;
+  return redactAnalyticsIdentifiers(out);
 }
 
 export function buildEnvelopeFields(input: {

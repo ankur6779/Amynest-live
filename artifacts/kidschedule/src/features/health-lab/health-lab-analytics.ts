@@ -2,6 +2,7 @@
  * Amy Health Lab™ analytics — session/quest/badge events. No medical claims in payloads.
  */
 
+import { childAnalyticsRef } from "@workspace/analytics-taxonomy";
 import { queueClientLog } from "@/lib/client-logs";
 
 export type HealthLabAnalyticsEvent =
@@ -42,7 +43,10 @@ export function trackHealthLabEvent(
   childId: number,
   meta?: Record<string, string | number | boolean | undefined>,
 ): void {
-  emit(event, { childId, ...meta });
+  emit(event, {
+    ...(childId > 0 ? { child_ref: childAnalyticsRef(childId) } : {}),
+    ...meta,
+  });
 }
 
 export function trackSessionStart(childId: number, gameId: string): void {

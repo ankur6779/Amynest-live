@@ -93,6 +93,9 @@ export async function recordPreauthAttribution(
   deviceId: string,
   events: Array<{ name: string; props?: Record<string, unknown> }>,
 ): Promise<AttributionRecord | null> {
+  if (!events.some((ev) => ev.name === "first_open" || ev.name === "install_source")) {
+    return null;
+  }
   try {
     const existingRows = await db
       .select()

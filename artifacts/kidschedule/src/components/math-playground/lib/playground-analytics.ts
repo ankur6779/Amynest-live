@@ -2,6 +2,7 @@
  * Math Playground analytics — session/mode/voice/intelligence events. No child speech content.
  */
 
+import { childAnalyticsRef } from "@workspace/analytics-taxonomy";
 import { queueClientLog } from "@/lib/client-logs";
 
 export type PlaygroundAnalyticsEvent =
@@ -41,7 +42,10 @@ export function trackPlaygroundEvent(
   childId: number,
   meta?: Record<string, string | number | boolean | undefined>,
 ): void {
-  emit(event, { childId, ...meta });
+  emit(event, {
+    ...(childId > 0 ? { child_ref: childAnalyticsRef(childId) } : {}),
+    ...meta,
+  });
 }
 
 export function trackPlaygroundSessionStart(

@@ -36,6 +36,10 @@ import {
 } from "../lib/razorpayClient";
 import { applyRevenueCatSnapshot, productIdToPlan, recordBillingAuditEvent } from "../services/subscriptionStateService.js";
 import {
+  classifyRevenueCatWebhook,
+  redactRevenueCatWebhookPayload,
+} from "../services/revenueCatWebhookClassification.js";
+import {
   recoverPremiumOwnerForAuth,
   resolveSubscriptionOwnerUserId,
 } from "../services/userIdentityService.js";
@@ -49,29 +53,6 @@ function preferredRevenueCatUserId(...ids: Array<string | null | undefined>): st
   return present.find((id) => !isRevenueCatAnonymousId(id)) ?? present[0] ?? null;
 }
 
-function revenueCatWebhookLifecycleStep(
-  eventType: string,
-  cancelReason?: string | null,
-): string | null {
-  switch (eventType) {
-    case "INITIAL_PURCHASE":
-      return "subscription_started";
-    case "RENEWAL":
-      return "subscription_renewed";
-    case "CANCELLATION":
-      return cancelReason === "CUSTOMER_SUPPORT" ? "refund" : "subscription_cancelled";
-    case "EXPIRATION":
-      return "subscription_expired";
-    case "BILLING_ISSUE":
-      return "billing_issue";
-    case "REFUND":
-      return "refund";
-    case "REFUND_REVERSED":
-      return "refund_reversed";
-    default:
-      return null;
-  }
-}
 
 const router: IRouter = Router();
 
@@ -430,6 +411,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
     price?: number;
     auto_renew_status?: boolean;
     cancel_reason?: string;
+    is_trial_conversion?: boolean;
   };
 
   const rawRevenueCatUserId = preferredRevenueCatUserId(event.app_user_id, event.original_app_user_id);
@@ -448,11 +430,7 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       eventId,
       eventType: event.type ?? null,
       appUserId: userId,
-      payload: {
-        ...(req.body ?? {}),
-        amynestCanonicalUserId: userId,
-        amynestRawRevenueCatAppUserId: rawRevenueCatUserId,
-      },
+      payload: redactRevenueCatWebhookPayload(req.body),
       eventTimestamp: eventAt,
       transactionId: event.transaction_id ?? null,
       originalTransactionId: event.original_transaction_id ?? null,
@@ -563,20 +541,29 @@ router.post("/subscription/webhook", asyncRoute(async (req, res): Promise<void> 
       metadata: { eventType: event.type, appliedFrom, isPremium: applied.isPremium },
     });
 
-    const lifecycleStep = revenueCatWebhookLifecycleStep(
-      event.type ?? "",
-      event.cancel_reason ?? null,
-    );
-    if (lifecycleStep) {
-      void trackServerSubscriptionFunnel(userId, lifecycleStep, {
-        event_type: event.type ?? "unknown",
-        product_id: event.product_id ?? "",
-        transaction_id: event.transaction_id ?? "",
-        store: event.store ?? "",
-        ...(event.cancel_reason ? { cancel_reason: event.cancel_reason } : {}),
-      });
-    }
-    if (event.type === "INITIAL_PURCHASE" && event.transaction_id && userId) {
+    const classification = classifyRevenueCatWebhook({
+      type: event.type,
+      period_type: event.period_type,
+      price: event.price,
+      is_trial_conversion: event.is_trial_conversion,
+      cancel_reason: event.cancel_reason,
+    });
+    void trackServerSubscriptionFunnel(userId, classification.funnelStep, {
+      event_type: event.type ?? "unknown",
+      rc_class: classification.class,
+      counts_as_paid: classification.countsAsPaidConversion ? "true" : "false",
+      ...(event.period_type ? { period_type: event.period_type } : {}),
+      product_id: event.product_id ?? "",
+      transaction_id: event.transaction_id ?? "",
+      store: event.store ?? "",
+      ...(event.cancel_reason ? { cancel_reason: event.cancel_reason } : {}),
+    });
+    if (
+      classification.countsAsPaidConversion &&
+      event.transaction_id &&
+      userId &&
+      !userId.startsWith("$RCAnonymousID:")
+    ) {
       const { recordServerPurchaseTruth } = await import("../services/serverPurchaseTruthService.js");
       void recordServerPurchaseTruth({
         canonicalUserId: userId,

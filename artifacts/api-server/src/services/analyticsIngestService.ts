@@ -60,9 +60,9 @@ function toDateOrNull(iso: string | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function numericChildId(props: Record<string, unknown>): number | null {
-  const v = props["childId"];
-  return typeof v === "number" && Number.isInteger(v) ? v : null;
+/** first_open is one row per user. A stored row makes a later copy a duplicate. */
+export function shouldPersistFirstOpen(eventName: string, alreadyStored: boolean): boolean {
+  return !(eventName === "first_open" && alreadyStored);
 }
 
 export async function ingestAnalyticsEvents(
@@ -93,7 +93,7 @@ export async function ingestAnalyticsEvents(
   }
 
   for (const ev of events) {
-    if (ev.name === "first_open" && skipFirstOpen) {
+    if (!shouldPersistFirstOpen(ev.name, skipFirstOpen)) {
       continue;
     }
     const rawProps = ev.props ?? {};
@@ -128,7 +128,7 @@ export async function ingestAnalyticsEvents(
 
     rows.push({
       userId: ctx.userId,
-      childId: numericChildId(result.props),
+      childId: null,
       eventName: result.name,
       eventCategory: result.category,
       sessionId: ev.sessionId?.slice(0, 128) ?? null,

@@ -18,14 +18,41 @@ import {
   isValidPreauthDeviceId,
   sanitizePreauthEvents,
 } from "../services/preauthAnalyticsService";
+import type { AnalyticsIngestSummary } from "../services/analyticsIngestService";
+import type { RawAnalyticsEvent } from "../services/analyticsIngestService";
 
 const router: IRouter = Router();
+
+type PreauthIngest = (
+  events: RawAnalyticsEvent[],
+  ctx: { deviceId: string; platform?: string; appVersion?: string },
+) => Promise<AnalyticsIngestSummary & { rejectedPreauthPolicy: number }>;
+
+let preauthIngest: PreauthIngest = ingestPreauthAnalyticsEvents;
+
+/** Disabled in production. Tests use this to avoid a database for ACK-shape checks. */
+export function setPreauthIngestForTests(fn: PreauthIngest | null): void {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("preauth ingest override is disabled in production");
+  }
+  preauthIngest = fn ?? ingestPreauthAnalyticsEvents;
+}
 
 const PREAUTH_MAX_BODY_BYTES = 32 * 1024;
 const PREAUTH_DEVICE_WINDOW_MS = 60_000;
 const PREAUTH_DEVICE_MAX = 30;
 const PREAUTH_IP_WINDOW_MS = 60_000;
 const PREAUTH_IP_MAX = 60;
+
+/** Test-only ceiling. Ignored unless the test flag is set, and always ignored in production. */
+function preauthLimit(envName: string, fallback: number): number {
+  if (process.env.NODE_ENV === "production") return fallback;
+  if (process.env.AMYNEST_PREAUTH_TEST_LIMITS !== "1") return fallback;
+  const raw = process.env[envName];
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
 
 const EventSchema = z.object({
   name: z.string().min(1).max(64),
@@ -69,7 +96,7 @@ router.post("/analytics/preauth-events", async (req, res): Promise<void> => {
   const started = Date.now();
   const ipLimit = await checkDistributedRateLimit(`preauth-ip:${clientIp(req)}`, {
     windowMs: PREAUTH_IP_WINDOW_MS,
-    maxPerWindow: PREAUTH_IP_MAX,
+    maxPerWindow: preauthLimit("PREAUTH_TEST_IP_MAX", PREAUTH_IP_MAX),
   });
   if (!ipLimit.allowed) {
     recordApiDomainOutcome("analytics", false, Date.now() - started, "rate_limited");
@@ -87,7 +114,7 @@ router.post("/analytics/preauth-events", async (req, res): Promise<void> => {
 
   const deviceLimit = await checkDistributedRateLimit(`preauth-device:${deviceId}`, {
     windowMs: PREAUTH_DEVICE_WINDOW_MS,
-    maxPerWindow: PREAUTH_DEVICE_MAX,
+    maxPerWindow: preauthLimit("PREAUTH_TEST_DEVICE_MAX", PREAUTH_DEVICE_MAX),
   });
   if (!deviceLimit.allowed) {
     recordApiDomainOutcome("analytics", false, Date.now() - started, "rate_limited");
@@ -110,7 +137,7 @@ router.post("/analytics/preauth-events", async (req, res): Promise<void> => {
 
   try {
     const events = sanitizePreauthEvents(parsed.data.events);
-    const summary = await ingestPreauthAnalyticsEvents(events, {
+    const summary = await preauthIngest(events, {
       deviceId,
       platform: parsed.data.platform,
       appVersion: parsed.data.appVersion ?? parsed.data.buildNumber,
