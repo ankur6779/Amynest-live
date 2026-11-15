@@ -11,11 +11,15 @@ export const API_ORIGINS = {
   local: "http://localhost:5000",
 } as const;
 
-export type AmynestEnv = "development" | "production";
+export type AmynestEnv = "development" | "staging" | "production";
 
 export function resolveAmynestEnvFromVite(): AmynestEnv {
+  if (typeof window !== "undefined" && window.location.hostname.toLowerCase() === "staging.amynest.in") {
+    return "staging";
+  }
   const fromEnv = (import.meta.env.VITE_AMYNEST_ENV as string | undefined)?.trim().toLowerCase();
   if (fromEnv === "dev" || fromEnv === "development") return "development";
+  if (fromEnv === "staging" || fromEnv === "stage") return "staging";
   if (fromEnv === "prod" || fromEnv === "production") return "production";
   return import.meta.env.PROD ? "production" : "development";
 }
@@ -37,6 +41,7 @@ export function getDefaultApiOrigin(): string {
     }
     return "http://localhost:3000";
   }
+  if (env === "staging") return "https://api-staging.amynest.in";
   return env === "production" ? API_ORIGINS.production : API_ORIGINS.development;
 }
 

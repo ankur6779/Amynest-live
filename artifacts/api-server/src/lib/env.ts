@@ -4,6 +4,7 @@
  */
 import { logger } from "./logger";
 import { amynestEnvLabel, resolveAmynestEnv } from "./loadEnv";
+import { assertStagingIsolationFromEnv, STAGING_API_HOST } from "./staging-isolation";
 
 function readRaw(name: string): string | undefined {
   const v = process.env[name];
@@ -302,6 +303,23 @@ export function assertCriticalEnvAtBoot(): void {
       "DATABASE_URL missing — set it in the Render Dashboard (Blueprint must use sync: false)",
     );
     process.exit(1);
+  }
+
+  const apiHost = (() => {
+    try {
+      return new URL(readEnv("API_PUBLIC_URL") ?? "").hostname.toLowerCase();
+    } catch {
+      return "";
+    }
+  })();
+  if (apiHost === STAGING_API_HOST && resolveAmynestEnv() !== "staging") {
+    console.error(
+      "STAGING ISOLATION: API_PUBLIC_URL is the staging API but AMYNEST_ENV is not staging",
+    );
+    process.exit(1);
+  }
+  if (resolveAmynestEnv() === "staging") {
+    assertStagingIsolationFromEnv();
   }
 }
 

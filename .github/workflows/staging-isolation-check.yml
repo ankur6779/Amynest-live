@@ -1,0 +1,29 @@
+# Manual check only. This workflow does not deploy and does not call production jobs.
+name: Staging isolation check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reject-production-targets:
+    name: Reject production database targets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Reject production database, Redis, and API targets
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+          STAGING_API_PUBLIC_URL: ${{ secrets.STAGING_API_PUBLIC_URL }}
+          STAGING_WORKER_ENABLED: ${{ secrets.STAGING_WORKER_ENABLED }}
+        run: npx --yes tsx@4.21.0 artifacts/api-server/src/lib/staging-isolation-cli.ts

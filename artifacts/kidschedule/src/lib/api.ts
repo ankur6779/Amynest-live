@@ -46,6 +46,9 @@ export function getAppApiBaseOrigin(): string {
 /** True when API calls target www.amynest.in (Cloudflare Worker → Render). */
 export function usesCloudflareWorkerApiPath(apiOrigin?: string): boolean {
   const origin = (apiOrigin ?? getAppApiBaseOrigin()).replace(/\/$/, "");
+  if (origin.startsWith("https://staging.") || origin.startsWith("https://api-staging.")) {
+    return false;
+  }
   return (
     origin === PRODUCTION_WORKER_API_ORIGIN ||
     origin === "https://amynest.in" ||

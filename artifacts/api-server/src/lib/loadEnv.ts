@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseDotenv } from "dotenv";
 
-export type AmynestEnv = "development" | "production";
+export type AmynestEnv = "development" | "staging" | "production";
 
 const LOADED_FLAG = "__AMYNEST_ENV_LOADED__";
 
@@ -34,6 +34,7 @@ function findRepoRoot(): string {
 export function resolveAmynestEnv(): AmynestEnv {
   const raw = process.env["AMYNEST_ENV"]?.trim().toLowerCase();
   if (raw === "dev" || raw === "development") return "development";
+  if (raw === "staging" || raw === "stage") return "staging";
   if (raw === "prod" || raw === "production") return "production";
   return process.env.NODE_ENV === "production" ? "production" : "development";
 }
@@ -85,8 +86,10 @@ export function loadAmynestEnvFiles(): AmynestEnv {
   return amynestEnv;
 }
 
-export function amynestEnvLabel(env: AmynestEnv = resolveAmynestEnv()): "DEV" | "PROD" {
-  return env === "development" ? "DEV" : "PROD";
+export function amynestEnvLabel(env: AmynestEnv = resolveAmynestEnv()): "DEV" | "STAGING" | "PROD" {
+  if (env === "development") return "DEV";
+  if (env === "staging") return "STAGING";
+  return "PROD";
 }
 
 /** Console + structured log line — safe to call once at startup. */
