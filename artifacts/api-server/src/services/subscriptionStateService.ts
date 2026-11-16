@@ -139,6 +139,20 @@ export async function recordBillingAuditEvent(input: {
   });
 }
 
+/**
+ * RevenueCat webhooks can arrive delayed / out of order. When V2 customer sync
+ * fails, the webhook route falls back to applying the event payload via
+ * `applyRevenueCatSnapshot`. Without this guard, an older INITIAL_PURCHASE /
+ * EXPIRATION can truncate `currentPeriodEnd` or wipe a newer paid mirror.
+ */
+export function shouldSkipStaleRevenueCatSnapshot(
+  existingLastEventAt: Date | null | undefined,
+  incomingEventAt: Date | null | undefined,
+): boolean {
+  if (!existingLastEventAt || !incomingEventAt) return false;
+  return incomingEventAt.getTime() < existingLastEventAt.getTime();
+}
+
 export async function applyRevenueCatSnapshot(
   userId: string,
   snapshot: RevenueCatSnapshot,
@@ -173,6 +187,39 @@ export async function applyRevenueCatSnapshot(
       isPremium: false,
       expiresAt: existing?.expiresAt ?? null,
       reason: "certification_reset",
+    };
+  }
+  if (shouldSkipStaleRevenueCatSnapshot(existing?.lastEventAt, snapshot.eventAt)) {
+    await recordBillingAuditEvent({
+      userId,
+      source: opts.source,
+      eventName: "stale_revenuecat_event_skipped",
+      status: "warning",
+      providerEventId: opts.providerEventId ?? null,
+      fromState,
+      toState: fromState,
+      reason: "stale_event",
+      metadata: {
+        existingLastEventAt: existing?.lastEventAt?.toISOString() ?? null,
+        incomingEventAt: snapshot.eventAt?.toISOString() ?? null,
+        incomingEventType: snapshot.eventType ?? null,
+      },
+    });
+    return {
+      userId,
+      fromState,
+      toState: fromState,
+      plan: ((existing?.plan as Plan | undefined) ?? "free"),
+      status: ((existing?.status as Status | undefined) ?? "free"),
+      isPremium: isStatePremium(fromState, {
+        currentPeriodEnd: existing?.currentPeriodEnd,
+        expiresAt: existing?.expiresAt,
+        gracePeriodExpiresAt: existing?.gracePeriodExpiresAt,
+        trialEndsAt: existing?.trialEndsAt,
+        bonusExpiresAt: existing?.bonusExpiresAt,
+      }),
+      expiresAt: existing?.currentPeriodEnd ?? existing?.expiresAt ?? null,
+      reason: "stale_event",
     };
   }
   const plan = state === "FREE" || state === "EXPIRED" ? "free" : productIdToPlan(snapshot.productId) ?? "monthly";

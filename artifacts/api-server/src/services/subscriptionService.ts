@@ -503,21 +503,26 @@ export async function getFirstChildId(userId: string): Promise<number | null> {
  * Extends the user's bonus premium expiry by `days`. The bonus expiry is
  * tracked separately from the paid currentPeriodEnd so a paid renewal webhook
  * never shrinks bonus time. Can be called inside or outside a transaction.
+ *
+ * Uses a single SQL expression (`GREATEST` + interval) so concurrent gift /
+ * referral extends cannot lost-update each other after a shared read.
  */
 export async function extendBonusPremium(
   userId: string,
   days: number,
   dbExec: DbExec = db,
 ): Promise<Date> {
-  const sub = await getOrCreateSubscription(userId, dbExec);
-  const now = Date.now();
-  const base = Math.max(now, sub.bonusExpiresAt ? sub.bonusExpiresAt.getTime() : 0);
-  const next = new Date(base + days * 24 * 60 * 60 * 1000);
-  await dbExec
+  await getOrCreateSubscription(userId, dbExec);
+  const now = new Date();
+  const [updated] = await dbExec
     .update(subscriptionsTable)
-    .set({ bonusExpiresAt: next, updatedAt: new Date() })
-    .where(eq(subscriptionsTable.userId, userId));
-  return next;
+    .set({
+      bonusExpiresAt: sql`GREATEST(COALESCE(${subscriptionsTable.bonusExpiresAt}, ${now}), ${now}) + (${days} * interval '1 day')`,
+      updatedAt: now,
+    })
+    .where(eq(subscriptionsTable.userId, userId))
+    .returning({ bonusExpiresAt: subscriptionsTable.bonusExpiresAt });
+  return updated?.bonusExpiresAt ?? new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
 /** Generic per-feature usage read (uses each feature's configured bucket). */
