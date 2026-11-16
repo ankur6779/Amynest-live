@@ -6,6 +6,21 @@ const DEFAULT_MAX_INFLIGHT = 40;
 const DEFAULT_RETRY_AFTER_SEC = 30;
 const DEFAULT_TTL_SEC = 120;
 
+/**
+ * Atomic incr that re-arms TTL whenever the key has none.
+ * Mirrors distributed-rate-limit: a crash/timeout after bare INCR used to
+ * leave `routine-gen:inflight:*` without expire, permanently busy for the
+ * instance once the counter exceeded max.
+ */
+export const ROUTINE_GEN_INCR_LUA = `
+local n = redis.call('INCR', KEYS[1])
+local ttl = redis.call('TTL', KEYS[1])
+if ttl < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return n
+`;
+
 function maxInflight(): number {
   const n = Number(process.env.ROUTINE_GEN_MAX_INFLIGHT ?? String(DEFAULT_MAX_INFLIGHT));
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_INFLIGHT;
@@ -48,10 +63,9 @@ export async function acquireRoutineGenerateSlot(): Promise<RoutineGenerateSlotR
     try {
       const redis = getRedisConnection();
       const key = redisKey();
-      const n = await redis.incr(key);
-      if (n === 1) {
-        await redis.expire(key, ttlSec());
-      }
+      const n = Number(
+        await redis.eval(ROUTINE_GEN_INCR_LUA, 1, key, String(ttlSec())),
+      );
       if (n > max) {
         await redis.decr(key);
         return { acquired: false, retryAfterSeconds };
