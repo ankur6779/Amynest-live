@@ -29,9 +29,29 @@ export type IngestAudioHealthEvent = {
   sessionId?: string;
   from?: string;
   to?: string;
+  /** Server-attested auth uid only — never trust a client-supplied value. */
+  userId?: string | null;
 };
 
-type StoredEvent = IngestAudioHealthEvent & { at: number };
+type StoredEvent = IngestAudioHealthEvent & { at: number; userId: string | null };
+
+/**
+ * Client audio telemetry is untrusted and can be forged by any signed-in user.
+ * Self-heal / predictive kill switches must not act on a single reporter:
+ * require a minimum sample size, per-user contribution caps, and multi-user
+ * failure quorum before returning non-zero actuation rates.
+ */
+export const SELF_HEAL_AUDIO_MIN_SAMPLES = 20;
+export const SELF_HEAL_AUDIO_MAX_EVENTS_PER_USER = 8;
+export const SELF_HEAL_AUDIO_MIN_DISTINCT_FAILURE_USERS = 2;
+
+export type SelfHealAudioSignals = {
+  failureRate: number;
+  streamingStallRate: number;
+  sampleCount: number;
+  distinctFailureUsers: number;
+  trusted: boolean;
+};
 
 export type ModuleStats = {
   module: AudioHealthModule;
@@ -288,6 +308,7 @@ export function ingestAudioHealthEvents(events: IngestAudioHealthEvent[]): { acc
       sessionId: raw.sessionId?.slice(0, 64),
       from: raw.from?.slice(0, 32),
       to: raw.to?.slice(0, 32),
+      userId: typeof raw.userId === "string" && raw.userId.trim() ? raw.userId.trim() : null,
       at: now,
     };
 
@@ -499,6 +520,77 @@ function formatSessionFlow(flow: SessionFlow): SessionFlow {
   return {
     ...flow,
     steps: flow.steps.slice(-12),
+  };
+}
+
+function reporterKey(userId: string | null | undefined): string {
+  return userId?.trim() || "__anonymous__";
+}
+
+function capCompletionsPerUser(
+  events: StoredEvent[],
+  maxPerUser: number,
+): StoredEvent[] {
+  const perUser = new Map<string, StoredEvent[]>();
+  for (const event of events) {
+    if (event.event !== "audio_success" && event.event !== "audio_failure") continue;
+    const key = reporterKey(event.userId);
+    const list = perUser.get(key) ?? [];
+    if (list.length >= maxPerUser) continue;
+    list.push(event);
+    perUser.set(key, list);
+  }
+  return [...perUser.values()].flat();
+}
+
+/**
+ * Actuation-safe rates for process-global self-heal / predictive controllers.
+ * Raw dashboard metrics remain unfiltered so ops can still see single-reporter spikes.
+ */
+export function getSelfHealAudioSignals(now = Date.now()): SelfHealAudioSignals {
+  prune(now);
+  const cutoff = now - WINDOW_MS;
+  const windowEvents = eventLog.filter((e) => e.at >= cutoff);
+  const capped = capCompletionsPerUser(windowEvents, SELF_HEAL_AUDIO_MAX_EVENTS_PER_USER);
+  const failures = capped.filter((e) => e.event === "audio_failure");
+  const failureUsers = new Set(failures.map((e) => reporterKey(e.userId)));
+  const sampleCount = capped.length;
+  const distinctFailureUsers = failureUsers.size;
+
+  if (
+    sampleCount < SELF_HEAL_AUDIO_MIN_SAMPLES ||
+    distinctFailureUsers < SELF_HEAL_AUDIO_MIN_DISTINCT_FAILURE_USERS
+  ) {
+    return {
+      failureRate: 0,
+      streamingStallRate: 0,
+      sampleCount,
+      distinctFailureUsers,
+      trusted: false,
+    };
+  }
+
+  const streamingWindow = windowEvents.filter((e) => e.layer === "streaming");
+  const cappedStreaming = capCompletionsPerUser(
+    streamingWindow,
+    SELF_HEAL_AUDIO_MAX_EVENTS_PER_USER,
+  );
+  const streamingFailures = cappedStreaming.filter((e) => e.event === "audio_failure");
+  const streamingFailureUsers = new Set(
+    streamingFailures.map((e) => reporterKey(e.userId)),
+  );
+  const streamingStallRate =
+    cappedStreaming.length >= SELF_HEAL_AUDIO_MIN_SAMPLES &&
+    streamingFailureUsers.size >= SELF_HEAL_AUDIO_MIN_DISTINCT_FAILURE_USERS
+      ? streamingFailures.length / cappedStreaming.length
+      : 0;
+
+  return {
+    failureRate: failures.length / sampleCount,
+    streamingStallRate,
+    sampleCount,
+    distinctFailureUsers,
+    trusted: true,
   };
 }
 

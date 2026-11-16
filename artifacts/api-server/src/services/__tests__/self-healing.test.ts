@@ -69,18 +69,40 @@ describe("self-healing system", () => {
     assert.equal(ops.forceEmergencyMode, true);
   });
 
-  it("detects streaming stall rate from layer health", async () => {
-    for (let i = 0; i < 12; i++) {
+  it("detects streaming stall rate only with multi-user quorum", async () => {
+    // Single reporter flood must not drive actuation metrics.
+    for (let i = 0; i < 24; i++) {
       ingestAudioHealthEvents([
         {
-          event: i < 4 ? "audio_success" : "audio_failure",
+          event: "audio_failure",
           module: "lesson",
           layer: "streaming",
           device: "mid",
           network: "fast",
           timestamp: Date.now(),
+          userId: "attacker-only",
         },
       ]);
+    }
+    const poisoned = await collectSystemMetrics();
+    assert.equal(poisoned.streamingStallRate, 0);
+    assert.equal(poisoned.audioFailureRate, 0);
+
+    // Multi-user streaming failures above threshold still actuate.
+    for (let user = 0; user < 4; user++) {
+      for (let i = 0; i < 6; i++) {
+        ingestAudioHealthEvents([
+          {
+            event: i < 1 ? "audio_success" : "audio_failure",
+            module: "lesson",
+            layer: "streaming",
+            device: "mid",
+            network: "fast",
+            timestamp: Date.now(),
+            userId: `user-${user}`,
+          },
+        ]);
+      }
     }
 
     const metrics = await collectSystemMetrics();

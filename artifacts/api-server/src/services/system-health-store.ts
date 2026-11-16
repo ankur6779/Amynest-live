@@ -3,7 +3,7 @@
  */
 
 import { getApiHealthSnapshot, getRecentApiHealthSnapshot } from "./api-health-store.js";
-import { getAdminDashboard } from "./audio-health-store.js";
+import { getAdminDashboard, getSelfHealAudioSignals } from "./audio-health-store.js";
 import { resetHealHysteresisForTests, updateHealthLatches } from "./heal-hysteresis.js";
 
 export type SystemHealthState = {
@@ -127,14 +127,6 @@ function maxApiErrorRate(now: number): number {
   return snap.routes.reduce((max, route) => Math.max(max, route.errorRate), 0);
 }
 
-function computeStreamingStallRate(
-  layerHealth: ReturnType<typeof getAdminDashboard>["layerHealth"],
-): number {
-  const streaming = layerHealth.find((l) => l.layer === "streaming");
-  if (!streaming || streaming.total === 0) return 0;
-  return streaming.failurePct;
-}
-
 function detectIncident(metrics: SystemMetrics, now: number): SystemIncident | null {
   if (!prevMetrics) return null;
 
@@ -165,6 +157,7 @@ function detectIncident(metrics: SystemMetrics, now: number): SystemIncident | n
 
 export async function collectSystemMetrics(now = Date.now()): Promise<SystemMetrics> {
   const dashboard = getAdminDashboard(now);
+  const healSignals = getSelfHealAudioSignals(now);
   const [dbLatencyMs, workerQueueDelayMs, redisHealthy] = await Promise.all([
     measureDbLatencyMs(),
     measureWorkerQueueDelayMs(),
@@ -172,11 +165,16 @@ export async function collectSystemMetrics(now = Date.now()): Promise<SystemMetr
   ]);
 
   const apiErrorRate = maxApiErrorRate(now);
-  const streamingStallRate = computeStreamingStallRate(dashboard.layerHealth);
+  // Prefer quorum-capped client signals for kill switches; fall back to raw
+  // layer health only when signals are trusted (multi-user) so single-reporter
+  // floods cannot disable streaming / safe-mode the fleet.
+  const streamingStallRate = healSignals.trusted
+    ? healSignals.streamingStallRate
+    : 0;
   const cacheHitRate = dashboard.cacheHealth.hitRate;
 
   const metrics: SystemMetrics = {
-    audioFailureRate: dashboard.failureRate,
+    audioFailureRate: healSignals.failureRate,
     fallbackRate: dashboard.fallbackRate,
     avgTTFA: dashboard.avgTTFA,
     streamingStallRate,
@@ -272,11 +270,10 @@ export async function probeApiHealthy(): Promise<boolean> {
 }
 
 export async function probeStreamingHealthy(): Promise<boolean> {
-  const dashboard = getAdminDashboard();
-  const stallRate = computeStreamingStallRate(dashboard.layerHealth);
-  const streaming = dashboard.layerHealth.find((l) => l.layer === "streaming");
-  if (!streaming || streaming.total < 5) return true;
-  return stallRate <= 0.06;
+  const healSignals = getSelfHealAudioSignals();
+  // Untrusted / single-reporter floods must not block recovery.
+  if (!healSignals.trusted) return true;
+  return healSignals.streamingStallRate <= 0.06;
 }
 
 export async function probeWorkerHealthy(): Promise<boolean> {

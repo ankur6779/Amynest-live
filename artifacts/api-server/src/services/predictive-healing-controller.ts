@@ -2,7 +2,7 @@
  * Phase 2 predictive self-healing — trend detection + preventive actions (stability hardened).
  */
 
-import { getAdminDashboard } from "./audio-health-store.js";
+import { getAdminDashboard, getSelfHealAudioSignals } from "./audio-health-store.js";
 import { getApiHealthSnapshot } from "./api-health-store.js";
 import {
   confirmPredictiveSignal,
@@ -68,21 +68,15 @@ function maxApiErrorRate(now: number): number {
   return snap.routes.reduce((max, route) => Math.max(max, route.errorRate), 0);
 }
 
-function computeStreamingStallRate(
-  layerHealth: ReturnType<typeof getAdminDashboard>["layerHealth"],
-): number {
-  const streaming = layerHealth.find((l) => l.layer === "streaming");
-  if (!streaming || streaming.total === 0) return 0;
-  return streaming.failurePct;
-}
-
 function collectSample(now: number): void {
   const dashboard = getAdminDashboard(now);
+  const healSignals = getSelfHealAudioSignals(now);
   appendMetricSample({
     apiErrorRate: maxApiErrorRate(now),
     ttfa: dashboard.avgTTFA,
-    streamingStallRate: computeStreamingStallRate(dashboard.layerHealth),
-    failureRate: dashboard.failureRate,
+    // Quorum-capped — single-user forged stalls must not drive predictive degrade.
+    streamingStallRate: healSignals.streamingStallRate,
+    failureRate: healSignals.failureRate,
   }, now);
 }
 

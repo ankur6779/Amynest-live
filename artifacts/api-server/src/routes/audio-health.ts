@@ -91,8 +91,14 @@ router.post("/audio-health", async (req, res): Promise<void> => {
     return;
   }
 
+  // Bind reporter identity server-side so a client cannot forge another uid
+  // (or omit identity) when poisoning self-heal telemetry.
   const { accepted } = ingestAudioHealthEvents(
-    parsed.data.events.map((e) => ({ ...e, timestamp: e.timestamp ?? Date.now() })),
+    parsed.data.events.map((e) => ({
+      ...e,
+      timestamp: e.timestamp ?? Date.now(),
+      userId,
+    })),
   );
   res.status(202).json({ ok: true, accepted });
 });
