@@ -519,6 +519,16 @@ class MainActivity : AppCompatActivity() {
                     if (host == "play.google.com" && url.path.orEmpty().startsWith("/store")) {
                         if (openExternally(url)) return true
                     }
+                    // Only AmyNest hosts stay in the WebView. External https would
+                    // otherwise inherit addJavascriptInterface bridges (Auth/Billing
+                    // inject) and could read pending OAuth tokens or trigger purchases.
+                    if (!WebViewOrigins.isTrustedAmyNestHost(host)) {
+                        if (openExternally(url)) return true
+                        // No external handler — refuse rather than load untrusted JS
+                        // into a WebView that exposes AmyNestAuthInject / BillingInject.
+                        Log.w(TAG, "blocked in-WebView navigation to untrusted host=$host")
+                        return true
+                    }
                     view.loadUrl(url.toString())
                     return true
                 }
