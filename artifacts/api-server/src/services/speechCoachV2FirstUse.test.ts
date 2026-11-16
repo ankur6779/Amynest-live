@@ -27,6 +27,7 @@ import {
 import { resolveSpeechCoachV2UsagePolicy } from "./speechCoachV2UsagePolicy.js";
 import { PRODUCTION_REALTIME_MODEL_DEFAULT } from "./speechCoachV2RealtimeService.js";
 import {
+  SpeechCoachV2SessionError,
   generateTabLockToken,
   registerActiveSession,
   terminateActiveSession,
@@ -76,6 +77,26 @@ describe("speechCoachV2 first-use freeze", () => {
       src.indexOf("export async function getActiveSessionForChild"),
     );
     assert.doesNotMatch(registerBlock, /chargeSpeechCoachV2FirstUseSeconds/);
+  });
+
+  it("limit 429 is thrown after the heartbeat transaction commits", () => {
+    const src = read("speechCoachV2ActiveSessionService.ts");
+    const fn = src.slice(
+      src.indexOf("export async function validateAndTouchSession"),
+      src.indexOf("export async function updateSessionState"),
+    );
+    assert.match(fn, /Charge \+ terminate must COMMIT before we surface the 429/);
+    assert.match(fn, /if \(outcome\.limitError\) \{\s*throw outcome\.limitError;/);
+    const txBody = fn.slice(fn.indexOf("await db.transaction"), fn.indexOf("if (outcome.limitError)"));
+    const throws = [...txBody.matchAll(/throw new SpeechCoachV2SessionError\([\s\S]*?\);/g)].map(
+      (m) => m[0],
+    );
+    assert.ok(throws.length >= 1);
+    for (const statement of throws) {
+      assert.match(statement, /invalid_session|tab_lock_violation/);
+      assert.doesNotMatch(statement, /first_use_limit_reached|daily_limit_reached|session_limit_reached|monthly_limit_reached/);
+    }
+    assert.match(txBody, /limitError: new SpeechCoachV2SessionError/);
   });
 
   it("routes refuse exhausted first-use without daily-reset copy", () => {
@@ -313,6 +334,93 @@ describe("speechCoachV2 first-use session accounting", { skip: !dbOk }, () => {
     const used = await peekSpeechCoachV2FirstUseUsed(userId);
     assert.ok(used < 90);
     assert.ok(used >= 1);
+  });
+});
+
+describe("speechCoachV2 exhausting heartbeat commits usage", { skip: !dbOk }, () => {
+  const userId = `p4-speech-exhaust-${randomUUID()}`;
+  let childId = 0;
+
+  before(async () => {
+    await db.insert(subscriptionsTable).values({
+      userId,
+      plan: "free",
+      status: "free",
+      provider: "none",
+    });
+    // ageYears*12 + ageMonths must stay < 24 so auto age-trial does not
+    // steal the free first-use path under test.
+    const child = await db
+      .insert(childrenTable)
+      .values({
+        userId,
+        name: "Exhaust Child",
+        age: 1,
+        ageMonths: 6,
+        schoolStartTime: "08:00",
+        schoolEndTime: "14:00",
+        goals: "p4-speech-exhaust",
+      })
+      .returning({ id: childrenTable.id });
+    childId = child[0]!.id;
+    await db.insert(usageDailyTable).values({
+      userId,
+      feature: SPEECH_COACH_V2_FIRST_USE_FEATURE,
+      day: SPEECH_COACH_V2_FIRST_USE_DAY,
+      count: SPEECH_COACH_V2_FIRST_USE_SECONDS - 1,
+    });
+  });
+
+  after(async () => {
+    await db.delete(speechCoachV2ActiveSessionsTable).where(eq(speechCoachV2ActiveSessionsTable.userId, userId));
+    await db.delete(usageDailyTable).where(eq(usageDailyTable.userId, userId));
+    await db.delete(childrenTable).where(eq(childrenTable.userId, userId));
+    await db.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, userId));
+  });
+
+  it("429 after first-use exhaust still persists the lifetime charge and terminates the session", async () => {
+    const sessionId = randomUUID();
+    const tabLockToken = generateTabLockToken();
+    const sessionState = createInitialSessionState({
+      sessionId,
+      childId,
+      childName: "Exhaust Child",
+      ageBand: "4-5",
+      sessionSeed: 2,
+    });
+    await registerActiveSession({
+      userId,
+      childId,
+      sessionId,
+      ageBand: "4-5",
+      sessionState,
+      tabLockToken,
+    });
+
+    await assert.rejects(
+      () =>
+        validateAndTouchSession({
+          userId,
+          childId,
+          sessionId,
+          tabLockToken,
+        }),
+      (err: unknown) => {
+        assert.ok(err instanceof SpeechCoachV2SessionError);
+        assert.equal(err.code, "first_use_limit_reached");
+        assert.equal(err.status, 429);
+        return true;
+      },
+    );
+
+    assert.equal(await peekSpeechCoachV2FirstUseUsed(userId), SPEECH_COACH_V2_FIRST_USE_SECONDS);
+    assert.equal(await peekSpeechCoachV2FirstUseRemaining(userId), 0);
+
+    const rows = await db
+      .select()
+      .from(speechCoachV2ActiveSessionsTable)
+      .where(eq(speechCoachV2ActiveSessionsTable.sessionId, sessionId));
+    assert.equal(rows[0]?.status, "terminated");
   });
 });
 
