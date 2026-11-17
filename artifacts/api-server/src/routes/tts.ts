@@ -488,7 +488,7 @@ router.post("/tts/telemetry", async (req, res): Promise<void> => {
     return;
   }
 
-  const { accepted } = ingestTtsTelemetry(parsed.data.events);
+  const { accepted } = ingestTtsTelemetry(parsed.data.events, { userId });
   res.status(202).json({ ok: true, accepted });
 });
 

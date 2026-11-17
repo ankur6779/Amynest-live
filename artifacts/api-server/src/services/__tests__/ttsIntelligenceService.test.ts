@@ -27,10 +27,14 @@ describe("ttsIntelligenceService", () => {
 
   it("aggregates layer preference from telemetry", () => {
     for (let i = 0; i < 10; i++) {
-      ingestTtsTelemetry([event({ layer: "static", success: true, latency: 180 })]);
+      ingestTtsTelemetry([event({ layer: "static", success: true, latency: 180 })], {
+        userId: "user-a",
+      });
     }
     for (let i = 0; i < 6; i++) {
-      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 3000 })]);
+      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 3000 })], {
+        userId: "user-a",
+      });
     }
 
     const strategy = resolveTtsStrategy({ networkType: "fast" });
@@ -38,9 +42,25 @@ describe("ttsIntelligenceService", () => {
     assert.equal(strategy.apiDegraded, false);
   });
 
-  it("marks api degraded on failure spike", () => {
-    for (let i = 0; i < 15; i++) {
-      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 4000 })]);
+  it("blocks single-user forged failure floods from marking api degraded", () => {
+    for (let i = 0; i < 50; i++) {
+      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 4000 })], {
+        userId: "attacker",
+      });
+    }
+
+    const strategy = resolveTtsStrategy();
+    assert.equal(strategy.apiDegraded, false);
+  });
+
+  it("marks api degraded only with multi-user failure quorum", () => {
+    for (let i = 0; i < 8; i++) {
+      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 4000 })], {
+        userId: "user-a",
+      });
+      ingestTtsTelemetry([event({ layer: "api", success: false, latency: 4000 })], {
+        userId: "user-b",
+      });
     }
 
     const strategy = resolveTtsStrategy();
@@ -49,35 +69,41 @@ describe("ttsIntelligenceService", () => {
   });
 
   it("stores transition probabilities", () => {
-    ingestTtsTelemetry([
-      event({
-        fromKeyHash: "from-a",
-        toKeyHash: "to-b",
-        cacheKeyHash: "from-a",
-      }),
-      event({
-        fromKeyHash: "from-a",
-        toKeyHash: "to-b",
-        cacheKeyHash: "to-b",
-      }),
-    ]);
+    ingestTtsTelemetry(
+      [
+        event({
+          fromKeyHash: "from-a",
+          toKeyHash: "to-b",
+          cacheKeyHash: "from-a",
+        }),
+        event({
+          fromKeyHash: "from-a",
+          toKeyHash: "to-b",
+          cacheKeyHash: "to-b",
+        }),
+      ],
+      { userId: "user-a" },
+    );
 
     const strategy = resolveTtsStrategy();
     assert.ok(strategy.transitions["from-a"]?.["to-b"] === 2);
   });
 
   it("rejects invalid layer names", () => {
-    const result = ingestTtsTelemetry([
-      {
-        cacheKeyHash: "x",
-        layer: "invalid" as "api",
-        success: true,
-        latency: 1,
-        deviceClass: "mid",
-        networkType: "fast",
-        textLength: 1,
-      },
-    ]);
+    const result = ingestTtsTelemetry(
+      [
+        {
+          cacheKeyHash: "x",
+          layer: "invalid" as "api",
+          success: true,
+          latency: 1,
+          deviceClass: "mid",
+          networkType: "fast",
+          textLength: 1,
+        },
+      ],
+      { userId: "user-a" },
+    );
     assert.equal(result.accepted, 0);
   });
 });
