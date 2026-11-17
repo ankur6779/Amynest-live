@@ -309,13 +309,14 @@ export function useHealthLabState(childId: number) {
         simulated: options?.simulated,
         cheatFlags: cheatFlags.join(",") || undefined,
       });
-      void postHealthLabSession(childId, result);
 
       if (options?.simulated) {
         trackHealthLabEvent("health_lab_simulation_mode", childId, { gameId });
       }
 
+      // Persist before session POST/flush so sync never snapshots pre-session state.
       persist(next);
+      void postHealthLabSession(childId, result);
       setView({ kind: "session-rewards", result, celebrations });
       return result;
     },
