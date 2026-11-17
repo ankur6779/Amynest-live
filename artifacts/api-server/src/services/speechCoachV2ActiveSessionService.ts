@@ -366,7 +366,18 @@ export async function validateAndTouchSession(input: {
     );
   }
 
-  return db.transaction(async (tx) => {
+  // Charge + terminate must COMMIT before we surface the 429. Throwing inside
+  // db.transaction rolls back the usage write, so the exhausting tick never
+  // sticks and canStartSession keeps reminting past first-use / daily caps.
+  type HeartbeatOutcome = {
+    sessionState: PersistedSessionState;
+    secondsConsumed: number;
+    limitReached: boolean;
+    remainingSeconds: number;
+    limitError?: SpeechCoachV2SessionError;
+  };
+
+  const outcome: HeartbeatOutcome = await db.transaction(async (tx) => {
     const rows = await tx
       .select()
       .from(speechCoachV2ActiveSessionsTable)
@@ -424,21 +435,22 @@ export async function validateAndTouchSession(input: {
         })
         .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
 
-      if (limitReached) {
-        throw new SpeechCoachV2SessionError(
-          firstUseExhausted
-            ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
-            : "Session time limit reached.",
-          firstUseExhausted ? "first_use_limit_reached" : "session_limit_reached",
-          429,
-        );
-      }
-
       return {
         sessionState: row.sessionStateJson as unknown as PersistedSessionState,
         secondsConsumed: nextConsumed,
-        limitReached: false,
+        limitReached,
         remainingSeconds: firstUse.remainingAfter,
+        ...(limitReached
+          ? {
+              limitError: new SpeechCoachV2SessionError(
+                firstUseExhausted
+                  ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
+                  : "Session time limit reached.",
+                firstUseExhausted ? "first_use_limit_reached" : "session_limit_reached",
+                429,
+              ),
+            }
+          : {}),
       };
     }
 
@@ -469,34 +481,46 @@ export async function validateAndTouchSession(input: {
       })
       .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
 
-    if (limitReached) {
-      throw new SpeechCoachV2SessionError(
-        sessionCapReached
-          ? "Session time limit reached."
-          : usage.monthlyLimitReached
-            ? "Monthly speech limit reached."
-            : "Daily speech limit reached.",
-        sessionCapReached
-          ? "session_limit_reached"
-          : usage.monthlyLimitReached
-            ? "monthly_limit_reached"
-            : "daily_limit_reached",
-        429,
-      );
-    }
-
     return {
       sessionState: row.sessionStateJson as unknown as PersistedSessionState,
       secondsConsumed: nextConsumed,
-      limitReached: false,
+      limitReached,
       remainingSeconds: remainingSpeechCoachSeconds({
         dailyUsedSeconds: usage.dailyUsed,
         dailyLimitSeconds: policy.dailyLimitSeconds,
         monthlyUsedSeconds: usage.monthlyUsed,
         monthlyLimitSeconds: SPEECH_COACH_V2_MONTHLY_LIMIT_SECONDS,
       }),
+      ...(limitReached
+        ? {
+            limitError: new SpeechCoachV2SessionError(
+              sessionCapReached
+                ? "Session time limit reached."
+                : usage.monthlyLimitReached
+                  ? "Monthly speech limit reached."
+                  : "Daily speech limit reached.",
+              sessionCapReached
+                ? "session_limit_reached"
+                : usage.monthlyLimitReached
+                  ? "monthly_limit_reached"
+                  : "daily_limit_reached",
+              429,
+            ),
+          }
+        : {}),
     };
   });
+
+  if (outcome.limitError) {
+    throw outcome.limitError;
+  }
+
+  return {
+    sessionState: outcome.sessionState,
+    secondsConsumed: outcome.secondsConsumed,
+    limitReached: false,
+    remainingSeconds: outcome.remainingSeconds,
+  };
 }
 
 export async function updateSessionState(input: {
