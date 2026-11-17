@@ -22,8 +22,9 @@ import {
 import { infantExploreMutationGate } from "../middlewares/infantExploreMutationGate.js";
 import {
   getPremiumDownloadWallet,
-  refundPremiumDownloadBankDebit,
+  refundPremiumDownloadBankDebitIfNeeded,
   reservePremiumDownload,
+  type PremiumDownloadReserve,
   type PremiumDownloadWallet,
 } from "../services/premiumDownloadBankService.js";
 
@@ -319,6 +320,9 @@ router.post("/funsheets/download", infantExploreMutationGate(), async (req, res)
     return;
   }
 
+  // Hoisted so outer catch can refund a bank debit if insert/stream fails.
+  let premiumReservation: PremiumDownloadReserve | null = null;
+
   try {
     const child = await loadOwnedChild(childId, userId);
     if (!child) {
@@ -394,10 +398,6 @@ router.post("/funsheets/download", infantExploreMutationGate(), async (req, res)
       return;
     }
 
-    let premiumReservation:
-      | Awaited<ReturnType<typeof reservePremiumDownload>>
-      | null = null;
-
     if (paidWalletEnabled) {
       premiumReservation = await reservePremiumDownload(userId);
       if (!premiumReservation.ok) {
@@ -437,6 +437,9 @@ router.post("/funsheets/download", infantExploreMutationGate(), async (req, res)
     } catch (insertErr) {
       const pgCode = (insertErr as { code?: string }).code;
       if (pgCode === "23505") {
+        // Concurrent double-tap: peer already inserted. Refund bank debit —
+        // no new row was granted for this reservation.
+        await refundPremiumDownloadBankDebitIfNeeded(userId, premiumReservation);
         setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
         const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
         if (!streamed && !res.headersSent) {
@@ -465,15 +468,14 @@ router.post("/funsheets/download", infantExploreMutationGate(), async (req, res)
           .delete(funsheetDownloadsTable)
           .where(eq(funsheetDownloadsTable.id, insertedId));
       }
-      if (premiumReservation?.ok && premiumReservation.source === "bank") {
-        await refundPremiumDownloadBankDebit(userId);
-      }
+      await refundPremiumDownloadBankDebitIfNeeded(userId, premiumReservation);
       if (!res.headersSent) {
         res.status(502).json({ error: "stream_failed" });
       }
       return;
     }
   } catch (err) {
+    await refundPremiumDownloadBankDebitIfNeeded(userId, premiumReservation).catch(() => undefined);
     logger.error(`funsheets download failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }

@@ -297,3 +297,25 @@ export async function refundPremiumDownloadBankDebit(userId: string): Promise<vo
     })
     .where(eq(subscriptionsTable.userId, userId));
 }
+
+/**
+ * Bank debits commit before the download row insert. Any path that does not
+ * keep a new download row (unique conflict, stream failure, thrown error)
+ * must call this so concurrent double-taps / insert failures cannot burn
+ * bank credits without granting a download.
+ */
+export async function refundPremiumDownloadBankDebitIfNeeded(
+  userId: string,
+  reservation: PremiumDownloadReserve | null | undefined,
+): Promise<void> {
+  if (reservation?.ok && reservation.source === "bank") {
+    await refundPremiumDownloadBankDebit(userId);
+  }
+}
+
+/** Pure predicate for tests / call-site guards. */
+export function isBankDebitReservation(
+  reservation: PremiumDownloadReserve | null | undefined,
+): boolean {
+  return Boolean(reservation?.ok && reservation.source === "bank");
+}
