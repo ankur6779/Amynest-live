@@ -106,7 +106,10 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
   );
 
   try {
-    const result = await Promise.race([runAiJobHandler(type, payload), timeout]);
+    const result = await Promise.race([
+      runAiJobHandler(type, payload, { userId }),
+      timeout,
+    ]);
 
     if (result === "timeout") {
       if (COACH_JOB_TYPES.has(type)) {

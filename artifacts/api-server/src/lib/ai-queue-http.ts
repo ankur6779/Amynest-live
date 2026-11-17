@@ -97,7 +97,9 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     }
     const { runAiJobHandler } = await import("../services/ai-job-handlers.js");
     try {
-      const result = await runAiJobHandler(opts.type, opts.payload);
+      const result = await runAiJobHandler(opts.type, opts.payload, {
+        userId: opts.userId,
+      });
       const body = await resolveSyncApiBody({
         rawResult: result,
         payload: opts.payload,
@@ -107,6 +109,13 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
       opts.res.json(body);
       return;
     } catch (err) {
+      const { isTtsRateLimitedError, ttsRateLimitResponseBody } = await import(
+        "../services/ttsCostGuardService.js"
+      );
+      if (isTtsRateLimitedError(err)) {
+        opts.res.status(429).json(ttsRateLimitResponseBody(err));
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       logger.error(
         { evt: "ai_job.inline_failed", type: opts.type, message: message.slice(0, 300) },

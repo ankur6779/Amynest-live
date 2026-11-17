@@ -111,7 +111,7 @@ async function processMemoryJob(jobId: string): Promise<void> {
   try {
     const { runAiJobHandler } = await import("../services/ai-job-handlers.js");
     const result = await Promise.race([
-      runAiJobHandler(job.type, payload),
+      runAiJobHandler(job.type, payload, { userId: job.userId }),
       timeout,
     ]);
 

@@ -26,17 +26,23 @@ export interface TtsSynthesizePayload {
 export async function runAiJobHandler(
   type: string,
   payload: unknown,
+  opts?: { userId?: string },
 ): Promise<unknown> {
   const { unwrapJobPayload } = await import("../queue/ai-job-payload.js");
   const unwrapped = unwrapJobPayload(payload);
   const inner = unwrapped.routeName === "legacy" ? payload : unwrapped.input;
+  const routeName =
+    unwrapped.routeName === "legacy" ? "tts/synthesize" : unwrapped.routeName;
 
   switch (type) {
     case "openai.chat":
     case "openai.chat_json":
       return handleOpenAiChat(inner as OpenAiChatPayload, type === "openai.chat_json");
     case "tts.synthesize":
-      return handleTtsSynthesize(inner as TtsSynthesizePayload);
+      return handleTtsSynthesize(inner as TtsSynthesizePayload, {
+        userId: opts?.userId,
+        route: routeName,
+      });
     default: {
       const { dispatchAiJob } = await import("./ai-handlers/index.js");
       return dispatchAiJob(type, payload);
@@ -80,7 +86,10 @@ async function handleOpenAiChat(
   };
 }
 
-async function handleTtsSynthesize(payload: TtsSynthesizePayload): Promise<{
+async function handleTtsSynthesize(
+  payload: TtsSynthesizePayload,
+  ctx?: { userId?: string; route?: string },
+): Promise<{
   cacheKey: string;
   audioUrl: string;
   contentType: string;
@@ -88,12 +97,21 @@ async function handleTtsSynthesize(payload: TtsSynthesizePayload): Promise<{
   cached: boolean;
 }> {
   const opts = payload.options ?? {};
-  const result = await generateOpenAiTts({
-    text: payload.text,
-    voice: opts.voiceId,
-    mode: opts.mode ?? "default",
-    category: opts.mode === "phonics" ? "phonics" : "words",
-  });
+  // Daily tts_generation quota only runs when ctx.userId is set (cache-miss path
+  // inside generateOpenAiTts). Omitting it silently remints past free/premium caps.
+  const generationCtx =
+    ctx?.userId && ctx.userId !== "anonymous"
+      ? { userId: ctx.userId, route: ctx.route ?? "tts/synthesize" }
+      : undefined;
+  const result = await generateOpenAiTts(
+    {
+      text: payload.text,
+      voice: opts.voiceId,
+      mode: opts.mode ?? "default",
+      category: opts.mode === "phonics" ? "phonics" : "words",
+    },
+    generationCtx,
+  );
   if (!result) throw new Error("tts_failed");
   logger.info(
     {
@@ -101,6 +119,7 @@ async function handleTtsSynthesize(payload: TtsSynthesizePayload): Promise<{
       cacheKey: result.cacheKey,
       cached: result.cached,
       charCount: payload.text.length,
+      userId: generationCtx?.userId,
     },
     "TTS job completed",
   );
