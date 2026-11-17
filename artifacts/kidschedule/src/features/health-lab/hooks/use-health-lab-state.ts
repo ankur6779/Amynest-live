@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { evaluateMasterBadges } from "../badges";
 import { STREAK_MILESTONES } from "../constants";
 import {
@@ -60,11 +60,22 @@ export function useHealthLabState(childId: number) {
     { type: "level-up" | "streak" | "badge" | "quest" | "treasure" | "surprise"; payload: unknown }[]
   >([]);
 
+  // Hub child switches often reuse this hook instance (no remount). Reset
+  // synchronously so shop/session writers cannot enqueue under child B while
+  // React state still holds child A's profile.
+  useEffect(() => {
+    setState(ensureDailyQuests(loadHealthLabState(childId)));
+    setView("home");
+    setPendingCelebrations([]);
+  }, [childId]);
+
   const persist = useCallback((next: HealthLabPersistedState) => {
     saveHealthLabState(next);
     setState(next);
-    enqueueHealthLabSync(childId);
-  }, [childId]);
+    // Always sync the child whose profile was written — never the possibly
+    // stale hook prop if callers omit a remount key.
+    enqueueHealthLabSync(next.childId);
+  }, []);
 
   const todayScore = useMemo(
     () => todayWellnessScore(state.gameHistory, dateKeyLocal()),
@@ -115,6 +126,15 @@ export function useHealthLabState(childId: number) {
       durationMs: number,
       options?: SessionCompleteOptions,
     ) => {
+      // Stale in-memory profile after a sibling switch — never attribute XP or
+      // POST /session under the newly selected childId.
+      if (state.childId !== childId) {
+        setState(ensureDailyQuests(loadHealthLabState(childId)));
+        setView("home");
+        setPendingCelebrations([]);
+        return null;
+      }
+
       const eligibleForBadges = options?.eligibleForBadges !== false;
       const eligibleForXp = options?.eligibleForXp !== false;
       const cheatFlags = options?.cheatFlags ?? [];
@@ -309,13 +329,15 @@ export function useHealthLabState(childId: number) {
         simulated: options?.simulated,
         cheatFlags: cheatFlags.join(",") || undefined,
       });
-      void postHealthLabSession(childId, result);
 
       if (options?.simulated) {
         trackHealthLabEvent("health_lab_simulation_mode", childId, { gameId });
       }
 
+      // Persist before session POST/flush so sync never snapshots pre-session
+      // state, and always address the profile childId that was written.
       persist(next);
+      void postHealthLabSession(next.childId, result);
       setView({ kind: "session-rewards", result, celebrations });
       return result;
     },
@@ -324,6 +346,9 @@ export function useHealthLabState(childId: number) {
 
   const equipShopItem = useCallback(
     (itemId: string) => {
+      if (state.childId !== childId) {
+        return { ok: false, equipped: state.equippedItems, error: "child_mismatch" };
+      }
       const result = equipItem(state.equippedItems, state.unlockedAvatarItems, itemId);
       if (!result.ok) return result;
       persist({ ...state, equippedItems: result.equipped });
@@ -335,6 +360,14 @@ export function useHealthLabState(childId: number) {
 
   const buyShopItem = useCallback(
     (itemId: string) => {
+      if (state.childId !== childId) {
+        return {
+          ok: false,
+          coins: state.coins,
+          owned: state.unlockedAvatarItems,
+          error: "child_mismatch",
+        };
+      }
       const result = purchaseItem(state.unlockedAvatarItems, state.coins, itemId);
       if (!result.ok) return result;
       persist({
@@ -349,6 +382,7 @@ export function useHealthLabState(childId: number) {
   );
 
   const claimDailySurprise = useCallback(() => {
+    if (state.childId !== childId) return null;
     const today = dateKeyLocal();
     if (state.dailySurpriseClaimedDateKey === today) return null;
     const surprise = rollDailySurprise(`${childId}-${today}`);
@@ -362,6 +396,7 @@ export function useHealthLabState(childId: number) {
   }, [state, persist, childId, pushCelebrations]);
 
   const openTreasureChest = useCallback(() => {
+    if (state.childId !== childId) return null;
     if (!canOpenTreasureChest(state)) return null;
     const reward = treasureChestReward(state.streakDays);
     let next: HealthLabPersistedState = {

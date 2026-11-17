@@ -152,7 +152,7 @@ export function HealthLabZone({ childId, childName, standalone = false }: Props)
     (gameId: HealthGameId) =>
     (score: number, durationMs: number, options?: SessionCompleteOptions) => {
       const result = recordSession(gameId, score, durationMs, options);
-      if (result.personalBest) audio.playNewRecord();
+      if (result?.personalBest) audio.playNewRecord();
     };
 
   const renderGame = (gameId: HealthGameId) => {

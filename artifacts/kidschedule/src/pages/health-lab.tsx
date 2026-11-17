@@ -25,7 +25,7 @@ export default function HealthLabPage() {
         isHealthLabPreviewAge(totalAgeMonths) ? (
           <HealthLabPreviewOverview living={living} />
         ) : (
-          <HealthLabZone childId={child.id} childName={child.name} />
+          <HealthLabZone key={child.id} childId={child.id} childName={child.name} />
         )
       }
     </HubModulePageShell>
