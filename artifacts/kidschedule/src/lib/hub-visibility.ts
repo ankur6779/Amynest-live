@@ -106,9 +106,33 @@ export function isHubSectionVisible(
 ): boolean {
   if (section.id === "infant-hub") return childAgeMonths < 24;
   if (childAgeMonths >= 24) return true;
+  // Rooms V1 has no Section 2 — keep printables discoverable as infant preview.
+  if (isRoomsInfantPreviewTile(section.id)) return true;
   return (
     checkBandMatch(section, currentBand) &&
     checkMonthRules(section.id, childAgeMonths)
+  );
+}
+
+/**
+ * Printables restored into Rooms V1 for infants.
+ * Legacy Section 2 ("Explore What's Next") never shipped in Rooms — coloring
+ * and fun-sheets vanished for every 0–23 month profile. These stay preview
+ * (downloads still blocked by infantExploreMutationGate).
+ */
+export const ROOMS_INFANT_PREVIEW_TILE_IDS = [
+  "coloring-books",
+  "fun-sheets",
+] as const;
+
+export type RoomsInfantPreviewTileId =
+  (typeof ROOMS_INFANT_PREVIEW_TILE_IDS)[number];
+
+export function isRoomsInfantPreviewTile(
+  sectionId: string,
+): sectionId is RoomsInfantPreviewTileId {
+  return (ROOMS_INFANT_PREVIEW_TILE_IDS as readonly string[]).includes(
+    sectionId,
   );
 }
 
@@ -174,6 +198,13 @@ export function shouldRenderHubTileContent(
   childAgeMonths: number,
   isTwoPlus: boolean,
 ): boolean {
+  if (
+    !isTwoPlus &&
+    isRoomsInfantPreviewTile(sectionId) &&
+    childAgeMonths < 24
+  ) {
+    return true;
+  }
   return checkMonthRules(sectionId, childAgeMonths, isTwoPlus);
 }
 

@@ -11,7 +11,11 @@
  *   12–23 month toddlers keep sleep / feed / cry logging.
  * Discovery Care door follows the Hub <24m rule so Infant Care is not lost.
  */
-import { getAgeGroup, getTotalMonths, type AgeGroup } from "@/lib/age-groups";
+import { getAgeGroup, type AgeGroup } from "@/lib/age-groups";
+import {
+  resolveTotalAgeMonths,
+  storedTotalAgeMonths,
+} from "@/lib/child-age-months";
 import {
   GAMING_HUB_MIN_AGE_MONTHS,
   HEALTH_LAB_MAX_AGE_MONTHS,
@@ -508,6 +512,52 @@ export const DISCOVERY_MODULES: readonly DiscoveryModule[] = [
     evidence: "Hidden from parent product; living URL aliases to Rooms",
   },
   {
+    id: "coloring-books",
+    href: "/parenting-hub#tile-coloring-books",
+    title: "Coloring",
+    category: "moments",
+    classification: "discovery",
+    audience: "both",
+    entitlement: "quota",
+    age: months(0),
+    preferredAgeGroups: ["toddler", "preschool", "early_school"],
+    firstSessionEligible: false,
+    postFirstValueEligible: true,
+    afterFirstActionEligible: true,
+    evidence:
+      "Rooms Moments Colour together; infant preview <24m; full from 24m",
+  },
+  {
+    id: "curiosity",
+    href: "/answer-to-kids-how",
+    title: "Curiosity",
+    category: "rooms",
+    classification: "discovery",
+    audience: "both",
+    entitlement: "quota",
+    age: unfiltered(),
+    preferredAgeGroups: "all",
+    firstSessionEligible: false,
+    postFirstValueEligible: true,
+    afterFirstActionEligible: true,
+    evidence: "Understand destination curiosity — alwaysCurrent hub tile",
+  },
+  {
+    id: "art-craft",
+    href: "/parenting-hub#tile-art-craft",
+    title: "Art & Craft",
+    category: "moments",
+    classification: "discovery",
+    audience: "both",
+    entitlement: "quota",
+    age: unfiltered(),
+    preferredAgeGroups: "all",
+    firstSessionEligible: false,
+    postFirstValueEligible: true,
+    afterFirstActionEligible: true,
+    evidence: "Moments Presence soft path + hub art-craft alwaysCurrent",
+  },
+  {
     id: "audio-lessons",
     href: "/audio-lessons",
     title: "Audio Lessons",
@@ -694,11 +744,12 @@ export function findDiscoveryModule(id: string): DiscoveryModule | undefined {
 }
 
 export function ageGroupFromParts(years?: number | null, monthsPart?: number | null): AgeGroup {
-  return getAgeGroup(years ?? 0, monthsPart ?? 0);
+  const total = storedTotalAgeMonths({ age: years, ageMonths: monthsPart });
+  return getAgeGroup(Math.floor(total / 12), total % 12);
 }
 
 export function totalMonthsFromParts(years?: number | null, monthsPart?: number | null): number {
-  return getTotalMonths(years ?? 0, monthsPart ?? 0);
+  return storedTotalAgeMonths({ age: years ?? 0, ageMonths: monthsPart ?? 0 });
 }
 
 /** Hub Infant Care window — not the canonical 0–11m infant group. */
@@ -762,5 +813,5 @@ export function resolveChildTotalMonths(
     activeChildId != null ? children.find((c) => c.id === activeChildId) : undefined;
   const child = active ?? children[0];
   if (!child || (child.age == null && child.ageMonths == null)) return null;
-  return getTotalMonths(child.age ?? 0, child.ageMonths ?? 0);
+  return resolveTotalAgeMonths(child);
 }

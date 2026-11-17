@@ -16,6 +16,7 @@ import {
   isHealthZoneFeature,
   isHealthZoneJourneyEligible,
   shouldApplyHealthZoneJourneyLock,
+  shouldRenderHubTileContent,
 } from "./hub-visibility";
 
 describe("isHubSectionVisible", () => {
@@ -60,6 +61,25 @@ describe("isHubSectionVisible", () => {
     expect(isHubSectionVisible(life, "2-4", 24)).toBe(true);
     expect(isHubSectionVisible(ptm, "2-4", 35)).toBe(true);
     expect(isHubSectionVisible(ptm, "4-6", 36)).toBe(true);
+  });
+
+  it("keeps coloring and fun-sheets visible as infant preview in Rooms", () => {
+    expect(
+      isHubSectionVisible(
+        { id: "coloring-books", bands: ["2-4", "4-6", "6-8"] },
+        "0-2",
+        6,
+      ),
+    ).toBe(true);
+    expect(
+      isHubSectionVisible(
+        { id: "fun-sheets", bands: ["2-4", "4-6"] },
+        "0-2",
+        18,
+      ),
+    ).toBe(true);
+    expect(shouldRenderHubTileContent("coloring-books", 8, false)).toBe(true);
+    expect(shouldRenderHubTileContent("coloring-books", 30, true)).toBe(true);
   });
 
   it("keeps infant band + month rules below 24 months", () => {

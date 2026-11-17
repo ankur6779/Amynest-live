@@ -93,6 +93,9 @@ test.describe("Rooms living fixture", () => {
     await page.getByTestId("hub-room-door-care").click();
     await expect(page.getByTestId("care-recommend")).toContainText("Today's care");
     await expect(page.getByTestId("care-quiet-nutrition")).toContainText("Nutrition");
+    await expect(page.getByTestId("dest-infant-hub")).toBeVisible();
+    await expect(page.getByTestId("infant-module-sleep")).toBeVisible();
+    await expect(page.getByTestId("infant-module-feeding")).toBeVisible();
     await page.getByTestId("care-recommend").click();
     await expect(page.getByTestId("dest-infant-hub")).toBeVisible();
     await page.getByTestId("care-quiet-nutrition").click();
@@ -115,12 +118,17 @@ test.describe("Rooms living fixture", () => {
     await page.getByTestId("parent-hub-exit-room").click();
 
     await page.getByTestId("hub-room-door-moments").click();
+    await expect(page.getByTestId("moments-soft-coloring-books")).toBeVisible();
     await page.getByTestId("moments-quiet-presence").click();
     await expect(page.getByTestId("dest-activities")).toBeVisible();
     await page.getByTestId("moments-quiet-story").click();
     await expect(page.getByTestId("dest-story-hub")).toBeVisible();
     await page.getByTestId("moments-quiet-make").click();
     await expect(page.getByTestId("dest-worksheets")).toBeVisible();
+    await expect(page.getByTestId("moments-make-soft")).toBeVisible();
+    await expect(page.getByTestId("moments-soft-coloring-books")).toBeVisible();
+    await page.getByTestId("moments-soft-coloring-books").click();
+    await expect(page.getByTestId("dest-coloring-books")).toBeVisible();
     await expect(page.getByTestId("moments-quiet-games")).toHaveAttribute(
       "href",
       /\/games/,

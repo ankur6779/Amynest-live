@@ -10,9 +10,9 @@ import { ROOM_HEROES } from "@/lib/parent-hub/room-heroes";
 import { PREMIUM_VOICE } from "@/lib/amynest-philosophy";
 import {
   GAMES_MODULE_HREF,
-  MOMENTS_MAKE_SOFT,
   MOMENTS_PRESENCE_SOFT,
   MOMENTS_QUIET_PATHS,
+  momentsMakeSoftForAge,
   momentsPathForTile,
   recommendMomentsAction,
   type MomentsPathId,
@@ -27,12 +27,15 @@ export type MomentsLivingStreamProps = {
   /** Currently deepened legacy tile (if any) */
   activeTileId?: string | null;
   onSelectTile: (tileId: string) => void;
+  /** Hub-visible tiles — Colour together stays on the room, not behind Make. */
+  visibleTileIds?: readonly string[];
 };
 
 export function MomentsLivingStream({
   childName,
   activeTileId = null,
   onSelectTile,
+  visibleTileIds,
 }: MomentsLivingStreamProps) {
   const { t } = useTranslation();
   const recommend = useMemo(
@@ -43,6 +46,10 @@ export function MomentsLivingStream({
     ? momentsPathForTile(activeTileId)
     : null;
   const recommendActive = activeTileId === recommend.tileId;
+  const makeSoft = useMemo(
+    () => momentsMakeSoftForAge(visibleTileIds),
+    [visibleTileIds],
+  );
 
   return (
     <div
@@ -177,7 +184,7 @@ export function MomentsLivingStream({
         </div>
       ) : null}
 
-      {activePath === "make" ? (
+      {makeSoft.length > 0 ? (
         <div className="mo-soft-band" data-testid="moments-make-soft">
           <p className="mo-soft-label">
             {t("moments.living.also_make", {
@@ -185,7 +192,7 @@ export function MomentsLivingStream({
             })}
           </p>
           <div className="mo-soft-list">
-            {MOMENTS_MAKE_SOFT.map((soft) => (
+            {makeSoft.map((soft) => (
               <button
                 key={soft.tileId}
                 type="button"
