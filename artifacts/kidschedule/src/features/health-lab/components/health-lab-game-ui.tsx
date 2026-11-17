@@ -358,8 +358,9 @@ export function HealthLabGameTopBar({
   const living = isHealthLabLivingV1Enabled();
   return (
     <div
+      data-testid="health-lab-game-topbar"
       className={cn(
-        "sticky top-0 z-20 px-4 py-3",
+        "z-20 shrink-0 px-4 py-3",
         living ? "hl-living-deep-topbar" : "health-lab-topbar-glass",
       )}
     >
