@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getSpellingManifest,
   catalogEntryToWord,
@@ -375,6 +375,14 @@ export function buildWeeklyReport(state: SpellingRetentionState) {
 export function useSpellingRetention(childId: number) {
   const [state, setState] = useState<SpellingRetentionState>(() => loadRetentionState(childId));
   const [celebrations, setCelebrations] = useState<RetentionCelebration[]>([]);
+
+  // Hub sibling switches often reuse this hook without remounting SpellingMastery.
+  // Reset before any mutate so writers cannot save child A's in-memory retention
+  // into amynest:spelling:retention:{B}.
+  useEffect(() => {
+    setState(loadRetentionState(childId));
+    setCelebrations([]);
+  }, [childId]);
 
   const mutate = useCallback(
     (
