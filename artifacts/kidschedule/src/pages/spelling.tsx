@@ -30,6 +30,7 @@ export default function SpellingPage() {
     >
       {({ child, totalAgeMonths }) => (
         <SpellingMastery
+          key={child.id}
           childId={child.id}
           childName={child.name}
           ageMonths={totalAgeMonths}
