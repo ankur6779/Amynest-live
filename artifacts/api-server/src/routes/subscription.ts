@@ -1045,7 +1045,9 @@ router.post(
     // first successful charge. The client should poll `/api/subscription`
     // (or refresh on the `amynest:refresh-subscription` event) until the
     // webhook lands, which usually takes a few seconds.
+    // Linkage must land on the alias owner — same read/write split as activate.
     const { db, subscriptionsTable } = await import("@workspace/db");
+    const subscriptionOwnerUserId = await resolveSubscriptionOwnerUserId(userId);
     await getOrCreateSubscription(userId);
     await db
       .update(subscriptionsTable)
@@ -1055,7 +1057,7 @@ router.post(
         providerSubscriptionId: subscriptionId,
         updatedAt: new Date(),
       })
-      .where(eq(subscriptionsTable.userId, userId));
+      .where(eq(subscriptionsTable.userId, subscriptionOwnerUserId));
 
     const ent = await getEntitlements(userId);
     res.json({
@@ -1143,7 +1145,7 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
       }
     | undefined;
 
-  const userId = sub?.notes?.userId;
+  const notedUserId = sub?.notes?.userId;
   const plan = razorpayPlanIdToPlan(sub?.plan_id);
   const periodEnd = sub?.current_end ? new Date(sub.current_end * 1000) : undefined;
 
@@ -1174,7 +1176,11 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
       if (claimed.length === 0) return { kind: "duplicate" };
 
       if (!sub) return { kind: "ignored", reason: "no_subscription_payload", extra: { eventType } };
-      if (!userId) return { kind: "ignored", reason: "no_user_id_in_notes", extra: { eventType } };
+      if (!notedUserId) return { kind: "ignored", reason: "no_user_id_in_notes", extra: { eventType } };
+
+      // notes.userId is the Firebase uid that created checkout; canonicalize so
+      // activate/terminal writes hit the same row entitlements read.
+      const userId = await resolveSubscriptionOwnerUserId(notedUserId, tx);
 
       switch (eventType) {
         case "subscription.activated":
@@ -1193,7 +1199,7 @@ router.post("/subscription/razorpay/webhook", asyncRoute(async (req, res): Promi
             {
               provider: "razorpay",
               periodEnd,
-              providerCustomerId: userId,
+              providerCustomerId: notedUserId,
               providerSubscriptionId: sub.id,
             },
             tx,
