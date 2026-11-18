@@ -61,4 +61,23 @@ describe("Talk-with-Amy clock is stamped only on converse", () => {
     assert.match(src, /peekConversationFirstUseMs/);
     assert.match(src, /Memory\/status reads must peek/);
   });
+
+  it("does not stamp first-use before child ownership is confirmed", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../routes/speech-converse.ts", import.meta.url), "utf8");
+    const handlerIdx = src.indexOf('router.post("/speech/converse"');
+    assert.ok(handlerIdx >= 0);
+    const handler = src.slice(handlerIdx, handlerIdx + 3500);
+    const childCheckIdx = handler.indexOf('error: "child_not_found"');
+    const stampIdx = handler.indexOf("stampFirstUse: true");
+    assert.ok(childCheckIdx >= 0, "child_not_found check must exist");
+    assert.ok(stampIdx >= 0, "stampFirstUse must exist on POST converse");
+    assert.ok(
+      childCheckIdx < stampIdx,
+      "first-use stamp must run only after child_not_found ownership check",
+    );
+    // Must not be stamped inside the pre-check Promise.all with loadOwnedChild.
+    const preCheckBlock = handler.slice(0, childCheckIdx);
+    assert.doesNotMatch(preCheckBlock, /stampFirstUse:\s*true/);
+  });
 });

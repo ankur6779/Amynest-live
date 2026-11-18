@@ -78,8 +78,9 @@ const MAX_TURN_SECONDS = 90;
  *   - Free → 5 min/day for {FREE_CONVERSATION_TRIAL_DAYS} from first actual
  *     converse (including kickoff). Unused accounts are not expired.
  *
- * `stampFirstUse` must be true only on POST /speech/converse (including kickoff).
- * Memory/status reads must peek — opening the screen must not start the clock.
+ * `stampFirstUse` must be true only on POST /speech/converse after the child
+ * ownership check (including kickoff). Memory/status reads must peek — opening
+ * the screen must not start the clock, and child_not_found must not either.
  */
 export async function resolveConversationBudget(
   userId: string,
@@ -337,12 +338,14 @@ router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
 
   const hasChildId = body.childId != null;
 
-  const [child, serverMemoryRow, budgetResult, usedBefore] = await Promise.all([
+  // Ownership/memory/usage first — never stamp the free Talk clock on a
+  // child_not_found (or other pre-session) failure. Stamp only after we know
+  // this request is allowed to start a real converse turn.
+  const [child, serverMemoryRow, usedBefore] = await Promise.all([
     hasChildId ? loadOwnedChild(body.childId!, userId) : Promise.resolve(null),
     hasChildId
       ? loadConversationMemory(userId, body.childId!).catch(() => null)
       : Promise.resolve(null),
-    resolveConversationBudget(userId, { stampFirstUse: true }),
     getFeatureUsage(userId, "speech_conversation_seconds"),
   ]);
 
@@ -350,6 +353,8 @@ router.post("/speech/converse", asyncRoute(async (req, res): Promise<void> => {
     res.status(404).json({ error: "child_not_found" });
     return;
   }
+
+  const budgetResult = await resolveConversationBudget(userId, { stampFirstUse: true });
 
   let childName: string | null = child?.name ?? null;
   let derivedAgeBand: AgeBand | null = null;
