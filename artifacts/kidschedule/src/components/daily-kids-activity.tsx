@@ -879,6 +879,44 @@ export function DailyKidsActivity({
   const [celebration, setCelebration] = useState<{ item: Origami; xp: number } | null>(null);
   const [modalItem, setModalItem] = useState<ModalItem | null>(null);
   const [stepsItem, setStepsItem] = useState<Origami | null>(null);
+
+  // Parent Hub sibling switches reuse this tile without remounting unless keyed.
+  // Reload before persist so child A's done/saved ids cannot overwrite
+  // amynest_activity_{B}_….
+  useEffect(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem(key) || "{}") as ActivityState;
+      setDone(new Set(p.doneIds ?? []));
+      setSaved(new Set(p.savedIds ?? []));
+      setOrigamiProgress(p.origamiProgress ?? {});
+    } catch {
+      setDone(new Set());
+      setSaved(new Set());
+      setOrigamiProgress({});
+    }
+    try {
+      const certs = JSON.parse(
+        localStorage.getItem(
+          `amynest.origami.certificates.${childName.replace(/\s+/g, "_").toLowerCase()}`,
+        ) || "[]",
+      ) as string[];
+      setCertificateUnlocks(new Set(certs));
+    } catch {
+      setCertificateUnlocks(new Set());
+    }
+    try {
+      const hist = JSON.parse(localStorage.getItem(origamiHistoryKey(childName)) || "[]") as OrigamiHistoryEvent[];
+      setOrigamiHistory(Array.isArray(hist) ? hist : []);
+    } catch {
+      setOrigamiHistory([]);
+    }
+    setOrigamiCategory("All");
+    setCollectionOpen(false);
+    setCelebration(null);
+    setModalItem(null);
+    setStepsItem(null);
+  }, [childName, key]);
+
   const persist = (d: Set<string>, s: Set<string>, progress: Record<string, number> = origamiProgress) => {
     try {
       const p = JSON.parse(localStorage.getItem(key) || "{}") as ActivityState;
