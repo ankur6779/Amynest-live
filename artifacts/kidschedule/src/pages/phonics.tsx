@@ -251,6 +251,7 @@ export default function PhonicsPage() {
               <PhonicsUnavailableFallback childName={activeChild.name} />
             ) : (
             <PhonicsLearning
+              key={activeChild.id}
               childQuery={search}
               childId={activeChild.id}
               childName={activeChild.name}

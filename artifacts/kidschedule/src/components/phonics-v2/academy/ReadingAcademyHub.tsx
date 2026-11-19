@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,19 @@ export function ReadingAcademyHub({
   const [activeBook, setActiveBook] = useState<DecodableBook | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showReport, setShowReport] = useState(false);
+
+  // Phonics sibling switches reuse this hub without remounting unless keyed.
+  // Reload before book-complete writers so child A's academy progress cannot
+  // overwrite amynest:phonics-v3-reading-academy:{B}.
+  useEffect(() => {
+    setProgress(loadAcademyProgress(childId));
+    setFluency(loadAcademyFluencyState(childId));
+    setVocab(loadVocabularyState(childId));
+    setAchievements(loadAchievementState(childId));
+    setActiveBook(null);
+    setToast(null);
+    setShowReport(false);
+  }, [childId]);
 
   const fluencyTrend = useMemo(() => fluencyTrendSummary(fluency), [fluency]);
   const vocabStats = useMemo(() => vocabularyGrowthStats(vocab), [vocab]);

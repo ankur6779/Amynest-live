@@ -1024,6 +1024,7 @@ export function PhonicsV2({
           </summary>
           <div className="mt-2 space-y-4 pb-2">
             <ReadingAcademyHub
+              key={childId}
               childId={childId}
               childName={childName}
               totalAgeMonths={totalAgeMonths}
