@@ -41,7 +41,7 @@ import referralsRouter from "./referrals";
 import featuresRouter from "./features";
 import mealsRouter from "./meals";
 import accountRouter from "./account";
-import pushRouter from "./push";
+import pushRouter, { pushAnonymousPublicRouter } from "./push";
 import notificationsRouter from "./notifications";
 import notificationPrefsRouter from "./notification-prefs";
 import featureNotificationSchedulesRouter from "./feature-notification-schedules";
@@ -196,6 +196,9 @@ router.use(openaiRealtimeInfraRouter);
 // Unsigned first_open / install_source before Firebase login. Must stay
 // ahead of requireAuth; the handler itself is allowlisted + rate-limited.
 router.use(analyticsPreauthRouter);
+// Pre-signup FCM CRM — intentionally unauthenticated. Linking later requires
+// the same push token (see linkAnonymousDeviceToUser requirePushToken).
+router.use(pushAnonymousPublicRouter);
 router.use(requireAuth);
 router.use(driveRouter);
 router.use(worksheetsRouter);

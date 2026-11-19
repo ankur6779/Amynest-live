@@ -2,6 +2,12 @@
  * Anonymous device registry for pre-signup CRM push (Segment 2).
  * Tokens are mirrored into push_tokens under synthetic userId `anon:{deviceId}`
  * so the existing dispatch / claim / FCM pipeline stays intact.
+ *
+ * Linking an anonymous device to a signed-in user MUST prove push-token
+ * possession: the caller presents the same FCM token that was stored for that
+ * deviceId. Otherwise an attacker who knows a shared-tablet install id can
+ * plant their own token via register-anonymous and auto-receive the victim's
+ * private notifications after /push/register links the header device id.
  */
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { anonymousDevicesTable, db, pushTokensTable } from "@workspace/db";
@@ -10,6 +16,26 @@ const ANON_PREFIX = "anon:";
 
 export function anonymousUserId(deviceId: string): string {
   return `${ANON_PREFIX}${deviceId}`;
+}
+
+export type AnonymousLinkGate =
+  | { ok: true }
+  | { ok: false; reason: "missing_token" | "missing_stored" | "token_mismatch" };
+
+/**
+ * Pure gate used by linkAnonymousDeviceToUser (and unit tests).
+ * presentedPushToken must exactly match the token previously stored for the device.
+ */
+export function canLinkAnonymousDevice(params: {
+  storedPushToken: string | null | undefined;
+  presentedPushToken: string | null | undefined;
+}): AnonymousLinkGate {
+  const presented = params.presentedPushToken?.trim() ?? "";
+  if (!presented) return { ok: false, reason: "missing_token" };
+  const stored = params.storedPushToken?.trim() ?? "";
+  if (!stored) return { ok: false, reason: "missing_stored" };
+  if (stored !== presented) return { ok: false, reason: "token_mismatch" };
+  return { ok: true };
 }
 
 export interface RegisterAnonymousDeviceInput {
@@ -76,14 +102,23 @@ export async function registerAnonymousDevice(
 export async function linkAnonymousDeviceToUser(
   deviceId: string,
   userId: string,
-): Promise<{ linked: boolean }> {
+  opts: { requirePushToken: string },
+): Promise<{ linked: boolean; reason?: string }> {
   const [device] = await db
     .select()
     .from(anonymousDevicesTable)
     .where(eq(anonymousDevicesTable.deviceId, deviceId))
     .limit(1);
 
-  if (!device) return { linked: false };
+  if (!device) return { linked: false, reason: "not_found" };
+
+  const gate = canLinkAnonymousDevice({
+    storedPushToken: device.pushToken,
+    presentedPushToken: opts.requirePushToken,
+  });
+  if (!gate.ok) {
+    return { linked: false, reason: gate.reason };
+  }
 
   const syntheticUserId = anonymousUserId(deviceId);
 
