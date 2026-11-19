@@ -32,7 +32,13 @@ export default function SmartMathTricksPage() {
       }
     >
       {({ child, gate }) => (
-        <SmartMathTricks childName={child.name} ageYears={child.age} childId={child.id} gate={gate} />
+        <SmartMathTricks
+          key={child.id}
+          childName={child.name}
+          ageYears={child.age}
+          childId={child.id}
+          gate={gate}
+        />
       )}
     </HubModulePageShell>
   );
