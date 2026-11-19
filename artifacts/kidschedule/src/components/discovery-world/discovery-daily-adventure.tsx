@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   dailyAdventureCompletionPct,
   loadDailyAdventureProgress,
@@ -51,6 +51,21 @@ export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, 
     ),
   );
   const [celebrate, setCelebrate] = useState(false);
+
+  // Sibling switches on discovery/live pages reuse this hook without remounting
+  // unless keyed. Reload before record so child A's daily tasks cannot overwrite
+  // the active child's world daily-adventure key.
+  useEffect(() => {
+    setProgress(
+      loadDailyAdventureProgress(
+        readDaily(config.worldId, childId),
+        config.worldId,
+        childId,
+        config.manifest.items,
+      ),
+    );
+    setCelebrate(false);
+  }, [childId, config.worldId, config.manifest.items]);
 
   const record = (kind: DailyAdventureTaskKind, amount = 1) => {
     const result = recordDailyAdventureEvent(progress, kind, amount);
