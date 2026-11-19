@@ -708,7 +708,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time.title")} description={t("parent_hub.subsections.story-time.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">
-            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
+            <HubLazyContent><DailyStorySection key={effectiveChild.id} ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<Gamepad2 className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.fun-and-play.title")} description={t("parent_hub.subsections.fun-and-play.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(52,211,153,0.26)0%,rgba(34,197,94,0.12)100%)">
@@ -735,7 +735,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">
-            <HubLazyContent><DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
+            <HubLazyContent><DailyStorySection key={effectiveChild.id} ageMonths={totalAgeMonths} childName={effectiveChild.name} childId={effectiveChild.id} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
@@ -1675,7 +1675,7 @@ function ParentingHubPage() {
       return <FeatureGate reason="hub_locked" locked={isHubLocked("hub_activities")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <CreativityPremiumSection id="origami-studio" title={t("parent_hub.web_tiles.origami-studio.title")} description={t("parent_hub.web_tiles.origami-studio.description")} tryFree={tryFreeFor("hub_activities")} onOpen={() => markHubUsed("hub_activities")}>
             <Suspense fallback={<div className="rounded-3xl border border-white/10 bg-slate-950/50 p-4 text-sm font-bold text-white/70">{t("parent_hub.shell.loading_origami_studio")}</div>}>
-              <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} childId={effectiveChild.id} />
+              <DailyKidsActivity key={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} childId={effectiveChild.id} />
             </Suspense>
           </CreativityPremiumSection>
         </FeatureGate>;

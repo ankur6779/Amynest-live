@@ -126,6 +126,7 @@ export default function DiscoveryWorldLivePage() {
           </button>
         </div>
         <DiscoveryWorldExperience
+          key={activeChild.id}
           config={config}
           childId={activeChild.id}
           onEngage={onEngage}

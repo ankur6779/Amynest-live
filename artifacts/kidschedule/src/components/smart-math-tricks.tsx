@@ -1188,6 +1188,16 @@ export function SmartMathTricks({
   const [signals, setSignals] = useState<ChildLearningSignals>(() =>
     createLearningSignals(ageYears),
   );
+
+  // Hub sibling switches reuse SmartMathTricks without remounting unless keyed.
+  // Reload before any persist so writers cannot save child A's mastery/streak
+  // into amynest_math_tricks_{B}.
+  useEffect(() => {
+    setMathSt(loadMathState(childName));
+    setSignals(createLearningSignals(ageYears));
+    setTab("today");
+  }, [childName, ageYears]);
+
   const adaptationProfile: AdaptationProfile = useMemo(
     () => deriveAdaptationProfile(signals, ageYears),
     [signals, ageYears],

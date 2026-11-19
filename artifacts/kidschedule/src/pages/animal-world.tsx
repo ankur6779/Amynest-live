@@ -106,7 +106,7 @@ export default function AnimalWorldPage() {
             Parent Hub
           </button>
         </div>
-        <AnimalWorldExperience childId={activeChild.id} onEngage={onEngage} />
+        <AnimalWorldExperience key={activeChild.id} childId={activeChild.id} onEngage={onEngage} />
       </div>
     </LockedBlock>
   );

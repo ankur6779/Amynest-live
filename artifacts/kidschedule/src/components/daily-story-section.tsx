@@ -481,15 +481,34 @@ export function DailyStorySection({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const progressKey = `amynest:story-studio:${childName}:${new Date().toISOString().slice(0, 10)}`;
   const streakKey = `amynest:story-studio:streak:${childName}`;
-  const [progress, setProgress] = useState<StoryStudioProgress>(() => {
+  const readProgressForKey = (key: string): StoryStudioProgress => {
     try {
-      return JSON.parse(localStorage.getItem(progressKey) ?? '{"completed":{},"reactions":{},"quizAnswers":{}}');
+      return JSON.parse(
+        localStorage.getItem(key) ?? '{"completed":{},"reactions":{},"quizAnswers":{}}',
+      ) as StoryStudioProgress;
     } catch {
       return { completed: {}, reactions: {}, quizAnswers: {} };
     }
-  });
+  };
+  const [progress, setProgress] = useState<StoryStudioProgress>(() =>
+    readProgressForKey(progressKey),
+  );
   const [streak, setStreak] = useState(() => readStoryStreak(streakKey));
   const [celebration, setCelebration] = useState({ trigger: 0, amount: 0 });
+
+  // Parent Hub sibling switches reuse this section without remounting unless keyed.
+  // Reload before persist so child A's completed/quiz map cannot overwrite
+  // amynest:story-studio:{B}:…, and drop the prior child's story session id.
+  useEffect(() => {
+    setProgress(readProgressForKey(progressKey));
+    setStreak(readStoryStreak(streakKey));
+    setCelebration({ trigger: 0, amount: 0 });
+    setPlayingId(null);
+    setOpenStoryId(null);
+    setActiveStoryId(null);
+    setPage(0);
+    storySessionRef.current = null;
+  }, [childName, childId, progressKey, streakKey]);
   const {
     speak,
     pause,
