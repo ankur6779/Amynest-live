@@ -809,10 +809,14 @@ function PuzzleEngine({ childName, ageGroup, ageMonths }: {
     setTimerRunning(false);
   }, [ageMonths, childName]);
 
+  // Parent Hub sibling switches reuse PuzzleEngine unless keyed. Reload before
+  // saveState so child A's XP/streak cannot overwrite amynest_puzzle_v2_{B}.
   useEffect(() => {
-    init(state);
+    const next = loadState(childName, ageGroup);
+    setState(next);
+    init(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [childName, ageGroup]);
 
   useEffect(() => {
     if (!cur || done) return;

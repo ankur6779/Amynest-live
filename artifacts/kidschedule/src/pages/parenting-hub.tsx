@@ -720,7 +720,7 @@ function ActivitiesSection({
           </SubSection>
 
           {ageGroup === "preschool" && <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-pre.title")} description={t("parent_hub.subsections.daily-puzzle-pre.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
-              <HubLazyContent><DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} /></HubLazyContent>
+              <HubLazyContent><DailyPuzzle key={effectiveChild.id} childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} /></HubLazyContent>
             </SubSection>}
 
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">
@@ -739,7 +739,7 @@ function ActivitiesSection({
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">
-            <HubLazyContent><DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} /></HubLazyContent>
+            <HubLazyContent><DailyPuzzle key={effectiveChild.id} childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-older.title")} description={t("parent_hub.subsections.parent-tasks-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(45,212,191,0.26)0%,rgba(34,211,238,0.12)100%)">
@@ -1379,7 +1379,7 @@ function ParentingHubPage() {
       const infantMonths = hubSurface.current === "previous"
         ? Math.min(totalAgeMonths, 23)
         : totalAgeMonths;
-      return <HubLazyContent><InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={infantMonths} /></HubLazyContent>;
+      return <HubLazyContent><InfantHub key={effectiveChild.id} childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={infantMonths} /></HubLazyContent>;
     }
   }, {
     id: "tomorrow-forecast",
