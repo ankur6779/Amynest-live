@@ -178,6 +178,9 @@ function useSleepLog(childId: number | undefined, childName: string) {
 
   useEffect(() => {
     let cancelled = false;
+    // Sync reset before any wake/down tap can race the API hydrate — otherwise
+    // child A's in-memory events persist under amynest:sleep:{B}.
+    setLog(loadSleepLog(childName));
     const hydrate = async () => {
       if (childId != null) {
         const apiLog = await loadSleepLogFromApi(childId, authFetch);
@@ -743,16 +746,27 @@ export function RoutineBuilder({
     toast
   } = useToast();
   const storageKey = `amynest:routine:${childName}`;
-  const [items, setItems] = useState<RoutineItem[]>(() => {
+  const readRoutine = (key: string, months: number): RoutineItem[] => {
     try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) return JSON.parse(raw);
+      const raw = localStorage.getItem(key);
+      if (raw) return JSON.parse(raw) as RoutineItem[];
     } catch (e) { console.error("REAL ERROR:", e); }
-    return generateRoutine(ageMonths);
-  });
+    return generateRoutine(months);
+  };
+  const [items, setItems] = useState<RoutineItem[]>(() => readRoutine(storageKey, ageMonths));
   const [editing, setEditing] = useState<string | null>(null);
   const [editTime, setEditTime] = useState("");
   const [editActivity, setEditActivity] = useState("");
+
+  // Infant Hub sibling switches reuse RoutineBuilder unless keyed. Reload before
+  // persist so child A's bedtime items cannot overwrite amynest:routine:{B}.
+  useEffect(() => {
+    setItems(readRoutine(storageKey, ageMonths));
+    setEditing(null);
+    setEditTime("");
+    setEditActivity("");
+  }, [storageKey, ageMonths]);
+
   const persist = (next: RoutineItem[]) => {
     setItems(next);
     try {
