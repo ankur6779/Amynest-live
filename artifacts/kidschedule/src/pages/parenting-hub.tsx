@@ -731,7 +731,7 @@ function ActivitiesSection({
       {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
       {isOlder && <>
           <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-older.title")} description={t("parent_hub.subsections.skills-to-focus-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(129,140,248,0.26)0%,rgba(168,85,247,0.12)100%)">
-            <HubLazyContent><SkillFocusSection group={ageGroup} childName={effectiveChild.name} /></HubLazyContent>
+            <HubLazyContent><SkillFocusSection key={effectiveChild.id} group={ageGroup} childName={effectiveChild.name} /></HubLazyContent>
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">

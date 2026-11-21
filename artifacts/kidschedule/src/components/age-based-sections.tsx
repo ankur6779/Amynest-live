@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,17 +21,27 @@ interface SkillFocusSectionProps {
  childName: string;
 }
 
+function loadGrowthMissionCompleted(missionKey: string): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(missionKey) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
 export function SkillFocusSection({ group, childName }: SkillFocusSectionProps) {
  const skills = SKILL_FOCUS_BY_GROUP[group];
  const missionKey = `amynest:growth-mission:${group}:${childName}:${new Date().toISOString().slice(0, 10)}`;
- const [completed, setCompleted] = useState<Record<string, boolean>>(() => {
-   try {
-     return JSON.parse(localStorage.getItem(missionKey) ?? "{}");
-   } catch {
-     return {};
-   }
- });
+ const [completed, setCompleted] = useState<Record<string, boolean>>(() =>
+   loadGrowthMissionCompleted(missionKey),
+ );
  const [celebration, setCelebration] = useState({ trigger: 0, amount: 0 });
+ // Parent Hub sibling switches reuse this section unless keyed. Reload before
+ // completeMission so child A's map cannot overwrite amynest:growth-mission:*:{B}:*.
+ useEffect(() => {
+   setCompleted(loadGrowthMissionCompleted(missionKey));
+   setCelebration({ trigger: 0, amount: 0 });
+ }, [missionKey]);
  const missions = useMemo(() => skills.map((skill, index) => buildGrowthMission(skill, index)), [skills]);
  const insight = missions.find((m) => /critical|thinking|focus|discipline/i.test(m.skill)) ?? missions[0];
  const completedCount = missions.filter((m) => completed[m.skill]).length;
