@@ -819,9 +819,19 @@ class MainActivity : AppCompatActivity() {
     /**
      * Convert a server-side deepLink path (e.g. "/routines/3", "/meals") to a
      * full URL. Uses path-based routing so wouter handles navigation client-side.
+     *
+     * Absolute http(s) values are only accepted for AmyNest hosts. Notification
+     * extras / FCM data on the exported MainActivity must never load an
+     * arbitrary origin into the WebView (Auth/Billing JS inject bridges are
+     * visible to every origin loaded in that WebView — see open #246).
      */
     private fun deepLinkToUrl(path: String, category: String? = null): String {
-        if (path.startsWith("http://") || path.startsWith("https://")) return path
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            val uri = Uri.parse(path)
+            if (isAllowedAmyNestHttps(uri)) return path
+            Log.w(TAG, "Rejected non-AmyNest absolute deepLink host=${uri.host}")
+            return "$BASE_URL${NotifCategory.from(category).fallbackDeepLink}"
+        }
         val normalized = when {
             path.startsWith("/") -> path
             path.isNotBlank() -> "/$path"
