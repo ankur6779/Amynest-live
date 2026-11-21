@@ -127,6 +127,7 @@ export default function PhonicsTestPlayPage() {
             }}
           >
             <PhonicsTest
+              key={childId}
               childId={childId}
               childName={childName}
               totalAgeMonths={totalAgeMonths}

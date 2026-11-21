@@ -958,19 +958,40 @@ function PhonicsTestContent({
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(resumeKey);
-      if (!raw) return;
+      if (!raw) {
+        setResumeSession(null);
+        return;
+      }
       const saved = JSON.parse(raw) as SavedTestSession;
       if (new Date(saved.expiresAt).getTime() <= Date.now()) {
         window.localStorage.removeItem(resumeKey);
+        setResumeSession(null);
         return;
       }
       if (saved.index < saved.data.questions.length) {
         setResumeSession(saved);
+      } else {
+        setResumeSession(null);
       }
     } catch {
       window.localStorage.removeItem(resumeKey);
+      setResumeSession(null);
     }
   }, [resumeKey]);
+
+  // Sibling chips on /phonics reuse PhonicsTest unless remounted. Drop the
+  // prior child's running session before persistResume can write under the new
+  // amynest:phonics-test-resume:{childId} key.
+  useEffect(() => {
+    setPhase({ kind: "idle" });
+    setStartError(null);
+    setAvailError(null);
+    setSecondsLeft(null);
+    if (timerRef.current != null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [numericChildId]);
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -978,7 +999,7 @@ function PhonicsTestContent({
     if (type === "daily" || type === "weekly") {
       setPhase({ kind: "mode-pick", testType: type });
     }
-  }, [search, initialTestType]);
+  }, [search, initialTestType, numericChildId]);
 
   const eligible = totalAgeMonths >= 12 && (availability?.eligible ?? totalAgeMonths >= 12);
 

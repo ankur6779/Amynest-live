@@ -469,6 +469,7 @@ function PhonicsLearningContent({
       <div id="phonics-daily-quiz" className="scroll-mt-24">
         <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
           <PhonicsTest
+            key={`daily-${childId}`}
             childId={childId}
             childName={childName}
             totalAgeMonths={totalAgeMonths}
@@ -578,6 +579,7 @@ function PhonicsLearningContent({
             <div id="phonics-test" className="scroll-mt-24 border-t border-border px-4 pb-4 pt-2">
               <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
                 <PhonicsTest
+                  key={`weekly-${childId}`}
                   childId={childId}
                   childName={childName}
                   totalAgeMonths={totalAgeMonths}
