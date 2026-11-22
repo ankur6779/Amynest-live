@@ -75,10 +75,13 @@ export function evaluateHeavyRouteRequest(
   if (recentCalls.length >= LOOP_THRESHOLD) {
     logger.warn(
       { evt: "api.loop_detected", userId, path, count: recentCalls.length, group },
-      "Repeated API calls within 2s — returning cache/fallback",
+      "Repeated API calls within 2s — returning cache or allowing live",
     );
     if (cached != null) return { action: "respond", body: cached, reason: "loop_cache" };
-    return { action: "fallback", reason: "loop_detected" };
+    // Match rate_limit_no_cache: never synthesize a FREE subscription body.
+    // A loop-detected FREE fallback is HTTP 200 and gets persisted by clients,
+    // which can downgrade paid users until a later live read succeeds.
+    return { action: "proceed" };
   }
 
   const rateKey = `${group}:${routeKey(userId, path)}`;
@@ -132,6 +135,14 @@ export async function waitForHeavyRouteCache(
     await new Promise((r) => setTimeout(r, IN_FLIGHT_POLL_MS));
   }
   return getCachedHeavyResponse(userId, path);
+}
+
+/** Test-only: clear in-memory guard maps between cases. */
+export function resetProductionGuardStateForTests(): void {
+  responseCache.clear();
+  rateTimestamps.clear();
+  callHistory.clear();
+  inFlightKeys.clear();
 }
 
 /** Trim expired entries and cap map sizes — called every 60s. */

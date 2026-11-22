@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EMPTY_DASHBOARD_SUMMARY,
   fetchDashboardSummaryResilient,
+  fetchSubscriptionResilient,
   formatDashboardSyncLabel,
   hasDashboardStaleCache,
   persistDashboardSummary,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/dashboard-data-cache";
 import type { SubscriptionResponse } from "@/hooks/use-subscription";
 import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
+import { getApiUrl } from "@/lib/api";
 
 describe("dashboard-data-cache", () => {
   beforeEach(() => {
@@ -87,5 +89,37 @@ describe("dashboard-data-cache", () => {
     expect(cached?.entitlements.isPremium).toBe(false);
     expect(cached?.entitlements.plan).toBe("free");
     expect(cached?.entitlements.provider).toBe("none");
+  });
+
+  it("rejects degraded subscription fallback and does not persist FREE over premium cache", async () => {
+    const premium: SubscriptionResponse = {
+      ...EMPTY_SUBSCRIPTION_RESPONSE,
+      entitlements: {
+        ...EMPTY_SUBSCRIPTION_RESPONSE.entitlements,
+        plan: "yearly",
+        status: "active",
+        isPremium: true,
+        currentPeriodEnd: "2099-01-01T00:00:00.000Z",
+        provider: "revenuecat",
+      },
+    };
+    persistSubscription(premium, "paid_user");
+    const before = localStorage.getItem("amynest:dashboard:subscription:v1:paid_user");
+
+    const authFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ...EMPTY_SUBSCRIPTION_RESPONSE,
+          fallback: true,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(fetchSubscriptionResilient(authFetch, "paid_user")).rejects.toThrow(
+      "subscription_degraded_fallback",
+    );
+    expect(authFetch).toHaveBeenCalledWith(getApiUrl("/api/subscription"));
+    expect(localStorage.getItem("amynest:dashboard:subscription:v1:paid_user")).toBe(before);
   });
 });
