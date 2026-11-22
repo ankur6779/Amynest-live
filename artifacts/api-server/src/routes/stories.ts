@@ -28,6 +28,7 @@ import {
   storyWatchProgressTable,
   type StoryContent,
 } from "@workspace/db";
+import { resolveStoryWatchProgressPositionSec } from "../lib/storyWatchProgressPosition.js";
 
 const router: IRouter = Router();
 
@@ -601,13 +602,21 @@ router.post("/progress", async (req, res) => {
       completed ??
       (durationSec !== undefined && positionSec / Math.max(1, durationSec) >= 0.95);
 
+    // Resume autoplay can POST positionSec=0 before the client seek finishes.
+    // Never let that wipe a durable mid-story row (Continue Watching uses > 5).
+    const insertPositionSec = resolveStoryWatchProgressPositionSec({
+      incomingPositionSec: positionSec,
+      existingPositionSec: 0,
+      isCompleted,
+    });
+
     await db
       .insert(storyWatchProgressTable)
       .values({
         childId,
         userId,
         storyId,
-        positionSec: isCompleted ? 0 : positionSec,
+        positionSec: insertPositionSec,
         durationSec: durationSec ?? null,
         playCount: 1,
         completed: isCompleted,
@@ -619,7 +628,9 @@ router.post("/progress", async (req, res) => {
           storyWatchProgressTable.storyId,
         ],
         set: {
-          positionSec: isCompleted ? 0 : positionSec,
+          positionSec: isCompleted
+            ? 0
+            : sql`GREATEST(${storyWatchProgressTable.positionSec}, ${positionSec})`,
           ...(durationSec !== undefined ? { durationSec } : {}),
           completed: isCompleted,
           // Bump play_count only when the client signals a new session.
