@@ -108,6 +108,8 @@ export type PlanCard = {
 export type SubscriptionResponse = {
   entitlements: Entitlements;
   plans: PlanCard[];
+  /** Set by degraded API guards — never treat as authoritative entitlements. */
+  fallback?: boolean;
 };
 
 export const subscriptionQueryKey = (userId: string | null | undefined) =>

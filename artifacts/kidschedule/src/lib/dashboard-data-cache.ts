@@ -270,9 +270,19 @@ export async function fetchSubscriptionResilient(
   try {
     const data = await fetchJson<SubscriptionResponse>(authFetch, "/api/subscription");
     if (!data?.entitlements?.limits) return EMPTY_SUBSCRIPTION_RESPONSE;
+    // Heavy-route / safeRoute degraded bodies are HTTP 200 with fallback:true and
+    // FREE entitlements. Persisting or resolving them as truth flips paid users
+    // to FREE and can clear Learning Zone premium caches. Rethrow so React Query
+    // keeps the previous successful premium snapshot instead of resolving FREE.
+    if (data.fallback) {
+      throw new Error("subscription_degraded_fallback");
+    }
     persistSubscription(data, userId);
     return data;
   } catch (err) {
+    if (err instanceof Error && err.message === "subscription_degraded_fallback") {
+      throw err;
+    }
     console.warn("[dashboard] subscription fetch failed", err);
     return readCachedSubscription(userId) ?? EMPTY_SUBSCRIPTION_RESPONSE;
   }
