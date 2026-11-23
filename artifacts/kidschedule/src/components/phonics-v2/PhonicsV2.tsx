@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import type { PhonicsLevel } from "@/lib/phonics-content";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
@@ -303,7 +303,9 @@ export function PhonicsV2({
     return () => clearTimeout(timer);
   }, [practiceWords, mastery]);
 
-  useEffect(() => {
+  // useLayoutEffect so dailySession/sessionActive clear before child runners'
+  // passive persist effects can key in-memory A state under B's resume keys.
+  useLayoutEffect(() => {
     setFamilyProgress(loadFamilyProgress(childId));
     setJourneyProgress(loadV2JourneyProgress(childId));
     setPronunciation(loadPronunciationScores(childId));

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -86,8 +86,21 @@ export function ReadingLessonRunner({
   const [showSegmentBonus, setShowSegmentBonus] = useState(false);
   const [coachEvals, setCoachEvals] = useState<CoachEvaluation[]>([]);
   const coachEnabled = typeof childId === "number" && childId > 0;
+  // Bind durable resume writes to the child this runner instance was opened for.
+  // Sibling chips can flip `childId` to B while in-memory `state` is still A's;
+  // persisting in that window overwrites `amynest:phonics-lesson-resume:{B}`.
+  const mountedForChildIdRef = useRef(childId);
 
   useEffect(() => {
+    // Cross-child reuse: leave the new child's resume untouched; parent should
+    // tear this runner down (PhonicsV2 clears dailySession on child switch).
+    if (
+      typeof childId === "number" &&
+      typeof mountedForChildIdRef.current === "number" &&
+      childId !== mountedForChildIdRef.current
+    ) {
+      return;
+    }
     const resumed =
       typeof childId === "number" && childId > 0
         ? applyResumeToState(target, loadLessonResume(childId))
@@ -100,6 +113,7 @@ export function ReadingLessonRunner({
 
   useEffect(() => {
     if (!coachEnabled || typeof childId !== "number") return;
+    if (childId !== mountedForChildIdRef.current) return;
     if (state.complete) {
       clearLessonResume(childId);
       return;
@@ -466,7 +480,12 @@ export function ReadingLessonRunner({
           type="button"
           className="mx-auto block min-h-12 px-4 text-[11px] text-muted-foreground underline"
           onClick={() => {
-            if (typeof childId === "number" && childId > 0 && !state.complete) {
+            if (
+              typeof childId === "number" &&
+              childId > 0 &&
+              childId === mountedForChildIdRef.current &&
+              !state.complete
+            ) {
               saveLessonResumeForce(childId, state);
             }
             onCancel();
