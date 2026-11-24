@@ -4,6 +4,7 @@ import type { CoachWinListenFields } from "../coachPlanCacheKey.js";
 export async function runCoachAudioPregenerate(input: {
   planCacheKey: string;
   wins: CoachWinListenFields[];
+  userId?: string;
 }): Promise<{
   ok: true;
   total: number;
@@ -11,6 +12,7 @@ export async function runCoachAudioPregenerate(input: {
   failed: number;
   cached: number;
   skipped: number;
+  rateLimited: number;
 }> {
   return pregenerateCoachPlanAudio(input);
 }
