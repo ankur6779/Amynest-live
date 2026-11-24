@@ -17,12 +17,22 @@ describe("clearUserSessionCaches", () => {
     localStorage.setItem("onboardingComplete", "true");
     localStorage.setItem("amynest:dashboard:children:v1", JSON.stringify([{ id: 1, name: "A", age: 5 }]));
     localStorage.setItem("amynest:hub:activeChildId", "1");
+    localStorage.setItem(
+      "amynest:learning-sync:v1:uid-a",
+      JSON.stringify({
+        queue: [{ clientId: "x", childId: 1, activityId: "a", section: "phonics", correct: true, at: "t", attempts: 0, nextAttemptAt: 0 }],
+        recent: [],
+        diag: {},
+      }),
+    );
 
     clearUserSessionCaches();
 
     expect(readOnboardingCache().onboardingComplete).toBe(false);
     expect(readCachedChildrenList()).toBeUndefined();
     expect(localStorage.getItem("amynest:hub:activeChildId")).toBeNull();
+    // Per-user learning queue must survive account switch so pending XP is not burned.
+    expect(localStorage.getItem("amynest:learning-sync:v1:uid-a")).toContain("phonics");
   });
 
   it("tracks session uid across logins on the same device", () => {

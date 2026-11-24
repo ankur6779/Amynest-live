@@ -19,8 +19,14 @@ import {
 } from "./learning-sync-engine";
 import { recordTelemetry } from "./telemetry-engine";
 
-const SYNC_STORAGE_KEY = "amynest:learning-sync:v1";
+const SYNC_STORAGE_KEY_PREFIX = "amynest:learning-sync:v1";
+const LEGACY_SYNC_STORAGE_KEY = SYNC_STORAGE_KEY_PREFIX;
 const REWARD_BUS_STORAGE_KEY = "amynest:reward-bus:last";
+
+function syncStorageKeyForUser(userId: string | null | undefined): string | null {
+  if (!userId || userId.length === 0) return null;
+  return `${SYNC_STORAGE_KEY_PREFIX}:${userId}`;
+}
 
 const STALE_PENDING_MS = 30 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
@@ -48,27 +54,36 @@ interface PersistedSyncShape {
   diag?: unknown;
 }
 
-function readSyncStorage(): { raw: string | null; parsed: PersistedSyncShape | null; corrupt: boolean } {
+function readSyncStorage(userId: string | null | undefined): {
+  key: string | null;
+  raw: string | null;
+  parsed: PersistedSyncShape | null;
+  corrupt: boolean;
+} {
   if (typeof window === "undefined") {
-    return { raw: null, parsed: null, corrupt: false };
+    return { key: null, raw: null, parsed: null, corrupt: false };
   }
-  const raw = window.localStorage.getItem(SYNC_STORAGE_KEY);
-  if (!raw) return { raw: null, parsed: null, corrupt: false };
+  const key = syncStorageKeyForUser(userId);
+  if (!key) return { key: null, raw: null, parsed: null, corrupt: false };
+  const raw =
+    window.localStorage.getItem(key) ??
+    window.localStorage.getItem(LEGACY_SYNC_STORAGE_KEY);
+  if (!raw) return { key, raw: null, parsed: null, corrupt: false };
   try {
     const parsed = JSON.parse(raw) as PersistedSyncShape;
     if (parsed && typeof parsed === "object") {
-      return { raw, parsed, corrupt: false };
+      return { key, raw, parsed, corrupt: false };
     }
-    return { raw, parsed: null, corrupt: true };
+    return { key, raw, parsed: null, corrupt: true };
   } catch {
-    return { raw, parsed: null, corrupt: true };
+    return { key, raw, parsed: null, corrupt: true };
   }
 }
 
-function writeSyncStorage(parsed: PersistedSyncShape): void {
+function writeSyncStorage(key: string, parsed: PersistedSyncShape): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SYNC_STORAGE_KEY, JSON.stringify(parsed));
+    window.localStorage.setItem(key, JSON.stringify(parsed));
   } catch {
     /* swallow */
   }
@@ -150,7 +165,7 @@ function checkRewardDesync(diag: SyncDiagnostics): boolean {
  * after a long network drop. Returns a report so the debug page (and
  * telemetry) can see what happened.
  */
-export function runResilienceSweep(): ResilienceReport {
+export function runResilienceSweep(userId?: string | null): ResilienceReport {
   const notes: string[] = [];
   const report: ResilienceReport = {
     removedCorruptedPayload: false,
@@ -166,11 +181,16 @@ export function runResilienceSweep(): ResilienceReport {
     recordTelemetry("offline_session", networkEvents.length, { kind: "flap" });
   }
 
-  const { raw, parsed, corrupt } = readSyncStorage();
+  const { key, raw, parsed, corrupt } = readSyncStorage(userId);
+  if (!key) {
+    notes.push("no signed-in user — skip learning-sync prune");
+    return report;
+  }
   if (raw && corrupt) {
     if (typeof window !== "undefined") {
       try {
-        window.localStorage.removeItem(SYNC_STORAGE_KEY);
+        window.localStorage.removeItem(key);
+        window.localStorage.removeItem(LEGACY_SYNC_STORAGE_KEY);
       } catch {
         /* swallow */
       }
@@ -186,7 +206,7 @@ export function runResilienceSweep(): ResilienceReport {
     report.removedStaleEntries = pruned.removedStaleEntries;
     report.removedDuplicateEntries = pruned.removedDuplicateEntries;
     if (pruned.removedStaleEntries > 0 || pruned.removedDuplicateEntries > 0) {
-      writeSyncStorage(parsed);
+      writeSyncStorage(key, parsed);
       notes.push(
         `pruned ${pruned.removedStaleEntries} stale + ${pruned.removedDuplicateEntries} dup entries`,
       );
@@ -208,11 +228,12 @@ export function runResilienceSweep(): ResilienceReport {
 
 /** Hook-friendly schedule — re-runs on focus/online. Returns latest report. */
 export function startResilienceWatcher(opts?: {
+  userId?: string | null;
   onReport?: (r: ResilienceReport) => void;
 }): () => void {
   if (typeof window === "undefined") return () => {};
   const handler = () => {
-    const r = runResilienceSweep();
+    const r = runResilienceSweep(opts?.userId);
     opts?.onReport?.(r);
   };
   window.addEventListener("focus", handler);

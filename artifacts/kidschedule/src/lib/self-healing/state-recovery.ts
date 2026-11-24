@@ -9,6 +9,7 @@ import { recoverQueriesForRoute } from "@/lib/self-healing/query-recovery";
 
 const CORRUPT_STORAGE_PATTERNS = [
   /^amynest:learning-sync:v1$/,
+  /^amynest:learning-sync:v1:/,
   /^amynest:reward-bus:/,
 ];
 

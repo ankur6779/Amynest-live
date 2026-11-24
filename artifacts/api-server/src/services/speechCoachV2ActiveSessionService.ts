@@ -366,7 +366,23 @@ export async function validateAndTouchSession(input: {
     );
   }
 
-  return db.transaction(async (tx) => {
+  // Limit exhaustion must commit charge + terminate, then surface 429 *after*
+  // the transaction. Throwing SessionError inside the txn rolled back both,
+  // leaving caps unenforceable and the row status=active (zombie / free restart).
+  type TouchOk = {
+    ok: true;
+    sessionState: PersistedSessionState;
+    secondsConsumed: number;
+    remainingSeconds: number;
+  };
+  type TouchLimit = {
+    ok: false;
+    message: string;
+    code: string;
+    status: number;
+  };
+
+  const outcome = await db.transaction(async (tx): Promise<TouchOk | TouchLimit> => {
     const rows = await tx
       .select()
       .from(speechCoachV2ActiveSessionsTable)
@@ -425,19 +441,20 @@ export async function validateAndTouchSession(input: {
         .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
 
       if (limitReached) {
-        throw new SpeechCoachV2SessionError(
-          firstUseExhausted
+        return {
+          ok: false,
+          message: firstUseExhausted
             ? SPEECH_COACH_V2_FIRST_USE_EXHAUSTED_MESSAGE
             : "Session time limit reached.",
-          firstUseExhausted ? "first_use_limit_reached" : "session_limit_reached",
-          429,
-        );
+          code: firstUseExhausted ? "first_use_limit_reached" : "session_limit_reached",
+          status: 429,
+        };
       }
 
       return {
+        ok: true,
         sessionState: row.sessionStateJson as unknown as PersistedSessionState,
         secondsConsumed: nextConsumed,
-        limitReached: false,
         remainingSeconds: firstUse.remainingAfter,
       };
     }
@@ -470,25 +487,26 @@ export async function validateAndTouchSession(input: {
       .where(eq(speechCoachV2ActiveSessionsTable.id, row.id));
 
     if (limitReached) {
-      throw new SpeechCoachV2SessionError(
-        sessionCapReached
+      return {
+        ok: false,
+        message: sessionCapReached
           ? "Session time limit reached."
           : usage.monthlyLimitReached
             ? "Monthly speech limit reached."
             : "Daily speech limit reached.",
-        sessionCapReached
+        code: sessionCapReached
           ? "session_limit_reached"
           : usage.monthlyLimitReached
             ? "monthly_limit_reached"
             : "daily_limit_reached",
-        429,
-      );
+        status: 429,
+      };
     }
 
     return {
+      ok: true,
       sessionState: row.sessionStateJson as unknown as PersistedSessionState,
       secondsConsumed: nextConsumed,
-      limitReached: false,
       remainingSeconds: remainingSpeechCoachSeconds({
         dailyUsedSeconds: usage.dailyUsed,
         dailyLimitSeconds: policy.dailyLimitSeconds,
@@ -497,6 +515,17 @@ export async function validateAndTouchSession(input: {
       }),
     };
   });
+
+  if (!outcome.ok) {
+    throw new SpeechCoachV2SessionError(outcome.message, outcome.code, outcome.status);
+  }
+
+  return {
+    sessionState: outcome.sessionState,
+    secondsConsumed: outcome.secondsConsumed,
+    limitReached: false,
+    remainingSeconds: outcome.remainingSeconds,
+  };
 }
 
 export async function updateSessionState(input: {
