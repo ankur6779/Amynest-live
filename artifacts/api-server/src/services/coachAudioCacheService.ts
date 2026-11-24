@@ -14,6 +14,7 @@ import {
   type CoachWinListenFields,
 } from "./coachPlanCacheKey.js";
 import { INFANT_PROBLEMS } from "@workspace/infant-problems";
+import { isTtsRateLimitedError } from "./ttsCostGuardService.js";
 
 export {
   buildCoachPlanCacheKey,
@@ -29,6 +30,8 @@ export type CoachWinAudioInput = {
   winIndex: number;
   text?: string;
   win?: CoachWinListenFields;
+  /** When set, cache-miss TTS charges daily tts_generation for this user. */
+  userId?: string;
 };
 
 export type CoachWinAudioResult = {
@@ -149,11 +152,20 @@ export async function generateAndCacheCoachWinAudio(
   const modelId = getAmyTtsModelId();
   const genStarted = performance.now();
 
-  const generated = await synthesizeElevenLabsFallback(text, {
-    voiceId,
-    modelId,
-    mode: "default",
-  });
+  const generationCtx =
+    input.userId && input.userId !== "anonymous"
+      ? { userId: input.userId, route: "ai-coach/audio" as const }
+      : undefined;
+
+  const generated = await synthesizeElevenLabsFallback(
+    text,
+    {
+      voiceId,
+      modelId,
+      mode: "default",
+    },
+    generationCtx,
+  );
   if (!generated || !isValidTtsPublicUrl(generated.audioUrl)) return null;
 
   const audioUrl = resolveTtsPlaybackUrl(generated.cacheKey) ?? generated.audioUrl;
@@ -226,6 +238,7 @@ export async function generateAndCacheCoachWinAudio(
 export async function pregenerateCoachPlanAudio(input: {
   planCacheKey: string;
   wins: CoachWinListenFields[];
+  userId?: string;
 }): Promise<{
   ok: true;
   total: number;
@@ -233,29 +246,49 @@ export async function pregenerateCoachPlanAudio(input: {
   failed: number;
   cached: number;
   skipped: number;
+  rateLimited: number;
 }> {
   if (isPregenerationPaused()) {
-    return { ok: true, total: 0, succeeded: 0, failed: 0, cached: 0, skipped: 0 };
+    return {
+      ok: true,
+      total: 0,
+      succeeded: 0,
+      failed: 0,
+      cached: 0,
+      skipped: 0,
+      rateLimited: 0,
+    };
   }
 
   const wins = input.wins.filter((w) => w.win >= 1).slice(0, 20);
-  const results = await Promise.allSettled(
-    wins.map((win) =>
-      generateAndCacheCoachWinAudio({
+  let succeeded = 0;
+  let failed = 0;
+  let cached = 0;
+  let rateLimited = 0;
+
+  // Sequential so a daily/burst 429 stops further provider spend for this user.
+  for (const win of wins) {
+    try {
+      const result = await generateAndCacheCoachWinAudio({
         planCacheKey: input.planCacheKey,
         winIndex: win.win,
         win,
-      }),
-    ),
-  );
-
-  const succeeded = results.filter((r) => r.status === "fulfilled" && r.value).length;
-  const failed = results.filter(
-    (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value),
-  ).length;
-  const cached = results.filter(
-    (r) => r.status === "fulfilled" && r.value?.cached,
-  ).length;
+        userId: input.userId,
+      });
+      if (!result) {
+        failed += 1;
+        continue;
+      }
+      succeeded += 1;
+      if (result.cached) cached += 1;
+    } catch (err) {
+      if (isTtsRateLimitedError(err)) {
+        rateLimited += 1;
+        break;
+      }
+      failed += 1;
+    }
+  }
 
   return {
     ok: true,
@@ -264,6 +297,7 @@ export async function pregenerateCoachPlanAudio(input: {
     failed,
     cached,
     skipped: 0,
+    rateLimited,
   };
 }
 
@@ -290,6 +324,7 @@ export async function pregenerateAllInfantCoachAudio(): Promise<{
     if (!problem.wins?.length) continue;
     problems++;
     const planCacheKey = buildInfantCoachPlanCacheKey(problem.id);
+    // Shared infant corpus warm — no per-user quota (bounded static problem set).
     const batch = await pregenerateCoachPlanAudio({
       planCacheKey,
       wins: problem.wins as CoachWinListenFields[],

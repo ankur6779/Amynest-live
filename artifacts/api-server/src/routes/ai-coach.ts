@@ -1726,7 +1726,7 @@ router.post("/ai-coach/pregenerate-audio", asyncRoute(async (req, res): Promise<
     routeName: "ai-coach/pregenerate-audio",
     type: "ai-coach.pregenerate_audio",
     userId,
-    input: { planCacheKey, wins },
+    input: { planCacheKey, wins, userId },
     waitMs: 120_000,
     buildSyncBody: (result) => result as Record<string, unknown>,
     res,
@@ -1762,6 +1762,7 @@ router.post("/ai-coach/audio/generate", asyncRoute(async (req, res): Promise<voi
       winIndex,
       text: text || undefined,
       win: rawWin,
+      userId,
     });
     if (!result) {
       res.status(502).json({ ok: false, error: "tts_failed" });
@@ -1777,6 +1778,13 @@ router.post("/ai-coach/audio/generate", asyncRoute(async (req, res): Promise<voi
       cached: result.cached,
     });
   } catch (err) {
+    const { isTtsRateLimitedError, ttsRateLimitResponseBody } = await import(
+      "../services/ttsCostGuardService.js"
+    );
+    if (isTtsRateLimitedError(err)) {
+      res.status(429).json(ttsRateLimitResponseBody(err));
+      return;
+    }
     logger.error(
       {
         evt: "coach_audio.generate_failed",

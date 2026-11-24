@@ -52,7 +52,9 @@ router.post("/audio-lessons/pregenerate", async (req, res): Promise<void> => {
     routeName: "audio-lessons/pregenerate",
     type: "audio-lessons.pregenerate",
     userId,
-    input: { texts: validTexts },
+    // userId must be inside the job input so the worker can build generationCtx
+    // for assertTtsCacheMissAllowed (dispatchAiJob does not receive opts.userId).
+    input: { texts: validTexts, userId },
     waitMs: 120_000,
     buildSyncBody: (result) => {
       const body = result as {
@@ -62,6 +64,7 @@ router.post("/audio-lessons/pregenerate", async (req, res): Promise<void> => {
         failed: number;
         cached: number;
         skipped: number;
+        rateLimited?: number;
       };
       logger.info(
         {
@@ -71,6 +74,7 @@ router.post("/audio-lessons/pregenerate", async (req, res): Promise<void> => {
           succeeded: body.succeeded,
           failed: body.failed,
           cached: body.cached,
+          rateLimited: body.rateLimited ?? 0,
           skipped,
         },
         "audio lessons pregenerate complete",

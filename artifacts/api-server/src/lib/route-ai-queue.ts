@@ -10,7 +10,12 @@ const TTS_ENQUEUE_RATE_LIMIT = {
 };
 
 function rateLimitOptionsForJobType(type: AiJobType): SubmitAiJobOptions["rateLimitOptions"] {
-  if (type === "tts.synthesize" || type === "tts.pregenerate") {
+  if (
+    type === "tts.synthesize" ||
+    type === "tts.pregenerate" ||
+    type === "audio-lessons.pregenerate" ||
+    type === "ai-coach.pregenerate_audio"
+  ) {
     return TTS_ENQUEUE_RATE_LIMIT;
   }
   return undefined;
