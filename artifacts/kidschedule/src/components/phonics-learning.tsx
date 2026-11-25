@@ -433,6 +433,7 @@ function PhonicsLearningContent({
   return <div id="phonics-learning" className="space-y-4 scroll-mt-24">
       {typeof childId === "number" && (
         <PhonicsJourneyHub
+          key={childId}
           childId={childId}
           childName={childName}
           totalAgeMonths={totalAgeMonths}
