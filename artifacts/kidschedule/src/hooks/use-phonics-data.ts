@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { useMountedRef } from "@/hooks/use-safe-async";
@@ -357,6 +357,28 @@ export function usePhonicsData(
     });
   }, [authFetch, childId, level, phonicsPrewarmPlan]);
 
+  // Wipe per-child caches in useLayoutEffect so sibling-chip switches reload
+  // this child's local progress before PhonicsJourneyHub passive sync effects
+  // can write the prior child's momentum under amynest:phonics-habit:{B} /
+  // amynest:phonics-adaptive:{B}.
+  useLayoutEffect(() => {
+    if (!level) {
+      if (isMounted.current) setLoading(false);
+      return;
+    }
+    if (!isMounted.current) return;
+    setLoading(true);
+    setApiItems([]);
+    setApiDaily([]);
+    setTotalCatalog(0);
+    setJourneyMeta(null);
+    setPremiumMeta(null);
+    setInsights(null);
+    setProgress(loadLocalProgress(childId, level.ageGroup));
+    // level is derived from ageGroup / overrideAgeGroup; omit object identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [childId, ageGroup, overrideAgeGroup, isMounted]);
+
   // ── Fetch from API ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!level) {
@@ -365,19 +387,6 @@ export function usePhonicsData(
     }
     const myReq = ++reqIdRef.current;
     const controller = new AbortController();
-
-    // FIX (architect #1): wipe per-child caches *immediately* when childId or
-    // ageGroup changes so the old child's items/progress never flash on screen.
-    if (isMounted.current) {
-      setLoading(true);
-      setApiItems([]);
-      setApiDaily([]);
-      setTotalCatalog(0);
-      setJourneyMeta(null);
-      setPremiumMeta(null);
-      setInsights(null);
-      setProgress(loadLocalProgress(childId, level.ageGroup));
-    }
 
     (async () => {
       try {
