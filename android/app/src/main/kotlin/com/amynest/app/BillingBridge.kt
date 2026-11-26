@@ -483,7 +483,14 @@ class BillingBridge(
         fun postMessage(rawMessage: String) {
             val wv = webViewRef.get() ?: return
             wv.post {
-                deliverJsReply(wv, rawMessage, Uri.parse(WebViewOrigins.CANONICAL_WRAPPER_URL))
+                val pageUrl = wv.url
+                if (!WebViewOrigins.isTrustedWebViewUrl(pageUrl)) {
+                    Log.w(TAG, "rejected BillingInject postMessage from untrusted page url=$pageUrl")
+                    return@post
+                }
+                // Use the live page URL — never forge CANONICAL_WRAPPER_URL.
+                // addJavascriptInterface is visible to every origin in the WebView.
+                deliverJsReply(wv, rawMessage, Uri.parse(pageUrl))
             }
         }
     }
@@ -509,6 +516,10 @@ class BillingBridge(
 
     private fun postBillingReply(webView: WebView, message: String) {
         webView.post {
+            if (!WebViewOrigins.isTrustedWebViewUrl(webView.url)) {
+                Log.w(TAG, "skip billing bridge reply — untrusted page url=${webView.url}")
+                return@post
+            }
             try {
                 val js =
                     "(function(){try{" +
