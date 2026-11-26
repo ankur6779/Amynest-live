@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { extendBonusPremium } from "./subscriptionService";
 
+type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GIFT_CODE_PREFIX = "GIFT-";
@@ -29,18 +31,21 @@ function buildGiftCode(): string {
 
 /**
  * Creates a new gift token for the given owner. Retries up to 5 times on the
- * (very unlikely) unique-code collision.
+ * (very unlikely) unique-code collision. Pass `dbExec` to participate in a
+ * caller transaction (referral reward grants must mint gifts atomically with
+ * the referralRewardsGranted counter bump).
  */
 export async function createGiftToken(
   ownerUserId: string,
   bonusDays = 30,
+  dbExec: DbExec = db,
 ): Promise<GiftToken> {
   const expiresAt = new Date(Date.now() + GIFT_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const giftCode = buildGiftCode();
     try {
-      const [row] = await db
+      const [row] = await dbExec
         .insert(giftTokensTable)
         .values({ ownerUserId, giftCode, bonusDays, expiresAt })
         .returning();
@@ -62,6 +67,11 @@ export type RedeemResult =
 /**
  * Redeems a gift token for the recipient. Grants bonus premium days on success.
  * Returns a typed result — never throws for caller-visible errors.
+ *
+ * Mark-redeemed and extendBonusPremium run in one transaction so a grant
+ * failure rolls the token back to available (avoids burning the gift on
+ * server_error). Sticky-alias silent 0-row writes in extendBonusPremium are
+ * covered by the alias-owner write fix (#160).
  */
 export async function redeemGiftToken(
   giftCode: string,
@@ -80,29 +90,36 @@ export async function redeemGiftToken(
     return { ok: false, reason: "expired" };
   }
 
-  // Mark redeemed atomically — only succeeds if status is still "available"
-  const updated = await db
-    .update(giftTokensTable)
-    .set({
-      status: "redeemed",
-      recipientUserId,
-      redeemedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(giftTokensTable.giftCode, code),
-        eq(giftTokensTable.status, "available"),
-      ),
-    )
-    .returning({ id: giftTokensTable.id, bonusDays: giftTokensTable.bonusDays });
-
-  if (updated.length === 0) return { ok: false, reason: "already_redeemed" };
-
-  const bonusDays = updated[0].bonusDays;
   try {
-    await extendBonusPremium(recipientUserId, bonusDays);
-    logger.info({ recipientUserId, giftCode: code, bonusDays }, "gift_token_redeemed");
-    return { ok: true, bonusDays, giftCode: code };
+    // Claim + grant atomically — only succeeds if status is still "available".
+    // If extendBonusPremium throws, the redeem mark rolls back.
+    const redeemed = await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(giftTokensTable)
+        .set({
+          status: "redeemed",
+          recipientUserId,
+          redeemedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(giftTokensTable.giftCode, code),
+            eq(giftTokensTable.status, "available"),
+          ),
+        )
+        .returning({ id: giftTokensTable.id, bonusDays: giftTokensTable.bonusDays });
+
+      if (updated.length === 0) return null;
+
+      const bonusDays = updated[0].bonusDays;
+      await extendBonusPremium(recipientUserId, bonusDays, tx);
+      return bonusDays;
+    });
+
+    if (redeemed === null) return { ok: false, reason: "already_redeemed" };
+
+    logger.info({ recipientUserId, giftCode: code, bonusDays: redeemed }, "gift_token_redeemed");
+    return { ok: true, bonusDays: redeemed, giftCode: code };
   } catch (err) {
     logger.error({ err, recipientUserId, giftCode: code }, "gift_token_bonus_extend_failed");
     return { ok: false, reason: "server_error" };
