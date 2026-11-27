@@ -60,4 +60,20 @@ describe("Launch security guards — route wiring", () => {
     const analytics = readSource("analytics.ts");
     assert.doesNotMatch(analytics, /\/analytics\/preauth-events/);
   });
+
+  it("infant notification HTTP cron tick fails closed without cron secret", () => {
+    const src = readSource("infant-notifications.ts");
+    assert.match(src, /NOTIFICATION_CRON_SECRET/);
+    assert.match(src, /if \(!expected \|\| provided !== expected\)/);
+    assert.doesNotMatch(
+      src,
+      /if \(cronSecret && header !== cronSecret\)/,
+    );
+  });
+
+  it("notification cron ping fails closed without NOTIFICATION_CRON_SECRET", () => {
+    const src = readSource("notification-prefs.ts");
+    assert.match(src, /NOTIFICATION_CRON_SECRET/);
+    assert.match(src, /if \(!expected \|\| provided !== expected\)/);
+  });
 });

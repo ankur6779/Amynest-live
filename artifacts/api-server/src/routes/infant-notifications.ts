@@ -175,7 +175,14 @@ router.post("/infant-notifications/outcome", async (req, res): Promise<void> => 
   res.json({ ok: true });
 });
 
-/** Admin/cron ping — evaluate infant notifications once. */
+/**
+ * Admin/cron ping — evaluate infant notifications once.
+ *
+ * Fail-closed: require x-cron-secret matching NOTIFICATION_CRON_SECRET
+ * (same secret as /notifications/cron/ping). Legacy CRON_SECRET is accepted
+ * as a fallback only when set. An unset secret must never authorize a
+ * platform-wide push fan-out for any signed-in user.
+ */
 router.post("/infant-notifications/tick", async (req, res): Promise<void> => {
   const { shouldAcceptHttpCronTrigger, schedulerStandbyResponse } = await import(
     "../lib/single-active-scheduler.js"
@@ -185,9 +192,10 @@ router.post("/infant-notifications/tick", async (req, res): Promise<void> => {
     res.status(standby.status).json(standby.body);
     return;
   }
-  const cronSecret = process.env["CRON_SECRET"];
-  const header = req.headers["x-cron-secret"];
-  if (cronSecret && header !== cronSecret) {
+  const expected =
+    process.env["NOTIFICATION_CRON_SECRET"] ?? process.env["CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }

@@ -372,9 +372,11 @@ router.post("/infant-sleep/weekly-report", async (req, res): Promise<void> => {
 });
 
 router.post("/infant-sleep/schedule-weekly-report", async (req, res): Promise<void> => {
-  const cronSecret = process.env["CRON_SECRET"];
-  const header = req.headers["x-cron-secret"];
-  if (cronSecret && header !== cronSecret) {
+  // Fail-closed (same contract as /notifications/cron/ping and infant tick).
+  const expected =
+    process.env["NOTIFICATION_CRON_SECRET"] ?? process.env["CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
     res.status(403).json({ error: "forbidden" });
     return;
   }
