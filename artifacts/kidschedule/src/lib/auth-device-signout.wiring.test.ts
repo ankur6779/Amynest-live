@@ -18,6 +18,32 @@ describe("sign-out and account-switch device wiring", () => {
     expect(signOutIdx).toBeGreaterThan(releaseIdx);
     expect(src).toMatch(/resetNativeBillingIdentity/);
     expect(src).toMatch(/clearUserSessionCaches/);
+    expect(src).toMatch(/signOutNativeGoogleAuth/);
+    expect(src).toMatch(/signOutNativeFacebookAuth/);
+  });
+
+  it("exports Capacitor Google/Facebook native sign-out helpers for shared-device switches", () => {
+    const google = read("./google-auth.ts");
+    expect(google).toMatch(/export async function signOutNativeGoogleAuth/);
+    expect(google).toMatch(/GoogleAuth\.signOut/);
+    const facebook = read("./facebook-auth.ts");
+    expect(facebook).toMatch(/export async function signOutNativeFacebookAuth/);
+    expect(facebook).toMatch(/FacebookLogin\.logout/);
+  });
+
+  it("iOS GoogleAuth patch never silent-restores the previous Google account on signIn", () => {
+    const swift = readFileSync(
+      join(
+        dir,
+        "../../../amynest-capacitor/ios-config/patches/GoogleAuthPlugin.swift",
+      ),
+      "utf8",
+    );
+    // Comment may mention the API; the call itself must be gone.
+    expect(swift).not.toMatch(/\.restorePreviousSignIn\s*\{/);
+    expect(swift).not.toMatch(/hasPreviousSignIn\s*\(/);
+    expect(swift).toMatch(/Always present the account picker for interactive signIn/);
+    expect(swift).toMatch(/googleSignIn\.signIn\(/);
   });
 
   it("re-registers the installation when the authenticated uid changes", () => {

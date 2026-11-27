@@ -223,6 +223,18 @@ async function loginCapacitorIosFacebook(): Promise<string> {
   return dest;
 }
 
+/** Best-effort native Facebook logout on Capacitor iOS (shared-device account switch). */
+export async function signOutNativeFacebookAuth(): Promise<void> {
+  if (!shouldUseCapacitorIosFacebookAuth()) return;
+  try {
+    await initNativeFacebookLogin();
+    const { FacebookLogin } = await import("@capacitor-community/facebook-login");
+    await FacebookLogin.logout();
+  } catch (err) {
+    console.warn(`${FACEBOOK_TAG} native FacebookLogin.logout failed`, err);
+  }
+}
+
 async function loginWithWebFallback(): Promise<string | void> {
   try {
     return await loginWithFacebookPopup();

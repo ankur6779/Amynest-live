@@ -90,13 +90,10 @@ public class GoogleAuth: CAPPlugin {
                 self.resolveSignInCallWith(user: user, serverAuthCode: serverAuthCode)
             }
 
-            if self.googleSignIn.hasPreviousSignIn() && !self.forceAuthCode {
-                self.googleSignIn.restorePreviousSignIn { user, error in
-                    finish(user, nil, error)
-                }
-                return
-            }
-
+            // Never restorePreviousSignIn here. Silent restore after AmyNest Firebase
+            // sign-out leaves the previous Google account bound and lets the next
+            // "Continue with Google" tap hijack Parent B into Parent A's session on a
+            // shared iPad. Always present the account picker for interactive signIn.
             let completion: (GIDSignInResult?, Error?) -> Void = { result, error in
                 finish(result?.user, result?.serverAuthCode, error)
             }
