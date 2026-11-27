@@ -18,6 +18,9 @@ describe("sign-out and account-switch device wiring", () => {
     expect(signOutIdx).toBeGreaterThan(releaseIdx);
     expect(src).toMatch(/resetNativeBillingIdentity/);
     expect(src).toMatch(/clearUserSessionCaches/);
+    expect(src).toMatch(/clearPendingNativeGoogleAuth/);
+    expect(src).toMatch(/clearPendingNativeFacebookAuth/);
+    expect(src.indexOf("clearPendingNativeGoogleAuth")).toBeLessThan(signOutIdx);
   });
 
   it("re-registers the installation when the authenticated uid changes", () => {

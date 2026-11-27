@@ -341,6 +341,19 @@ export async function clearPendingNativeGoogleAuth(): Promise<void> {
   await callAsync(bridge, { action: "clearPendingGoogleAuth" }, 5_000);
 }
 
+/** Non-destructive check — does not consume window.__AMYNEST_PENDING_* or prefs. */
+export function hasPendingNativeGoogleIdToken(): boolean {
+  if (window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN?.trim()) return true;
+  try {
+    const inject = (
+      window as Window & { AmyNestAuthInject?: { getPendingGoogleIdToken?: () => string } }
+    ).AmyNestAuthInject;
+    return !!inject?.getPendingGoogleIdToken?.()?.trim();
+  } catch {
+    return false;
+  }
+}
+
 export function readPendingNativeGoogleIdToken(): string | null {
   const token = window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN?.trim();
   if (token) {
@@ -379,6 +392,21 @@ export function readPendingNativeFacebookAccessToken(): string | null {
     /* older app builds without getPendingFacebookAccessToken */
   }
   return null;
+}
+
+/** Non-destructive check — does not consume window.__AMYNEST_PENDING_* or prefs. */
+export function hasPendingNativeFacebookAccessToken(): boolean {
+  if (window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN?.trim()) return true;
+  try {
+    const inject = (
+      window as Window & {
+        AmyNestAuthInject?: { getPendingFacebookAccessToken?: () => string };
+      }
+    ).AmyNestAuthInject;
+    return !!inject?.getPendingFacebookAccessToken?.()?.trim();
+  } catch {
+    return false;
+  }
 }
 
 function pendingFacebookTokenSignInResult(): NativeFacebookSignInResult | null {
