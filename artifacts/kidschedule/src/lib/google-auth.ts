@@ -245,6 +245,23 @@ export async function loginNativeGoogle(): Promise<string> {
   return finishGoogleLoginFlow();
 }
 
+/**
+ * Clear the native Google Sign-In session on Capacitor iOS. AmyNest Firebase
+ * sign-out alone leaves GIDSignIn's previous account cached; the next Google
+ * tap would otherwise restore Parent A's tokens for Parent B on a shared iPad.
+ * Best-effort — never throw into the AmyNest sign-out path.
+ */
+export async function signOutNativeGoogleAuth(): Promise<void> {
+  if (!shouldUseCapacitorGoogleAuth()) return;
+  try {
+    await initNativeGoogleAuth();
+    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    await GoogleAuth.signOut();
+  } catch (err) {
+    console.warn(`${GOOGLE_TAG} native GoogleAuth.signOut failed`, err);
+  }
+}
+
 /** Android WebView APK — native account picker via AuthBridge.kt. */
 export async function loginAndroidWebViewGoogle(): Promise<string> {
   console.info(`${GOOGLE_TAG} android webview flow start`, {

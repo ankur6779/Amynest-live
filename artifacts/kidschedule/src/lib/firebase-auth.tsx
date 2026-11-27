@@ -157,6 +157,14 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     // device cannot inherit the previous user's premium entitlements. Fire and
     // forget — never block sign-out on the billing bridge.
     void resetNativeBillingIdentity();
+    // Capacitor iOS: clear GIDSignIn so the next "Continue with Google" cannot
+    // silently restore the previous parent's account on a shared device.
+    void import("@/lib/google-auth").then(({ signOutNativeGoogleAuth }) => {
+      void signOutNativeGoogleAuth();
+    });
+    void import("@/lib/facebook-auth").then(({ signOutNativeFacebookAuth }) => {
+      void signOutNativeFacebookAuth();
+    });
     resetOnboardingFetchLock();
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;
